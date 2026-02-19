@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
 
 const ADMIN_LOGIN = import.meta.env.VITE_ADMIN_LOGIN ?? 'admin';
-const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD ?? '';
+const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD ?? 'fs2024';
 
 type AuthContextType = {
   isAuthenticated: boolean;
