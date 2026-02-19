@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import Section from '../../components/Section';
+import AdminLayout from '../../components/admin/AdminLayout';
 import { usePackages } from '../../hooks/usePackages';
 import { useCategories } from '../../hooks/useCategories';
 import { useContacts } from '../../hooks/useContacts';
@@ -29,13 +29,12 @@ const emptyCategory: Category = {
   pagePath: '/rent/light',
 };
 
-type Tab = 'packages' | 'categories' | 'contacts' | 'cases' | 'calculator';
+type Tab = 'packages' | 'categories' | 'contacts' | 'calculator';
 
 const tabs: { key: Tab; label: string }[] = [
   { key: 'packages', label: 'Пакеты' },
   { key: 'categories', label: 'Категории' },
   { key: 'contacts', label: 'Контакты' },
-  { key: 'cases', label: 'Кейсы' },
   { key: 'calculator', label: 'Калькулятор' },
 ];
 
@@ -231,35 +230,37 @@ const AdminContentPage = () => {
   };
 
   return (
-    <div className="space-y-6 pb-16">
-      <Section title="Админка контента" subtitle="Выберите раздел для редактирования">
-        <div className="mb-4 flex items-center justify-between">
-          <div className="flex flex-wrap gap-2">
-            {tabs.map((t) => (
-              <button
-                key={t.key}
-                onClick={() => setActiveTab(t.key)}
-                className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
-                  activeTab === t.key
-                    ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/30'
-                    : 'border border-white/15 text-slate-300 hover:border-white/30 hover:text-white'
-                }`}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-          <a
-            href="/admin/leads"
-            className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-100 hover:border-emerald-500/60"
-          >
-            📊 Лента заявок
-          </a>
+    <AdminLayout title="Контент" subtitle="Управление пакетами, категориями, контактами и кейсами">
+      <div className="mb-4 flex items-center justify-between">
+        <div className="flex flex-wrap gap-2">
+          {tabs.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setActiveTab(t.key)}
+              className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
+                activeTab === t.key
+                  ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/30'
+                  : 'border border-white/15 text-slate-300 hover:border-white/30 hover:text-white'
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
         </div>
-      </Section>
+        <a
+          href="/admin/leads"
+          className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-100 hover:border-emerald-500/60"
+        >
+          📊 Лента заявок
+        </a>
+      </div>
+
+      <div className="space-y-6">
 
       {activeTab === 'packages' && (
-      <Section title="Пакеты" subtitle="Лайт / Медиум / Биг">
+        <div className="rounded-xl border border-white/10 bg-slate-800 p-6">
+          <h2 className="mb-4 text-xl font-semibold text-white">Пакеты</h2>
+          <p className="mb-6 text-sm text-slate-400">Лайт / Медиум / Биг</p>
           <div className="grid gap-6 md:grid-cols-2">
             <form className="card space-y-3" onSubmit={submitPackage}>
               <div className="flex items-center justify-between">
@@ -369,11 +370,13 @@ const AdminContentPage = () => {
               </div>
             </div>
           </div>
-      </Section>
+      </div>
       )}
 
       {activeTab === 'categories' && (
-      <Section title="Категории аренды" subtitle="Свет, видео, звук, сцены, инструменты">
+        <div className="rounded-xl border border-white/10 bg-slate-800 p-6">
+          <h2 className="mb-4 text-xl font-semibold text-white">Категории аренды</h2>
+          <p className="mb-6 text-sm text-slate-400">Свет, видео, звук, сцены, инструменты</p>
           <div className="grid gap-6 md:grid-cols-2">
             <form className="card space-y-3" onSubmit={submitCategory}>
               <div className="flex items-center justify-between">
@@ -473,11 +476,13 @@ const AdminContentPage = () => {
               </div>
             </div>
           </div>
-      </Section>
+      </div>
       )}
 
       {activeTab === 'contacts' && (
-      <Section title="Контакты" subtitle="Телефоны, email, адрес, время">
+        <div className="rounded-xl border border-white/10 bg-slate-800 p-6">
+          <h2 className="mb-4 text-xl font-semibold text-white">Контакты</h2>
+          <p className="mb-6 text-sm text-slate-400">Телефоны, email, адрес, время</p>
           <div className="grid gap-6 md:grid-cols-2">
             <form className="card space-y-3" onSubmit={submitContacts}>
             <div className="flex items-center justify-between">
@@ -695,171 +700,15 @@ const AdminContentPage = () => {
             </div>
           </div>
         </div>
-      </Section>
-      )}
-
-      {activeTab === 'cases' && (
-      <Section title="Кейсы" subtitle="Реализованные проекты">
-        <div className="grid gap-6 md:grid-cols-2">
-          <form className="card space-y-3" onSubmit={submitCase}>
-            <div className="flex items-center justify-between">
-              <div className="text-lg font-semibold text-white">{caseEditing ? 'Редактировать кейс' : 'Создать кейс'}</div>
-              {caseEditing && (
-                <button type="button" onClick={() => { setCaseForm(emptyCaseForm); setCaseEditing(null); }} className="text-sm text-slate-300 hover:text-white">
-                  Сбросить
-                </button>
-              )}
-            </div>
-            <div className="grid gap-3">
-              <label className="text-sm text-slate-200">
-                Slug*
-                <input
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
-                  value={caseForm.slug}
-                  onChange={(e) => setCaseForm((f) => ({ ...f, slug: e.target.value }))}
-                  required
-                  disabled={!!caseEditing}
-                />
-              </label>
-              <label className="text-sm text-slate-200">
-                Заголовок*
-                <input
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
-                  value={caseForm.title}
-                  onChange={(e) => {
-                    const nextTitle = e.target.value;
-                    const autoSlug = slugify(nextTitle);
-                    setCaseForm((f) => {
-                      const shouldUpdateSlug = !caseEditing && (!f.slug || f.slug === slugify(f.title));
-                      return { ...f, title: nextTitle, slug: shouldUpdateSlug ? autoSlug : f.slug };
-                    });
-                  }}
-                  required
-                />
-              </label>
-              <div className="grid gap-3 md:grid-cols-3">
-                <label className="text-sm text-slate-200">
-                  Город
-                  <input className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2" value={caseForm.city} onChange={(e) => setCaseForm((f) => ({ ...f, city: e.target.value }))} />
-                </label>
-                <label className="text-sm text-slate-200">
-                  Дата/год
-                  <input className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2" value={caseForm.date} onChange={(e) => setCaseForm((f) => ({ ...f, date: e.target.value }))} />
-                </label>
-                <label className="text-sm text-slate-200">
-                  Формат
-                  <input className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2" value={caseForm.format} onChange={(e) => setCaseForm((f) => ({ ...f, format: e.target.value }))} />
-                </label>
-              </div>
-              <label className="text-sm text-slate-200">
-                Услуги (через запятую)
-                <input className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2" value={caseForm.services} onChange={(e) => setCaseForm((f) => ({ ...f, services: e.target.value }))} placeholder="led, sound, stage" />
-              </label>
-              <label className="text-sm text-slate-200">
-                Краткое описание
-                <textarea className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2" value={caseForm.summary} onChange={(e) => setCaseForm((f) => ({ ...f, summary: e.target.value }))} rows={3} />
-              </label>
-              <label className="text-sm text-slate-200">
-                Метрики (опционально)
-                <input className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2" value={caseForm.metrics} onChange={(e) => setCaseForm((f) => ({ ...f, metrics: e.target.value }))} placeholder="800 гостей, 2 дня" />
-              </label>
-              <label className="text-sm text-slate-200">
-                Изображения (URL через запятую)
-                <textarea className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2" value={caseForm.imagesText} onChange={(e) => setCaseForm((f) => ({ ...f, imagesText: e.target.value }))} rows={2} placeholder="https://.../img1.jpg" />
-              </label>
-              <label className="text-sm text-slate-200">
-                Загрузить файлы
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  className="mt-1 w-full text-sm text-slate-300 file:mr-3 file:rounded-lg file:border-0 file:bg-brand-500 file:px-3 file:py-2 file:text-white file:hover:bg-brand-400"
-                  onChange={async (e) => {
-                    const files = Array.from(e.target.files ?? []);
-                    if (!files.length) return;
-                    const toDataUrl = (file: File) =>
-                      new Promise<string>((resolve, reject) => {
-                        const reader = new FileReader();
-                        reader.onload = () => resolve(String(reader.result));
-                        reader.onerror = () => reject(reader.error);
-                        reader.readAsDataURL(file);
-                      });
-                    try {
-                      const urls = await Promise.all(files.map((f) => toDataUrl(f)));
-                      setCaseForm((f) => ({ ...f, images: [...f.images, ...urls] }));
-                    } catch (err) {
-                      console.error('File read error', err);
-                    }
-                    e.target.value = '';
-                  }}
-                />
-              </label>
-              {caseForm.images.length > 0 && (
-                <div className="grid grid-cols-4 gap-2">
-                  {caseForm.images.map((src, idx) => (
-                    <div key={src + idx} className="relative">
-                      <img src={src} alt="preview" className="h-16 w-full rounded-md object-cover" />
-                      <button
-                        type="button"
-                        className="absolute right-1 top-1 rounded-full bg-black/60 px-1 text-[10px] text-white"
-                        onClick={() => setCaseForm((f) => ({ ...f, images: f.images.filter((_, i) => i !== idx) }))}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            <button type="submit" disabled={!caseCanSubmit} className="rounded-lg bg-brand-500 px-4 py-2 font-semibold text-white hover:bg-brand-400 disabled:opacity-50">
-              {caseEditing ? 'Сохранить' : 'Добавить'}
-            </button>
-          </form>
-
-          <div className="card space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="text-lg font-semibold text-white">Список кейсов</div>
-              <button type="button" onClick={resetCases} className="text-sm text-slate-300 hover:text-white">Сброс к дефолту</button>
-            </div>
-            <div className="space-y-2">
-              {cases.map((item) => (
-                <div key={item.slug} className="rounded-lg border border-white/10 bg-white/5 p-3 text-sm text-slate-200">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="font-semibold text-white">{item.title}</div>
-                    <div className="text-xs text-slate-400">{item.slug}</div>
-                  </div>
-                  <div className="text-xs text-slate-400">{item.city} · {item.date} · {item.format}</div>
-                  <div className="mt-1 text-slate-200">{item.summary}</div>
-                  {item.metrics && <div className="text-xs text-brand-100">{item.metrics}</div>}
-                  <div className="text-xs text-slate-400">Услуги: {item.services.join(', ')}</div>
-                  {item.images && item.images.length > 0 && (
-                    <div className="mt-2 grid grid-cols-3 gap-2">
-                      {item.images.map((src) => (
-                        <img key={src} src={src} alt={item.title} className="h-16 w-full rounded-md object-cover" loading="lazy" />
-                      ))}
-                    </div>
-                  )}
-                  <div className="mt-2 flex gap-2">
-                    <button type="button" onClick={() => startEditCase(item)} className="rounded-lg border border-white/20 px-3 py-1 text-xs font-semibold text-white hover:border-white/40">
-                      Редактировать
-                    </button>
-                    <button type="button" onClick={() => deleteCase(item.slug)} className="rounded-lg border border-red-400/40 px-3 py-1 text-xs font-semibold text-red-200 hover:border-red-400">
-                      Удалить
-                    </button>
-                  </div>
-                </div>
-              ))}
-              {cases.length === 0 && <div className="text-slate-400">Нет кейсов.</div>}
-            </div>
-          </div>
-        </div>
-      </Section>
+      </div>
       )}
 
       {activeTab === 'calculator' && (
-      <Section title="Калькулятор" subtitle="Настройки шагов пикселя и типовых размеров">
-        <div className="space-y-4">
-          <div className="flex flex-wrap items-center gap-3">
+        <div className="rounded-xl border border-white/10 bg-slate-800 p-6">
+          <h2 className="mb-4 text-xl font-semibold text-white">Калькулятор</h2>
+          <p className="mb-6 text-sm text-slate-400">Настройки шагов пикселя и типовых размеров</p>
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center gap-3">
             <button
               type="button"
               onClick={addPitch}
@@ -1008,9 +857,10 @@ const AdminContentPage = () => {
             </div>
           </div>
         </div>
-      </Section>
+      </div>
       )}
     </div>
+    </AdminLayout>
   );
 };
 

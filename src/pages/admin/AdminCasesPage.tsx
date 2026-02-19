@@ -1,299 +1,274 @@
 import { FormEvent, useMemo, useState } from 'react';
-import Section from '../../components/Section';
+import AdminLayout from '../../components/admin/AdminLayout';
 import { useCases } from '../../hooks/useCases';
 import type { CaseItem } from '../../data/cases';
-import { slugify } from '../../utils/slugify';
 
-type FormState = Omit<CaseItem, 'services' | 'images'> & { services: string; imagesText: string; images: string[] };
+type CaseFormState = Omit<CaseItem, 'services' | 'images'> & { 
+  servicesText: string; 
+  imagesText: string; 
+};
 
-const emptyForm: FormState = {
-  slug: '',
-  title: '',
-  city: '',
-  date: '',
-  format: '',
-  summary: '',
-  metrics: '',
+const emptyCaseForm: CaseFormState = {
+  slug: '', 
+  title: '', 
+  city: '', 
+  date: '', 
+  format: '', 
+  summary: '', 
+  metrics: '', 
+  servicesText: '', 
   imagesText: '',
-  images: [],
-  services: '',
 };
 
 const AdminCasesPage = () => {
   const { cases, addCase, updateCase, deleteCase, resetToDefault } = useCases();
-  const [form, setForm] = useState(emptyForm);
-  const [editingSlug, setEditingSlug] = useState<string | null>(null);
-  const isEditing = Boolean(editingSlug);
+  const [caseForm, setCaseForm] = useState<CaseFormState>(emptyCaseForm);
+  const [caseEditing, setCaseEditing] = useState<string | null>(null);
 
-  const canSubmit = useMemo(() => form.slug.trim() && form.title.trim(), [form.slug, form.title]);
+  const caseCanSubmit = useMemo(() => 
+    caseForm.slug.trim() && caseForm.title.trim(), 
+    [caseForm.slug, caseForm.title]
+  );
 
-  const onSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const submitCase = (e: FormEvent) => {
     e.preventDefault();
-    if (!canSubmit) return;
-
+    if (!caseCanSubmit) return;
+    
     const payload = {
-      ...form,
-      services: form.services.split(',').map((s) => s.trim()),
-      images: [
-        ...form.images,
-        ...form.imagesText
-          .split(',')
-          .map((s) => s.trim())
-          .filter(Boolean),
-      ],
+      ...caseForm,
+      services: caseForm.servicesText.split(',').map((s) => s.trim()).filter(Boolean),
+      images: caseForm.imagesText.split(',').map((s) => s.trim()).filter(Boolean),
     };
-
-    if (isEditing && editingSlug) {
-      updateCase(editingSlug, payload);
+    
+    if (caseEditing) {
+      updateCase(caseEditing, payload);
     } else {
       addCase(payload);
     }
-
-    setForm(emptyForm);
-    setEditingSlug(null);
+    setCaseForm(emptyCaseForm);
+    setCaseEditing(null);
   };
 
   const startEdit = (item: CaseItem) => {
-    setForm({
+    setCaseForm({
       ...item,
-      services: item.services.join(', '),
+      servicesText: item.services.join(', '),
       imagesText: item.images?.join(', ') ?? '',
-      images: item.images ?? [],
     });
-    setEditingSlug(item.slug);
+    setCaseEditing(item.slug);
   };
 
   const cancelEdit = () => {
-    setForm(emptyForm);
-    setEditingSlug(null);
+    setCaseForm(emptyCaseForm);
+    setCaseEditing(null);
   };
 
   return (
-    <div className="space-y-2">
-      <Section title="Админка кейсов" subtitle="Локальное редактирование (localStorage). Для прод нужна реальная CMS/API.">
-        <div className="grid gap-6 md:grid-cols-2">
-          <form className="card space-y-3" onSubmit={onSubmit}>
-            <div className="flex items-center justify-between">
-              <div className="text-lg font-semibold text-white">{isEditing ? 'Редактировать кейс' : 'Создать кейс'}</div>
-              {isEditing && (
-                <button type="button" onClick={cancelEdit} className="text-sm text-slate-300 hover:text-white">
-                  Сбросить
-                </button>
-              )}
-            </div>
-            <div className="grid gap-3">
+    <AdminLayout title="Кейсы" subtitle="Реализованные проекты">
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Форма */}
+        <div className="rounded-xl border border-white/10 bg-slate-800 p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-white">
+              {caseEditing ? 'Редактировать кейс' : 'Новый кейс'}
+            </h2>
+            {caseEditing && (
+              <button 
+                type="button" 
+                onClick={cancelEdit}
+                className="text-sm text-slate-300 hover:text-white"
+              >
+                Отмена
+              </button>
+            )}
+          </div>
+          
+          <form onSubmit={submitCase} className="space-y-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               <label className="text-sm text-slate-200">
                 Slug*
                 <input
                   className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
-                  value={form.slug}
-                  onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value }))}
-                  required
-                  disabled={isEditing}
-                />
-              </label>
-              <label className="text-sm text-slate-200">
-                Заголовок*
-                <input
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
-                  value={form.title}
-                  onChange={(e) => {
-                    const nextTitle = e.target.value;
-                    const autoSlug = slugify(nextTitle);
-                    setForm((f) => {
-                      const shouldUpdateSlug = !isEditing && (!f.slug || f.slug === slugify(f.title));
-                      return {
-                        ...f,
-                        title: nextTitle,
-                        slug: shouldUpdateSlug ? autoSlug : f.slug,
-                      };
-                    });
-                  }}
+                  value={caseForm.slug}
+                  onChange={(e) => setCaseForm((f) => ({ ...f, slug: e.target.value }))}
+                  placeholder="forum-ekb-2024"
                   required
                 />
               </label>
-              <div className="grid gap-3 md:grid-cols-3">
-                <label className="text-sm text-slate-200">
-                  Город
-                  <input
-                    className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
-                    value={form.city}
-                    onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
-                  />
-                </label>
-                <label className="text-sm text-slate-200">
-                  Дата/год
-                  <input
-                    className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
-                    value={form.date}
-                    onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
-                  />
-                </label>
-                <label className="text-sm text-slate-200">
-                  Формат
-                  <input
-                    className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
-                    value={form.format}
-                    onChange={(e) => setForm((f) => ({ ...f, format: e.target.value }))}
-                  />
-                </label>
-              </div>
               <label className="text-sm text-slate-200">
-                Услуги (через запятую: led, sound, light, video, stage, support)
+                Название*
                 <input
                   className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
-                  value={form.services}
-                  onChange={(e) => setForm((f) => ({ ...f, services: e.target.value }))}
-                  placeholder="led, sound, stage"
+                  value={caseForm.title}
+                  onChange={(e) => setCaseForm((f) => ({ ...f, title: e.target.value }))}
+                  placeholder="Форум в Екатеринбурге"
+                  required
                 />
               </label>
-              <label className="text-sm text-slate-200">
-                Краткое описание
-                <textarea
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
-                  value={form.summary}
-                  onChange={(e) => setForm((f) => ({ ...f, summary: e.target.value }))}
-                  rows={3}
-                />
-              </label>
-              <label className="text-sm text-slate-200">
-                Метрики (опционально)
-                <input
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
-                  value={form.metrics}
-                  onChange={(e) => setForm((f) => ({ ...f, metrics: e.target.value }))}
-                  placeholder="800 гостей, 2 дня"
-                />
-              </label>
-              <label className="text-sm text-slate-200">
-                Изображения (URL через запятую)
-                <textarea
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
-                  value={form.imagesText}
-                  onChange={(e) => setForm((f) => ({ ...f, imagesText: e.target.value }))}
-                  rows={2}
-                  placeholder="https://.../img1.jpg, https://.../img2.webp"
-                />
-              </label>
-              <label className="text-sm text-slate-200">
-                Загрузить файлы (конвертируются в data URL, сохраняются в localStorage)
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  className="mt-1 w-full text-sm text-slate-300 file:mr-3 file:rounded-lg file:border-0 file:bg-brand-500 file:px-3 file:py-2 file:text-white file:hover:bg-brand-400"
-                  onChange={async (e) => {
-                    const files = Array.from(e.target.files ?? []);
-                    if (!files.length) return;
-                    const toDataUrl = (file: File) =>
-                      new Promise<string>((resolve, reject) => {
-                        const reader = new FileReader();
-                        reader.onload = () => resolve(String(reader.result));
-                        reader.onerror = () => reject(reader.error);
-                        reader.readAsDataURL(file);
-                      });
-                    try {
-                      const urls = await Promise.all(files.map((f) => toDataUrl(f)));
-                      setForm((f) => ({ ...f, images: [...f.images, ...urls] }));
-                    } catch (err) {
-                      console.error('File read error', err);
-                    }
-                    e.target.value = '';
-                  }}
-                />
-                <div className="mt-2 text-xs text-slate-400">Для прод лучше грузить в CDN/S3. Data URL подходят для черновиков.</div>
-              </label>
-              {form.images.length > 0 && (
-                <div className="grid grid-cols-4 gap-2">
-                  {form.images.map((src, idx) => (
-                    <div key={src + idx} className="relative">
-                      <img src={src} alt="preview" className="h-16 w-full rounded-md object-cover" />
-                      <button
-                        type="button"
-                        className="absolute right-1 top-1 rounded-full bg-black/60 px-1 text-[10px] text-white"
-                        onClick={() =>
-                          setForm((f) => ({ ...f, images: f.images.filter((_, i) => i !== idx) }))
-                        }
-                        aria-label="Удалить изображение"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="text-sm text-slate-200">
+                Город
+                <input
+                  className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                  value={caseForm.city}
+                  onChange={(e) => setCaseForm((f) => ({ ...f, city: e.target.value }))}
+                  placeholder="Екатеринбург"
+                />
+              </label>
+              <label className="text-sm text-slate-200">
+                Дата
+                <input
+                  className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                  value={caseForm.date}
+                  onChange={(e) => setCaseForm((f) => ({ ...f, date: e.target.value }))}
+                  placeholder="2024"
+                />
+              </label>
+            </div>
+
+            <label className="text-sm text-slate-200">
+              Формат
+              <input
+                className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                value={caseForm.format}
+                onChange={(e) => setCaseForm((f) => ({ ...f, format: e.target.value }))}
+                placeholder="Форум"
+              />
+            </label>
+
+            <label className="text-sm text-slate-200">
+              Описание
+              <textarea
+                className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                value={caseForm.summary}
+                onChange={(e) => setCaseForm((f) => ({ ...f, summary: e.target.value }))}
+                rows={3}
+                placeholder="Краткое описание проекта"
+              />
+            </label>
+
+            <label className="text-sm text-slate-200">
+              Метрики
+              <input
+                className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                value={caseForm.metrics}
+                onChange={(e) => setCaseForm((f) => ({ ...f, metrics: e.target.value }))}
+                placeholder="800 гостей, 2 дня"
+              />
+            </label>
+
+            <label className="text-sm text-slate-200">
+              Услуги (через запятую)
+              <input
+                className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                value={caseForm.servicesText}
+                onChange={(e) => setCaseForm((f) => ({ ...f, servicesText: e.target.value }))}
+                placeholder="led, sound, light, support"
+              />
+            </label>
+
+            <label className="text-sm text-slate-200">
+              Изображения (URL через запятую)
+              <textarea
+                className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                value={caseForm.imagesText}
+                onChange={(e) => setCaseForm((f) => ({ ...f, imagesText: e.target.value }))}
+                rows={2}
+                placeholder="https://..."
+              />
+            </label>
+
             <button
               type="submit"
-              disabled={!canSubmit}
-              className="rounded-lg bg-brand-500 px-4 py-2 font-semibold text-white hover:bg-brand-400 disabled:opacity-50"
+              disabled={!caseCanSubmit}
+              className="w-full rounded-lg bg-brand-500 px-4 py-2 font-semibold text-white hover:bg-brand-400 disabled:opacity-50"
             >
-              {isEditing ? 'Сохранить' : 'Добавить'}
+              {caseEditing ? 'Сохранить' : 'Добавить кейс'}
             </button>
           </form>
+        </div>
 
-          <div className="card space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="text-lg font-semibold text-white">Список кейсов</div>
-              <button
-                type="button"
-                onClick={resetToDefault}
-                className="text-sm text-slate-300 hover:text-white"
+        {/* Список кейсов */}
+        <div className="rounded-xl border border-white/10 bg-slate-800 p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-white">Список кейсов</h2>
+            <button
+              type="button"
+              onClick={resetToDefault}
+              className="text-sm text-slate-300 hover:text-white"
+            >
+              Сброс к дефолту
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            {cases.map((c) => (
+              <div 
+                key={c.slug} 
+                className="rounded-lg border border-white/10 bg-white/5 p-4"
               >
-                Сброс к дефолту
-              </button>
-            </div>
-            <div className="space-y-2">
-              {cases.map((item) => (
-                <div key={item.slug} className="rounded-lg border border-white/10 bg-white/5 p-3 text-sm text-slate-200">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="font-semibold text-white">{item.title}</div>
-                    <div className="text-xs text-slate-400">{item.slug}</div>
-                  </div>
-                  <div className="text-xs text-slate-400">{item.city} · {item.date} · {item.format}</div>
-                  <div className="mt-1 text-slate-200">{item.summary}</div>
-                  {item.metrics && <div className="text-xs text-brand-100">{item.metrics}</div>}
-                  <div className="text-xs text-slate-400">Услуги: {item.services.join(', ')}</div>
-                  {item.images && item.images.length > 0 && (
-                    <div className="mt-2 grid grid-cols-3 gap-2">
-                      {item.images.map((src) => (
-                        <img
-                          key={src}
-                          src={src}
-                          alt={item.title}
-                          className="h-16 w-full rounded-md object-cover"
-                          loading="lazy"
-                        />
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-white">{c.title}</span>
+                      <span className="text-xs text-slate-400">({c.slug})</span>
+                    </div>
+                    <div className="mt-1 text-sm text-slate-300">
+                      {c.city} · {c.date} · {c.format}
+                    </div>
+                    <div className="mt-1 text-xs text-slate-400">
+                      {c.summary}
+                    </div>
+                    {c.metrics && (
+                      <div className="mt-1 text-xs text-brand-100">
+                        📊 {c.metrics}
+                      </div>
+                    )}
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {c.services.map((s) => (
+                        <span 
+                          key={s}
+                          className="rounded bg-slate-700 px-2 py-0.5 text-xs text-slate-300"
+                        >
+                          {s}
+                        </span>
                       ))}
                     </div>
-                  )}
-                  <div className="mt-2 flex gap-2">
+                  </div>
+                  <div className="flex flex-col gap-2">
                     <button
                       type="button"
-                      onClick={() => startEdit(item)}
-                      className="rounded-lg border border-white/20 px-3 py-1 text-xs font-semibold text-white hover:border-white/40"
+                      onClick={() => startEdit(c)}
+                      className="rounded border border-white/20 px-3 py-1 text-xs font-semibold text-white hover:border-white/40"
                     >
-                      Редактировать
+                      ✏️
                     </button>
                     <button
                       type="button"
-                      onClick={() => deleteCase(item.slug)}
-                      className="rounded-lg border border-red-400/40 px-3 py-1 text-xs font-semibold text-red-200 hover:border-red-400"
+                      onClick={() => {
+                        if (confirm(`Удалить кейс "${c.title}"?`)) {
+                          deleteCase(c.slug);
+                        }
+                      }}
+                      className="rounded border border-red-400/40 px-3 py-1 text-xs font-semibold text-red-200 hover:border-red-400"
                     >
-                      Удалить
+                      🗑
                     </button>
                   </div>
                 </div>
-              ))}
-              {cases.length === 0 && <div className="text-slate-400">Нет кейсов.</div>}
-            </div>
+              </div>
+            ))}
+            {cases.length === 0 && (
+              <div className="text-center text-slate-400">
+                Кейсов пока нет. Добавьте первый!
+              </div>
+            )}
           </div>
         </div>
-        <div className="text-xs text-slate-400">
-          Данные сохраняются в localStorage браузера. Для прод-версии нужен backend/CMS и авторизация.
-        </div>
-      </Section>
-    </div>
+      </div>
+    </AdminLayout>
   );
 };
 

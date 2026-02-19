@@ -22,6 +22,7 @@ const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 const AdminContentPage = lazy(() => import('./pages/admin/AdminContentPage'));
 const AdminLeadsPage = lazy(() => import('./pages/admin/AdminLeadsPage'));
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
+const AdminCasesPage = lazy(() => import('./pages/admin/AdminCasesPage'));
 
 const PageLoader = () => (
   <div className="flex min-h-[40vh] items-center justify-center">
@@ -88,6 +89,10 @@ const App = () => {
       {
         path: '/admin/leads',
         element: <ProtectedRoute><AdminLeadsPage /></ProtectedRoute>,
+      },
+      {
+        path: '/admin/cases',
+        element: <ProtectedRoute><AdminCasesPage /></ProtectedRoute>,
       },
       {
         path: '/admin',

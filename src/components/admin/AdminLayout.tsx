@@ -11,8 +11,8 @@ interface Props {
 const navItems = [
   { to: '/admin', label: 'Дашборд', icon: '📊' },
   { to: '/admin/leads', label: 'Заявки', icon: '📬', badge: true },
-  { to: '/admin/content', label: 'Контент', icon: '📦' },
   { to: '/admin/cases', label: 'Кейсы', icon: '📁' },
+  { to: '/admin/content', label: 'Настройки', icon: '⚙️' },
 ];
 
 const AdminLayout = ({ title, subtitle, children }: Props) => {
