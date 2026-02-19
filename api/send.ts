@@ -3,7 +3,8 @@ import nodemailer from 'nodemailer';
 import 'dotenv/config';
 
 // Транспорт для почты
-const transporter = nodemailer.createTransport({
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const transporter: any = nodemailer.createTransport({
   host: 'smtp.mail.ru',
   port: 465,
   secure: true,
