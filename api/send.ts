@@ -111,6 +111,8 @@ const sendEmail = async (payload: EmailPayload): Promise<boolean> => {
   }).join('<br>');
 
   try {
+    console.log(`[Email] Начинаем отправку. Admin: ${process.env.SMTP_TO}, Client: ${payload.email || 'не указан'}`);
+    
     // Отправка админу
     await transporter.sendMail({
       from: `"Future Screen" <${process.env.SMTP_USER}>`,
@@ -119,9 +121,12 @@ const sendEmail = async (payload: EmailPayload): Promise<boolean> => {
       text,
       html,
     });
+    console.log(`[Email] Письмо админу отправлено на ${process.env.SMTP_TO}`);
 
     // Отправка подтверждения клиенту (если указан email)
-    if (payload.email) {
+    if (payload.email && payload.email.trim()) {
+      console.log(`[Email] Отправляем подтверждение клиенту: ${payload.email}`);
+      
       const clientText = [
         `Здравствуйте, ${payload.name}!`,
         '',
@@ -171,7 +176,10 @@ const sendEmail = async (payload: EmailPayload): Promise<boolean> => {
 
     return true;
   } catch (err) {
-    console.error('[Email] Ошибка:', err);
+    console.error('[Email] Ошибка отправки:', err);
+    console.error('[Email] SMTP_USER:', process.env.SMTP_USER);
+    console.error('[Email] SMTP_TO:', process.env.SMTP_TO);
+    console.error('[Email] Client email:', payload.email);
     return false;
   }
 };
