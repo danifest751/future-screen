@@ -4,6 +4,7 @@ import Layout from './components/Layout';
 import { useCategories } from './hooks/useCategories';
 import { Helmet } from 'react-helmet-async';
 import ProtectedRoute from './components/ProtectedRoute';
+import { StructuredData } from './components/StructuredData';
 
 const HomePage = lazy(() => import('./pages/HomePage'));
 const LedPage = lazy(() => import('./pages/LedPage'));
@@ -101,6 +102,7 @@ const App = () => {
           content="Техсопровождение мероприятий: LED-экраны, звук, свет, сцены. КП за 15 минут. Работаем по РФ с 2007 года."
         />
       </Helmet>
+      <StructuredData />
       <Suspense fallback={<PageLoader />}>
         {element}
       </Suspense>
