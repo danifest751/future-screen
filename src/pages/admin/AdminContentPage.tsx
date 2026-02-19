@@ -233,20 +233,28 @@ const AdminContentPage = () => {
   return (
     <div className="space-y-6 pb-16">
       <Section title="Админка контента" subtitle="Выберите раздел для редактирования">
-        <div className="flex flex-wrap gap-2">
-          {tabs.map((t) => (
-            <button
-              key={t.key}
-              onClick={() => setActiveTab(t.key)}
-              className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
-                activeTab === t.key
-                  ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/30'
-                  : 'border border-white/15 text-slate-300 hover:border-white/30 hover:text-white'
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex flex-wrap gap-2">
+            {tabs.map((t) => (
+              <button
+                key={t.key}
+                onClick={() => setActiveTab(t.key)}
+                className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
+                  activeTab === t.key
+                    ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/30'
+                    : 'border border-white/15 text-slate-300 hover:border-white/30 hover:text-white'
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+          <a
+            href="/admin/leads"
+            className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-100 hover:border-emerald-500/60"
+          >
+            📊 Лента заявок
+          </a>
         </div>
       </Section>
 

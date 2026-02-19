@@ -9,9 +9,33 @@ export type FormPayload = {
   format?: string;
   comment?: string;
   extra?: Record<string, string>;
+  pagePath?: string;
+  referrer?: string;
+};
+
+const STORAGE_KEY = 'fs_lead_logs';
+
+const saveToLogs = (payload: FormPayload) => {
+  try {
+    const log = {
+      id: `log_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      timestamp: new Date().toISOString(),
+      ...payload,
+    };
+
+    const stored = localStorage.getItem(STORAGE_KEY);
+    const logs = stored ? JSON.parse(stored) : [];
+    logs.unshift(log); // Добавляем в начало
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
+  } catch (e) {
+    console.error('[saveToLogs] Ошибка:', e);
+  }
 };
 
 export const submitForm = async (payload: FormPayload): Promise<{ tg: boolean; email: boolean }> => {
+  // Сохраняем в локальные логи
+  saveToLogs(payload);
+
   // Определяем API URL
   const apiUrl = import.meta.env.VITE_API_URL || '/api/send';
 
