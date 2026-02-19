@@ -77,7 +77,6 @@ export function recommendInstall(location: Location, installType: CalcInputs['in
 export function estimatePower(area: number) {
   const avgMin = (area * powerPerM2.avgMin).toFixed(1);
   const avgMax = (area * powerPerM2.avgMax).toFixed(1);
-  const peakMin = (area * powerPerM2.peakMin).toFixed(1);
   const peakMax = (area * powerPerM2.peakMax).toFixed(1);
   return {
     avg: `${avgMin}–${avgMax} кВт`,

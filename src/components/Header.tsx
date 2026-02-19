@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, NavLink, useLocation } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import { PhoneIcon } from './icons/PhoneIcon';
 import ThemeSwitcher from './ThemeSwitcher';
 import LoginModal from './LoginModal';
@@ -19,7 +19,6 @@ const navLinks = [
 const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
-  const location = useLocation();
   const { isAuthenticated, logout } = useAuth();
 
   // Закрываем меню при переходе

@@ -26,31 +26,6 @@ const LeadForm = ({ inputs, result, open, onClose }: Props) => {
 
     setSending(true);
 
-    const payload = {
-      name,
-      phone,
-      city,
-      date,
-      comment,
-      calcInputs: {
-        eventType: inputs.eventType,
-        location: inputs.location,
-        audience: inputs.audience,
-        distance: result.distance,
-        purpose: inputs.purpose,
-      },
-      calcResult: {
-        size: `${result.width} × ${result.height} м`,
-        area: `${result.area} м²`,
-        pitch: result.pitch.label,
-        install: result.installRecommendation,
-        power: result.powerAvg,
-      },
-      version: 'v1',
-      timestamp: new Date().toISOString(),
-      referrer: window.location.href,
-    };
-
     await submitForm({
       source: 'Калькулятор LED',
       name,

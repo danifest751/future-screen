@@ -2,7 +2,7 @@ type EventName = 'click_phone' | 'click_whatsapp' | 'submit_form' | 'submit_quiz
 
 const YANDEX_METRIKA_ID = 85439743;
 
-export const trackEvent = (name: EventName, payload?: Record<string, any>) => {
+export const trackEvent = (name: EventName, payload?: Record<string, unknown>) => {
   // Отправка в Яндекс.Метрику
   if (window.ym) {
     window.ym(YANDEX_METRIKA_ID, 'reachGoal', name, payload);
