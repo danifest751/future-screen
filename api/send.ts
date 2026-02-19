@@ -200,7 +200,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { source, name, phone, city, date, format, comment, extra } = req.body;
+    const { source, name, phone, email, telegram, city, date, format, comment, extra } = req.body;
+
+    // Логирование входящих данных
+    console.log('[API] Получены данные:', {
+      source,
+      name,
+      phone,
+      email: email || 'не указан',
+      telegram: telegram || 'не указан',
+      city,
+      date,
+      format,
+      comment,
+    });
 
     // Валидация
     if (!name || !phone) {
@@ -211,6 +224,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       source,
       name,
       phone,
+      email,
+      telegram,
       city,
       date,
       format,
@@ -219,7 +234,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     };
 
     // Отправка параллельно
-    const [tg, email] = await Promise.allSettled([
+    const [tg, emailResult] = await Promise.allSettled([
       sendTelegram(formatTelegramMessage(payload)),
       sendEmail(payload),
     ]);
@@ -229,7 +244,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.status(200).json({
       ok: true,
       telegram: tg.status === 'fulfilled' && tg.value,
-      email: email.status === 'fulfilled' && email.value,
+      email: emailResult.status === 'fulfilled' && emailResult.value,
     });
   } catch (err) {
     console.error('[API] Ошибка:', err);
