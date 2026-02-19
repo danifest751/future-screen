@@ -4,6 +4,7 @@ dist/
 .vite
 .idea
 .vscode
+.vercel
 *.log
 .env
 .env.*
