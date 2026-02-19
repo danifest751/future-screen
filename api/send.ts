@@ -111,6 +111,7 @@ const sendEmail = async (payload: EmailPayload): Promise<boolean> => {
   }).join('<br>');
 
   try {
+    // Отправка админу
     await transporter.sendMail({
       from: `"Future Screen" <${process.env.SMTP_USER}>`,
       to: process.env.SMTP_TO || process.env.SMTP_USER,
@@ -118,6 +119,56 @@ const sendEmail = async (payload: EmailPayload): Promise<boolean> => {
       text,
       html,
     });
+
+    // Отправка подтверждения клиенту (если указан email)
+    if (payload.email) {
+      const clientText = [
+        `Здравствуйте, ${payload.name}!`,
+        '',
+        'Ваша заявка принята. Мы свяжемся с вами в течение 15 минут.',
+        '',
+        'Детали заявки:',
+        `Источник: ${payload.source}`,
+        `Телефон: ${payload.phone}`,
+      ];
+
+      if (payload.city) clientText.push(`Город: ${payload.city}`);
+      if (payload.date) clientText.push(`Дата: ${payload.date}`);
+      if (payload.format) clientText.push(`Формат: ${payload.format}`);
+      if (payload.comment) clientText.push(`Комментарий: ${payload.comment}`);
+
+      if (payload.extra) {
+        clientText.push('');
+        clientText.push('Детали расчёта:');
+        for (const [key, value] of Object.entries(payload.extra)) {
+          clientText.push(`${key}: ${value}`);
+        }
+      }
+
+      clientText.push('');
+      clientText.push('С уважением,');
+      clientText.push('Команда Future Screen');
+      clientText.push('+7 (912) 246-65-66');
+      clientText.push('futurescreen@list.ru');
+
+      const clientHtml = clientText.map((l) => {
+        if (!l) return '<br>';
+        const [label, ...rest] = l.split(': ');
+        if (rest.length > 0) return `<b>${label}:</b> ${rest.join(': ')}`;
+        return l;
+      }).join('<br>');
+
+      await transporter.sendMail({
+        from: `"Future Screen" <${process.env.SMTP_USER}>`,
+        to: payload.email,
+        subject: `Ваша заявка принята — Future Screen`,
+        text: clientText.join('\n'),
+        html: clientHtml,
+      });
+
+      console.log(`[Email] Подтверждение отправлено клиенту: ${payload.email}`);
+    }
+
     return true;
   } catch (err) {
     console.error('[Email] Ошибка:', err);
