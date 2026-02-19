@@ -488,14 +488,6 @@ const AdminContentPage = () => {
               />
             </label>
             <label className="text-sm text-slate-200">
-              WhatsApp телефон
-              <input
-                className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
-                value={contactsDraft.whatsappPhone}
-                onChange={(e) => setContactsDraft((f) => ({ ...f, whatsappPhone: e.target.value }))}
-              />
-            </label>
-            <label className="text-sm text-slate-200">
               Email (каждый с новой строки)
               <textarea
                 className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
@@ -530,10 +522,6 @@ const AdminContentPage = () => {
             <div>
               <div className="text-xs text-slate-400">Телефоны</div>
               <div>{contacts.phones.join(', ')}</div>
-            </div>
-            <div>
-              <div className="text-xs text-slate-400">WhatsApp</div>
-              <div>{contacts.whatsappPhone}</div>
             </div>
             <div>
               <div className="text-xs text-slate-400">Email</div>

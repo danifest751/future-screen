@@ -2,6 +2,8 @@ export type FormPayload = {
   source: string;
   name: string;
   phone: string;
+  email?: string;
+  telegram?: string;
   city?: string;
   date?: string;
   format?: string;

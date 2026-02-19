@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useContacts } from '../hooks/useContacts';
 import { PhoneIcon } from './icons/PhoneIcon';
-import { WhatsAppIcon } from './icons/WhatsAppIcon';
 
 const Footer = () => {
   const { contacts } = useContacts();
@@ -42,9 +41,6 @@ const Footer = () => {
               <PhoneIcon className="h-4 w-4" /> {p}
             </a>
           ))}
-          <a href={`https://wa.me/${contacts.whatsappPhone.replace(/[^\d]/g, '')}`} className="flex items-center gap-2 hover:text-white">
-            <WhatsAppIcon className="h-4 w-4" /> WhatsApp
-          </a>
           <div className="text-slate-300">{contacts.emails.join(', ')}</div>
           <div className="text-slate-400">{contacts.address}</div>
           <div className="text-slate-400">{contacts.workingHours}</div>

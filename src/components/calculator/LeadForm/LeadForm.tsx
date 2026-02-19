@@ -12,6 +12,8 @@ interface Props {
 const LeadForm = ({ inputs, result, open, onClose }: Props) => {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [telegram, setTelegram] = useState('');
   const [city, setCity] = useState('');
   const [date, setDate] = useState('');
   const [comment, setComment] = useState('');
@@ -30,6 +32,8 @@ const LeadForm = ({ inputs, result, open, onClose }: Props) => {
       source: 'Калькулятор LED',
       name,
       phone,
+      email,
+      telegram,
       city,
       date,
       comment,
@@ -104,6 +108,28 @@ const LeadForm = ({ inputs, result, open, onClose }: Props) => {
                 placeholder="+7 (___) ___-__-__"
               />
             </label>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="block text-sm text-slate-200">
+                Email
+                <input
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  type="email"
+                  className="mt-1 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white placeholder:text-slate-500 focus:border-brand-500 focus:outline-none"
+                  placeholder="example@mail.ru"
+                />
+              </label>
+              <label className="block text-sm text-slate-200">
+                Telegram
+                <input
+                  value={telegram}
+                  onChange={(e) => setTelegram(e.target.value)}
+                  className="mt-1 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white placeholder:text-slate-500 focus:border-brand-500 focus:outline-none"
+                  placeholder="@username"
+                />
+              </label>
+            </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="block text-sm text-slate-200">

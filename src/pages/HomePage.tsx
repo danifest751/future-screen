@@ -57,13 +57,6 @@ const HomePage = () => {
             >
               Позвонить: +7 (912) 246-65-66
             </a>
-            <a
-              href="https://wa.me/79530458558"
-              onClick={() => trackEvent('click_whatsapp')}
-              className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-5 py-3 text-sm font-semibold text-emerald-100 hover:border-emerald-500/60"
-            >
-              WhatsApp
-            </a>
           </div>
           <div className="flex flex-wrap gap-3 text-sm text-slate-300">
             {trust.map((item) => (
@@ -180,13 +173,6 @@ const HomePage = () => {
             className="rounded-lg bg-brand-500 px-5 py-3 text-sm font-semibold text-white hover:bg-brand-400"
           >
             Позвонить
-          </a>
-          <a
-            href="https://wa.me/79530458558"
-            onClick={() => trackEvent('click_whatsapp')}
-            className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-5 py-3 text-sm font-semibold text-emerald-100 hover:border-emerald-500/60"
-          >
-            WhatsApp
           </a>
           <Link
             to="/contacts"

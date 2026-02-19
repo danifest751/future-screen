@@ -1,4 +1,4 @@
-type EventName = 'click_phone' | 'click_whatsapp' | 'submit_form' | 'submit_quiz' | 'view_case';
+type EventName = 'click_phone' | 'submit_form' | 'submit_quiz' | 'view_case';
 
 const YANDEX_METRIKA_ID = 85439743;
 

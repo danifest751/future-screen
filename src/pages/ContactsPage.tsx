@@ -10,22 +10,19 @@ const ContactsPage = () => {
   <div className="space-y-2">
     <Helmet>
       <title>Контакты | Future Screen</title>
-      <meta name="description" content="Контакты Future Screen: телефон, WhatsApp, email, адрес. Свяжитесь любым удобным способом." />
+      <meta name="description" content="Контакты Future Screen: телефон, email, адрес. Свяжитесь любым удобным способом." />
     </Helmet>
     <Section title="Контакты" subtitle="Свяжитесь любым удобным способом">
       <div className="grid gap-6 md:grid-cols-2">
         <div className="card space-y-3 text-sm text-slate-200">
           <div>
-            <div className="text-xs uppercase text-slate-400">Телефоны / WhatsApp</div>
+            <div className="text-xs uppercase text-slate-400">Телефоны</div>
             <div className="mt-1 space-y-1">
               {contacts.phones.map((p) => (
                 <a key={p} href={`tel:${p.replace(/[^\d+]/g, '')}`} className="block text-white hover:text-brand-100">
                   {p}
                 </a>
               ))}
-              <a href={`https://wa.me/${contacts.whatsappPhone.replace(/[^\d]/g, '')}`} className="block text-emerald-200 hover:text-emerald-100">
-                WhatsApp
-              </a>
             </div>
           </div>
           <div>

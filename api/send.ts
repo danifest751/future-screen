@@ -18,6 +18,8 @@ interface EmailPayload {
   source: string;
   name: string;
   phone: string;
+  email?: string;
+  telegram?: string;
   city?: string;
   date?: string;
   format?: string;
@@ -33,6 +35,8 @@ const formatTelegramMessage = (p: EmailPayload): string => {
     `<b>Телефон:</b> ${p.phone}`,
   ];
 
+  if (p.email) lines.push(`<b>Email:</b> ${p.email}`);
+  if (p.telegram) lines.push(`<b>Telegram:</b> ${p.telegram}`);
   if (p.city) lines.push(`<b>Город:</b> ${p.city}`);
   if (p.date) lines.push(`<b>Дата:</b> ${p.date}`);
   if (p.format) lines.push(`<b>Формат:</b> ${p.format}`);
@@ -83,6 +87,8 @@ const sendEmail = async (payload: EmailPayload): Promise<boolean> => {
     `Телефон: ${payload.phone}`,
   ];
 
+  if (payload.email) lines.push(`Email: ${payload.email}`);
+  if (payload.telegram) lines.push(`Telegram: ${payload.telegram}`);
   if (payload.city) lines.push(`Город: ${payload.city}`);
   if (payload.date) lines.push(`Дата: ${payload.date}`);
   if (payload.format) lines.push(`Формат: ${payload.format}`);
