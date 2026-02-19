@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "name": "future-screen",
+  "name": "future-screen-danifest",
   "framework": "vite",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
