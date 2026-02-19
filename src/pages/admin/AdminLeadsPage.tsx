@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import Section from '../../components/Section';
+import AdminLayout from '../../components/admin/AdminLayout';
 
 export type LeadLog = {
   id: string;
@@ -55,6 +55,33 @@ const AdminLeadsPage = () => {
     URL.revokeObjectURL(url);
   };
 
+  const exportCSV = () => {
+    const headers = ['ID', 'Дата', 'Время', 'Источник', 'Имя', 'Телефон', 'Email', 'Telegram', 'Город', 'Дата мероприятия', 'Формат', 'Комментарий'];
+    const rows = logs.map((log) => [
+      log.id,
+      new Date(log.timestamp).toLocaleDateString('ru-RU'),
+      new Date(log.timestamp).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+      log.source,
+      log.name,
+      log.phone,
+      log.email || '',
+      log.telegram || '',
+      log.city || '',
+      log.date || '',
+      log.format || '',
+      `"${(log.comment || '').replace(/"/g, '""')}"`,
+    ]);
+
+    const csvContent = [headers.join(';'), ...rows.map((r) => r.join(';'))].join('\n');
+    const dataBlob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `leads-${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   // Уникальные источники для фильтра
   const sources = Array.from(new Set(logs.map((l) => l.source)));
 
@@ -85,34 +112,37 @@ const AdminLeadsPage = () => {
   }, {} as Record<string, LeadLog[]>);
 
   return (
-    <div className="space-y-2">
-      <Section
-        title="Лента заявок"
-        subtitle="Все отправленные КП и заявки с форм"
-      >
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-          <div className="text-sm text-slate-400">
-            Всего заявок: <span className="text-white font-semibold">{logs.length}</span>
-          </div>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={exportLogs}
-              className="rounded-lg border border-white/20 px-4 py-2 text-sm font-medium text-white hover:border-white/40"
-            >
-              📥 Экспорт JSON
-            </button>
-            <button
-              type="button"
-              onClick={clearLogs}
-              className="rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-200 hover:border-red-500/60"
-            >
-              🗑 Очистить всё
-            </button>
-          </div>
+    <AdminLayout title="Лента заявок" subtitle="Все отправленные КП и заявки с форм">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+        <div className="text-sm text-slate-400">
+          Всего заявок: <span className="text-white font-semibold">{logs.length}</span>
         </div>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={exportCSV}
+            className="rounded-lg border border-white/20 px-4 py-2 text-sm font-medium text-white hover:border-white/40"
+          >
+            📥 Экспорт CSV
+          </button>
+          <button
+            type="button"
+            onClick={exportLogs}
+            className="rounded-lg border border-white/20 px-4 py-2 text-sm font-medium text-white hover:border-white/40"
+          >
+            📥 Экспорт JSON
+          </button>
+          <button
+            type="button"
+            onClick={clearLogs}
+            className="rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-200 hover:border-red-500/60"
+          >
+            🗑 Очистить всё
+          </button>
+        </div>
+      </div>
 
-        {/* Фильтры */}
+      {/* Фильтры */}
         <div className="mb-6 grid gap-4 md:grid-cols-2">
           <label className="text-sm text-slate-200">
             Поиск
@@ -160,8 +190,7 @@ const AdminLeadsPage = () => {
             ))}
           </div>
         )}
-      </Section>
-    </div>
+    </AdminLayout>
   );
 };
 
