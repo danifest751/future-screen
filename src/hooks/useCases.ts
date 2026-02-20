@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
+import { supabase } from '../lib/supabase';
 import { cases as baseCases, CaseItem } from '../data/cases';
-
-const STORAGE_KEY = 'fs_admin_cases';
 
 const sanitizeServices = (services: string[]): CaseItem['services'] =>
   services
@@ -13,63 +12,93 @@ const sanitizeServices = (services: string[]): CaseItem['services'] =>
     );
 
 export const useCases = () => {
-  const [items, setItems] = useState<CaseItem[]>(baseCases);
+  const [items, setItems] = useState<CaseItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    loadCases();
+  }, []);
+
+  const loadCases = async () => {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw) as CaseItem[];
-        setItems(parsed);
+      const { data, error } = await supabase.from('cases').select('*').order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Failed to load cases:', error);
+        setItems(baseCases);
+      } else if (data && data.length > 0) {
+        setItems(data);
+      } else {
+        setItems(baseCases);
       }
     } catch (err) {
-      console.error('Failed to load cases from storage', err);
+      console.error('Failed to load cases:', err);
+      setItems(baseCases);
     }
-  }, []);
-
-  const persist = useCallback((next: CaseItem[]) => {
-    setItems(next);
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-    } catch (err) {
-      console.error('Failed to save cases', err);
-    }
-  }, []);
+    setLoading(false);
+  };
 
   const addCase = useCallback(
-    (payload: Omit<CaseItem, 'services'> & { services: string[] }) => {
+    async (payload: Omit<CaseItem, 'services'> & { services: string[] }) => {
       const next: CaseItem = { ...payload, services: sanitizeServices(payload.services) };
-      persist([...items, next]);
+      
+      try {
+        const { data, error } = await supabase
+          .from('cases')
+          .insert(next)
+          .select();
+
+        if (!error && data) {
+          setItems([data[0], ...items]);
+        }
+      } catch (err) {
+        console.error('Failed to add case:', err);
+      }
     },
-    [items, persist]
+    [items]
   );
 
   const updateCase = useCallback(
-    (slug: string, payload: Partial<Omit<CaseItem, 'services'>> & { services?: string[] }) => {
-      const nextItems = items.map((item) =>
-        item.slug === slug
-          ? {
-              ...item,
-              ...payload,
-              services: payload.services ? sanitizeServices(payload.services) : item.services,
-            }
-          : item
-      );
-      persist(nextItems);
+    async (slug: string, payload: Partial<Omit<CaseItem, 'services'>> & { services?: string[] }) => {
+      const updates = {
+        ...payload,
+        services: payload.services ? sanitizeServices(payload.services) : undefined,
+      };
+      
+      try {
+        const { data, error } = await supabase
+          .from('cases')
+          .update(updates)
+          .eq('slug', slug)
+          .select();
+
+        if (!error && data) {
+          setItems(items.map((item) => (item.slug === slug ? data[0] : item)));
+        }
+      } catch (err) {
+        console.error('Failed to update case:', err);
+      }
     },
-    [items, persist]
+    [items]
   );
 
   const deleteCase = useCallback(
-    (slug: string) => {
-      persist(items.filter((item) => item.slug !== slug));
+    async (slug: string) => {
+      try {
+        await supabase.from('cases').delete().eq('slug', slug);
+        setItems(items.filter((item) => item.slug !== slug));
+      } catch (err) {
+        console.error('Failed to delete case:', err);
+      }
     },
-    [items, persist]
+    [items]
   );
 
-  const resetToDefault = useCallback(() => {
-    persist(baseCases);
-  }, [persist]);
+  const resetToDefault = useCallback(async () => {
+    await supabase.from('cases').delete();
+    await supabase.from('cases').insert(baseCases);
+    setItems(baseCases);
+  }, []);
 
-  return { cases: items, addCase, updateCase, deleteCase, resetToDefault };
+  return { cases: items, loading, addCase, updateCase, deleteCase, resetToDefault };
 };
