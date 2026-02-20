@@ -1,47 +1,57 @@
 import { useCallback, useEffect, useState } from 'react';
+import { supabase } from '../lib/supabase';
 import { contacts as baseContacts } from '../data/contacts';
-import { normalizeList } from '../utils/normalizeList';
-
-type Contacts = typeof baseContacts;
-
-const STORAGE_KEY = 'fs_admin_contacts';
 
 export const useContacts = () => {
-  const [item, setItem] = useState<Contacts>(baseContacts);
+  const [items, setItems] = useState(baseContacts);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setItem(JSON.parse(raw));
-    } catch (err) {
-      console.error('Failed to load contacts', err);
-    }
+    loadContacts();
   }, []);
 
-  const persist = useCallback((next: Contacts) => {
-    setItem(next);
+  const loadContacts = async () => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      const { data, error } = await supabase.from('contacts').select('*').limit(1);
+      
+      if (error) {
+        console.error('Failed to load contacts:', error);
+        setItems(baseContacts);
+      } else if (data && data.length > 0) {
+        setItems(data[0]);
+      } else {
+        setItems(baseContacts);
+      }
     } catch (err) {
-      console.error('Failed to save contacts', err);
+      console.error('Failed to load contacts:', err);
+      setItems(baseContacts);
     }
-  }, []);
+    setLoading(false);
+  };
 
   const update = useCallback(
-    (payload: Partial<Contacts>) => {
-      persist({
-        ...item,
-        ...payload,
-        phones: payload.phones ? normalizeList(payload.phones) : item.phones,
-        emails: payload.emails ? normalizeList(payload.emails) : item.emails,
-      });
+    async (payload: typeof baseContacts) => {
+      try {
+        const { error } = await supabase
+          .from('contacts')
+          .upsert({ ...payload, id: 1 })
+          .select();
+
+        if (!error) {
+          setItems(payload);
+        }
+      } catch (err) {
+        console.error('Failed to save contacts:', err);
+      }
     },
-    [item, persist]
+    []
   );
 
-  const resetToDefault = useCallback(() => {
-    persist(baseContacts);
-  }, [persist]);
+  const resetToDefault = useCallback(async () => {
+    await supabase.from('contacts').delete();
+    await supabase.from('contacts').insert(baseContacts);
+    setItems(baseContacts);
+  }, []);
 
-  return { contacts: item, update, resetToDefault };
+  return { contacts: items, loading, update, resetToDefault };
 };
