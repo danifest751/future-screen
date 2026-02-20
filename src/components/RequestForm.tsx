@@ -27,6 +27,7 @@ type Props = {
 
 export const RequestForm = ({ title = 'Запросить КП', subtitle, ctaText = 'Отправить' }: Props) => {
   const [sent, setSent] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const {
     register,
     handleSubmit,
@@ -36,8 +37,9 @@ export const RequestForm = ({ title = 'Запросить КП', subtitle, ctaTe
 
   const onSubmit = async (values: FormValues) => {
     if (values.honey) return;
+    setSubmitError(null);
     trackEvent('submit_form', { pagePath: window.location.pathname, ...values });
-    await submitForm({
+    const result = await submitForm({
       source: `Форма КП (${window.location.pathname})`,
       name: values.name,
       phone: values.phone,
@@ -48,6 +50,12 @@ export const RequestForm = ({ title = 'Запросить КП', subtitle, ctaTe
       format: values.format,
       comment: values.comment,
     });
+
+    if (!result.tg && !result.email) {
+      setSubmitError('Не удалось отправить заявку. Проверьте соединение или попробуйте позже.');
+      return;
+    }
+
     setSent(true);
     reset();
   };
@@ -108,6 +116,7 @@ export const RequestForm = ({ title = 'Запросить КП', subtitle, ctaTe
         >
           {isSubmitting ? 'Отправляем...' : ctaText}
         </button>
+        {submitError && <div className="text-sm text-red-400">{submitError}</div>}
         {sent && <div className="text-sm text-emerald-300">Спасибо! Мы свяжемся в течение 15 минут.</div>}
       </form>
     </div>
