@@ -16,23 +16,27 @@ const RentPage = () => {
     </Helmet>
     <Section title="Аренда оборудования" subtitle="Свет, звук, видео, сцены, инструменты">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {categories.map((cat) => {
-          const content = rentCategoriesContent.find((c) => c.id === cat.id);
-          return (
-            <Link key={cat.id} to={cat.pagePath} className="card block hover:border-brand-500/40">
-              <div className="text-xl font-semibold text-white">{cat.title}</div>
-              <p className="text-sm text-slate-300">{cat.shortDescription}</p>
-              <ul className="mt-3 space-y-1 text-sm text-slate-200">
-                {content?.facts.map((b) => (
-                  <li key={b} className="flex items-start gap-2">
-                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-brand-400"></span>
-                    <span>{b}</span>
-                  </li>
-                ))}
-              </ul>
-            </Link>
-          );
-        })}
+        {categories.length === 0 ? (
+          <div className="col-span-3 text-center text-slate-400">Загрузка...</div>
+        ) : (
+          categories.map((cat) => {
+            const content = rentCategoriesContent.find((c) => c.id === cat.id);
+            return (
+              <Link key={cat.id} to={cat.pagePath} className="card block hover:border-brand-500/40">
+                <div className="text-xl font-semibold text-white">{cat.title}</div>
+                <p className="text-sm text-slate-300">{cat.shortDescription}</p>
+                <ul className="mt-3 space-y-1 text-sm text-slate-200">
+                  {content?.facts.map((b) => (
+                    <li key={b} className="flex items-start gap-2">
+                      <span className="mt-1 h-1.5 w-1.5 rounded-full bg-brand-400"></span>
+                      <span>{b}</span>
+                    </li>
+                  ))}
+                </ul>
+              </Link>
+            );
+          })
+        )}
       </div>
     </Section>
 
