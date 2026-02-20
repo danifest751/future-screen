@@ -161,10 +161,10 @@ const AdminContentPage = () => {
   const [pkgEditing, setPkgEditing] = useState<Package['id'] | null>(null);
   const pkgCanSubmit = useMemo(() => pkgForm.id.trim() && pkgForm.name.trim(), [pkgForm]);
 
-  const submitPackage = (e: FormEvent) => {
+  const submitPackage = async (e: FormEvent) => {
     e.preventDefault();
     if (!pkgCanSubmit) return;
-    upsertPackage(pkgForm);
+    await upsertPackage(pkgForm);
     setPkgForm(emptyPackage);
     setPkgEditing(null);
   };
@@ -175,10 +175,10 @@ const AdminContentPage = () => {
   const [catEditing, setCatEditing] = useState<Category['id'] | null>(null);
   const catCanSubmit = useMemo(() => catForm.id.trim() && catForm.title.trim(), [catForm]);
 
-  const submitCategory = (e: FormEvent) => {
+  const submitCategory = async (e: FormEvent) => {
     e.preventDefault();
     if (!catCanSubmit) return;
-    upsertCategory(catForm);
+    await upsertCategory(catForm);
     setCatForm(emptyCategory);
     setCatEditing(null);
   };
@@ -191,9 +191,9 @@ const AdminContentPage = () => {
     setContactsDraft(contacts);
   }, [contacts]);
 
-  const submitContacts = (e: FormEvent) => {
+  const submitContacts = async (e: FormEvent) => {
     e.preventDefault();
-    updateContacts(contactsDraft);
+    await updateContacts(contactsDraft);
   };
 
   // Cases
@@ -202,7 +202,7 @@ const AdminContentPage = () => {
   const [caseEditing, setCaseEditing] = useState<string | null>(null);
   const caseCanSubmit = useMemo(() => caseForm.slug.trim() && caseForm.title.trim(), [caseForm.slug, caseForm.title]);
 
-  const submitCase = (e: FormEvent) => {
+  const submitCase = async (e: FormEvent) => {
     e.preventDefault();
     if (!caseCanSubmit) return;
     const payload = {
@@ -211,9 +211,9 @@ const AdminContentPage = () => {
       images: [...caseForm.images, ...caseForm.imagesText.split(',').map((s) => s.trim()).filter(Boolean)],
     };
     if (caseEditing) {
-      updateCase(caseEditing, payload);
+      await updateCase(caseEditing, payload);
     } else {
-      addCase(payload);
+      await addCase(payload);
     }
     setCaseForm(emptyCaseForm);
     setCaseEditing(null);
