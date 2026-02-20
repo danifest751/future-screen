@@ -30,7 +30,7 @@ const LeadForm = ({ inputs, result, open, onClose }: Props) => {
     setSending(true);
     setSubmitError(null);
 
-    const result = await submitForm({
+    const submitResult = await submitForm({
       source: 'Калькулятор LED',
       name,
       phone,
@@ -52,7 +52,7 @@ const LeadForm = ({ inputs, result, open, onClose }: Props) => {
       },
     });
 
-    if (!result.tg && !result.email) {
+    if (!submitResult.tg && !submitResult.email) {
       setSending(false);
       setSubmitError('Не удалось отправить заявку. Проверьте соединение или попробуйте позже.');
       return;
