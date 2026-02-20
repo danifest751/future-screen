@@ -8,6 +8,24 @@ interface TestRecord {
   created_at: string;
 }
 
+interface Package {
+  id: number;
+  name: string;
+  price_hint: string;
+}
+
+interface Category {
+  id: number;
+  title: string;
+  page_path: string;
+}
+
+interface Contact {
+  id: number;
+  phones: string[];
+  emails: string[];
+}
+
 const SupabaseTestPage = () => {
   const [result, setResult] = useState<string>('');
   const [loading, setLoading] = useState(false);
@@ -15,9 +33,16 @@ const SupabaseTestPage = () => {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState({ name: '', email: '' });
   const [tableCreated, setTableCreated] = useState(false);
+  
+  // Данные для проверки
+  const [packages, setPackages] = useState<Package[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [contacts, setContacts] = useState<Contact | null>(null);
+  const [envOk, setEnvOk] = useState(false);
 
   useEffect(() => {
     loadRecords();
+    loadSupabaseData();
   }, []);
 
   const loadRecords = async () => {
@@ -26,6 +51,20 @@ const SupabaseTestPage = () => {
       setRecords(data);
       setTableCreated(true);
     }
+  };
+
+  const loadSupabaseData = async () => {
+    // Загружаем пакеты
+    const { data: pkgData } = await supabase.from('packages').select('id, name, price_hint');
+    if (pkgData) setPackages(pkgData);
+
+    // Загружаем категории
+    const { data: catData } = await supabase.from('categories').select('id, title, page_path');
+    if (catData) setCategories(catData);
+
+    // Загружаем контакты
+    const { data: contactData } = await supabase.from('contacts').select('*').limit(1);
+    if (contactData && contactData.length > 0) setContacts(contactData[0]);
   };
 
   const createTable = async () => {
@@ -54,6 +93,79 @@ const SupabaseTestPage = () => {
     }
 
     setLoading(false);
+  };
+
+  const insertTestData = async () => {
+    console.log('Adding test data...');
+
+    // Тестовые пакеты
+    const { data: pkgData, error: pkgError } = await supabase.from('packages').insert([
+      {
+        name: 'Лайт',
+        for_formats: ['выставка', 'презентация'],
+        includes: ['LED 3x2 м', 'Звук 2 колонки', 'Микрофон'],
+        options: ['Доставка', 'Монтаж'],
+        price_hint: 'от 50 000 ₽'
+      },
+      {
+        name: 'Медиум',
+        for_formats: ['конференция', 'форум'],
+        includes: ['LED 5x3 м', 'Звук 4 колонки', 'Микрофоны 2 шт', 'Свет'],
+        options: ['Доставка', 'Монтаж', 'Инженер'],
+        price_hint: 'от 100 000 ₽'
+      },
+      {
+        name: 'Биг',
+        for_formats: ['концерт', 'городское событие'],
+        includes: ['LED 10x4 м', 'Звук линейный массив', 'Световое шоу', 'Сцена 8x6 м'],
+        options: ['Полный комплект', 'Бригада', 'Резерв'],
+        price_hint: 'от 300 000 ₽'
+      }
+    ]).select();
+
+    console.log('Packages:', pkgData, pkgError);
+
+    // Тестовые категории
+    const { data: catData, error: catError } = await supabase.from('categories').insert([
+      {
+        title: 'Световое оборудование',
+        short_description: 'Сцена, выставка или банкет с настроенной световой схемой.',
+        bullets: ['Подбор по формату площадки', 'Сценический и архитектурный свет', 'Инженер и монтаж'],
+        page_path: '/rent/light'
+      },
+      {
+        title: 'Видеооборудование',
+        short_description: 'Экраны, проекторы, камеры и коммутация под трансляцию.',
+        bullets: ['LED/проекционные решения', 'Плейаут и процессинг', 'Оператор'],
+        page_path: '/rent/video'
+      },
+      {
+        title: 'Звуковое оборудование',
+        short_description: 'Линейные массивы, мониторы, микшеры, радиосистемы.',
+        bullets: ['Расчёт мощности', 'Подбор микшерных пультов', 'Монтаж и настройка'],
+        page_path: '/rent/sound'
+      }
+    ]).select();
+
+    console.log('Categories:', catData, catError);
+
+    // Тестовые контакты
+    const { data: contactData, error: contactError } = await supabase.from('contacts').insert([{
+      phones: ['+7 (912) 246-65-66', '+7 (953) 045-85-58'],
+      emails: ['gr@future-screen.ru', 'an@future-screen.ru'],
+      address: 'Большой Конный полуостров, 5а, г. Екатеринбург',
+      working_hours: 'Ежедневно 10:00–20:00'
+    }]).select();
+
+    console.log('Contacts:', contactData, contactError);
+
+    const messages = [];
+    messages.push(`Пакеты: ${pkgError ? '❌ ' + pkgError.message : '✅ ' + pkgData?.length + ' добавлено'}`);
+    messages.push(`Категории: ${catError ? '❌ ' + catError.message : '✅ ' + catData?.length + ' добавлено'}`);
+    messages.push(`Контакты: ${contactError ? '❌ ' + contactError.message : '✅ ' + contactData?.length + ' добавлено'}`);
+
+    alert(messages.join('\n'));
+    loadSupabaseData();
   };
 
   const createRecord = async () => {
@@ -143,8 +255,10 @@ const SupabaseTestPage = () => {
 
     if (!url || !key) {
       setResult('❌ Переменные окружения не настроены!\n\nVITE_SUPABASE_URL: ' + (url ? '✓' : '✗') + '\nVITE_SUPABASE_ANON_KEY: ' + (key ? '✓' : '✗'));
+      setEnvOk(false);
     } else {
       setResult('✅ Переменные окружения настроены!\n\nURL: ' + url + '\nKey: ' + (key.substring(0, 20) + '...'));
+      setEnvOk(true);
     }
   };
 
@@ -303,6 +417,70 @@ const SupabaseTestPage = () => {
             </div>
           </div>
         )}
+
+        {/* Проверка данных из Supabase */}
+        <div className="mt-6 rounded-xl border border-white/10 bg-slate-800 p-6">
+          <h2 className="mb-4 text-xl font-bold text-white">📊 Данные из Supabase</h2>
+          
+          <div className="grid gap-4 md:grid-cols-3">
+            {/* Пакеты */}
+            <div className="rounded-lg bg-white/5 p-4">
+              <h3 className="mb-2 font-semibold text-white">Пакеты ({packages.length})</h3>
+              {packages.length === 0 ? (
+                <p className="text-sm text-slate-400">Нет данных</p>
+              ) : (
+                <ul className="text-sm text-slate-300 space-y-1">
+                  {packages.map(p => (
+                    <li key={p.id}>• {p.name} <span className="text-slate-500">({p.price_hint})</span></li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            {/* Категории */}
+            <div className="rounded-lg bg-white/5 p-4">
+              <h3 className="mb-2 font-semibold text-white">Категории ({categories.length})</h3>
+              {categories.length === 0 ? (
+                <p className="text-sm text-slate-400">Нет данных</p>
+              ) : (
+                <ul className="text-sm text-slate-300 space-y-1">
+                  {categories.map(c => (
+                    <li key={c.id} className="truncate">• {c.title}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            {/* Контакты */}
+            <div className="rounded-lg bg-white/5 p-4">
+              <h3 className="mb-2 font-semibold text-white">Контакты</h3>
+              {!contacts ? (
+                <p className="text-sm text-slate-400">Нет данных</p>
+              ) : (
+                <div className="text-sm text-slate-300">
+                  <p>📞 {contacts.phones?.[0]}</p>
+                  <p>✉️ {contacts.emails?.[0]}</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="mt-4 flex gap-2">
+            <button
+              onClick={loadSupabaseData}
+              className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-400"
+            >
+              🔄 Обновить данные
+            </button>
+            <button
+              onClick={insertTestData}
+              disabled={loading}
+              className="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-400 disabled:opacity-50"
+            >
+              📥 Добавить тестовые данные
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

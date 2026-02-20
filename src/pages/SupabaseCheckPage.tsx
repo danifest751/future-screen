@@ -39,8 +39,10 @@ const SupabaseCheckPage = () => {
   };
 
   const insertTestData = async () => {
+    console.log('Adding test data...');
+
     // Тестовые пакеты
-    const { error: pkgError } = await supabase.from('packages').insert([
+    const { data: pkgData, error: pkgError } = await supabase.from('packages').insert([
       {
         name: 'Лайт',
         for_formats: ['выставка', 'презентация'],
@@ -62,10 +64,12 @@ const SupabaseCheckPage = () => {
         options: ['Полный комплект', 'Бригада', 'Резерв'],
         price_hint: 'от 300 000 ₽'
       }
-    ]);
+    ]).select();
+
+    console.log('Packages:', pkgData, pkgError);
 
     // Тестовые категории
-    const { error: catError } = await supabase.from('categories').insert([
+    const { data: catData, error: catError } = await supabase.from('categories').insert([
       {
         title: 'Световое оборудование',
         short_description: 'Сцена, выставка или банкет с настроенной световой схемой.',
@@ -84,17 +88,26 @@ const SupabaseCheckPage = () => {
         bullets: ['Расчёт мощности', 'Подбор микшерных пультов', 'Монтаж и настройка'],
         page_path: '/rent/sound'
       }
-    ]);
+    ]).select();
+
+    console.log('Categories:', catData, catError);
 
     // Тестовые контакты
-    const { error: contactError } = await supabase.from('contacts').insert([{
+    const { data: contactData, error: contactError } = await supabase.from('contacts').insert([{
       phones: ['+7 (912) 246-65-66', '+7 (953) 045-85-58'],
       emails: ['gr@future-screen.ru', 'an@future-screen.ru'],
       address: 'Большой Конный полуостров, 5а, г. Екатеринбург',
       working_hours: 'Ежедневно 10:00–20:00'
-    }]);
+    }]).select();
 
-    alert(`Пакеты: ${pkgError ? '❌ ' + pkgError.message : '✅'}\nКатегории: ${catError ? '❌ ' + catError.message : '✅'}\nКонтакты: ${contactError ? '❌ ' + contactError.message : '✅'}`);
+    console.log('Contacts:', contactData, contactError);
+
+    const messages = [];
+    messages.push(`Пакеты: ${pkgError ? '❌ ' + pkgError.message : '✅ ' + pkgData?.length + ' добавлено'}`);
+    messages.push(`Категории: ${catError ? '❌ ' + catError.message : '✅ ' + catData?.length + ' добавлено'}`);
+    messages.push(`Контакты: ${contactError ? '❌ ' + contactError.message : '✅ ' + contactData?.length + ' добавлено'}`);
+
+    alert(messages.join('\n'));
     checkTables();
   };
 
