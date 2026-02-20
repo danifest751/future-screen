@@ -24,6 +24,7 @@ const AdminLeadsPage = lazy(() => import('./pages/admin/AdminLeadsPage'));
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
 const AdminCasesPage = lazy(() => import('./pages/admin/AdminCasesPage'));
 const SupabaseTestPage = lazy(() => import('./pages/SupabaseTestPage'));
+const SupabaseCheckPage = lazy(() => import('./pages/SupabaseCheckPage'));
 
 const PageLoader = () => (
   <div className="flex min-h-[40vh] items-center justify-center">
@@ -102,6 +103,10 @@ const App = () => {
       {
         path: '/test-supabase',
         element: <SupabaseTestPage />,
+      },
+      {
+        path: '/check-supabase',
+        element: <SupabaseCheckPage />,
       },
       {
         path: '*',
