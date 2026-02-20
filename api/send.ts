@@ -54,8 +54,8 @@ const formatTelegramMessage = (p: EmailPayload): string => {
 };
 
 const sendTelegram = async (message: string): Promise<boolean> => {
-  const token = process.env.VITE_TG_BOT_TOKEN;
-  const chatId = process.env.VITE_TG_CHAT_ID;
+  const token = process.env.VITE_TG_BOT_TOKEN || process.env.TG_BOT_TOKEN;
+  const chatId = process.env.VITE_TG_CHAT_ID || process.env.TG_CHAT_ID;
 
   if (!token || !chatId) {
     console.warn('[Telegram] Token или ChatID не настроены');
@@ -64,7 +64,7 @@ const sendTelegram = async (message: string): Promise<boolean> => {
 
   try {
     const url = `https://api.telegram.org/bot${token}/sendMessage`;
-    await fetch(url, {
+    const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -73,6 +73,13 @@ const sendTelegram = async (message: string): Promise<boolean> => {
         parse_mode: 'HTML',
       }),
     });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[Telegram] Ошибка отправки:', errorText);
+      return false;
+    }
+
     return true;
   } catch (err) {
     console.error('[Telegram] Ошибка:', err);
@@ -239,12 +246,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       sendEmail(payload),
     ]);
 
+    const tgOk = tg.status === 'fulfilled' && tg.value;
+    const emailOk = emailResult.status === 'fulfilled' && emailResult.value;
+    const ok = tgOk || emailOk;
+
     console.log(`[API] Отправлено: ${source} — ${name} ${phone}`);
+
+    if (!ok) {
+      return res.status(502).json({
+        ok: false,
+        telegram: tgOk,
+        email: emailOk,
+        error: 'Не удалось отправить ни Telegram, ни Email',
+      });
+    }
 
     res.status(200).json({
       ok: true,
-      telegram: tg.status === 'fulfilled' && tg.value,
-      email: emailResult.status === 'fulfilled' && emailResult.value,
+      telegram: tgOk,
+      email: emailOk,
     });
   } catch (err) {
     console.error('[API] Ошибка:', err);

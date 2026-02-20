@@ -89,6 +89,8 @@ export const submitForm = async (payload: FormPayload): Promise<{ tg: boolean; e
         `<b>Имя:</b> ${p.name}`,
         `<b>Телефон:</b> ${p.phone}`,
       ];
+      if (p.email) lines.push(`<b>Email:</b> ${p.email}`);
+      if (p.telegram) lines.push(`<b>Telegram:</b> ${p.telegram}`);
       if (p.city) lines.push(`<b>Город:</b> ${p.city}`);
       if (p.date) lines.push(`<b>Дата:</b> ${p.date}`);
       if (p.format) lines.push(`<b>Формат:</b> ${p.format}`);
