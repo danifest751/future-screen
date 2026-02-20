@@ -17,6 +17,12 @@ export type FormPayload = {
 
 const saveToLeads = async (payload: FormPayload) => {
   try {
+    const extra = {
+      ...(payload.extra ?? {}),
+      ...(payload.pagePath ? { pagePath: payload.pagePath } : {}),
+      ...(payload.referrer ? { referrer: payload.referrer } : {}),
+    };
+
     const { error } = await supabase.from('leads').insert({
       source: payload.source,
       name: payload.name,
@@ -27,9 +33,7 @@ const saveToLeads = async (payload: FormPayload) => {
       date: payload.date ?? null,
       format: payload.format ?? null,
       comment: payload.comment ?? null,
-      extra: payload.extra ?? {},
-      page_path: payload.pagePath ?? null,
-      referrer: payload.referrer ?? null,
+      extra,
     });
 
     if (error) {
@@ -45,7 +49,10 @@ export const submitForm = async (payload: FormPayload): Promise<{ tg: boolean; e
   await saveToLeads(payload);
 
   // Определяем API URL
-  const apiUrl = import.meta.env.VITE_API_URL || '/api/send';
+  const rawApiUrl = import.meta.env.VITE_API_URL?.trim();
+  const apiUrl = rawApiUrl
+    ? (rawApiUrl.endsWith('/api/send') ? rawApiUrl : `${rawApiUrl.replace(/\/$/, '')}/api/send`)
+    : (import.meta.env.DEV ? 'http://localhost:3001/api/send' : '/api/send');
 
   try {
     const response = await fetch(apiUrl, {
@@ -58,10 +65,16 @@ export const submitForm = async (payload: FormPayload): Promise<{ tg: boolean; e
       throw new Error(`HTTP ${response.status}`);
     }
 
-    const result = await response.json();
+    const result = await response.json().catch(() => ({} as Record<string, unknown>));
+
+    const telegram = typeof result.telegram === 'boolean' ? result.telegram : false;
+    const email = typeof result.email === 'boolean'
+      ? result.email
+      : (typeof result.ok === 'boolean' ? result.ok : true);
+
     return {
-      tg: result.telegram ?? false,
-      email: result.email ?? false,
+      tg: telegram,
+      email,
     };
   } catch (err) {
     console.error('[submitForm] Ошибка:', err);

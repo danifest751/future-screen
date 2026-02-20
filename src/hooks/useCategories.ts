@@ -3,7 +3,17 @@ import { supabase } from '../lib/supabase';
 import { categories as baseCategories, type Category } from '../data/categories';
 import { normalizeList } from '../utils/normalizeList';
 
-const mapCategoryFromDB = (row: any): Category => ({
+type CategoryRow = {
+  id: Category['id'];
+  title: string;
+  short_description: string;
+  bullets: string[];
+  page_path: string;
+};
+
+const getErrorMessage = (err: unknown) => (err instanceof Error ? err.message : 'Unknown error');
+
+const mapCategoryFromDB = (row: CategoryRow): Category => ({
   id: row.id,
   title: row.title,
   shortDescription: row.short_description,
@@ -50,9 +60,9 @@ export const useCategories = () => {
         setItems([]);
         setError(null);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to load categories:', err);
-      setError(err.message || 'Unknown error');
+      setError(getErrorMessage(err));
       setItems([]);
     }
     setLoading(false);
@@ -83,9 +93,9 @@ export const useCategories = () => {
           return true;
         }
         return false;
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Failed to save category:', err);
-        setError(err.message || 'Unknown error');
+        setError(getErrorMessage(err));
         return false;
       }
     },
@@ -103,9 +113,9 @@ export const useCategories = () => {
         }
         setItems((prev) => prev.filter((c) => c.id !== id));
         return true;
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Failed to delete category:', err);
-        setError(err.message || 'Unknown error');
+        setError(getErrorMessage(err));
         return false;
       }
     },
@@ -123,9 +133,9 @@ export const useCategories = () => {
       
       if (error) throw error;
       if (data) setItems(data.map(mapCategoryFromDB));
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to reset categories:', err);
-      setError(err.message || 'Unknown error');
+      setError(getErrorMessage(err));
     }
     setLoading(false);
   }, []);

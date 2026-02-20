@@ -38,7 +38,6 @@ const SupabaseTestPage = () => {
   const [packages, setPackages] = useState<Package[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [contacts, setContacts] = useState<Contact | null>(null);
-  const [envOk, setEnvOk] = useState(false);
 
   useEffect(() => {
     loadRecords();
@@ -255,10 +254,8 @@ const SupabaseTestPage = () => {
 
     if (!url || !key) {
       setResult('❌ Переменные окружения не настроены!\n\nVITE_SUPABASE_URL: ' + (url ? '✓' : '✗') + '\nVITE_SUPABASE_ANON_KEY: ' + (key ? '✓' : '✗'));
-      setEnvOk(false);
     } else {
       setResult('✅ Переменные окружения настроены!\n\nURL: ' + url + '\nKey: ' + (key.substring(0, 20) + '...'));
-      setEnvOk(true);
     }
   };
 

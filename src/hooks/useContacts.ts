@@ -7,7 +7,17 @@ type ContactsData = typeof baseContacts;
 // Внутренний тип для хранения реального ID из базы
 type ContactsWithId = ContactsData & { id?: number };
 
-const mapContactsFromDB = (row: any): ContactsWithId => ({
+type ContactsRow = {
+  id?: number;
+  phones?: string[];
+  emails?: string[];
+  address?: string;
+  working_hours?: string;
+};
+
+const getErrorMessage = (err: unknown) => (err instanceof Error ? err.message : 'Unknown error');
+
+const mapContactsFromDB = (row: ContactsRow): ContactsWithId => ({
   id: row.id,
   phones: row.phones || [],
   emails: row.emails || [],
@@ -16,7 +26,7 @@ const mapContactsFromDB = (row: any): ContactsWithId => ({
 });
 
 const mapContactsToDB = (contacts: ContactsWithId) => {
-  const result: any = {
+  const result: Record<string, unknown> = {
     phones: contacts.phones,
     emails: contacts.emails,
     address: contacts.address,
@@ -50,9 +60,9 @@ export const useContacts = () => {
         setItems(null);
         setError(null);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to load contacts:', err);
-      setError(err.message || 'Unknown error');
+      setError(getErrorMessage(err));
       setItems(null);
     }
     setLoading(false);
@@ -81,9 +91,9 @@ export const useContacts = () => {
         }
         await loadContacts();
         return true;
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Failed to save contacts:', err);
-        setError(err.message || 'Unknown error');
+        setError(getErrorMessage(err));
         return false;
       }
     },
@@ -98,9 +108,9 @@ export const useContacts = () => {
       const { error } = await supabase.from('contacts').insert(mapContactsToDB(baseContacts));
       if (error) throw error;
       await loadContacts();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to reset contacts:', err);
-      setError(err.message || 'Unknown error');
+      setError(getErrorMessage(err));
     }
     setLoading(false);
   }, [loadContacts]);
