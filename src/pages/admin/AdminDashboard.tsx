@@ -1,12 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import AdminLayout from '../../components/admin/AdminLayout';
-import type { LeadLog } from './AdminLeadsPage';
+import { useLeads } from '../../hooks/useLeads';
 
 const AdminDashboard = () => {
-  const [logs] = useState<LeadLog[]>(() => {
-    const stored = localStorage.getItem('fs_lead_logs');
-    return stored ? JSON.parse(stored) : [];
-  });
+  const { leads: logs, loading, error } = useLeads();
 
   // Статистика
   const stats = useMemo(() => {
@@ -51,6 +48,8 @@ const AdminDashboard = () => {
     };
   }, [logs]);
 
+  const sourceEntries = Object.entries(stats.bySource) as Array<[string, number]>;
+
   // Последние заявки
   const recentLogs = useMemo(() => {
     return [...logs].sort((a, b) => b.timestamp.localeCompare(a.timestamp)).slice(0, 10);
@@ -59,6 +58,9 @@ const AdminDashboard = () => {
   return (
     <AdminLayout title="Дашборд" subtitle="Обзор активности и статистика">
       <div className="space-y-6">
+        {loading && <div className="text-sm text-slate-400">Загрузка аналитики...</div>}
+        {error && <div className="text-sm text-red-400">Ошибка загрузки заявок: {error}</div>}
+
         {/* Карточки статистики */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
@@ -96,7 +98,7 @@ const AdminDashboard = () => {
           <div className="rounded-xl border border-white/10 bg-slate-800 p-6">
             <h3 className="mb-4 text-lg font-semibold text-white">Источники заявок</h3>
             <div className="space-y-3">
-              {Object.entries(stats.bySource)
+              {sourceEntries
                 .sort((a, b) => b[1] - a[1])
                 .map(([source, count]) => (
                   <div key={source} className="flex items-center justify-between">
@@ -105,7 +107,7 @@ const AdminDashboard = () => {
                       <div className="h-2 w-32 rounded-full bg-slate-700">
                         <div
                           className="h-2 rounded-full bg-brand-500"
-                          style={{ width: `${(count / stats.total) * 100}%` }}
+                          style={{ width: `${stats.total > 0 ? (count / stats.total) * 100 : 0}%` }}
                         />
                       </div>
                       <span className="w-12 text-right text-sm font-medium text-white">

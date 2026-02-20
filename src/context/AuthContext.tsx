@@ -1,37 +1,61 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
-
-const ADMIN_LOGIN = import.meta.env.VITE_ADMIN_LOGIN ?? 'admin';
-const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD ?? 'fs2024';
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
+import { supabase } from '../lib/supabase';
 
 type AuthContextType = {
   isAuthenticated: boolean;
-  login: (username: string, password: string) => boolean;
-  logout: () => void;
+  isLoading: boolean;
+  login: (email: string, password: string) => Promise<boolean>;
+  logout: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(
-    () => sessionStorage.getItem('fs_auth') === '1'
-  );
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  const login = useCallback((username: string, password: string) => {
-    if (username === ADMIN_LOGIN && password === ADMIN_PASSWORD) {
-      sessionStorage.setItem('fs_auth', '1');
-      setIsAuthenticated(true);
-      return true;
-    }
-    return false;
+  useEffect(() => {
+    let mounted = true;
+
+    const bootstrap = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!mounted) return;
+      setIsAuthenticated(Boolean(data.session));
+      setIsLoading(false);
+    };
+
+    void bootstrap();
+
+    const { data: subscription } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!mounted) return;
+      setIsAuthenticated(Boolean(session));
+      setIsLoading(false);
+    });
+
+    return () => {
+      mounted = false;
+      subscription.subscription.unsubscribe();
+    };
   }, []);
 
-  const logout = useCallback(() => {
-    sessionStorage.removeItem('fs_auth');
-    setIsAuthenticated(false);
+  const login = useCallback(async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      console.error('[Auth] Login failed:', error.message);
+      return false;
+    }
+    return true;
+  }, []);
+
+  const logout = useCallback(async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error('[Auth] Logout failed:', error.message);
+    }
   }, []);
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, isLoading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

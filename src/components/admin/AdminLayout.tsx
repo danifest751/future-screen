@@ -1,6 +1,8 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { Toaster } from 'react-hot-toast';
+import { supabase } from '../../lib/supabase';
 
 interface Props {
   title: string;
@@ -12,7 +14,11 @@ const navItems = [
   { to: '/admin', label: 'Дашборд', icon: '📊' },
   { to: '/admin/leads', label: 'Заявки', icon: '📬', badge: true },
   { to: '/admin/cases', label: 'Кейсы', icon: '📁' },
-  { to: '/admin/content', label: 'Настройки', icon: '⚙️' },
+  { to: '/admin/packages', label: 'Пакеты', icon: '📦' },
+  { to: '/admin/categories', label: 'Категории', icon: '🗂️' },
+  { to: '/admin/contacts', label: 'Контакты', icon: '📞' },
+  { to: '/admin/calculator', label: 'Калькулятор', icon: '🧮' },
+  { to: '/admin/content', label: 'Все настройки', icon: '⚙️' },
 ];
 
 const AdminLayout = ({ title, subtitle, children }: Props) => {
@@ -20,14 +26,45 @@ const AdminLayout = ({ title, subtitle, children }: Props) => {
   const navigate = useNavigate();
   const { logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [leadCount, setLeadCount] = useState<number>(0);
 
-  const handleLogout = () => {
-    logout();
+  useEffect(() => {
+    let mounted = true;
+
+    const loadLeadCount = async () => {
+      const { count, error } = await supabase
+        .from('leads')
+        .select('id', { count: 'exact', head: true });
+
+      if (!mounted) return;
+      if (error) {
+        setLeadCount(0);
+        return;
+      }
+      setLeadCount(count ?? 0);
+    };
+
+    void loadLeadCount();
+    return () => {
+      mounted = false;
+    };
+  }, [location.pathname]);
+
+  const handleLogout = async () => {
+    await logout();
     navigate('/');
   };
 
   return (
     <div className="min-h-screen bg-slate-900">
+      <Toaster 
+        position="top-right" 
+        toastOptions={{ 
+          className: 'bg-slate-800 text-white border border-white/10',
+          success: { iconTheme: { primary: '#10b981', secondary: 'white' } },
+          error: { iconTheme: { primary: '#ef4444', secondary: 'white' } },
+        }} 
+      />
       {/* Мобильная кнопка меню */}
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -89,13 +126,7 @@ const AdminLayout = ({ title, subtitle, children }: Props) => {
                   </div>
                   {item.badge && (
                     <span className="flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-red-500 px-1 text-xs font-bold">
-                      {item.to === '/admin/leads' ? (
-                        (() => {
-                          const logs = localStorage.getItem('fs_lead_logs');
-                          const count = logs ? JSON.parse(logs).length : 0;
-                          return count > 0 ? count : null;
-                        })()
-                      ) : null}
+                      {item.to === '/admin/leads' && leadCount > 0 ? leadCount : null}
                     </span>
                   )}
                 </Link>

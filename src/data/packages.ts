@@ -1,5 +1,5 @@
 export type Package = {
-  id: 'light' | 'medium' | 'big';
+  id: number | string;
   name: string;
   forFormats: string[];
   includes: string[];

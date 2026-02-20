@@ -19,10 +19,14 @@ const ContactsPage = lazy(() => import('./pages/ContactsPage'));
 const ConsultPage = lazy(() => import('./pages/ConsultPage'));
 const CalculatorPage = lazy(() => import('./pages/CalculatorPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
-const AdminContentPage = lazy(() => import('./pages/admin/AdminContentPage'));
+const AdminContentPage = lazy(() => import('./pages/admin/AdminContentIndexPage'));
 const AdminLeadsPage = lazy(() => import('./pages/admin/AdminLeadsPage'));
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
-const AdminCasesPage = lazy(() => import('./pages/admin/AdminCasesPage'));
+const AdminCasesPage = lazy(() => import('./pages/admin/AdminCasesManagerPage'));
+const AdminPackagesPage = lazy(() => import('./pages/admin/AdminPackagesPage'));
+const AdminCategoriesPage = lazy(() => import('./pages/admin/AdminCategoriesPage'));
+const AdminContactsPage = lazy(() => import('./pages/admin/AdminContactsPage'));
+const AdminCalculatorPage = lazy(() => import('./pages/admin/AdminCalculatorPage'));
 const SupabaseTestPage = lazy(() => import('./pages/SupabaseTestPage'));
 const SupabaseCheckPage = lazy(() => import('./pages/SupabaseCheckPage'));
 
@@ -95,6 +99,22 @@ const App = () => {
       {
         path: '/admin/cases',
         element: <ProtectedRoute><AdminCasesPage /></ProtectedRoute>,
+      },
+      {
+        path: '/admin/packages',
+        element: <ProtectedRoute><AdminPackagesPage /></ProtectedRoute>,
+      },
+      {
+        path: '/admin/categories',
+        element: <ProtectedRoute><AdminCategoriesPage /></ProtectedRoute>,
+      },
+      {
+        path: '/admin/contacts',
+        element: <ProtectedRoute><AdminContactsPage /></ProtectedRoute>,
+      },
+      {
+        path: '/admin/calculator',
+        element: <ProtectedRoute><AdminCalculatorPage /></ProtectedRoute>,
       },
       {
         path: '/admin',

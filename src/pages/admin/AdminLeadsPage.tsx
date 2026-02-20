@@ -1,85 +1,68 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import AdminLayout from '../../components/admin/AdminLayout';
-
-export type LeadLog = {
-  id: string;
-  timestamp: string;
-  source: string;
-  name: string;
-  phone: string;
-  email?: string;
-  telegram?: string;
-  city?: string;
-  date?: string;
-  format?: string;
-  comment?: string;
-  extra?: Record<string, string>;
-  pagePath?: string;
-  referrer?: string;
-};
-
-const STORAGE_KEY = 'fs_lead_logs';
+import toast from 'react-hot-toast';
+import { useLeads } from '../../hooks/useLeads';
+import type { LeadLog } from '../../types/leads';
 
 const AdminLeadsPage = () => {
-  const [logs, setLogs] = useState<LeadLog[]>([]);
+  const { leads: logs, loading, error: leadsError, clearLeads } = useLeads();
   const [filter, setFilter] = useState('');
   const [selectedSource, setSelectedSource] = useState<string>('all');
 
-  useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        setLogs(parsed);
-      } catch (e) {
-        console.error('Failed to parse lead logs', e);
-      }
-    }
-  }, []);
-
-  const clearLogs = () => {
+  const clearLogs = async () => {
     if (confirm('Вы уверены, что хотите очистить все записи?')) {
-      localStorage.removeItem(STORAGE_KEY);
-      setLogs([]);
+      const ok = await clearLeads();
+      if (ok) toast.success('Все заявки удалены');
+      else toast.error('Не удалось удалить заявки');
     }
   };
 
   const exportLogs = () => {
-    const dataStr = JSON.stringify(logs, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `leads-${new Date().toISOString().split('T')[0]}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
+    try {
+      const dataStr = JSON.stringify(logs, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(dataBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `leads-${new Date().toISOString().split('T')[0]}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+      toast.success('Заявки экспортированы в JSON');
+    } catch (e) {
+      toast.error('Ошибка при экспорте');
+    }
   };
 
   const exportCSV = () => {
-    const headers = ['ID', 'Дата', 'Время', 'Источник', 'Имя', 'Телефон', 'Email', 'Telegram', 'Город', 'Дата мероприятия', 'Формат', 'Комментарий'];
-    const rows = logs.map((log) => [
-      log.id,
-      new Date(log.timestamp).toLocaleDateString('ru-RU'),
-      new Date(log.timestamp).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
-      log.source,
-      log.name,
-      log.phone,
-      log.email || '',
-      log.telegram || '',
-      log.city || '',
-      log.date || '',
-      log.format || '',
-      `"${(log.comment || '').replace(/"/g, '""')}"`,
-    ]);
+    try {
+      const headers = ['ID', 'Дата', 'Время', 'Источник', 'Имя', 'Телефон', 'Email', 'Telegram', 'Город', 'Дата мероприятия', 'Формат', 'Комментарий'];
+      const rows = logs.map((log) => [
+        log.id,
+        new Date(log.timestamp).toLocaleDateString('ru-RU'),
+        new Date(log.timestamp).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+        log.source,
+        log.name,
+        log.phone,
+        log.email || '',
+        log.telegram || '',
+        log.city || '',
+        log.date || '',
+        log.format || '',
+        `"${(log.comment || '').replace(/"/g, '""')}"`,
+      ]);
 
-    const csvContent = [headers.join(';'), ...rows.map((r) => r.join(';'))].join('\n');
-    const dataBlob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `leads-${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
+      const csvContent = [headers.join(';'), ...rows.map((r) => r.join(';'))].join('\n');
+      const dataBlob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(dataBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `leads-${new Date().toISOString().split('T')[0]}.csv`;
+      link.click();
+      URL.revokeObjectURL(url);
+      toast.success('Заявки экспортированы в CSV');
+    } catch (e) {
+      toast.error('Ошибка при экспорте');
+    }
   };
 
   // Уникальные источники для фильтра
@@ -113,6 +96,9 @@ const AdminLeadsPage = () => {
 
   return (
     <AdminLayout title="Лента заявок" subtitle="Все отправленные КП и заявки с форм">
+      {loading && <div className="mb-4 text-sm text-slate-400">Загрузка заявок...</div>}
+      {leadsError && <div className="mb-4 text-sm text-red-400">Ошибка: {leadsError}</div>}
+
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div className="text-sm text-slate-400">
           Всего заявок: <span className="text-white font-semibold">{logs.length}</span>
