@@ -62,7 +62,8 @@ export const submitForm = async (payload: FormPayload): Promise<{ tg: boolean; e
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
+      const responseBody = await response.text().catch(() => '');
+      throw new Error(`HTTP ${response.status}${responseBody ? `: ${responseBody}` : ''}`);
     }
 
     const result = await response.json().catch(() => ({} as Record<string, unknown>));
@@ -89,22 +90,48 @@ export const submitForm = async (payload: FormPayload): Promise<{ tg: boolean; e
     const { sendEmail } = await import('./email');
 
     const formatTelegramMessage = (p: FormPayload): string => {
+      const escapeHtml = (value = ''): string => String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+
+      const toCleanString = (value: unknown): string => {
+        if (value === null || value === undefined) return '';
+        return String(value).trim();
+      };
+
       const lines = [
-        `<b>Новая заявка: ${p.source}</b>`,
+        '<b>🔥 Новая заявка</b>',
+        `<b>Источник:</b> ${escapeHtml(toCleanString(p.source) || 'Сайт')}`,
         '',
-        `<b>Имя:</b> ${p.name}`,
-        `<b>Телефон:</b> ${p.phone}`,
       ];
-      if (p.email) lines.push(`<b>Email:</b> ${p.email}`);
-      if (p.telegram) lines.push(`<b>Telegram:</b> ${p.telegram}`);
-      if (p.city) lines.push(`<b>Город:</b> ${p.city}`);
-      if (p.date) lines.push(`<b>Дата:</b> ${p.date}`);
-      if (p.format) lines.push(`<b>Формат:</b> ${p.format}`);
-      if (p.comment) lines.push(`<b>Комментарий:</b> ${p.comment}`);
+
+      const pushField = (label: string, value: unknown) => {
+        const clean = toCleanString(value);
+        if (!clean) return;
+        lines.push(`<b>${label}:</b> ${escapeHtml(clean)}`);
+      };
+
+      pushField('Имя', p.name);
+      pushField('Телефон', p.phone);
+      pushField('Email', p.email);
+      pushField('Telegram', p.telegram);
+      pushField('Город', p.city);
+      pushField('Дата', p.date);
+      pushField('Формат', p.format);
+      pushField('Комментарий', p.comment);
+
       if (p.extra) {
-        lines.push('');
-        for (const [key, value] of Object.entries(p.extra)) {
-          lines.push(`<b>${key}:</b> ${value}`);
+        const extraEntries = Object.entries(p.extra)
+          .map(([key, value]) => [toCleanString(key), toCleanString(value)] as const)
+          .filter(([key, value]) => key && value);
+
+        if (extraEntries.length > 0) {
+          lines.push('');
+          lines.push('<b>Параметры расчета:</b>');
+          for (const [key, value] of extraEntries) {
+            lines.push(`• <b>${escapeHtml(key)}:</b> ${escapeHtml(value)}`);
+          }
         }
       }
       return lines.join('\n');

@@ -50,28 +50,102 @@ transporter.verify()
   .then(() => console.log('[SMTP] Подключение к mail.ru OK'))
   .catch((err) => console.error('[SMTP] Ошибка подключения:', err.message));
 
-const formatTelegramMessage = ({ source, name, phone, email, telegram, city, date, format, comment, extra }) => {
-  const lines = [
-    `<b>Новая заявка: ${source || 'Сайт'}</b>`,
-    '',
-    `<b>Имя:</b> ${name}`,
-    `<b>Телефон:</b> ${phone}`,
-  ];
+const escapeHtml = (value = '') => String(value)
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;');
 
-  if (email) lines.push(`<b>Email:</b> ${email}`);
-  if (telegram) lines.push(`<b>Telegram:</b> ${telegram}`);
-  if (city) lines.push(`<b>Город:</b> ${city}`);
-  if (date) lines.push(`<b>Дата:</b> ${date}`);
-  if (format) lines.push(`<b>Формат:</b> ${format}`);
-  if (comment) lines.push(`<b>Комментарий:</b> ${comment}`);
+const toCleanString = (value) => {
+  if (value === null || value === undefined) return '';
+  return String(value).trim();
+};
 
-  if (extra && typeof extra === 'object') {
-    lines.push('');
-    for (const [key, value] of Object.entries(extra)) {
-      lines.push(`<b>${key}:</b> ${value}`);
+const wait = (ms) => new Promise((resolve) => {
+  setTimeout(resolve, ms);
+});
+
+const toErrorMessage = (err) => {
+  if (!err) return 'Unknown error';
+  if (typeof err === 'string') return err;
+  return err?.message || String(err);
+};
+
+const retryAsync = async (task, {
+  attempts = 3,
+  delayMs = 600,
+  onRetry,
+} = {}) => {
+  let lastError;
+
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      return await task();
+    } catch (err) {
+      lastError = err;
+      if (attempt < attempts) {
+        if (onRetry) onRetry(err, attempt, attempts);
+        await wait(delayMs * attempt);
+      }
     }
   }
 
+  throw lastError;
+};
+
+const formatTelegramMessage = ({ source, name, phone, email, telegram, city, date, format, comment, extra }) => {
+  const lines = [
+    '<b>🔥 Новая заявка</b>',
+    `<b>Источник:</b> ${escapeHtml(toCleanString(source) || 'Сайт')}`,
+    '',
+  ];
+
+  const pushField = (label, value) => {
+    const clean = toCleanString(value);
+    if (!clean) return;
+    lines.push(`<b>${label}:</b> ${escapeHtml(clean)}`);
+  };
+
+  pushField('Имя', name);
+  pushField('Телефон', phone);
+  pushField('Email', email);
+  pushField('Telegram', telegram);
+  pushField('Город', city);
+  pushField('Дата', date);
+  pushField('Формат', format);
+  pushField('Комментарий', comment);
+
+  if (extra && typeof extra === 'object') {
+    const extraEntries = Object.entries(extra)
+      .map(([key, value]) => [toCleanString(key), toCleanString(value)])
+      .filter(([key, value]) => key && value);
+
+    if (extraEntries.length > 0) {
+      lines.push('');
+      lines.push('<b>Параметры расчета:</b>');
+      for (const [key, value] of extraEntries) {
+        lines.push(`• <b>${escapeHtml(key)}:</b> ${escapeHtml(value)}`);
+      }
+    }
+  }
+
+  return lines.join('\n');
+};
+
+const formatEmailFailureAlertMessage = ({ requestId, source, name, phone, email, errorMessage }) => {
+  const lines = [
+    '<b>⚠️ Ошибка доставки Email</b>',
+    `<b>Request ID:</b> <code>${escapeHtml(requestId)}</code>`,
+    '',
+    `<b>Источник:</b> ${escapeHtml(toCleanString(source) || 'Сайт')}`,
+    `<b>Имя:</b> ${escapeHtml(toCleanString(name) || '—')}`,
+    `<b>Телефон:</b> ${escapeHtml(toCleanString(phone) || '—')}`,
+  ];
+
+  const cleanEmail = toCleanString(email);
+  if (cleanEmail) lines.push(`<b>Email:</b> ${escapeHtml(cleanEmail)}`);
+
+  lines.push('');
+  lines.push(`<b>Причина:</b> ${escapeHtml(toCleanString(errorMessage) || 'Unknown error')}`);
   return lines.join('\n');
 };
 
@@ -85,21 +159,28 @@ const sendTelegram = async (message) => {
   }
 
   try {
-    const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text: message,
-        parse_mode: 'HTML',
-      }),
-    });
+    await retryAsync(async () => {
+      const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: message,
+          parse_mode: 'HTML',
+        }),
+      });
 
-    if (!response.ok) {
-      const err = await response.text();
-      console.warn('[Telegram] Ошибка отправки:', err);
-      return false;
-    }
+      if (!response.ok) {
+        const err = await response.text();
+        throw new Error(err || `HTTP ${response.status}`);
+      }
+    }, {
+      attempts: 2,
+      delayMs: 500,
+      onRetry: (err, attempt, attempts) => {
+        console.warn(`[Telegram] Retry ${attempt}/${attempts - 1}: ${toErrorMessage(err)}`);
+      },
+    });
 
     return true;
   } catch (err) {
@@ -111,6 +192,7 @@ const sendTelegram = async (message) => {
 app.post('/api/send', async (req, res) => {
   try {
     const { source, name, phone, email, telegram, city, date, format, comment, extra } = req.body;
+    const requestId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
     if (!name || !phone) {
       return res.status(400).json({ ok: false, error: 'Имя и телефон обязательны' });
@@ -146,14 +228,28 @@ app.post('/api/send', async (req, res) => {
       return `<b>${l}</b>`;
     });
 
-    await transporter.sendMail({
-      from: `"Future Screen" <${process.env.SMTP_USER}>`,
-      to: process.env.SMTP_TO || process.env.SMTP_USER,
-      replyTo: email || process.env.SMTP_USER,
-      subject: `Заявка: ${source || 'Сайт'} — ${name}`,
-      text,
-      html: htmlLines.join('<br>'),
-    });
+    let adminEmailSent = false;
+    let emailErrorMessage = '';
+    try {
+      await retryAsync(() => transporter.sendMail({
+        from: `"Future Screen" <${process.env.SMTP_USER}>`,
+        to: process.env.SMTP_TO || process.env.SMTP_USER,
+        replyTo: email || process.env.SMTP_USER,
+        subject: `Заявка: ${source || 'Сайт'} — ${name}`,
+        text,
+        html: htmlLines.join('<br>'),
+      }), {
+        attempts: 3,
+        delayMs: 800,
+        onRetry: (err, attempt, attempts) => {
+          console.warn(`[Email][${requestId}] Retry ${attempt}/${attempts - 1}: ${toErrorMessage(err)}`);
+        },
+      });
+      adminEmailSent = true;
+    } catch (adminErr) {
+      emailErrorMessage = toErrorMessage(adminErr);
+      console.error(`[Email][${requestId}] Ошибка доставки админ-письма:`, emailErrorMessage);
+    }
 
     let clientEmailSent = false;
     if (email && String(email).trim()) {
@@ -192,12 +288,18 @@ app.post('/api/send', async (req, res) => {
       }).join('<br>');
 
       try {
-        await transporter.sendMail({
+        await retryAsync(() => transporter.sendMail({
           from: `"Future Screen" <${process.env.SMTP_USER}>`,
           to: String(email).trim(),
           subject: 'Ваша заявка принята — Future Screen',
           text: clientLines.join('\n'),
           html: clientHtml,
+        }), {
+          attempts: 2,
+          delayMs: 700,
+          onRetry: (err, attempt, attempts) => {
+            console.warn(`[EmailClient][${requestId}] Retry ${attempt}/${attempts - 1}: ${toErrorMessage(err)}`);
+          },
         });
         clientEmailSent = true;
       } catch (clientErr) {
@@ -207,8 +309,33 @@ app.post('/api/send', async (req, res) => {
 
     const tg = await sendTelegram(formatTelegramMessage(req.body));
 
-    console.log(`[Email] Отправлено: ${source} — ${name} ${phone}`);
-    res.json({ ok: true, email: clientEmailSent, telegram: tg, tg });
+    let tgEmailAlertSent = false;
+    if (!adminEmailSent) {
+      tgEmailAlertSent = await sendTelegram(formatEmailFailureAlertMessage({
+        requestId,
+        source,
+        name,
+        phone,
+        email,
+        errorMessage: emailErrorMessage,
+      }));
+    }
+
+    console.log(`[Send][${requestId}] source=${source} email=${adminEmailSent} clientEmail=${clientEmailSent} tg=${tg}`);
+
+    const ok = adminEmailSent || tg;
+    const statusCode = ok ? 200 : 502;
+
+    res.status(statusCode).json({
+      ok,
+      requestId,
+      email: adminEmailSent,
+      clientEmail: clientEmailSent,
+      telegram: tg,
+      tg,
+      tgEmailAlertSent,
+      ...(adminEmailSent ? {} : { emailError: emailErrorMessage }),
+    });
   } catch (err) {
     const message = err?.message || 'Unknown error';
     console.error('[Email] Ошибка отправки:', message);
