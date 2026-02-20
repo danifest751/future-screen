@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 
 const SupabaseCheckPage = () => {
-  const [tables, setTables] = useState<string[]>([]);
+  const [tables, setTables] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const expectedTables = ['cases', 'packages', 'categories', 'contacts', 'leads', 'test'];
 
   useEffect(() => {
     checkTables();
@@ -14,19 +16,25 @@ const SupabaseCheckPage = () => {
     setLoading(true);
     setError(null);
 
-    // Получаем список таблиц
-    const { data, error } = await supabase
-      .from('information_schema.tables')
-      .select('table_name')
-      .eq('table_schema', 'public');
+    const results: Record<string, boolean> = {};
 
-    if (error) {
-      setError(error.message);
-    } else {
-      const tableNames = data?.map(t => t.table_name) || [];
-      setTables(tableNames);
+    for (const table of expectedTables) {
+      try {
+        const { error } = await supabase.from(table).select('*').limit(1);
+        results[table] = !error || (error?.message.includes('relation') === false);
+        
+        // Если таблица не найдена - это тоже результат
+        if (error?.message.includes('relation') || error?.message.includes('schema cache')) {
+          results[table] = false;
+        } else if (!error) {
+          results[table] = true;
+        }
+      } catch {
+        results[table] = false;
+      }
     }
 
+    setTables(results);
     setLoading(false);
   };
 
@@ -107,20 +115,20 @@ const SupabaseCheckPage = () => {
           {!loading && !error && (
             <div className="space-y-4">
               <div className="rounded-lg bg-emerald-500/10 p-4 text-emerald-300">
-                ✅ Найдено таблиц: {tables.length}
+                ✅ Таблиц найдено: {Object.values(tables).filter(Boolean).length} из {expectedTables.length}
               </div>
 
               <div className="grid gap-2 md:grid-cols-2">
-                {tables.map(table => (
+                {expectedTables.map(table => (
                   <div 
                     key={table}
                     className={`rounded-lg p-3 ${
-                      ['cases', 'packages', 'categories', 'contacts', 'leads', 'test'].includes(table)
+                      tables[table]
                         ? 'bg-emerald-500/10 text-emerald-300'
                         : 'bg-slate-700 text-slate-300'
                     }`}
                   >
-                    {table} {['cases', 'packages', 'categories', 'contacts', 'leads', 'test'].includes(table) ? '✅' : ''}
+                    {table} {tables[table] ? '✅' : '❌'}
                   </div>
                 ))}
               </div>
@@ -135,13 +143,16 @@ const SupabaseCheckPage = () => {
               <div className="mt-6 rounded-lg bg-blue-500/10 p-4 text-sm text-blue-200">
                 <strong>Ожидаемые таблицы:</strong>
                 <ul className="mt-2 list-disc pl-4">
-                  <li>cases ✅</li>
-                  <li>packages ✅</li>
-                  <li>categories ✅</li>
-                  <li>contacts ✅</li>
-                  <li>leads ✅</li>
-                  <li>test (тестовая) ✅</li>
+                  <li>cases — кейсы</li>
+                  <li>packages — пакеты услуг</li>
+                  <li>categories — категории аренды</li>
+                  <li>contacts — контакты</li>
+                  <li>leads — заявки</li>
+                  <li>test — тестовая таблица</li>
                 </ul>
+                <p className="mt-2 text-xs">
+                  Если таблица не найдена (❌) — создай её через SQL Editor в Supabase Dashboard
+                </p>
               </div>
 
               <div className="mt-4">
