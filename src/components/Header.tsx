@@ -26,34 +26,34 @@ const Header = () => {
 
   return (
     <header className="fixed inset-x-0 top-0 z-30 border-b backdrop-blur" style={{ borderColor: 'var(--border-color)', background: 'color-mix(in srgb, var(--bg-primary) 80%, transparent)' }}>
-      <div className="container-page flex h-16 items-center justify-between gap-3 lg:gap-4">
+      <div className="container-page flex h-16 items-center justify-between gap-2 lg:gap-3">
         <Link to="/" className="flex shrink-0 items-center gap-2 font-semibold text-white" onClick={closeMenu}>
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-500 text-sm font-bold text-white lg:h-10 lg:w-10">FS</div>
           <div className="min-w-0 leading-tight">
-            <div className="truncate text-sm font-semibold lg:text-base">Future Screen</div>
+            <div className="truncate text-[13px] font-semibold lg:text-sm">Future Screen</div>
             <div className="hidden text-[10px] text-slate-300 lg:block">Экраны будущего</div>
           </div>
         </Link>
-        <nav className="hidden min-w-0 flex-1 items-center justify-center gap-1 text-sm font-medium lg:flex">
+        <nav className="hidden min-w-0 flex-1 items-center justify-center gap-0.5 text-xs font-medium lg:flex lg:text-sm">
           {navLinks.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               className={({ isActive }) =>
-                `whitespace-nowrap px-2 py-1 transition hover:text-white ${isActive ? 'text-white' : 'text-slate-300'}`
+                `whitespace-nowrap px-1.5 py-1 transition hover:text-white lg:px-2 ${isActive ? 'text-white' : 'text-slate-300'}`
               }
             >
               {item.label}
             </NavLink>
           ))}
         </nav>
-        <div className="flex shrink-0 items-center gap-2 text-sm">
+        <div className="flex shrink-0 items-center gap-1.5 text-sm lg:gap-2">
           <a
-            className="hidden items-center gap-1 rounded-full px-3 py-1 transition lg:flex"
+            className="hidden items-center gap-1 rounded-full px-2.5 py-1 text-xs transition lg:flex lg:px-3"
             style={{ border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}
             href="tel:+79122466566"
           >
-            <PhoneIcon className="h-4 w-4" /> +7 (912) 246-65-66
+            <PhoneIcon className="h-3.5 w-3.5 lg:h-4 lg:w-4" /> <span className="hidden lg:inline">+7 (912) 246-65-66</span><span className="lg:hidden">Позвонить</span>
           </a>
           <ThemeSwitcher />
           {/* Кнопка входа/выхода */}
