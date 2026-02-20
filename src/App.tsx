@@ -23,6 +23,7 @@ const AdminContentPage = lazy(() => import('./pages/admin/AdminContentPage'));
 const AdminLeadsPage = lazy(() => import('./pages/admin/AdminLeadsPage'));
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
 const AdminCasesPage = lazy(() => import('./pages/admin/AdminCasesPage'));
+const SupabaseTestPage = lazy(() => import('./pages/SupabaseTestPage'));
 
 const PageLoader = () => (
   <div className="flex min-h-[40vh] items-center justify-center">
@@ -97,6 +98,10 @@ const App = () => {
       {
         path: '/admin',
         element: <ProtectedRoute><AdminDashboard /></ProtectedRoute>,
+      },
+      {
+        path: '/test-supabase',
+        element: <SupabaseTestPage />,
       },
       {
         path: '*',
