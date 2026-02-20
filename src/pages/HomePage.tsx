@@ -85,30 +85,34 @@ const HomePage = () => {
 
     <Section title="Пакеты техсопровождения" subtitle="Лайт · Медиум · Биг" className="space-y-4">
       <div className="grid gap-4 md:grid-cols-3">
-        {packages.map((pack) => (
-          <div key={pack.id} className="card flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <div className="text-xl font-semibold text-white">{pack.name}</div>
-              <div className="badge">{pack.forFormats[0]}</div>
+        {packages.length === 0 ? (
+          <div className="col-span-3 text-center text-slate-400">Загрузка...</div>
+        ) : (
+          packages.map((pack) => (
+            <div key={pack.id} className="card flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <div className="text-xl font-semibold text-white">{pack.name}</div>
+                <div className="badge">{pack.forFormats?.[0] || 'Универсальный'}</div>
+              </div>
+              <div className="text-sm text-slate-300">{pack.priceHint}</div>
+              <ul className="space-y-2 text-sm text-slate-200">
+                {pack.includes?.map((item) => (
+                  <li key={item} className="flex items-start gap-2">
+                    <span className="mt-1 h-2 w-2 rounded-full bg-brand-400"></span>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+              {pack.options && <div className="text-xs text-slate-400">Опции: {pack.options.join(', ')}</div>}
+              <Link
+                to="/support"
+                className="mt-auto inline-flex items-center justify-center rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-white hover:border-white/40"
+              >
+                Подробнее
+              </Link>
             </div>
-            <div className="text-sm text-slate-300">{pack.priceHint}</div>
-            <ul className="space-y-2 text-sm text-slate-200">
-              {pack.includes.map((item) => (
-                <li key={item} className="flex items-start gap-2">
-                  <span className="mt-1 h-2 w-2 rounded-full bg-brand-400"></span>
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-            {pack.options && <div className="text-xs text-slate-400">Опции: {pack.options.join(', ')}</div>}
-            <Link
-              to="/support"
-              className="mt-auto inline-flex items-center justify-center rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-white hover:border-white/40"
-            >
-              Подробнее
-            </Link>
-          </div>
-        ))}
+          ))
+        )}
       </div>
     </Section>
 
