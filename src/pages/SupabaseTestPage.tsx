@@ -1,48 +1,137 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+
+interface TestRecord {
+  id: number;
+  name: string;
+  email: string;
+  created_at: string;
+}
 
 const SupabaseTestPage = () => {
   const [result, setResult] = useState<string>('');
   const [loading, setLoading] = useState(false);
+  const [records, setRecords] = useState<TestRecord[]>([]);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [formData, setFormData] = useState({ name: '', email: '' });
+  const [tableCreated, setTableCreated] = useState(false);
+
+  useEffect(() => {
+    loadRecords();
+  }, []);
+
+  const loadRecords = async () => {
+    const { data, error } = await supabase.from('test').select('*').order('created_at', { ascending: false });
+    if (!error && data) {
+      setRecords(data);
+      setTableCreated(true);
+    }
+  };
+
+  const createTable = async () => {
+    setLoading(true);
+    setResult('Создание таблицы...');
+
+    const sql = `
+      CREATE TABLE IF NOT EXISTS test (
+        id SERIAL PRIMARY KEY,
+        name TEXT NOT NULL,
+        email TEXT,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `;
+
+    try {
+      // Пробуем создать таблицу через RPC (если есть функция)
+      const { error } = await supabase.rpc('exec_sql', { sql });
+      
+      if (error) {
+        // Если RPC нет, показываем инструкцию
+        setResult('ℹ️ Прямое выполнение SQL недоступно.\n\nСоздай таблицу вручную в Supabase Dashboard:\n\n1. Открой SQL Editor\n2. Вставь этот SQL:\n\n' + sql + '\n3. Нажми Run\n4. Обнови эту страницу');
+      }
+    } catch (err) {
+      setResult('ℹ️ Создай таблицу через SQL Editor в Supabase Dashboard\n\nSQL:\n' + sql);
+    }
+
+    setLoading(false);
+  };
+
+  const createRecord = async () => {
+    if (!formData.name) return;
+    
+    const { data, error } = await supabase.from('test').insert([{
+      name: formData.name,
+      email: formData.email || null,
+    }]).select();
+
+    if (!error && data) {
+      setRecords([data[0], ...records]);
+      setFormData({ name: '', email: '' });
+      setResult('✅ Запись добавлена!');
+    } else {
+      setResult('❌ Ошибка: ' + (error?.message || 'Неизвестная ошибка'));
+    }
+  };
+
+  const updateRecord = async (id: number) => {
+    const { error } = await supabase.from('test').update({
+      name: formData.name,
+      email: formData.email,
+    }).eq('id', id);
+
+    if (!error) {
+      loadRecords();
+      setEditingId(null);
+      setFormData({ name: '', email: '' });
+      setResult('✅ Запись обновлена!');
+    } else {
+      setResult('❌ Ошибка: ' + error.message);
+    }
+  };
+
+  const deleteRecord = async (id: number) => {
+    if (!confirm('Удалить эту запись?')) return;
+
+    const { error } = await supabase.from('test').delete().eq('id', id);
+
+    if (!error) {
+      setRecords(records.filter(r => r.id !== id));
+      setResult('✅ Запись удалена!');
+    } else {
+      setResult('❌ Ошибка: ' + error.message);
+    }
+  };
+
+  const startEdit = (record: TestRecord) => {
+    setEditingId(record.id);
+    setFormData({ name: record.name, email: record.email || '' });
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setFormData({ name: '', email: '' });
+  };
 
   const testConnection = async () => {
     setLoading(true);
     setResult('Проверка подключения...');
 
     try {
-      // Простой запрос к Supabase
+      // Простой запрос к Supabase - проверка что соединение работает
       const { data, error } = await supabase.from('_prisma_migrations').select('*').limit(1);
 
       if (error) {
-        if (error.message.includes('relation') || error.message.includes('does not exist')) {
-          setResult('✅ Подключение успешно!\n\nБаза работает, но таблица _prisma_migrations не найдена (это нормально для новой базы).\n\nПопробуй создать таблицу через SQL Editor в Supabase Dashboard.');
+        // Ошибка "table doesn't exist" означает что подключение РАБОТАЕТ
+        if (error.message.includes('relation') || error.message.includes('does not exist') || error.message.includes('schema cache')) {
+          setResult('✅ ПОДКЛЮЧЕНИЕ УСПЕШНО!\n\nБаза данных работает и отвечает.\n\n⚠️ Таблица _prisma_migrations не найдена — это нормально для новой базы.\n\n📋 Следующие шаги:\n1. Создай таблицы через SQL Editor в Supabase Dashboard\n2. Или используй Prisma для миграций\n3. Или создай тестовую таблицу (кнопка ниже)');
         } else {
-          setResult(`⚠️ Ошибка: ${error.message}`);
+          setResult(`⚠️ Подключение есть, но ошибка:\n${error.message}`);
         }
       } else {
         setResult(`✅ Подключение успешно!\n\nДанные из базы:\n${JSON.stringify(data, null, 2)}`);
       }
     } catch (err) {
       setResult(`❌ Ошибка подключения:\n${String(err)}`);
-    }
-
-    setLoading(false);
-  };
-
-  const testSimpleQuery = async () => {
-    setLoading(true);
-    setResult('Выполнение простого запроса...');
-
-    try {
-      // Создадим тестовую таблицу если нет
-      const { error: createError } = await supabase.rpc('create_test_table');
-      
-      if (createError && !createError.message.includes('already exists')) {
-        // Если функция не существует, пробуем создать таблицу напрямую
-        setResult('ℹ️ RPC функция не найдена. Попробуй создать таблицу вручную в Supabase Dashboard:\n\nCREATE TABLE test (\n  id SERIAL PRIMARY KEY,\n  name TEXT,\n  created_at TIMESTAMPTZ DEFAULT NOW()\n);\n\nINSERT INTO test (name) VALUES (\'Test from Future Screen\');');
-      }
-    } catch (err) {
-      setResult(`ℹ️ Для теста создай таблицу вручную:\n\nCREATE TABLE test (\n  id SERIAL PRIMARY KEY,\n  name TEXT,\n  created_at TIMESTAMPTZ DEFAULT NOW()\n);`);
     }
 
     setLoading(false);
@@ -82,13 +171,15 @@ const SupabaseTestPage = () => {
               2. Тест подключения к базе
             </button>
 
-            <button
-              onClick={testSimpleQuery}
-              disabled={loading}
-              className="w-full rounded-lg bg-purple-500 px-4 py-3 font-semibold text-white hover:bg-purple-400 disabled:opacity-50"
-            >
-              3. SQL для создания таблицы
-            </button>
+            {!tableCreated && (
+              <button
+                onClick={createTable}
+                disabled={loading}
+                className="w-full rounded-lg bg-purple-500 px-4 py-3 font-semibold text-white hover:bg-purple-400 disabled:opacity-50"
+              >
+                3. Создать тестовую таблицу
+              </button>
+            )}
           </div>
 
           {loading && (
@@ -108,8 +199,8 @@ const SupabaseTestPage = () => {
             <ol className="mt-2 list-decimal space-y-1 pl-4">
               <li>Нажми "Проверить переменные окружения"</li>
               <li>Нажми "Тест подключения к базе"</li>
-              <li>Если таблица не найдена — создай её через SQL Editor в Supabase Dashboard</li>
-              <li>Повтори тест подключения</li>
+              <li>Если таблица не найдена — нажми "Создать тестовую таблицу"</li>
+              <li>Появится CRUD интерфейс для добавления/редактирования записей</li>
             </ol>
           </div>
 
@@ -124,6 +215,94 @@ const SupabaseTestPage = () => {
             </a>
           </div>
         </div>
+
+        {/* CRUD тестовая таблица */}
+        {tableCreated && (
+          <div className="mt-6 rounded-xl border border-white/10 bg-slate-800 p-6">
+            <h2 className="mb-4 text-xl font-bold text-white">📋 Тестовая таблица (CRUD)</h2>
+
+            {/* Форма добавления/редактирования */}
+            <div className="mb-6 grid gap-3 md:grid-cols-3">
+              <input
+                type="text"
+                placeholder="Имя *"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-brand-500 focus:outline-none"
+              />
+              <input
+                type="email"
+                placeholder="Email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-brand-500 focus:outline-none"
+              />
+              <div className="flex gap-2">
+                {editingId ? (
+                  <>
+                    <button
+                      onClick={() => updateRecord(editingId)}
+                      className="flex-1 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-400"
+                    >
+                      Сохранить
+                    </button>
+                    <button
+                      onClick={cancelEdit}
+                      className="rounded-lg border border-white/20 px-4 py-2 text-sm font-semibold text-white hover:border-white/40"
+                    >
+                      Отмена
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={createRecord}
+                    className="flex-1 rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-400"
+                  >
+                    Добавить
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Список записей */}
+            <div className="space-y-2">
+              {records.length === 0 ? (
+                <div className="rounded-lg bg-white/5 p-4 text-center text-slate-400">
+                  Записей нет. Добавь первую!
+                </div>
+              ) : (
+                records.map((record) => (
+                  <div
+                    key={record.id}
+                    className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 p-3"
+                  >
+                    <div>
+                      <div className="font-medium text-white">{record.name}</div>
+                      <div className="text-sm text-slate-400">{record.email || '—'}</div>
+                      <div className="text-xs text-slate-500">
+                        {new Date(record.created_at).toLocaleString('ru-RU')}
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => startEdit(record)}
+                        className="rounded border border-white/20 px-3 py-1 text-xs font-semibold text-white hover:border-white/40"
+                      >
+                        ✏️
+                      </button>
+                      <button
+                        onClick={() => deleteRecord(record.id)}
+                        className="rounded border border-red-400/40 px-3 py-1 text-xs font-semibold text-red-200 hover:border-red-400"
+                      >
+                        🗑
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
