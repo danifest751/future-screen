@@ -50,6 +50,64 @@ transporter.verify()
   .then(() => console.log('[SMTP] Подключение к mail.ru OK'))
   .catch((err) => console.error('[SMTP] Ошибка подключения:', err.message));
 
+const formatTelegramMessage = ({ source, name, phone, email, telegram, city, date, format, comment, extra }) => {
+  const lines = [
+    `<b>Новая заявка: ${source || 'Сайт'}</b>`,
+    '',
+    `<b>Имя:</b> ${name}`,
+    `<b>Телефон:</b> ${phone}`,
+  ];
+
+  if (email) lines.push(`<b>Email:</b> ${email}`);
+  if (telegram) lines.push(`<b>Telegram:</b> ${telegram}`);
+  if (city) lines.push(`<b>Город:</b> ${city}`);
+  if (date) lines.push(`<b>Дата:</b> ${date}`);
+  if (format) lines.push(`<b>Формат:</b> ${format}`);
+  if (comment) lines.push(`<b>Комментарий:</b> ${comment}`);
+
+  if (extra && typeof extra === 'object') {
+    lines.push('');
+    for (const [key, value] of Object.entries(extra)) {
+      lines.push(`<b>${key}:</b> ${value}`);
+    }
+  }
+
+  return lines.join('\n');
+};
+
+const sendTelegram = async (message) => {
+  const token = process.env.VITE_TG_BOT_TOKEN || process.env.TG_BOT_TOKEN;
+  const chatId = process.env.VITE_TG_CHAT_ID || process.env.TG_CHAT_ID;
+
+  if (!token || !chatId) {
+    console.warn('[Telegram] Token/ChatID не настроены');
+    return false;
+  }
+
+  try {
+    const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: message,
+        parse_mode: 'HTML',
+      }),
+    });
+
+    if (!response.ok) {
+      const err = await response.text();
+      console.warn('[Telegram] Ошибка отправки:', err);
+      return false;
+    }
+
+    return true;
+  } catch (err) {
+    console.warn('[Telegram] Ошибка отправки:', err?.message || err);
+    return false;
+  }
+};
+
 app.post('/api/send', async (req, res) => {
   try {
     const { source, name, phone, email, telegram, city, date, format, comment, extra } = req.body;
@@ -147,8 +205,10 @@ app.post('/api/send', async (req, res) => {
       }
     }
 
+    const tg = await sendTelegram(formatTelegramMessage(req.body));
+
     console.log(`[Email] Отправлено: ${source} — ${name} ${phone}`);
-    res.json({ ok: true, email: clientEmailSent });
+    res.json({ ok: true, email: clientEmailSent, telegram: tg, tg });
   } catch (err) {
     const message = err?.message || 'Unknown error';
     console.error('[Email] Ошибка отправки:', message);
