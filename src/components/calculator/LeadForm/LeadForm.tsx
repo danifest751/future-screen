@@ -19,6 +19,7 @@ const LeadForm = ({ inputs, result, open, onClose }: Props) => {
   const [comment, setComment] = useState('');
   const [sent, setSent] = useState(false);
   const [sending, setSending] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   if (!open) return null;
 
@@ -27,8 +28,9 @@ const LeadForm = ({ inputs, result, open, onClose }: Props) => {
     if (!name.trim() || !phone.trim()) return;
 
     setSending(true);
+    setSubmitError(null);
 
-    await submitForm({
+    const result = await submitForm({
       source: 'Калькулятор LED',
       name,
       phone,
@@ -49,6 +51,13 @@ const LeadForm = ({ inputs, result, open, onClose }: Props) => {
         'Назначение': inputs.purpose,
       },
     });
+
+    if (!result.tg && !result.email) {
+      setSending(false);
+      setSubmitError('Не удалось отправить заявку. Проверьте соединение или попробуйте позже.');
+      return;
+    }
+
     setSending(false);
     setSent(true);
   };
@@ -170,6 +179,10 @@ const LeadForm = ({ inputs, result, open, onClose }: Props) => {
             >
               {sending ? 'Отправляем...' : 'Отправить заявку'}
             </button>
+
+            {submitError && (
+              <div className="text-sm text-red-400">{submitError}</div>
+            )}
           </form>
         )}
       </div>

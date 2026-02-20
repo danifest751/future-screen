@@ -78,7 +78,13 @@ export const submitForm = async (payload: FormPayload): Promise<{ tg: boolean; e
     };
   } catch (err) {
     console.error('[submitForm] Ошибка:', err);
-    // Fallback: пробуем старый метод (для локальной разработки)
+    // В production не уходим в клиентские fallback-каналы,
+    // чтобы не получать частичный успех (например, только Telegram без email).
+    if (!import.meta.env.DEV) {
+      return { tg: false, email: false };
+    }
+
+    // Fallback: пробуем старый метод только для локальной разработки
     const { sendTelegram } = await import('./telegram');
     const { sendEmail } = await import('./email');
 
