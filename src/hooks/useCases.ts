@@ -14,6 +14,7 @@ const sanitizeServices = (services: string[]): CaseItem['services'] =>
 export const useCases = () => {
   const [items, setItems] = useState<CaseItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadCases();
@@ -25,15 +26,19 @@ export const useCases = () => {
       
       if (error) {
         console.error('Failed to load cases:', error);
-        setItems(baseCases);
+        setError(error.message);
+        setItems([]);
       } else if (data && data.length > 0) {
         setItems(data);
+        setError(null);
       } else {
-        setItems(baseCases);
+        setItems([]);
+        setError(null);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to load cases:', err);
-      setItems(baseCases);
+      setError(err.message || 'Unknown error');
+      setItems([]);
     }
     setLoading(false);
   };
@@ -48,14 +53,24 @@ export const useCases = () => {
           .insert(next)
           .select();
 
-        if (!error && data) {
-          setItems([data[0], ...items]);
+        if (error) {
+          console.error('Failed to add case:', error);
+          setError(error.message);
+          return false;
         }
-      } catch (err) {
+
+        if (data) {
+          setItems((prev) => [data[0], ...prev]);
+          return true;
+        }
+        return false;
+      } catch (err: any) {
         console.error('Failed to add case:', err);
+        setError(err.message || 'Unknown error');
+        return false;
       }
     },
-    [items]
+    []
   );
 
   const updateCase = useCallback(
@@ -72,33 +87,61 @@ export const useCases = () => {
           .eq('slug', slug)
           .select();
 
-        if (!error && data) {
-          setItems(items.map((item) => (item.slug === slug ? data[0] : item)));
+        if (error) {
+          console.error('Failed to update case:', error);
+          setError(error.message);
+          return false;
         }
-      } catch (err) {
+
+        if (data) {
+          setItems((prev) => prev.map((item) => (item.slug === slug ? data[0] : item)));
+          return true;
+        }
+        return false;
+      } catch (err: any) {
         console.error('Failed to update case:', err);
+        setError(err.message || 'Unknown error');
+        return false;
       }
     },
-    [items]
+    []
   );
 
   const deleteCase = useCallback(
     async (slug: string) => {
       try {
-        await supabase.from('cases').delete().eq('slug', slug);
-        setItems(items.filter((item) => item.slug !== slug));
-      } catch (err) {
+        const { error } = await supabase.from('cases').delete().eq('slug', slug);
+        if (error) {
+          console.error('Failed to delete case:', error);
+          setError(error.message);
+          return false;
+        }
+        setItems((prev) => prev.filter((item) => item.slug !== slug));
+        return true;
+      } catch (err: any) {
         console.error('Failed to delete case:', err);
+        setError(err.message || 'Unknown error');
+        return false;
       }
     },
-    [items]
+    []
   );
 
   const resetToDefault = useCallback(async () => {
-    await supabase.from('cases').delete();
-    await supabase.from('cases').insert(baseCases);
-    setItems(baseCases);
+    setLoading(true);
+    setError(null);
+    try {
+      await supabase.from('cases').delete().neq('slug', 'temp_impossible_slug'); // Delete all
+      const { data, error } = await supabase.from('cases').insert(baseCases).select();
+      
+      if (error) throw error;
+      if (data) setItems(data);
+    } catch (err: any) {
+      console.error('Failed to reset cases:', err);
+      setError(err.message || 'Unknown error');
+    }
+    setLoading(false);
   }, []);
 
-  return { cases: items, loading, addCase, updateCase, deleteCase, resetToDefault };
+  return { cases: items, loading, error, addCase, updateCase, deleteCase, resetToDefault };
 };

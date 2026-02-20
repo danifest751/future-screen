@@ -59,7 +59,7 @@ const Header = () => {
           {/* Кнопка входа/выхода */}
           {isAuthenticated ? (
             <button
-              onClick={() => { logout(); closeMenu(); }}
+              onClick={async () => { await logout(); closeMenu(); }}
               className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-slate-300 hover:border-white/30 hover:text-white"
               title="Выйти"
             >

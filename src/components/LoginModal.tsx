@@ -8,24 +8,30 @@ type Props = {
 };
 
 const LoginModal = ({ open, onClose }: Props) => {
-  const { login } = useAuth();
+  const { login, isLoading } = useAuth();
   const navigate = useNavigate();
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   if (!open) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitting || isLoading) return;
     setError('');
-    if (login(username, password)) {
-      setUsername('');
+    setSubmitting(true);
+    const ok = await login(email, password);
+    setSubmitting(false);
+
+    if (ok) {
+      setEmail('');
       setPassword('');
       onClose();
       navigate('/admin/content');
     } else {
-      setError('Неверный логин или пароль');
+      setError('Неверный email или пароль');
     }
   };
 
@@ -41,12 +47,13 @@ const LoginModal = ({ open, onClose }: Props) => {
         </div>
         <form onSubmit={handleSubmit} className="space-y-3">
           <input
-            type="text"
-            placeholder="Логин"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-slate-500 outline-none focus:border-brand-500"
             autoFocus
+            required
           />
           <input
             type="password"
@@ -54,13 +61,15 @@ const LoginModal = ({ open, onClose }: Props) => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-slate-500 outline-none focus:border-brand-500"
+            required
           />
           {error && <div className="text-center text-sm text-red-400">{error}</div>}
           <button
             type="submit"
-            className="w-full rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-400"
+            disabled={submitting || isLoading}
+            className="w-full rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-400 disabled:opacity-60"
           >
-            Войти
+            {submitting ? 'Входим...' : 'Войти'}
           </button>
         </form>
         <button

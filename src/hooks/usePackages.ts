@@ -3,9 +3,35 @@ import { supabase } from '../lib/supabase';
 import { packages as basePackages, type Package } from '../data/packages';
 import { normalizeList } from '../utils/normalizeList';
 
+const mapPackageFromDB = (row: any): Package => ({
+  id: row.id,
+  name: row.name,
+  forFormats: row.for_formats,
+  includes: row.includes,
+  options: row.options,
+  priceHint: row.price_hint,
+});
+
+const mapPackageToDB = (pkg: Package) => {
+  const row: Record<string, unknown> = {
+    name: pkg.name,
+    for_formats: normalizeList(pkg.forFormats),
+    includes: normalizeList(pkg.includes),
+    options: pkg.options ? normalizeList(pkg.options) : undefined,
+    price_hint: pkg.priceHint,
+  };
+
+  if (pkg.id !== undefined && pkg.id !== null && String(pkg.id).trim() !== '') {
+    row.id = typeof pkg.id === 'string' && /^\d+$/.test(pkg.id) ? Number(pkg.id) : pkg.id;
+  }
+
+  return row;
+};
+
 export const usePackages = () => {
   const [items, setItems] = useState<Package[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadPackages();
@@ -17,67 +43,94 @@ export const usePackages = () => {
       
       if (error) {
         console.error('Failed to load packages:', error);
-        // Fallback to defaults
-        setItems(basePackages);
+        setError(error.message);
+        setItems([]);
       } else if (data && data.length > 0) {
-        setItems(data);
+        setItems(data.map(mapPackageFromDB));
+        setError(null);
       } else {
-        // Если таблица пустая, используем дефолтные
-        setItems(basePackages);
+        setItems([]);
+        setError(null);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to load packages:', err);
-      setItems(basePackages);
+      setError(err.message || 'Unknown error');
+      setItems([]);
     }
     setLoading(false);
   };
 
   const upsert = useCallback(
     async (payload: Package) => {
-      const nextPayload: Package = {
-        ...payload,
-        includes: normalizeList(payload.includes),
-        options: payload.options ? normalizeList(payload.options) : undefined,
-        forFormats: normalizeList(payload.forFormats),
-      } as Package;
-
       try {
         const { data, error } = await supabase
           .from('packages')
-          .upsert(nextPayload)
+          .upsert(mapPackageToDB(payload))
           .select();
 
-        if (!error && data) {
-          const exists = items.find((p) => p.id === payload.id);
-          const next = exists
-            ? items.map((p) => (p.id === payload.id ? data[0] : p))
-            : [...items, data[0]];
-          setItems(next);
+        if (error) {
+          console.error('Failed to save package:', error);
+          setError(error.message);
+          return false;
         }
-      } catch (err) {
+
+        if (data) {
+          const updatedPackage = mapPackageFromDB(data[0]);
+          setItems((prev) => {
+            const exists = prev.find((p) => p.id === payload.id);
+            return exists
+              ? prev.map((p) => (p.id === payload.id ? updatedPackage : p))
+              : [...prev, updatedPackage];
+          });
+          return true;
+        }
+        return false;
+      } catch (err: any) {
         console.error('Failed to save package:', err);
+        setError(err.message || 'Unknown error');
+        return false;
       }
     },
-    [items]
+    []
   );
 
   const remove = useCallback(
     async (id: Package['id']) => {
       try {
-        await supabase.from('packages').delete().eq('id', id);
-        setItems(items.filter((p) => p.id !== id));
-      } catch (err) {
+        const { error } = await supabase.from('packages').delete().eq('id', id);
+        if (error) {
+          console.error('Failed to delete package:', error);
+          setError(error.message);
+          return false;
+        }
+        setItems((prev) => prev.filter((p) => p.id !== id));
+        return true;
+      } catch (err: any) {
         console.error('Failed to delete package:', err);
+        setError(err.message || 'Unknown error');
+        return false;
       }
     },
-    [items]
+    []
   );
 
   const resetToDefault = useCallback(async () => {
-    await supabase.from('packages').delete();
-    await supabase.from('packages').insert(basePackages);
-    setItems(basePackages);
+    setLoading(true);
+    setError(null);
+    try {
+      await supabase.from('packages').delete().not('id', 'is', null); // Delete all
+      
+      const defaultData = basePackages.map(mapPackageToDB);
+      const { data, error } = await supabase.from('packages').insert(defaultData).select();
+      
+      if (error) throw error;
+      if (data) setItems(data.map(mapPackageFromDB));
+    } catch (err: any) {
+      console.error('Failed to reset packages:', err);
+      setError(err.message || 'Unknown error');
+    }
+    setLoading(false);
   }, []);
 
-  return { packages: items, loading, upsert, remove, resetToDefault };
+  return { packages: items, loading, error, upsert, remove, resetToDefault };
 };

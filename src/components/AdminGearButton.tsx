@@ -40,7 +40,7 @@ const AdminGearButton = () => {
             </button>
             <hr className="my-1 border-white/10" />
             <button
-              onClick={() => { logout(); setShowMenu(false); navigate('/'); }}
+              onClick={async () => { await logout(); setShowMenu(false); navigate('/'); }}
               className="w-full rounded-lg px-3 py-2 text-left text-sm text-red-400 hover:bg-white/5"
             >
               Выйти

@@ -1,5 +1,5 @@
 export type Category = {
-  id: 'light' | 'video' | 'sound' | 'stage' | 'instruments';
+  id: number | string;
   title: string;
   shortDescription: string;
   bullets: string[];

@@ -1,3 +1,5 @@
+import { supabase } from './supabase';
+
 export type FormPayload = {
   source: string;
   name: string;
@@ -13,28 +15,34 @@ export type FormPayload = {
   referrer?: string;
 };
 
-const STORAGE_KEY = 'fs_lead_logs';
-
-const saveToLogs = (payload: FormPayload) => {
+const saveToLeads = async (payload: FormPayload) => {
   try {
-    const log = {
-      id: `log_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      timestamp: new Date().toISOString(),
-      ...payload,
-    };
+    const { error } = await supabase.from('leads').insert({
+      source: payload.source,
+      name: payload.name,
+      phone: payload.phone,
+      email: payload.email ?? null,
+      telegram: payload.telegram ?? null,
+      city: payload.city ?? null,
+      date: payload.date ?? null,
+      format: payload.format ?? null,
+      comment: payload.comment ?? null,
+      extra: payload.extra ?? {},
+      page_path: payload.pagePath ?? null,
+      referrer: payload.referrer ?? null,
+    });
 
-    const stored = localStorage.getItem(STORAGE_KEY);
-    const logs = stored ? JSON.parse(stored) : [];
-    logs.unshift(log); // Добавляем в начало
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
+    if (error) {
+      console.error('[saveToLeads] Ошибка:', error.message);
+    }
   } catch (e) {
-    console.error('[saveToLogs] Ошибка:', e);
+    console.error('[saveToLeads] Ошибка:', e);
   }
 };
 
 export const submitForm = async (payload: FormPayload): Promise<{ tg: boolean; email: boolean }> => {
-  // Сохраняем в локальные логи
-  saveToLogs(payload);
+  // Сохраняем заявку в Supabase
+  await saveToLeads(payload);
 
   // Определяем API URL
   const apiUrl = import.meta.env.VITE_API_URL || '/api/send';
