@@ -1,18 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
+
+const expectedTables = ['cases', 'packages', 'categories', 'contacts', 'leads', 'test'];
 
 const SupabaseCheckPage = () => {
   const [tables, setTables] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const expectedTables = ['cases', 'packages', 'categories', 'contacts', 'leads', 'test'];
-
-  useEffect(() => {
-    checkTables();
-  }, []);
-
-  const checkTables = async () => {
+  const checkTables = useCallback(async () => {
     setLoading(true);
     setError(null);
 
@@ -36,7 +32,11 @@ const SupabaseCheckPage = () => {
 
     setTables(results);
     setLoading(false);
-  };
+  }, []);
+
+  useEffect(() => {
+    void checkTables();
+  }, [checkTables]);
 
   const insertTestData = async () => {
     console.log('Adding test data...');

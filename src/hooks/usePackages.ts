@@ -3,7 +3,18 @@ import { supabase } from '../lib/supabase';
 import { packages as basePackages, type Package } from '../data/packages';
 import { normalizeList } from '../utils/normalizeList';
 
-const mapPackageFromDB = (row: any): Package => ({
+type PackageRow = {
+  id: Package['id'];
+  name: string;
+  for_formats: string[];
+  includes: string[];
+  options?: string[];
+  price_hint: string;
+};
+
+const getErrorMessage = (err: unknown) => (err instanceof Error ? err.message : 'Unknown error');
+
+const mapPackageFromDB = (row: PackageRow): Package => ({
   id: row.id,
   name: row.name,
   forFormats: row.for_formats,
@@ -52,9 +63,9 @@ export const usePackages = () => {
         setItems([]);
         setError(null);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to load packages:', err);
-      setError(err.message || 'Unknown error');
+      setError(getErrorMessage(err));
       setItems([]);
     }
     setLoading(false);
@@ -85,9 +96,9 @@ export const usePackages = () => {
           return true;
         }
         return false;
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Failed to save package:', err);
-        setError(err.message || 'Unknown error');
+        setError(getErrorMessage(err));
         return false;
       }
     },
@@ -105,9 +116,9 @@ export const usePackages = () => {
         }
         setItems((prev) => prev.filter((p) => p.id !== id));
         return true;
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Failed to delete package:', err);
-        setError(err.message || 'Unknown error');
+        setError(getErrorMessage(err));
         return false;
       }
     },
@@ -125,9 +136,9 @@ export const usePackages = () => {
       
       if (error) throw error;
       if (data) setItems(data.map(mapPackageFromDB));
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to reset packages:', err);
-      setError(err.message || 'Unknown error');
+      setError(getErrorMessage(err));
     }
     setLoading(false);
   }, []);

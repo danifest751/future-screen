@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { cases as baseCases, CaseItem } from '../data/cases';
 
+const getErrorMessage = (err: unknown) => (err instanceof Error ? err.message : 'Unknown error');
+
 const sanitizeServices = (services: string[]): CaseItem['services'] =>
   services
     .map((s) => s.trim())
@@ -35,9 +37,9 @@ export const useCases = () => {
         setItems([]);
         setError(null);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to load cases:', err);
-      setError(err.message || 'Unknown error');
+      setError(getErrorMessage(err));
       setItems([]);
     }
     setLoading(false);
@@ -64,9 +66,9 @@ export const useCases = () => {
           return true;
         }
         return false;
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Failed to add case:', err);
-        setError(err.message || 'Unknown error');
+        setError(getErrorMessage(err));
         return false;
       }
     },
@@ -98,9 +100,9 @@ export const useCases = () => {
           return true;
         }
         return false;
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Failed to update case:', err);
-        setError(err.message || 'Unknown error');
+        setError(getErrorMessage(err));
         return false;
       }
     },
@@ -118,9 +120,9 @@ export const useCases = () => {
         }
         setItems((prev) => prev.filter((item) => item.slug !== slug));
         return true;
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Failed to delete case:', err);
-        setError(err.message || 'Unknown error');
+        setError(getErrorMessage(err));
         return false;
       }
     },
@@ -136,9 +138,9 @@ export const useCases = () => {
       
       if (error) throw error;
       if (data) setItems(data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to reset cases:', err);
-      setError(err.message || 'Unknown error');
+      setError(getErrorMessage(err));
     }
     setLoading(false);
   }, []);
