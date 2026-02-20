@@ -26,12 +26,12 @@ const Header = () => {
 
   return (
     <header className="fixed inset-x-0 top-0 z-30 border-b backdrop-blur" style={{ borderColor: 'var(--border-color)', background: 'color-mix(in srgb, var(--bg-primary) 80%, transparent)' }}>
-      <div className="container-page flex h-16 items-center justify-between gap-4">
+      <div className="container-page flex h-16 items-center justify-between gap-3 lg:gap-4">
         <Link to="/" className="flex shrink-0 items-center gap-2 font-semibold text-white" onClick={closeMenu}>
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-500 text-white">FS</div>
-          <div className="leading-tight">
-            <div>Future Screen</div>
-            <div className="text-xs text-slate-300">Экраны будущего</div>
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-500 text-sm font-bold text-white lg:h-10 lg:w-10">FS</div>
+          <div className="min-w-0 leading-tight">
+            <div className="truncate text-sm font-semibold lg:text-base">Future Screen</div>
+            <div className="hidden text-[10px] text-slate-300 lg:block">Экраны будущего</div>
           </div>
         </Link>
         <nav className="hidden min-w-0 flex-1 items-center justify-center gap-1 text-sm font-medium lg:flex">
@@ -103,23 +103,23 @@ const Header = () => {
       {/* Мобильное меню */}
       {menuOpen && (
         <div className="border-t backdrop-blur lg:hidden" style={{ borderColor: 'var(--border-color)', background: 'color-mix(in srgb, var(--bg-primary) 95%, transparent)' }}>
-          <nav className="container-page flex flex-col gap-1 py-4">
+          <nav className="container-page flex flex-col gap-2 px-2 py-4">
             {navLinks.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
                 onClick={closeMenu}
                 className={({ isActive }) =>
-                  `rounded-lg px-3 py-2.5 text-sm font-medium transition ${isActive ? 'bg-brand-500/10 text-white' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`
+                  `rounded-lg px-4 py-3 text-sm font-medium transition ${isActive ? 'bg-brand-500/10 text-white' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`
                 }
               >
                 {item.label}
               </NavLink>
             ))}
-            <div className="mt-2 border-t pt-3" style={{ borderColor: 'var(--border-color)' }}>
+            <div className="mt-2 space-y-2 border-t pt-4" style={{ borderColor: 'var(--border-color)' }}>
               <a
-                className="flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm transition"
-                style={{ border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}
+                className="flex items-center justify-center gap-2 rounded-lg border border-white/10 px-4 py-3 text-sm transition"
+                style={{ color: 'var(--text-secondary)' }}
                 href="tel:+79122466566"
               >
                 <PhoneIcon className="h-4 w-4" /> Позвонить
