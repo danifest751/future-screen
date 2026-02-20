@@ -344,8 +344,8 @@ const AdminContentPage = () => {
                       <div className="font-semibold text-white">{p.name}</div>
                       <div className="text-xs text-slate-400">{p.id}</div>
                     </div>
-                    <div className="text-xs text-slate-400">Для: {p.forFormats.join(', ')}</div>
-                    <div className="mt-1 text-xs text-slate-300">{p.includes.join(' · ')}</div>
+                    <div className="text-xs text-slate-400">Для: {p.forFormats?.join(', ') || '—'}</div>
+                    <div className="mt-1 text-xs text-slate-300">{p.includes?.join(' · ') || '—'}</div>
                     {p.options && p.options.length > 0 && <div className="text-xs text-slate-400">Опции: {p.options.join(', ')}</div>}
                     {p.priceHint && <div className="text-xs text-brand-100">{p.priceHint}</div>}
                     <div className="mt-2 flex gap-2">
