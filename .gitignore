@@ -1,5 +1,4 @@
 node_modules
-Dist/
 dist/
 .vite
 .idea
@@ -8,6 +7,5 @@ dist/
 *.log
 .env
 .env.*
+*.tsbuildinfo
 .DS_Store
-
-.vercel
