@@ -10,10 +10,10 @@ export const useContacts = () => {
     loadContacts();
   }, []);
 
-  const loadContacts = async () => {
+  const loadContacts = useCallback(async () => {
     try {
       const { data, error } = await supabase.from('contacts').select('*').limit(1);
-      
+
       if (error) {
         console.error('Failed to load contacts:', error);
         setItems(baseContacts);
@@ -27,7 +27,7 @@ export const useContacts = () => {
       setItems(baseContacts);
     }
     setLoading(false);
-  };
+  }, []);
 
   const update = useCallback(
     async (payload: typeof baseContacts) => {
@@ -38,13 +38,14 @@ export const useContacts = () => {
           .select();
 
         if (!error) {
-          setItems(payload);
+          // Перезагружаем данные из базы
+          await loadContacts();
         }
       } catch (err) {
         console.error('Failed to save contacts:', err);
       }
     },
-    []
+    [loadContacts]
   );
 
   const resetToDefault = useCallback(async () => {
