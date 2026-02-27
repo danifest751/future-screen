@@ -1,6 +1,7 @@
 # Аудит проекта Future Screen
 
-**Дата аудита:** 19 февраля 2026 г.  
+**Дата аудита:** 27 февраля 2026 г.  
+**Актуализация:** 27 февраля 2026 г. (после рефакторинга админки и миграции на Supabase)  
 **Проект:** future-screen.ru — техсопровождение мероприятий (LED, звук, свет, сцены)  
 **Стек:** React 18 + TypeScript + Vite + TailwindCSS + React Router
 
@@ -48,13 +49,18 @@ c:\FS-GPT\
 │   ├── utils/            # Утилиты (screenMath.ts + тесты)
 │   ├── App.tsx           # Роутинг
 │   └── main.tsx          # Точка входа
+├── api/
+│   └── send.ts           # Serverless API (Vercel) для email/telegram
 ├── server/
-│   └── index.js          # Express-сервер для отправки email/telegram
+│   └── index.js          # Express-сервер для отправки email
+├── supabase/
+│   └── migrations/       # SQL-миграции (leads + storage)
 ├── dist/                 # Продакшен-билд
 ├── package.json
 ├── tsconfig.json
 ├── vite.config.ts
 ├── tailwind.config.cjs
+├── vercel.json
 └── .env.example
 ```
 
@@ -78,7 +84,14 @@ c:\FS-GPT\
 | `/contacts` | Контакты | ✅ |
 | `/consult` | Консультация | ✅ |
 | `/calculator` | Калькулятор LED | ✅ |
-| `/admin/content` | Админ-панель | ✅ |
+| `/admin` | Админ-дашборд | ✅ |
+| `/admin/content` | Индекс разделов админки | ✅ |
+| `/admin/leads` | Заявки (Supabase) | ✅ |
+| `/admin/cases` | Кейсы + загрузка изображений в Supabase Storage | ✅ |
+| `/admin/packages` | Управление пакетами (RHF + Zod) | ✅ |
+| `/admin/categories` | Управление категориями (RHF + Zod) | ✅ |
+| `/admin/contacts` | Управление контактами (RHF + Zod) | ✅ |
+| `/admin/calculator` | Управление конфигом калькулятора (RHF + Zod) | ✅ |
 
 ### 2.2 Ключевые фичи
 
@@ -94,16 +107,23 @@ c:\FS-GPT\
    - Neon (неоновая)
 
 3. **Админ-панель**:
-   - Защищена паролем (sessionStorage)
-   - Управление контентом
+   - Защищена Supabase Auth + ProtectedRoute
+   - Разделена на независимые маршруты (packages/categories/contacts/cases/calculator/leads)
+   - Формы в админке переведены на React Hook Form + Zod
+   - Добавлен UX-слой: единый вывод ошибок полей + защита от потери несохраненных изменений
 
 4. **Формы заявок**:
-   - Отправка в Telegram
-   - Отправка на email (SMTP Mail.ru)
-   - Honeypot для защиты от спама
+   - Запись лидов в Supabase
+   - Отправка в Telegram и на email (serverless/Express)
+   - Honeypot для базовой защиты от спама
+
+5. **Хранилище медиа**:
+   - Загрузка изображений кейсов в Supabase Storage bucket `images`
 
 5. **SEO**:
    - Meta-теги (title, description, OG, Twitter Card)
+   - Structured data (JSON-LD)
+   - `robots.txt` и `sitemap.xml`
    - React Helmet Async
 
 ---
@@ -114,29 +134,27 @@ c:\FS-GPT\
 
 | # | Проблема | Файл | Рекомендация |
 |---|----------|------|--------------|
-| 1 | **Тесты не работают** | `screenMath.test.ts` | Vitest не находит тесты — проверить конфиг `vite.config.ts` (добавить `test: { ... }`) |
-| 2 | **Аналитика не подключена** | `src/lib/analytics.ts` | Заглушка `console.info()` — нужна интеграция с Яндекс.Метрикой |
-| 3 | **Хранение пароля на клиенте** | `AuthContext.tsx` | Пароль админки в `import.meta.env` — уязвимость. Перенести аутентификацию на сервер |
-| 4 | **Нет HTTPS для SMTP** | `server/index.js` | Порт 465 с `secure: true` — ок, но проверить сертификаты |
+| 1 | **Публичный fallback ключ Supabase** | `src/lib/supabase.ts` | Убрать из клиента дефолтный URL/anon key, оставить только env |
+| 2 | **Клиентский fallback отправки Telegram/email** | `src/lib/submitForm.ts`, `src/lib/telegram.ts` | Удалить клиентскую отправку, оставить только серверную |
+| 3 | **Открытый CORS и отсутствие rate limiting** | `api/send.ts`, `server/index.js` | Ограничить origin и добавить лимиты запросов |
+| 4 | **Логирование персональных данных** | `api/send.ts`, `server/index.js` | Удалить/сократить PII из логов |
+| 5 | **Тесты не запускаются** | `vite.config.ts` | Добавить конфигурацию Vitest |
 
 ### 3.2 Средние (🟡)
 
 | # | Проблема | Файл | Рекомендация |
 |---|----------|------|--------------|
-| 5 | **Предупреждения ESLint** | 5 warning'ов | Исправить unused variables |
-| 6 | **Нет README** | Корень | Добавить документацию по запуску, деплою |
-| 7 | **Жёстко закодированные пути** | `server/index.js` | SMTP хост, порты — вынести в `.env` |
-| 8 | **Нет обработки ошибок форм** | `LeadForm.tsx` | Нет показа ошибок пользователю при failed submit |
-| 9 | **Large bundle** | `RequestForm-CK2rErkd.js` | 81.78 kB (22.82 kB gzip) — code splitting, lazy loading |
+| 6 | **Анонимные вставки лидов в Supabase** | `supabase/migrations/...` | Перенести insert на сервер, добавить антиспам |
+| 7 | **Предупреждения ESLint** | 5 warning'ов | Исправить unused variables |
+| 8 | **Нет route-level предупреждения при уходе с dirty-формы** | admin pages | Добавить confirm при смене маршрута внутри SPA |
+| 9 | **Не зафиксирован единый чек-лист env для Vercel** | документация | Добавить deploy checklist с обязательными env |
 
 ### 3.3 Низкие (🟢)
 
 | # | Проблема | Файл | Рекомендация |
 |---|----------|------|--------------|
-| 10 | **Нет прелоадера для роутов** | `App.tsx` | Есть `<Suspense>`, но можно улучшить |
-| 11 | **Нет sitemap.xml / robots.txt** | `public/` | Добавить для SEO |
-| 12 | **Нет favicon.svg в репозитории** | `public/` | Проверить наличие |
-| 13 | **Константы в коде** | `calculatorConfig.ts` | Цены, мощности — вынести в конфиг |
+| 10 | **Логи аналитики в продакшене** | `src/lib/analytics.ts` | Ограничить логирование в production |
+| 11 | **Хардкод значений калькулятора** | `data/calculatorConfig.ts` | Вынести в управляемый источник |
 
 ---
 
@@ -146,17 +164,17 @@ c:\FS-GPT\
 
 | Риск | Уровень | Описание |
 |------|---------|----------|
-| **Клиентская аутентификация** | 🔴 Высокий | Пароль админки хранится в `.env`, доступном на клиенте |
-| **CORS** | 🟡 Средний | `cors({ origin: true })` — разрешает все origin'ы |
-| **Rate limiting** | 🟡 Средний | Нет защиты от brute-force на `/api/send` |
-| **Input validation** | 🟢 Низкий | Zod валидация есть, но не везде |
+| **Публичный anon key Supabase** | 🔴 Высокий | В коде есть дефолтные ключи, что упрощает доступ к проекту |
+| **Клиентский Telegram токен** | 🔴 Высокий | Токен в frontend при fallback отправке |
+| **CORS** | 🟡 Средний | `Access-Control-Allow-Origin: *` на `/api/send` |
+| **Rate limiting** | 🟡 Средний | Нет защиты от спама/ботов на `/api/send` |
+| **Логи с PII** | 🟡 Средний | Логи содержат email/телефон/имя |
 
 ### 4.2 Рекомендации по безопасности
 
-1. **Аутентификация**:
-   - Перенести проверку логина/пароля на сервер
-   - Использовать JWT или сессионные токены
-   - Добавить HTTPS для продакшена
+1. **Ключи и токены**:
+   - Убрать fallback ключи Supabase из клиента
+   - Удалить клиентскую отправку Telegram/email
 
 2. **CORS**:
    ```js
@@ -174,9 +192,9 @@ c:\FS-GPT\
    app.use('/api/', limiter);
    ```
 
-4. **Environment variables**:
-   - Добавить `.env.production`
-   - Не коммитить `.env` в git (уже в `.gitignore` ✅)
+4. **Логирование**:
+   - Удалить персональные данные из логов
+   - Маскировать телефон/email в debug
 
 ---
 
@@ -184,15 +202,7 @@ c:\FS-GPT\
 
 ### 5.1 Размер бандла
 
-```
-dist/assets/index-C87YElb9.js       208.28 kB (68.20 kB gzip)
-dist/assets/RequestForm-CK2rErkd.js  81.78 kB (22.82 kB gzip)
-dist/assets/CalculatorPage-S9j7U8Ed.js 34.53 kB (9.56 kB gzip)
-```
-
-**Проблема:** `RequestForm` слишком большой (81 kB).  
-**Причина:** Вероятно, включает Zod + React Hook Form + зависимости.  
-**Решение:** Lazy load для форм, tree shaking.
+Актуальные замеры не зафиксированы. Для обновлённого аудита нужен свежий `npm run build` и анализ `dist/assets/*`.
 
 ### 5.2 Рекомендации
 
@@ -223,43 +233,21 @@ dist/assets/CalculatorPage-S9j7U8Ed.js 34.53 kB (9.56 kB gzip)
 - Meta title/description на странице
 - Open Graph теги
 - Twitter Card
-- Семантическая вёрстка
+- Structured data (JSON-LD)
+- `robots.txt` и `sitemap.xml`
 
 ### 6.2 Отсутствует ❌
 
-- `sitemap.xml`
-- `robots.txt`
-- Structured data (JSON-LD)
 - Canonical URL
 - Hreflang (если нужна мультиязычность)
 
 ### 6.3 Рекомендации
 
-1. **Добавить sitemap.xml**:
-   ```xml
-   <?xml version="1.0" encoding="UTF-8"?>
-   <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-     <url><loc>https://future-screen.ru/</loc></url>
-     <url><loc>https://future-screen.ru/led</loc></url>
-     <!-- ... -->
-   </urlset>
-   ```
+1. **Canonical URL**:
+   - Добавить canonical на ключевые страницы
 
-2. **Structured data** (Organization):
-   ```json
-   {
-     "@context": "https://schema.org",
-     "@type": "Organization",
-     "name": "Future Screen",
-     "url": "https://future-screen.ru",
-     "telephone": "+79122466566",
-     "address": {
-       "@type": "PostalAddress",
-       "streetAddress": "Большой Конный полуостров, 5а",
-       "addressLocality": "Екатеринбург"
-     }
-   }
-   ```
+2. **Hreflang**:
+   - Добавить при появлении мультиязычности
 
 ---
 
@@ -269,7 +257,7 @@ dist/assets/CalculatorPage-S9j7U8Ed.js 34.53 kB (9.56 kB gzip)
 
 - **Фреймворк:** Vitest 4.0.18
 - **Тест-файлы:** 1 (`screenMath.test.ts`)
-- **Статус:** ❌ Тесты не запускаются
+- **Статус:** ❌ Требует проверки/донастройки Vitest (в `vite.config.ts` нет секции `test`)
 
 ### 7.2 Проблема
 
@@ -278,7 +266,7 @@ dist/assets/CalculatorPage-S9j7U8Ed.js 34.53 kB (9.56 kB gzip)
  Error: No test suite found in file
 ```
 
-**Причина:** В `vite.config.ts` отсутствует конфигурация для тестов.
+**Причина:** В `vite.config.ts` отсутствует конфигурация для тестов, а `tsconfig.json` исключает `*.test.ts`.
 
 ### 7.3 Решение
 
@@ -323,10 +311,9 @@ export default defineConfig({
 
 ### 8.2 Рекомендации
 
-1. **Хостинг фронтенда**:
-   - Cloudflare Pages
-   - Netlify
-   - Vercel
+1. **Хостинг фронтенда (целевой)**:
+   - Vercel (конфигурация `vercel.json` уже добавлена)
+   - Проверить env-переменные проекта и production domain allowlist
 
 2. **Хостинг сервера**:
    - VPS (Timeweb, Reg.ru, Selectel)
@@ -357,8 +344,8 @@ export default defineConfig({
 ### 9.2 Проблемы
 
 1. **Мало кейсов** — всего 3
-2. **Нет изображений** в кейсах (пути не указаны)
-3. **Хардкод цен** в конфиге
+2. **Нужна контентная загрузка кейсов** (механизм загрузки фото реализован, но данных пока мало)
+3. **Хардкод цен** в конфиге калькулятора
 
 ### 9.3 Рекомендации
 
@@ -377,13 +364,13 @@ export default defineConfig({
 
 | Приоритет | Категория | Проблема | Статус |
 |-----------|-----------|----------|--------|
-| 🔴 | Тесты | Vitest не работает | Требует исправления |
-| 🔴 | Безопасность | Клиентская аутентификация | Требует исправления |
-| 🔴 | Аналитика | Не подключена Метрика | Требует исправления |
+| 🔴 | Безопасность | Публичные fallback ключи Supabase | Требует исправления |
+| 🔴 | Безопасность | Клиентский Telegram/email fallback | Требует исправления |
+| 🔴 | Безопасность | Открытый CORS + нет rate limiting | Требует исправления |
+| 🔴 | Тесты | Vitest требует настройки и проверки прогона | Требует исправления |
+| 🟡 | Безопасность | Логи с PII | Желательно исправить |
 | 🟡 | ESLint | 5 warning'ов | Желательно исправить |
-| 🟡 | SEO | Нет sitemap/robots | Желательно добавить |
-| 🟡 | Производительность | Большой бандл форм | Желательно оптимизировать |
-| 🟢 | Документация | Нет README | По желанию |
+| 🟡 | UX | Нет confirm при смене SPA-роута при dirty-форме | Желательно исправить |
 | 🟢 | Контент | Мало кейсов | По желанию |
 
 ---
@@ -392,24 +379,24 @@ export default defineConfig({
 
 ### Этап 1: Критические исправления (1-2 дня)
 
-1. Исправить конфиг Vitest
-2. Запустить и пройти тесты
-3. Интегрировать Яндекс.Метрику
-4. Исправить предупреждения ESLint
+1. Удалить fallback ключи Supabase из клиента
+2. Убрать клиентский Telegram/email fallback
+3. Ограничить CORS и добавить rate limiting
+4. Исправить конфиг Vitest и запустить тесты
 
-### Этап 2: Безопасность (2-3 дня)
+### Этап 2: Безопасность и доставка (2-3 дня)
 
-1. Перенести аутентификацию на сервер
-2. Настроить CORS
-3. Добавить rate limiting
-4. Добавить HTTPS
+1. Сократить логирование PII
+2. Перенести insert лидов на сервер
+3. Добавить антиспам (captcha/slowdown)
+4. Добавить deploy checklist для Vercel (env + Auth + Supabase policies)
 
-### Этап 3: SEO и производительность (2-3 дня)
+### Этап 3: UX, SEO и производительность (2-3 дня)
 
-1. Добавить sitemap.xml, robots.txt
+1. Снять свежие метрики бандла
 2. Оптимизировать бандл (code splitting)
-3. Добавить structured data
-4. Проверить Lighthouse
+3. Добавить route-level confirm при уходе с dirty-форм
+4. Добавить canonical URL и проверить Lighthouse
 
 ### Этап 4: Контент и улучшения (по желанию)
 
@@ -429,17 +416,16 @@ export default defineConfig({
 3. Есть типизация TypeScript
 4. Калькулятор — уникальная фича
 5. Мульти-темизация
-6. Формы с валидацией Zod
-7. Тесты (хоть и не работают)
+6. Формы админки переведены на RHF + Zod
+7. Админка разделена на отдельные маршруты с Supabase-интеграцией
 
 ### Слабые стороны ❌
 
 1. Тесты не запускаются
-2. Аналитика не подключена
-3. Уязвимая аутентификация
-4. Нет документации (README)
-5. Большой размер бандла
-6. Мало контента (кейсы, изображения)
+2. Риски безопасности вокруг ключей и CORS
+3. Логи содержат PII
+4. Нет route-level confirm при смене SPA-роута при dirty-форме
+5. Недостаточно контента (кейсы и наполненность портфолио)
 
 ### Общая оценка
 
@@ -449,11 +435,11 @@ export default defineConfig({
 | Код | ⭐⭐⭐⭐☆ (4/5) |
 | Безопасность | ⭐⭐☆☆☆ (2/5) |
 | Производительность | ⭐⭐⭐☆☆ (3/5) |
-| SEO | ⭐⭐⭐☆☆ (3/5) |
+| SEO | ⭐⭐⭐⭐☆ (4/5) |
 | Тесты | ⭐⭐☆☆☆ (2/5) |
-| Документация | ⭐☆☆☆☆ (1/5) |
+| Документация | ⭐⭐⭐☆☆ (3/5) |
 
-**Итого:** Проект в хорошем состоянии, но требует исправления критических уязвимостей и настройки тестов/аналитики перед продакшеном.
+**Итого:** Проект в рабочем состоянии для деплоя, но перед production рекомендуется закрыть блоки безопасности (fallback/PII/CORS/rate-limit), стабилизировать тесты и оформить deploy-checklist.
 
 ---
 
@@ -478,7 +464,7 @@ npm run preview
 # Линтинг
 npm run lint
 
-# Тесты (требует исправления vite.config.ts)
+# Тесты (после настройки секции test в vite.config.ts)
 npm run test
 
 # Сервер (отдельно)
@@ -490,15 +476,16 @@ npm run server
 ## Приложение B: Переменные окружения
 
 ```env
-# .env.example
-VITE_ADMIN_LOGIN=admin
-VITE_ADMIN_PASSWORD=your_secure_password_here
+# .env.example (актуально)
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 
-VITE_TG_BOT_TOKEN=your_bot_token_here
-VITE_TG_CHAT_ID=your_chat_id_here
-
+# Для локальной разработки с отдельным backend (опционально)
 VITE_API_URL=http://localhost:3001
 
+# Serverless/API
+VITE_TG_BOT_TOKEN=your_bot_token_here
+VITE_TG_CHAT_ID=your_chat_id_here
 SMTP_USER=your_email@list.ru
 SMTP_PASS=your_password_or_app_password
 SMTP_TO=recipient@example.com
@@ -508,4 +495,4 @@ SERVER_PORT=3001
 ---
 
 **Аудит провёл:** Qwen Code  
-**Дата:** 19 февраля 2026 г.
+**Дата:** 27 февраля 2026 г.

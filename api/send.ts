@@ -2,6 +2,38 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import nodemailer from 'nodemailer';
 import 'dotenv/config';
 
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'https://future-screen.ru,http://localhost:5173,http://127.0.0.1:5173')
+  .split(',')
+  .map((v) => v.trim())
+  .filter(Boolean);
+
+const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
+const RATE_LIMIT_MAX = 10;
+const requestsByIp = new Map<string, number[]>();
+
+const isOriginAllowed = (origin?: string) => {
+  if (!origin) return true;
+  return allowedOrigins.includes(origin);
+};
+
+const getClientIp = (req: VercelRequest) => {
+  const forwardedFor = req.headers['x-forwarded-for'];
+  const value = Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor;
+  return value?.split(',')[0]?.trim() || 'unknown';
+};
+
+const isRateLimited = (ip: string) => {
+  const now = Date.now();
+  const attempts = (requestsByIp.get(ip) || []).filter((ts) => now - ts < RATE_LIMIT_WINDOW_MS);
+  if (attempts.length >= RATE_LIMIT_MAX) {
+    requestsByIp.set(ip, attempts);
+    return true;
+  }
+  attempts.push(now);
+  requestsByIp.set(ip, attempts);
+  return false;
+};
+
 // Транспорт для почты
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const transporter: any = nodemailer.createTransport({
@@ -158,8 +190,8 @@ const formatEmailFailureAlertMessage = ({
 };
 
 const sendTelegram = async (message: string): Promise<boolean> => {
-  const token = process.env.VITE_TG_BOT_TOKEN || process.env.TG_BOT_TOKEN;
-  const chatId = process.env.VITE_TG_CHAT_ID || process.env.TG_CHAT_ID;
+  const token = process.env.TG_BOT_TOKEN;
+  const chatId = process.env.TG_CHAT_ID;
 
   if (!token || !chatId) {
     console.warn('[Telegram] Token или ChatID не настроены');
@@ -233,8 +265,6 @@ const sendEmail = async (payload: EmailPayload, requestId: string): Promise<Emai
   let errorMessage = '';
 
   try {
-    console.log(`[Email][${requestId}] Начинаем отправку. Admin: ${process.env.SMTP_TO}, Client: ${payload.email || 'не указан'}`);
-
     await retryAsync(() => transporter.sendMail({
       from: `"Future Screen" <${process.env.SMTP_USER}>`,
       to: process.env.SMTP_TO || process.env.SMTP_USER,
@@ -250,12 +280,9 @@ const sendEmail = async (payload: EmailPayload, requestId: string): Promise<Emai
     });
 
     adminSent = true;
-    console.log(`[Email][${requestId}] Письмо админу отправлено на ${process.env.SMTP_TO}`);
 
     // Отправка подтверждения клиенту (если указан email)
     if (payload.email && payload.email.trim()) {
-      console.log(`[Email] Отправляем подтверждение клиенту: ${payload.email}`);
-      
       const clientText = [
         `Здравствуйте, ${payload.name}!`,
         '',
@@ -307,14 +334,10 @@ const sendEmail = async (payload: EmailPayload, requestId: string): Promise<Emai
       });
 
       clientSent = true;
-      console.log(`[Email][${requestId}] Подтверждение отправлено клиенту: ${payload.email}`);
     }
   } catch (err) {
     errorMessage = toErrorMessage(err);
     console.error(`[Email][${requestId}] Ошибка отправки:`, errorMessage);
-    console.error(`[Email][${requestId}] SMTP_USER:`, process.env.SMTP_USER);
-    console.error(`[Email][${requestId}] SMTP_TO:`, process.env.SMTP_TO);
-    console.error(`[Email][${requestId}] Client email:`, payload.email);
   }
 
   return {
@@ -325,10 +348,19 @@ const sendEmail = async (payload: EmailPayload, requestId: string): Promise<Emai
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  const origin = req.headers.origin;
+
+  if (!isOriginAllowed(origin)) {
+    return res.status(403).json({ error: 'Forbidden origin' });
+  }
+
   // CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  if (origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Vary', 'Origin');
 
   // Preflight
   if (req.method === 'OPTIONS') {
@@ -339,22 +371,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  const ip = getClientIp(req);
+  if (isRateLimited(ip)) {
+    return res.status(429).json({ error: 'Too many requests' });
+  }
+
   try {
     const { source, name, phone, email, telegram, city, date, format, comment, extra } = req.body;
     const requestId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
-    // Логирование входящих данных
-    console.log('[API] Получены данные:', {
-      source,
-      name,
-      phone,
-      email: email || 'не указан',
-      telegram: telegram || 'не указан',
-      city,
-      date,
-      format,
-      comment,
-    });
+    console.log('[API] Получена заявка', { source, hasEmail: Boolean(email), hasTelegram: Boolean(telegram), ip });
 
     // Валидация
     if (!name || !phone) {

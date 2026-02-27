@@ -79,72 +79,9 @@ export const submitForm = async (payload: FormPayload): Promise<{ tg: boolean; e
     };
   } catch (err) {
     console.error('[submitForm] Ошибка:', err);
-    // В production не уходим в клиентские fallback-каналы,
-    // чтобы не получать частичный успех (например, только Telegram без email).
-    if (!import.meta.env.DEV) {
-      return { tg: false, email: false };
-    }
-
-    // Fallback: пробуем старый метод только для локальной разработки
-    const { sendTelegram } = await import('./telegram');
-    const { sendEmail } = await import('./email');
-
-    const formatTelegramMessage = (p: FormPayload): string => {
-      const escapeHtml = (value = ''): string => String(value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
-
-      const toCleanString = (value: unknown): string => {
-        if (value === null || value === undefined) return '';
-        return String(value).trim();
-      };
-
-      const lines = [
-        '<b>🔥 Новая заявка</b>',
-        `<b>Источник:</b> ${escapeHtml(toCleanString(p.source) || 'Сайт')}`,
-        '',
-      ];
-
-      const pushField = (label: string, value: unknown) => {
-        const clean = toCleanString(value);
-        if (!clean) return;
-        lines.push(`<b>${label}:</b> ${escapeHtml(clean)}`);
-      };
-
-      pushField('Имя', p.name);
-      pushField('Телефон', p.phone);
-      pushField('Email', p.email);
-      pushField('Telegram', p.telegram);
-      pushField('Город', p.city);
-      pushField('Дата', p.date);
-      pushField('Формат', p.format);
-      pushField('Комментарий', p.comment);
-
-      if (p.extra) {
-        const extraEntries = Object.entries(p.extra)
-          .map(([key, value]) => [toCleanString(key), toCleanString(value)] as const)
-          .filter(([key, value]) => key && value);
-
-        if (extraEntries.length > 0) {
-          lines.push('');
-          lines.push('<b>Параметры расчета:</b>');
-          for (const [key, value] of extraEntries) {
-            lines.push(`• <b>${escapeHtml(key)}:</b> ${escapeHtml(value)}`);
-          }
-        }
-      }
-      return lines.join('\n');
-    };
-
-    const [tg, email] = await Promise.allSettled([
-      sendTelegram(formatTelegramMessage(payload)),
-      sendEmail(payload),
-    ]);
-
     return {
-      tg: tg.status === 'fulfilled' && tg.value,
-      email: email.status === 'fulfilled' && email.value,
+      tg: false,
+      email: false,
     };
   }
 };

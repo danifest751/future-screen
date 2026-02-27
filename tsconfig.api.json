@@ -13,6 +13,6 @@
     "lib": ["ESNext"],
     "types": ["node"]
   },
-  "include": ["api/**/*"],
+  "include": ["api/**/*", "types/**/*.d.ts"],
   "exclude": ["node_modules"]
 }

@@ -10,7 +10,36 @@ const PORT = process.env.SERVER_PORT || 3001;
 const CLIENT_LOGS_DIR = path.join(process.cwd(), 'logs');
 const CLIENT_LOGS_FILE = path.join(CLIENT_LOGS_DIR, 'client-errors.log');
 
-app.use(cors({ origin: true }));
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'https://future-screen.ru,http://localhost:5173,http://127.0.0.1:5173')
+  .split(',')
+  .map((v) => v.trim())
+  .filter(Boolean);
+
+const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
+const RATE_LIMIT_MAX = 10;
+const requestsByIp = new Map();
+
+const isRateLimited = (ip) => {
+  const now = Date.now();
+  const attempts = (requestsByIp.get(ip) || []).filter((ts) => now - ts < RATE_LIMIT_WINDOW_MS);
+  if (attempts.length >= RATE_LIMIT_MAX) {
+    requestsByIp.set(ip, attempts);
+    return true;
+  }
+  attempts.push(now);
+  requestsByIp.set(ip, attempts);
+  return false;
+};
+
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+      return;
+    }
+    callback(new Error('CORS blocked'));
+  },
+}));
 app.use(express.json());
 
 app.post('/api/client-log', async (req, res) => {
@@ -34,6 +63,14 @@ app.post('/api/client-log', async (req, res) => {
     console.error('[ClientLog] Ошибка записи:', err?.message || err);
     res.status(500).json({ ok: false });
   }
+});
+
+app.use('/api', (req, res, next) => {
+  const ip = req.headers['x-forwarded-for']?.toString().split(',')[0].trim() || req.ip || 'unknown';
+  if (isRateLimited(ip)) {
+    return res.status(429).json({ ok: false, error: 'Too many requests' });
+  }
+  return next();
 });
 
 const transporter = nodemailer.createTransport({
@@ -150,8 +187,8 @@ const formatEmailFailureAlertMessage = ({ requestId, source, name, phone, email,
 };
 
 const sendTelegram = async (message) => {
-  const token = process.env.VITE_TG_BOT_TOKEN || process.env.TG_BOT_TOKEN;
-  const chatId = process.env.VITE_TG_CHAT_ID || process.env.TG_CHAT_ID;
+  const token = process.env.TG_BOT_TOKEN;
+  const chatId = process.env.TG_CHAT_ID;
 
   if (!token || !chatId) {
     console.warn('[Telegram] Token/ChatID не настроены');
@@ -332,7 +369,6 @@ app.post('/api/send', async (req, res) => {
       email: adminEmailSent,
       clientEmail: clientEmailSent,
       telegram: tg,
-      tg,
       tgEmailAlertSent,
       ...(adminEmailSent ? {} : { emailError: emailErrorMessage }),
     });
