@@ -17,6 +17,7 @@ const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'https://future-screen.ru
 
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
 const RATE_LIMIT_MAX = 10;
+const SMTP_TIMEOUT_MS = 4000;
 const requestsByIp = new Map();
 
 const isRateLimited = (ip) => {
@@ -77,6 +78,9 @@ const transporter = nodemailer.createTransport({
   host: 'smtp.mail.ru',
   port: 465,
   secure: true,
+  connectionTimeout: SMTP_TIMEOUT_MS,
+  greetingTimeout: SMTP_TIMEOUT_MS,
+  socketTimeout: SMTP_TIMEOUT_MS,
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
@@ -227,156 +231,148 @@ const sendTelegram = async (message) => {
 };
 
 app.post('/api/send', async (req, res) => {
-  try {
-    const { source, name, phone, email, telegram, city, date, format, comment, extra } = req.body;
-    const requestId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+  const { source, name, phone, email, telegram, city, date, format, comment, extra } = req.body ?? {};
+  const requestId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
-    if (!name || !phone) {
-      return res.status(400).json({ ok: false, error: 'Имя и телефон обязательны' });
-    }
+  if (!name || !phone) {
+    return res.status(400).json({ ok: false, error: 'Имя и телефон обязательны' });
+  }
 
-    const lines = [
-      `Новая заявка: ${source || 'Сайт'}`,
-      '',
-      `Имя: ${name}`,
-      `Телефон: ${phone}`,
-    ];
+  res.status(202).json({ ok: true, accepted: true, requestId });
 
-    if (email) lines.push(`Email: ${email}`);
-    if (telegram) lines.push(`Telegram: ${telegram}`);
-    if (city) lines.push(`Город: ${city}`);
-    if (date) lines.push(`Дата: ${date}`);
-    if (format) lines.push(`Формат: ${format}`);
-    if (comment) lines.push(`Комментарий: ${comment}`);
-
-    if (extra && typeof extra === 'object') {
-      lines.push('');
-      for (const [key, value] of Object.entries(extra)) {
-        lines.push(`${key}: ${value}`);
-      }
-    }
-
-    const text = lines.join('\n');
-
-    const htmlLines = lines.map((l) => {
-      if (!l) return '<br>';
-      const [label, ...rest] = l.split(': ');
-      if (rest.length > 0) return `<b>${label}:</b> ${rest.join(': ')}`;
-      return `<b>${l}</b>`;
-    });
-
-    let adminEmailSent = false;
-    let emailErrorMessage = '';
+  void (async () => {
     try {
-      await retryAsync(() => transporter.sendMail({
-        from: `"Future Screen" <${process.env.SMTP_USER}>`,
-        to: process.env.SMTP_TO || process.env.SMTP_USER,
-        replyTo: email || process.env.SMTP_USER,
-        subject: `Заявка: ${source || 'Сайт'} — ${name}`,
-        text,
-        html: htmlLines.join('<br>'),
-      }), {
-        attempts: 3,
-        delayMs: 800,
-        onRetry: (err, attempt, attempts) => {
-          console.warn(`[Email][${requestId}] Retry ${attempt}/${attempts - 1}: ${toErrorMessage(err)}`);
-        },
-      });
-      adminEmailSent = true;
-    } catch (adminErr) {
-      emailErrorMessage = toErrorMessage(adminErr);
-      console.error(`[Email][${requestId}] Ошибка доставки админ-письма:`, emailErrorMessage);
-    }
+      const tgPromise = sendTelegram(formatTelegramMessage({ source, name, phone, email, telegram, city, date, format, comment, extra }));
 
-    let clientEmailSent = false;
-    if (email && String(email).trim()) {
-      const clientLines = [
-        `Здравствуйте, ${name}!`,
+      const lines = [
+        `Новая заявка: ${source || 'Сайт'}`,
         '',
-        'Ваша заявка принята. Мы свяжемся с вами в течение 15 минут.',
-        '',
-        'Детали заявки:',
-        `Источник: ${source || 'Сайт'}`,
+        `Имя: ${name}`,
         `Телефон: ${phone}`,
       ];
 
-      if (city) clientLines.push(`Город: ${city}`);
-      if (date) clientLines.push(`Дата: ${date}`);
-      if (format) clientLines.push(`Формат: ${format}`);
-      if (comment) clientLines.push(`Комментарий: ${comment}`);
+      if (email) lines.push(`Email: ${email}`);
+      if (telegram) lines.push(`Telegram: ${telegram}`);
+      if (city) lines.push(`Город: ${city}`);
+      if (date) lines.push(`Дата: ${date}`);
+      if (format) lines.push(`Формат: ${format}`);
+      if (comment) lines.push(`Комментарий: ${comment}`);
 
       if (extra && typeof extra === 'object') {
-        clientLines.push('');
-        clientLines.push('Детали расчёта:');
+        lines.push('');
         for (const [key, value] of Object.entries(extra)) {
-          clientLines.push(`${key}: ${value}`);
+          lines.push(`${key}: ${value}`);
         }
       }
 
-      clientLines.push('');
-      clientLines.push('С уважением,');
-      clientLines.push('Команда Future Screen');
-
-      const clientHtml = clientLines.map((l) => {
+      const text = lines.join('\n');
+      const htmlLines = lines.map((l) => {
         if (!l) return '<br>';
         const [label, ...rest] = l.split(': ');
         if (rest.length > 0) return `<b>${label}:</b> ${rest.join(': ')}`;
-        return l;
-      }).join('<br>');
+        return `<b>${l}</b>`;
+      });
 
+      let adminEmailSent = false;
+      let emailErrorMessage = '';
       try {
         await retryAsync(() => transporter.sendMail({
+          from: `"Future Screen" <${process.env.SMTP_USER}>`,
+          to: process.env.SMTP_TO || process.env.SMTP_USER,
+          replyTo: email || process.env.SMTP_USER,
+          subject: `Заявка: ${source || 'Сайт'} — ${name}`,
+          text,
+          html: htmlLines.join('<br>'),
+        }), {
+          attempts: 1,
+          delayMs: 200,
+          onRetry: (err, attempt, attempts) => {
+            console.warn(`[Email][${requestId}] Retry ${attempt}/${attempts - 1}: ${toErrorMessage(err)}`);
+          },
+        });
+        adminEmailSent = true;
+      } catch (adminErr) {
+        emailErrorMessage = toErrorMessage(adminErr);
+        console.error(`[Email][${requestId}] Ошибка доставки админ-письма:`, emailErrorMessage);
+      }
+
+      let clientEmailSent = false;
+      if (email && String(email).trim()) {
+        const clientLines = [
+          `Здравствуйте, ${name}!`,
+          '',
+          'Ваша заявка принята. Мы свяжемся с вами в течение 15 минут.',
+          '',
+          'Детали заявки:',
+          `Источник: ${source || 'Сайт'}`,
+          `Телефон: ${phone}`,
+        ];
+
+        if (city) clientLines.push(`Город: ${city}`);
+        if (date) clientLines.push(`Дата: ${date}`);
+        if (format) clientLines.push(`Формат: ${format}`);
+        if (comment) clientLines.push(`Комментарий: ${comment}`);
+
+        if (extra && typeof extra === 'object') {
+          clientLines.push('');
+          clientLines.push('Детали расчёта:');
+          for (const [key, value] of Object.entries(extra)) {
+            clientLines.push(`${key}: ${value}`);
+          }
+        }
+
+        clientLines.push('');
+        clientLines.push('С уважением,');
+        clientLines.push('Команда Future Screen');
+
+        const clientHtml = clientLines.map((l) => {
+          if (!l) return '<br>';
+          const [label, ...rest] = l.split(': ');
+          if (rest.length > 0) return `<b>${label}:</b> ${rest.join(': ')}`;
+          return l;
+        }).join('<br>');
+
+        void retryAsync(() => transporter.sendMail({
           from: `"Future Screen" <${process.env.SMTP_USER}>`,
           to: String(email).trim(),
           subject: 'Ваша заявка принята — Future Screen',
           text: clientLines.join('\n'),
           html: clientHtml,
         }), {
-          attempts: 2,
-          delayMs: 700,
+          attempts: 1,
+          delayMs: 200,
           onRetry: (err, attempt, attempts) => {
             console.warn(`[EmailClient][${requestId}] Retry ${attempt}/${attempts - 1}: ${toErrorMessage(err)}`);
           },
-        });
-        clientEmailSent = true;
-      } catch (clientErr) {
-        console.warn('[Email] Не удалось отправить подтверждение клиенту:', clientErr?.message || clientErr);
+        })
+          .then(() => {
+            clientEmailSent = true;
+          })
+          .catch((clientErr) => {
+            console.warn('[Email] Не удалось отправить подтверждение клиенту:', clientErr?.message || clientErr);
+          });
       }
+
+      const tg = await tgPromise;
+
+      let tgEmailAlertSent = false;
+      if (!adminEmailSent) {
+        tgEmailAlertSent = await sendTelegram(formatEmailFailureAlertMessage({
+          requestId,
+          source,
+          name,
+          phone,
+          email,
+          errorMessage: emailErrorMessage,
+        }));
+      }
+
+      console.log(`[Send][${requestId}] source=${source} email=${adminEmailSent} clientEmail=${clientEmailSent} tg=${tg} tgEmailAlertSent=${tgEmailAlertSent}`);
+    } catch (err) {
+      const message = err?.message || 'Unknown error';
+      console.error(`[Send][${requestId}] Фоновая обработка упала:`, message);
     }
-
-    const tg = await sendTelegram(formatTelegramMessage(req.body));
-
-    let tgEmailAlertSent = false;
-    if (!adminEmailSent) {
-      tgEmailAlertSent = await sendTelegram(formatEmailFailureAlertMessage({
-        requestId,
-        source,
-        name,
-        phone,
-        email,
-        errorMessage: emailErrorMessage,
-      }));
-    }
-
-    console.log(`[Send][${requestId}] source=${source} email=${adminEmailSent} clientEmail=${clientEmailSent} tg=${tg}`);
-
-    const ok = adminEmailSent || tg;
-    const statusCode = ok ? 200 : 502;
-
-    res.status(statusCode).json({
-      ok,
-      requestId,
-      email: adminEmailSent,
-      clientEmail: clientEmailSent,
-      telegram: tg,
-      tgEmailAlertSent,
-      ...(adminEmailSent ? {} : { emailError: emailErrorMessage }),
-    });
-  } catch (err) {
-    const message = err?.message || 'Unknown error';
-    console.error('[Email] Ошибка отправки:', message);
-    res.status(500).json({ ok: false, error: 'Ошибка отправки письма', details: message });
-  }
+  })();
 });
 
 app.listen(PORT, () => {

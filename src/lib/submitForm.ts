@@ -15,6 +15,8 @@ export type FormPayload = {
   referrer?: string;
 };
 
+const REQUEST_TIMEOUT_MS = 15000;
+
 const saveToLeads = async (payload: FormPayload) => {
   try {
     const extra = {
@@ -45,8 +47,8 @@ const saveToLeads = async (payload: FormPayload) => {
 };
 
 export const submitForm = async (payload: FormPayload): Promise<{ tg: boolean; email: boolean }> => {
-  // Сохраняем заявку в Supabase
-  await saveToLeads(payload);
+  // Сохраняем заявку в Supabase неблокирующе (не тормозим UX отправки)
+  void saveToLeads(payload);
 
   // Определяем API URL
   const rawApiUrl = import.meta.env.VITE_API_URL?.trim();
@@ -55,11 +57,20 @@ export const submitForm = async (payload: FormPayload): Promise<{ tg: boolean; e
     : (import.meta.env.DEV ? 'http://localhost:3001/api/send' : '/api/send');
 
   try {
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+    let response: Response;
+    try {
+      response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
+    } finally {
+      window.clearTimeout(timeoutId);
+    }
 
     if (!response.ok) {
       const responseBody = await response.text().catch(() => '');
@@ -78,6 +89,14 @@ export const submitForm = async (payload: FormPayload): Promise<{ tg: boolean; e
       email,
     };
   } catch (err) {
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      console.warn('[submitForm] Таймаут запроса к API');
+      return {
+        tg: false,
+        email: false,
+      };
+    }
+
     console.error('[submitForm] Ошибка:', err);
     return {
       tg: false,
