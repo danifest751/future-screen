@@ -14,6 +14,7 @@ const LOG_TAG = '[client-log]';
 
 const getErrorLogUrl = () => {
   if (import.meta.env.VITE_ERROR_LOG_URL) return import.meta.env.VITE_ERROR_LOG_URL as string;
+  if (import.meta.env.DEV) return 'http://localhost:3001/api/client-log';
   return '/api/client-log';
 };
 
