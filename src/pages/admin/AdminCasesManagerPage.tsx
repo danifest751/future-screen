@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import toast from 'react-hot-toast';
 import AdminLayout from '../../components/admin/AdminLayout';
 import AdminFieldError from '../../components/admin/AdminFieldError';
+import { ConfirmModal, EmptyState } from '../../components/admin/ui';
 import { useCases } from '../../hooks/useCases';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 import type { CaseItem } from '../../data/cases';
@@ -51,6 +52,8 @@ const AdminCasesManagerPage = () => {
   const [caseEditing, setCaseEditing] = useState<string | null>(null);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Pick<CaseItem, 'slug' | 'title'> | null>(null);
+  const [resetModalOpen, setResetModalOpen] = useState(false);
 
   const {
     register,
@@ -169,11 +172,16 @@ const AdminCasesManagerPage = () => {
     reset(defaultValues);
   };
 
-  const handleDelete = async (slug: string, title: string) => {
-    if (!confirm(`Удалить кейс "${title}"?`)) return;
-    const ok = await deleteCase(slug);
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    const ok = await deleteCase(deleteTarget.slug);
     if (ok) toast.success('Кейс удален');
     else toast.error('Не удалось удалить кейс');
+  };
+
+  const handleResetDefaults = async () => {
+    await resetToDefault();
+    toast.success('Кейсы сброшены к демо-значениям');
   };
 
   const sortedCases = useMemo(
@@ -183,6 +191,27 @@ const AdminCasesManagerPage = () => {
 
   return (
     <AdminLayout title="Кейсы" subtitle="Проекты, фото и ключевые метрики">
+      <ConfirmModal
+        open={Boolean(deleteTarget)}
+        danger
+        title="Удалить кейс?"
+        description={deleteTarget ? `Кейс "${deleteTarget.title}" будет удален без возможности восстановления.` : ''}
+        confirmText="Удалить"
+        cancelText="Отмена"
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+      />
+      <ConfirmModal
+        open={resetModalOpen}
+        danger
+        title="Сбросить все кейсы к дефолту?"
+        description="Текущие кейсы будут перезаписаны демо-значениями."
+        confirmText="Сбросить"
+        cancelText="Отмена"
+        onCancel={() => setResetModalOpen(false)}
+        onConfirm={handleResetDefaults}
+      />
+
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="rounded-xl border border-white/10 bg-slate-800 p-6">
           <div className="mb-4 flex items-center justify-between">
@@ -319,10 +348,7 @@ const AdminCasesManagerPage = () => {
             <h2 className="text-xl font-semibold text-white">Список кейсов</h2>
             <button
               type="button"
-              onClick={async () => {
-                await resetToDefault();
-                toast.success('Кейсы сброшены к демо-значениям');
-              }}
+              onClick={() => setResetModalOpen(true)}
               className="text-sm text-slate-300 hover:text-white"
             >
               Сброс к дефолту
@@ -358,7 +384,7 @@ const AdminCasesManagerPage = () => {
                     </button>
                     <button
                       type="button"
-                      onClick={() => void handleDelete(c.slug, c.title)}
+                      onClick={() => setDeleteTarget({ slug: c.slug, title: c.title })}
                       className="rounded border border-red-400/40 px-3 py-1 text-xs font-semibold text-red-200 hover:border-red-400"
                     >
                       Удалить
@@ -367,7 +393,13 @@ const AdminCasesManagerPage = () => {
                 </div>
               </div>
             ))}
-            {sortedCases.length === 0 && <div className="text-center text-slate-400">Кейсов пока нет</div>}
+            {sortedCases.length === 0 && (
+              <EmptyState
+                icon="📁"
+                title="Кейсов пока нет"
+                description="Добавьте первый кейс через форму слева."
+              />
+            )}
           </div>
         </div>
       </div>

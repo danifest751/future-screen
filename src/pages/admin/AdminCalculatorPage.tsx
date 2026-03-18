@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import AdminLayout from '../../components/admin/AdminLayout';
+import { Button, ConfirmModal, EmptyState } from '../../components/admin/ui';
 import { useCalculatorConfig } from '../../hooks/useCalculatorConfig';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 import type {
@@ -35,6 +36,7 @@ const AdminCalculatorPage = () => {
   const [screenProducts, setScreenProducts] = useState<ScreenProduct[]>(config.screenProducts);
   const [costParams, setCostParams] = useState<CostParams>(config.costParams);
   const [discountFactorsText, setDiscountFactorsText] = useState(config.costParams.discountFactors.join(', '));
+  const [resetModalOpen, setResetModalOpen] = useState(false);
 
   useEffect(() => {
     setPitchList(config.pitchOptions);
@@ -193,8 +195,24 @@ const AdminCalculatorPage = () => {
     toast.success('Конфигурация калькулятора сохранена');
   };
 
+  const handleResetDefaults = () => {
+    resetConfig();
+    toast.success('Конфиг калькулятора сброшен');
+  };
+
   return (
     <AdminLayout title="Калькулятор" subtitle="Параметры, модели экранов и коэффициенты расчета">
+      <ConfirmModal
+        open={resetModalOpen}
+        danger
+        title="Сбросить конфигурацию к дефолту?"
+        description="Текущие несохраненные изменения будут потеряны."
+        confirmText="Сбросить"
+        cancelText="Отмена"
+        onCancel={() => setResetModalOpen(false)}
+        onConfirm={handleResetDefaults}
+      />
+
       <div className="rounded-xl border border-white/10 bg-slate-800 p-6">
         {hasUnsavedChanges && (
           <div className="mb-4 inline-flex rounded-full border border-amber-400/40 bg-amber-500/10 px-3 py-1 text-xs text-amber-200">
@@ -222,45 +240,22 @@ const AdminCalculatorPage = () => {
         </div>
 
         <div className="mb-6 flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            onClick={addPitch}
-            className="rounded-lg border border-white/15 px-3 py-2 text-sm text-white hover:border-white/30"
-          >
+          <Button type="button" variant="secondary" size="md" onClick={addPitch}>
             Добавить шаг пикселя
-          </button>
-          <button
-            type="button"
-            onClick={addSizePreset}
-            className="rounded-lg border border-white/15 px-3 py-2 text-sm text-white hover:border-white/30"
-          >
+          </Button>
+          <Button type="button" variant="secondary" size="md" onClick={addSizePreset}>
             Добавить типовой размер
-          </button>
-          <button
-            type="button"
-            onClick={addProduct}
-            className="rounded-lg border border-white/15 px-3 py-2 text-sm text-white hover:border-white/30"
-          >
+          </Button>
+          <Button type="button" variant="secondary" size="md" onClick={addProduct}>
             Добавить модель экрана
-          </button>
+          </Button>
           <div className="flex-1" />
-          <button
-            type="button"
-            onClick={() => {
-              resetConfig();
-              toast.success('Конфиг калькулятора сброшен');
-            }}
-            className="rounded-lg border border-white/20 px-4 py-2 text-sm font-semibold text-slate-200 hover:border-white/40"
-          >
+          <Button type="button" variant="secondary" size="md" onClick={() => setResetModalOpen(true)}>
             Сбросить к дефолту
-          </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            className="rounded-lg bg-brand-500 px-4 py-2 font-semibold text-white hover:bg-brand-400"
-          >
+          </Button>
+          <Button type="button" variant="primary" size="md" onClick={handleSave}>
             Сохранить конфигурацию
-          </button>
+          </Button>
         </div>
 
         <div className="space-y-6">
@@ -276,9 +271,9 @@ const AdminCalculatorPage = () => {
                       onChange={(e) => updatePitchField(idx, 'label', e.target.value)}
                       placeholder="Например: P3.9"
                     />
-                    <button type="button" onClick={() => removePitch(idx)} className="text-xs text-red-300 hover:text-red-200">
+                    <Button type="button" variant="danger" size="sm" onClick={() => removePitch(idx)}>
                       Удалить
-                    </button>
+                    </Button>
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-xs text-slate-300">
                     <label>
@@ -333,7 +328,13 @@ const AdminCalculatorPage = () => {
                   </div>
                 </div>
               ))}
-              {pitchList.length === 0 && <div className="text-sm text-slate-400">Пусто. Добавьте шаг пикселя.</div>}
+              {pitchList.length === 0 && (
+                <EmptyState
+                  icon="📐"
+                  title="Нет шагов пикселя"
+                  description="Добавьте хотя бы один шаг пикселя для расчетов."
+                />
+              )}
             </div>
 
             <div className="space-y-3 rounded-lg border border-white/10 bg-white/5 p-4">
@@ -347,9 +348,9 @@ const AdminCalculatorPage = () => {
                       onChange={(e) => updateSizeField(idx, 'label', e.target.value)}
                       placeholder="Название размера"
                     />
-                    <button type="button" onClick={() => removeSize(idx)} className="text-xs text-red-300 hover:text-red-200">
+                    <Button type="button" variant="danger" size="sm" onClick={() => removeSize(idx)}>
                       Удалить
-                    </button>
+                    </Button>
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-xs text-slate-300">
                     <label>
@@ -375,7 +376,13 @@ const AdminCalculatorPage = () => {
                   </div>
                 </div>
               ))}
-              {sizePresets.length === 0 && <div className="text-sm text-slate-400">Пусто. Добавьте размер.</div>}
+              {sizePresets.length === 0 && (
+                <EmptyState
+                  icon="📏"
+                  title="Нет типовых размеров"
+                  description="Добавьте хотя бы один шаблон размера экрана."
+                />
+              )}
             </div>
           </div>
 
@@ -475,13 +482,19 @@ const AdminCalculatorPage = () => {
                   </label>
                 </div>
                 <div className="mt-2">
-                  <button type="button" onClick={() => removeProduct(idx)} className="text-xs text-red-300 hover:text-red-200">
+                  <Button type="button" variant="danger" size="sm" onClick={() => removeProduct(idx)}>
                     Удалить модель
-                  </button>
+                  </Button>
                 </div>
               </div>
             ))}
-            {screenProducts.length === 0 && <div className="text-sm text-slate-400">Пусто. Добавьте модель экрана.</div>}
+            {screenProducts.length === 0 && (
+              <EmptyState
+                icon="🖥️"
+                title="Нет моделей экранов"
+                description="Добавьте хотя бы одну модель, чтобы калькулятор мог подбирать оборудование."
+              />
+            )}
           </div>
 
           <div className="rounded-lg border border-white/10 bg-white/5 p-4">

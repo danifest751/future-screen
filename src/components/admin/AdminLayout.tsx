@@ -10,6 +10,11 @@ interface Props {
   children: ReactNode;
 }
 
+type BreadcrumbItem = {
+  label: string;
+  to?: string;
+};
+
 const navItems = [
   { to: '/admin', label: 'Дашборд', icon: '📊' },
   { to: '/admin/leads', label: 'Заявки', icon: '📬', badge: true },
@@ -27,6 +32,17 @@ const AdminLayout = ({ title, subtitle, children }: Props) => {
   const { logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [leadCount, setLeadCount] = useState<number>(0);
+
+  const activeNavItem = navItems.find((item) =>
+    item.to === '/admin'
+      ? location.pathname === '/admin'
+      : location.pathname.startsWith(item.to),
+  );
+
+  const breadcrumbs: BreadcrumbItem[] = [
+    { label: 'Админ', to: '/admin' },
+    ...(activeNavItem ? [{ label: activeNavItem.label }] : []),
+  ];
 
   useEffect(() => {
     let mounted = true;
@@ -68,6 +84,8 @@ const AdminLayout = ({ title, subtitle, children }: Props) => {
       {/* Мобильная кнопка меню */}
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
+        aria-label={sidebarOpen ? 'Закрыть меню' : 'Открыть меню'}
+        aria-expanded={sidebarOpen}
         className="fixed left-4 top-4 z-50 flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-slate-800 text-white lg:hidden"
       >
         {sidebarOpen ? '✕' : '☰'}
@@ -86,6 +104,7 @@ const AdminLayout = ({ title, subtitle, children }: Props) => {
         className={`fixed left-0 top-0 z-40 h-full w-64 transform border-r border-white/10 bg-slate-800 transition-transform duration-300 lg:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
+        aria-hidden={!sidebarOpen}
       >
         <div className="flex h-full flex-col">
           {/* Логотип */}
@@ -125,9 +144,13 @@ const AdminLayout = ({ title, subtitle, children }: Props) => {
                     <span>{item.label}</span>
                   </div>
                   {item.badge && (
-                    <span className="flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-red-500 px-1 text-xs font-bold">
-                      {item.to === '/admin/leads' && leadCount > 0 ? leadCount : null}
-                    </span>
+                     <>
+                       {item.to === '/admin/leads' && leadCount > 0 ? (
+                         <span className="flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-red-500 px-1 text-xs font-bold">
+                           {leadCount}
+                         </span>
+                       ) : null}
+                     </>
                   )}
                 </Link>
               );
@@ -155,6 +178,24 @@ const AdminLayout = ({ title, subtitle, children }: Props) => {
             <div className="flex h-16 items-center justify-between px-6 py-4">
               <div>
                 <h1 className="text-xl font-semibold text-white">{title}</h1>
+                {breadcrumbs.length > 1 && (
+                  <div className="mt-1 text-sm text-slate-400">
+                    {breadcrumbs.map((b, idx) => (
+                      <span key={`${b.label}-${idx}`}>
+                        {idx > 0 ? (
+                          <span className="mx-2 text-slate-600">/</span>
+                        ) : null}
+                        {b.to ? (
+                          <Link to={b.to} className="hover:text-white">
+                            {b.label}
+                          </Link>
+                        ) : (
+                          <span className="text-slate-200">{b.label}</span>
+                        )}
+                      </span>
+                    ))}
+                  </div>
+                )}
                 {subtitle && (
                   <p className="text-sm text-slate-400">{subtitle}</p>
                 )}

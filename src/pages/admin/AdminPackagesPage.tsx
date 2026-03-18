@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import toast from 'react-hot-toast';
 import AdminLayout from '../../components/admin/AdminLayout';
-import AdminFieldError from '../../components/admin/AdminFieldError';
+import { Button, ConfirmModal, EmptyState, Field, Input, Textarea } from '../../components/admin/ui';
 import { usePackages } from '../../hooks/usePackages';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 import type { Package } from '../../data/packages';
@@ -38,6 +38,8 @@ const splitList = (value: string) =>
 const AdminPackagesPage = () => {
   const { packages, upsert, remove, resetToDefault } = usePackages();
   const [editingId, setEditingId] = useState<Package['id'] | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Package | null>(null);
+  const [resetModalOpen, setResetModalOpen] = useState(false);
 
   const {
     register,
@@ -89,10 +91,43 @@ const AdminPackagesPage = () => {
     reset(defaultValues);
   };
 
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    const ok = await remove(deleteTarget.id);
+    if (ok) toast.success('Пакет удалён');
+    else toast.error('Ошибка удаления пакета');
+  };
+
+  const handleResetDefaults = async () => {
+    await resetToDefault();
+    toast.success('Пакеты сброшены к дефолту');
+  };
+
   const sortedPackages = useMemo(() => [...packages], [packages]);
 
   return (
     <AdminLayout title="Пакеты" subtitle="Управление пакетами и ценовыми предложениями">
+      <ConfirmModal
+        open={Boolean(deleteTarget)}
+        danger
+        title="Удалить пакет?"
+        description={deleteTarget ? `Пакет "${deleteTarget.name}" будет удален без возможности восстановления.` : ''}
+        confirmText="Удалить"
+        cancelText="Отмена"
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+      />
+      <ConfirmModal
+        open={resetModalOpen}
+        danger
+        title="Сбросить все пакеты к дефолту?"
+        description="Текущие изменения будут перезаписаны демо-данными."
+        confirmText="Сбросить"
+        cancelText="Отмена"
+        onCancel={() => setResetModalOpen(false)}
+        onConfirm={handleResetDefaults}
+      />
+
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="rounded-xl border border-white/10 bg-slate-800 p-6">
           <div className="mb-4 flex items-center justify-between">
@@ -110,51 +145,43 @@ const AdminPackagesPage = () => {
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
-            <label className="text-sm text-slate-200">
-              ID*
-              <input
-                className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
-                disabled={Boolean(editingId)}
-                {...register('id')}
-              />
-              <AdminFieldError message={errors.id?.message} />
-            </label>
+            <Field label="ID" required error={errors.id?.message}>
+              <Input disabled={Boolean(editingId)} {...register('id')} />
+            </Field>
 
-            <label className="text-sm text-slate-200">
-              Название*
-              <input className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2" {...register('name')} />
-              <AdminFieldError message={errors.name?.message} />
-            </label>
+            <Field label="Название" required error={errors.name?.message}>
+              <Input {...register('name')} />
+            </Field>
 
-            <label className="text-sm text-slate-200">
-              Для форматов* (через запятую или новую строку)
-              <textarea className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2" rows={2} {...register('forFormatsText')} />
-              <AdminFieldError message={errors.forFormatsText?.message} />
-            </label>
-
-            <label className="text-sm text-slate-200">
-              Состав* (каждый пункт с новой строки)
-              <textarea className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2" rows={3} {...register('includesText')} />
-              <AdminFieldError message={errors.includesText?.message} />
-            </label>
-
-            <label className="text-sm text-slate-200">
-              Опции (необязательно)
-              <textarea className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2" rows={2} {...register('optionsText')} />
-            </label>
-
-            <label className="text-sm text-slate-200">
-              Подсказка цены
-              <input className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2" {...register('priceHint')} />
-            </label>
-
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full rounded-lg bg-brand-500 px-4 py-2 font-semibold text-white hover:bg-brand-400 disabled:opacity-60"
+            <Field
+              label="Для форматов"
+              required
+              hint="Через запятую или новую строку"
+              error={errors.forFormatsText?.message}
             >
-              {isSubmitting ? 'Сохраняем...' : editingId ? 'Сохранить' : 'Добавить'}
-            </button>
+              <Textarea rows={2} {...register('forFormatsText')} />
+            </Field>
+
+            <Field
+              label="Состав"
+              required
+              hint="Каждый пункт с новой строки"
+              error={errors.includesText?.message}
+            >
+              <Textarea rows={3} {...register('includesText')} />
+            </Field>
+
+            <Field label="Опции" hint="Необязательно">
+              <Textarea rows={2} {...register('optionsText')} />
+            </Field>
+
+            <Field label="Подсказка цены">
+              <Input {...register('priceHint')} />
+            </Field>
+
+            <Button type="submit" loading={isSubmitting} className="w-full">
+              {editingId ? 'Сохранить' : 'Добавить'}
+            </Button>
           </form>
         </div>
 
@@ -163,10 +190,7 @@ const AdminPackagesPage = () => {
             <h2 className="text-xl font-semibold text-white">Список пакетов</h2>
             <button
               type="button"
-              onClick={async () => {
-                await resetToDefault();
-                toast.success('Пакеты сброшены к дефолту');
-              }}
+              onClick={() => setResetModalOpen(true)}
               className="text-sm text-slate-300 hover:text-white"
             >
               Сброс к дефолту
@@ -194,12 +218,7 @@ const AdminPackagesPage = () => {
                     </button>
                     <button
                       type="button"
-                      onClick={async () => {
-                        if (!confirm(`Удалить пакет "${p.name}"?`)) return;
-                        const ok = await remove(p.id);
-                        if (ok) toast.success('Пакет удалён');
-                        else toast.error('Ошибка удаления пакета');
-                      }}
+                      onClick={() => setDeleteTarget(p)}
                       className="rounded border border-red-400/40 px-3 py-1 text-xs font-semibold text-red-200 hover:border-red-400"
                     >
                       Удалить
@@ -208,7 +227,13 @@ const AdminPackagesPage = () => {
                 </div>
               </div>
             ))}
-            {sortedPackages.length === 0 && <div className="text-center text-slate-400">Пакетов пока нет</div>}
+            {sortedPackages.length === 0 && (
+              <EmptyState
+                icon="📦"
+                title="Пакетов пока нет"
+                description="Добавьте первый пакет через форму слева."
+              />
+            )}
           </div>
         </div>
       </div>
