@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import AdminLayout from '../../components/admin/AdminLayout';
 import toast from 'react-hot-toast';
 import { useLeads } from '../../hooks/useLeads';
@@ -31,6 +31,12 @@ const AdminLeadsPage = () => {
     } finally {
       setClearSubmitting(false);
     }
+  };
+
+  const resetFilters = () => {
+    setFilter('');
+    setSelectedSource('all');
+    setDebouncedFilter('');
   };
 
   const exportLogs = () => {
@@ -85,19 +91,23 @@ const AdminLeadsPage = () => {
   const sources = Array.from(new Set(logs.map((l) => l.source)));
 
   // Фильтрация
-  const filteredLogs = logs.filter((log) => {
-    const q = debouncedFilter.trim();
-    const matchesFilter =
-      q === '' ||
-      log.name.toLowerCase().includes(q.toLowerCase()) ||
-      log.phone.includes(q) ||
-      log.email?.toLowerCase().includes(q.toLowerCase()) ||
-      log.city?.toLowerCase().includes(q.toLowerCase());
+  const filteredLogs = useMemo(
+    () =>
+      logs.filter((log) => {
+        const q = debouncedFilter.trim();
+        const matchesFilter =
+          q === '' ||
+          log.name.toLowerCase().includes(q.toLowerCase()) ||
+          log.phone.includes(q) ||
+          log.email?.toLowerCase().includes(q.toLowerCase()) ||
+          log.city?.toLowerCase().includes(q.toLowerCase());
 
-    const matchesSource = selectedSource === 'all' || log.source === selectedSource;
+        const matchesSource = selectedSource === 'all' || log.source === selectedSource;
 
-    return matchesFilter && matchesSource;
-  });
+        return matchesFilter && matchesSource;
+      }),
+    [debouncedFilter, logs, selectedSource]
+  );
 
   // Группировка по датам
   const logsByDate = filteredLogs.reduce((acc, log) => {
@@ -130,7 +140,8 @@ const AdminLeadsPage = () => {
 
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div className="text-sm text-slate-400">
-          Всего заявок: <span className="text-white font-semibold">{logs.length}</span>
+          Показано: <span className="font-semibold text-white">{filteredLogs.length}</span> из{' '}
+          <span className="font-semibold text-white">{logs.length}</span>
         </div>
         <div className="flex gap-2">
           <button
@@ -138,7 +149,7 @@ const AdminLeadsPage = () => {
             onClick={exportCSV}
             className="rounded-lg border border-white/20 px-4 py-2 text-sm font-medium text-white hover:border-white/40"
           >
-            📥 Экспорт CSV
+            Экспорт CSV
           </button>
           <button
             type="button"
@@ -158,6 +169,22 @@ const AdminLeadsPage = () => {
       </div>
 
       {/* Фильтры */}
+        <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-slate-400">
+          {filter.trim() && <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1">Поиск: {filter.trim()}</span>}
+          {selectedSource !== 'all' && (
+            <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1">Источник: {selectedSource}</span>
+          )}
+          {(filter.trim() || selectedSource !== 'all') && (
+            <button
+              type="button"
+              onClick={resetFilters}
+              className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-slate-300 hover:text-white"
+            >
+              Сбросить фильтры
+            </button>
+          )}
+        </div>
+
         <div className="mb-6 grid gap-4 md:grid-cols-2">
           <label className="text-sm text-slate-200">
             Поиск

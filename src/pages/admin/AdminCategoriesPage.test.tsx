@@ -1,7 +1,7 @@
 import React from 'react';
-import { describe, expect, it, vi } from 'vitest';
 import { createRoot } from 'react-dom/client';
-import AdminPackagesPage from './AdminPackagesPage';
+import { describe, expect, it, vi } from 'vitest';
+import AdminCategoriesPage from './AdminCategoriesPage';
 
 vi.mock('../../components/admin/AdminLayout', () => ({
   default: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
@@ -11,16 +11,15 @@ const upsertMock = vi.fn(async () => true);
 const removeMock = vi.fn(async () => true);
 const resetToDefaultMock = vi.fn(async () => undefined);
 
-vi.mock('../../hooks/usePackages', () => ({
-  usePackages: () => ({
-    packages: [
+vi.mock('../../hooks/useCategories', () => ({
+  useCategories: () => ({
+    categories: [
       {
-        id: 101,
-        name: 'Пакет Тест',
-        forFormats: ['Концерт', 'Форум'],
-        includes: ['Экран 6x3', 'Монтаж'],
-        options: ['Режиссер эфира'],
-        priceHint: 'от 100 000 ₽',
+        id: 7,
+        title: 'Свет',
+        shortDescription: 'Световое оборудование и сценический свет',
+        bullets: ['LED', 'Пульты', 'Монтаж'],
+        pagePath: '/rent/light',
       },
     ],
     upsert: upsertMock,
@@ -40,13 +39,13 @@ vi.mock('react-hot-toast', () => ({
   },
 }));
 
-describe('AdminPackagesPage edit mode', () => {
-  it('fills form fields when clicking Ред.', async () => {
+describe('AdminCategoriesPage edit mode', () => {
+  it('fills form fields when clicking Редактировать', async () => {
     const el = document.createElement('div');
     document.body.appendChild(el);
     const root = createRoot(el);
 
-    root.render(<AdminPackagesPage />);
+    root.render(<AdminCategoriesPage />);
     await new Promise((r) => setTimeout(r, 0));
 
     const editBtn = Array.from(el.querySelectorAll('button')).find((btn) => btn.textContent?.trim() === 'Редактировать');
@@ -55,17 +54,16 @@ describe('AdminPackagesPage edit mode', () => {
 
     await new Promise((r) => setTimeout(r, 0));
 
-    expect(el.textContent).toContain('Редактирование пакета');
+    expect(el.textContent).toContain('Редактирование категории');
 
     const inputs = Array.from(el.querySelectorAll('input, textarea')) as Array<HTMLInputElement | HTMLTextAreaElement>;
     const values = inputs.map((i) => i.value);
 
-    expect(values).toContain('101');
-    expect(values).toContain('Пакет Тест');
-    expect(values).toContain('Концерт\nФорум');
-    expect(values).toContain('Экран 6x3\nМонтаж');
-    expect(values).toContain('Режиссер эфира');
-    expect(values).toContain('от 100 000 ₽');
+    expect(values).toContain('7');
+    expect(values).toContain('Свет');
+    expect(values).toContain('Световое оборудование и сценический свет');
+    expect(values).toContain('LED\nПульты\nМонтаж');
+    expect(values).toContain('/rent/light');
 
     root.unmount();
     el.remove();

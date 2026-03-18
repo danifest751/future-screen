@@ -38,6 +38,7 @@ const AdminCategoriesPage = () => {
   const [editingId, setEditingId] = useState<Category['id'] | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
   const [resetModalOpen, setResetModalOpen] = useState(false);
+  const [search, setSearch] = useState('');
 
   const {
     register,
@@ -99,7 +100,18 @@ const AdminCategoriesPage = () => {
     toast.success('Категории сброшены к дефолту');
   };
 
-  const sortedCategories = useMemo(() => [...categories], [categories]);
+  const filteredCategories = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return [...categories];
+
+    return categories.filter((c) => {
+      const haystack = [c.id, c.title, c.shortDescription, ...(c.bullets ?? []), c.pagePath]
+        .join(' ')
+        .toLowerCase();
+
+      return haystack.includes(q);
+    });
+  }, [categories, search]);
 
   return (
     <AdminLayout title="Категории" subtitle="Управление категориями аренды">
@@ -127,17 +139,31 @@ const AdminCategoriesPage = () => {
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="rounded-xl border border-white/10 bg-slate-800 p-6">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-white">{editingId ? 'Редактирование категории' : 'Новая категория'}</h2>
-            {isDirty && (
-              <span className="rounded-full border border-amber-400/40 bg-amber-500/10 px-2 py-0.5 text-xs text-amber-200">
-                Есть несохраненные изменения
-              </span>
-            )}
-            {editingId && (
-              <button type="button" onClick={cancelEdit} className="text-sm text-slate-300 hover:text-white">
-                Отмена
-              </button>
-            )}
+            <div>
+              <h2 className="text-xl font-semibold text-white">{editingId ? 'Редактирование категории' : 'Новая категория'}</h2>
+              <p className="mt-1 text-sm text-slate-400">
+                {editingId
+                  ? `Вы редактируете категорию ${String(editingId)}. Сохраните изменения или нажмите «Отмена».`
+                  : 'Создайте новую категорию или выберите существующую справа для редактирования.'}
+              </p>
+            </div>
+            <div className="flex flex-col items-end gap-2">
+              {editingId && (
+                <span className="rounded-full border border-brand-500/40 bg-brand-500/10 px-2 py-0.5 text-xs text-brand-100">
+                  Режим редактирования
+                </span>
+              )}
+              {isDirty && (
+                <span className="rounded-full border border-amber-400/40 bg-amber-500/10 px-2 py-0.5 text-xs text-amber-200">
+                  Есть несохраненные изменения
+                </span>
+              )}
+              {editingId && (
+                <button type="button" onClick={cancelEdit} className="text-sm text-slate-300 hover:text-white">
+                  Отмена
+                </button>
+              )}
+            </div>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
@@ -174,18 +200,32 @@ const AdminCategoriesPage = () => {
 
         <div className="rounded-xl border border-white/10 bg-slate-800 p-6">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-white">Список категорий</h2>
-            <button
-              type="button"
-              onClick={() => setResetModalOpen(true)}
-              className="text-sm text-slate-300 hover:text-white"
-            >
+            <div>
+              <h2 className="text-xl font-semibold text-white">Список категорий</h2>
+              <p className="mt-1 text-sm text-slate-400">
+                Показано {filteredCategories.length} из {categories.length}
+              </p>
+            </div>
+            <button type="button" onClick={() => setResetModalOpen(true)} className="text-sm text-slate-300 hover:text-white">
               Сброс к дефолту
             </button>
           </div>
 
+          <div className="mb-4 flex items-center gap-2">
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Поиск по названию, пути, описанию..."
+            />
+            {search && (
+              <Button type="button" variant="ghost" size="md" onClick={() => setSearch('')}>
+                Очистить
+              </Button>
+            )}
+          </div>
+
           <div className="space-y-3">
-            {sortedCategories.map((c) => (
+            {filteredCategories.map((c) => (
               <div key={c.id} className="rounded-lg border border-white/10 bg-white/5 p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -196,7 +236,7 @@ const AdminCategoriesPage = () => {
                   </div>
                   <div className="flex flex-col gap-2">
                     <button type="button" onClick={() => startEdit(c)} className="rounded border border-white/20 px-3 py-1 text-xs font-semibold text-white hover:border-white/40">
-                      Ред.
+                      Редактировать
                     </button>
                     <button
                       type="button"
@@ -209,11 +249,15 @@ const AdminCategoriesPage = () => {
                 </div>
               </div>
             ))}
-            {sortedCategories.length === 0 && (
+            {filteredCategories.length === 0 && (
               <EmptyState
                 icon="🗂️"
-                title="Категорий пока нет"
-                description="Создайте первую категорию аренды через форму слева."
+                title={categories.length === 0 ? 'Категорий пока нет' : 'Ничего не найдено'}
+                description={
+                  categories.length === 0
+                    ? 'Создайте первую категорию аренды через форму слева.'
+                    : 'Попробуйте изменить поисковый запрос или очистить фильтр.'
+                }
               />
             )}
           </div>
