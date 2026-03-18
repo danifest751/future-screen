@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import AdminLayout from '../../components/admin/AdminLayout';
 import { Button, ConfirmModal, EmptyState, Field, Input, Textarea } from '../../components/admin/ui';
 import { useContacts } from '../../hooks/useContacts';
+import { useFormDraftPersistence } from '../../hooks/useFormDraftPersistence';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 
 const schema = z.object({
@@ -38,22 +39,32 @@ const AdminContactsPage = () => {
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors, isSubmitting, isDirty },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues,
   });
 
+  const { clearDraft: clearContactsDraft, hasDraft: hasContactsDraft, isHydrated } = useFormDraftPersistence<FormValues>({
+    enabled: true,
+    storageKey: 'admin-contacts-draft',
+    reset,
+    watch,
+  });
+
   useUnsavedChangesGuard(isDirty);
 
   useEffect(() => {
+    if (!isHydrated || hasContactsDraft) return;
+
     reset({
       phonesText: contacts.phones.join('\n'),
       emailsText: contacts.emails.join('\n'),
       address: contacts.address,
       workingHours: contacts.workingHours,
     });
-  }, [contacts, reset]);
+  }, [contacts, hasContactsDraft, isHydrated, reset]);
 
   const onSubmit = async (values: FormValues) => {
     const ok = await update({
@@ -65,11 +76,14 @@ const AdminContactsPage = () => {
 
     if (ok) toast.success('Контакты сохранены');
     else toast.error('Ошибка сохранения контактов');
+
+    if (ok) clearContactsDraft();
   };
 
   const handleResetDefaults = async () => {
     await resetToDefault();
     toast.success('Контакты сброшены к дефолту');
+    clearContactsDraft();
   };
 
   return (
@@ -81,6 +95,7 @@ const AdminContactsPage = () => {
         description="Текущие контакты будут перезаписаны демо-значениями."
         confirmText="Сбросить"
         cancelText="Отмена"
+        confirmDisabled={isSubmitting}
         onCancel={() => setResetModalOpen(false)}
         onConfirm={handleResetDefaults}
       />
@@ -89,6 +104,11 @@ const AdminContactsPage = () => {
         <div className="rounded-xl border border-white/10 bg-slate-800 p-6">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-xl font-semibold text-white">Редактирование контактов</h2>
+            {isHydrated && hasContactsDraft && (
+              <span className="rounded-full border border-brand-500/40 bg-brand-500/10 px-2 py-0.5 text-xs text-brand-100">
+                Восстановлен черновик
+              </span>
+            )}
             {isDirty && (
               <span className="rounded-full border border-amber-400/40 bg-amber-500/10 px-2 py-0.5 text-xs text-amber-200">
                 Есть несохраненные изменения
@@ -97,7 +117,8 @@ const AdminContactsPage = () => {
             <button
               type="button"
               onClick={() => setResetModalOpen(true)}
-              className="text-sm text-slate-300 hover:text-white"
+              disabled={isSubmitting}
+              className="text-sm text-slate-300 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
             >
               Сброс к дефолту
             </button>

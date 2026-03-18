@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import AdminLayout from '../../components/admin/AdminLayout';
 import { Button, ConfirmModal, EmptyState, Field, Input, Textarea } from '../../components/admin/ui';
 import { usePackages } from '../../hooks/usePackages';
+import { useFormDraftPersistence } from '../../hooks/useFormDraftPersistence';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 import type { Package } from '../../data/packages';
 
@@ -46,10 +47,18 @@ const AdminPackagesPage = () => {
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors, isSubmitting, isDirty },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues,
+  });
+
+  const { clearDraft: clearPackageDraft, hasDraft: hasPackageDraft, isHydrated } = useFormDraftPersistence<FormValues>({
+    enabled: true,
+    storageKey: 'admin-package-draft',
+    reset,
+    watch,
   });
 
   useUnsavedChangesGuard(isDirty);
@@ -73,6 +82,7 @@ const AdminPackagesPage = () => {
     toast.success(editingId ? 'Пакет обновлён' : 'Пакет добавлен');
     setEditingId(null);
     reset(defaultValues);
+    clearPackageDraft();
   };
 
   const startEdit = (item: Package) => {
@@ -90,6 +100,7 @@ const AdminPackagesPage = () => {
   const cancelEdit = () => {
     setEditingId(null);
     reset(defaultValues);
+    clearPackageDraft();
   };
 
   const handleDelete = async () => {
@@ -102,6 +113,7 @@ const AdminPackagesPage = () => {
   const handleResetDefaults = async () => {
     await resetToDefault();
     toast.success('Пакеты сброшены к дефолту');
+    clearPackageDraft();
   };
 
   const filteredPackages = useMemo(() => {
@@ -159,6 +171,9 @@ const AdminPackagesPage = () => {
                   ? `Вы редактируете пакет ${String(editingId)}. Сохраните изменения или нажмите «Отмена».`
                   : 'Создайте новый пакет или выберите существующий справа для редактирования.'}
               </p>
+              {isHydrated && hasPackageDraft && !editingId && (
+                <p className="mt-2 text-xs text-amber-200">Восстановлен черновик формы — можно продолжить с того же места.</p>
+              )}
             </div>
             <div className="flex flex-col items-end gap-2">
               {editingId && (
