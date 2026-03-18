@@ -49,7 +49,11 @@ vi.mock('react-hot-toast', () => ({
 }));
 
 const setNativeValue = (element: HTMLInputElement | HTMLTextAreaElement, value: string) => {
-  const valueSetter = Object.getOwnPropertyDescriptor(element.__proto__, 'value')?.set;
+  const prototype =
+    element instanceof HTMLTextAreaElement
+      ? HTMLTextAreaElement.prototype
+      : HTMLInputElement.prototype;
+  const valueSetter = Object.getOwnPropertyDescriptor(prototype, 'value')?.set;
   valueSetter?.call(element, value);
   element.dispatchEvent(new Event('input', { bubbles: true }));
   element.dispatchEvent(new Event('change', { bubbles: true }));
