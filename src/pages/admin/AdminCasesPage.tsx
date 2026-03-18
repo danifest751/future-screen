@@ -25,29 +25,33 @@ const AdminCasesPage = () => {
   const [caseForm, setCaseForm] = useState<CaseFormState>(emptyCaseForm);
   const [caseEditing, setCaseEditing] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   const caseCanSubmit = useMemo(() => 
     caseForm.slug.trim() && caseForm.title.trim(), 
     [caseForm.slug, caseForm.title]
   );
 
-  const submitCase = (e: FormEvent) => {
+  const submitCase = async (e: FormEvent) => {
     e.preventDefault();
     if (!caseCanSubmit) return;
-    
+
     const payload = {
       ...caseForm,
       services: caseForm.servicesText.split(',').map((s) => s.trim()).filter(Boolean),
       images: caseForm.imagesText.split(',').map((s) => s.trim()).filter(Boolean),
     };
-    
-    if (caseEditing) {
-      updateCase(caseEditing, payload);
-    } else {
-      addCase(payload);
+
+    setIsSaving(true);
+    try {
+      const ok = caseEditing ? await updateCase(caseEditing, payload) : await addCase(payload);
+      if (ok) {
+        setCaseForm(emptyCaseForm);
+        setCaseEditing(null);
+      }
+    } finally {
+      setIsSaving(false);
     }
-    setCaseForm(emptyCaseForm);
-    setCaseEditing(null);
   };
 
   const startEdit = (item: CaseItem) => {
@@ -129,6 +133,7 @@ const AdminCasesPage = () => {
                   className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
                   value={caseForm.slug}
                   onChange={(e) => setCaseForm((f) => ({ ...f, slug: e.target.value }))}
+                  disabled={isSaving}
                   placeholder="forum-ekb-2024"
                   required
                 />
@@ -139,6 +144,7 @@ const AdminCasesPage = () => {
                   className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
                   value={caseForm.title}
                   onChange={(e) => setCaseForm((f) => ({ ...f, title: e.target.value }))}
+                  disabled={isSaving}
                   placeholder="Форум в Екатеринбурге"
                   required
                 />
@@ -152,6 +158,7 @@ const AdminCasesPage = () => {
                   className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
                   value={caseForm.city}
                   onChange={(e) => setCaseForm((f) => ({ ...f, city: e.target.value }))}
+                  disabled={isSaving}
                   placeholder="Екатеринбург"
                 />
               </label>
@@ -161,6 +168,7 @@ const AdminCasesPage = () => {
                   className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
                   value={caseForm.date}
                   onChange={(e) => setCaseForm((f) => ({ ...f, date: e.target.value }))}
+                  disabled={isSaving}
                   placeholder="2024"
                 />
               </label>
@@ -172,6 +180,7 @@ const AdminCasesPage = () => {
                 className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
                 value={caseForm.format}
                 onChange={(e) => setCaseForm((f) => ({ ...f, format: e.target.value }))}
+                disabled={isSaving}
                 placeholder="Форум"
               />
             </label>
@@ -182,6 +191,7 @@ const AdminCasesPage = () => {
                 className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
                 value={caseForm.summary}
                 onChange={(e) => setCaseForm((f) => ({ ...f, summary: e.target.value }))}
+                disabled={isSaving}
                 rows={3}
                 placeholder="Краткое описание проекта"
               />
@@ -193,6 +203,7 @@ const AdminCasesPage = () => {
                 className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
                 value={caseForm.metrics}
                 onChange={(e) => setCaseForm((f) => ({ ...f, metrics: e.target.value }))}
+                disabled={isSaving}
                 placeholder="800 гостей, 2 дня"
               />
             </label>
@@ -203,6 +214,7 @@ const AdminCasesPage = () => {
                 className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
                 value={caseForm.servicesText}
                 onChange={(e) => setCaseForm((f) => ({ ...f, servicesText: e.target.value }))}
+                disabled={isSaving}
                 placeholder="led, sound, light, support"
               />
             </label>
@@ -213,6 +225,7 @@ const AdminCasesPage = () => {
                 className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
                 value={caseForm.imagesText}
                 onChange={(e) => setCaseForm((f) => ({ ...f, imagesText: e.target.value }))}
+                disabled={isSaving}
                 rows={2}
                 placeholder="https://..."
               />
@@ -221,9 +234,9 @@ const AdminCasesPage = () => {
             <button
               type="submit"
               disabled={!caseCanSubmit}
-              className="w-full rounded-lg bg-brand-500 px-4 py-2 font-semibold text-white hover:bg-brand-400 disabled:opacity-50"
+              className="w-full rounded-lg bg-brand-500 px-4 py-2 font-semibold text-white hover:bg-brand-400 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {caseEditing ? 'Сохранить кейс' : 'Добавить кейс'}
+              {isSaving ? 'Сохранение...' : caseEditing ? 'Сохранить кейс' : 'Добавить кейс'}
             </button>
           </form>
         </div>
@@ -240,7 +253,8 @@ const AdminCasesPage = () => {
             <button
               type="button"
               onClick={resetToDefault}
-              className="text-sm text-slate-300 hover:text-white"
+              disabled={isSaving}
+              className="text-sm text-slate-300 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
             >
               Сброс к дефолту
             </button>
@@ -251,13 +265,15 @@ const AdminCasesPage = () => {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Поиск по slug, названию, городу, услугам..."
-              className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-slate-500 outline-none focus:border-brand-500"
+              disabled={isSaving}
+              className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-slate-500 outline-none focus:border-brand-500 disabled:cursor-not-allowed disabled:opacity-60"
             />
             {search && (
               <button
                 type="button"
                 onClick={() => setSearch('')}
-                className="rounded-lg border border-white/10 px-3 py-2 text-sm text-slate-300 hover:text-white"
+                disabled={isSaving}
+                className="rounded-lg border border-white/10 px-3 py-2 text-sm text-slate-300 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Очистить
               </button>
@@ -302,18 +318,20 @@ const AdminCasesPage = () => {
                     <button
                       type="button"
                       onClick={() => startEdit(c)}
+                      disabled={isSaving}
                       className="rounded border border-white/20 px-3 py-1 text-xs font-semibold text-white hover:border-white/40"
                     >
                       Редактировать
                     </button>
                     <button
                       type="button"
+                      disabled={isSaving}
                       onClick={() => {
                         if (confirm(`Удалить кейс "${c.title}"?`)) {
                           deleteCase(c.slug);
                         }
                       }}
-                      className="rounded border border-red-400/40 px-3 py-1 text-xs font-semibold text-red-200 hover:border-red-400"
+                      className="rounded border border-red-400/40 px-3 py-1 text-xs font-semibold text-red-200 hover:border-red-400 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       🗑
                     </button>

@@ -122,6 +122,7 @@ const AdminCategoriesPage = () => {
         description={deleteTarget ? `Категория "${deleteTarget.title}" будет удалена без возможности восстановления.` : ''}
         confirmText="Удалить"
         cancelText="Отмена"
+        confirmDisabled={isSubmitting}
         onCancel={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
       />
@@ -132,6 +133,7 @@ const AdminCategoriesPage = () => {
         description="Текущий список категорий будет перезаписан демо-данными."
         confirmText="Сбросить"
         cancelText="Отмена"
+        confirmDisabled={isSubmitting}
         onCancel={() => setResetModalOpen(false)}
         onConfirm={handleResetDefaults}
       />
@@ -159,7 +161,12 @@ const AdminCategoriesPage = () => {
                 </span>
               )}
               {editingId && (
-                <button type="button" onClick={cancelEdit} className="text-sm text-slate-300 hover:text-white">
+                <button
+                  type="button"
+                  onClick={cancelEdit}
+                  disabled={isSubmitting}
+                  className="text-sm text-slate-300 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+                >
                   Отмена
                 </button>
               )}
@@ -206,7 +213,12 @@ const AdminCategoriesPage = () => {
                 Показано {filteredCategories.length} из {categories.length}
               </p>
             </div>
-            <button type="button" onClick={() => setResetModalOpen(true)} className="text-sm text-slate-300 hover:text-white">
+            <button
+              type="button"
+              onClick={() => setResetModalOpen(true)}
+              disabled={isSubmitting}
+              className="text-sm text-slate-300 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+            >
               Сброс к дефолту
             </button>
           </div>
@@ -235,13 +247,19 @@ const AdminCategoriesPage = () => {
                     <div className="mt-1 text-xs text-slate-400">Путь: {c.pagePath}</div>
                   </div>
                   <div className="flex flex-col gap-2">
-                    <button type="button" onClick={() => startEdit(c)} className="rounded border border-white/20 px-3 py-1 text-xs font-semibold text-white hover:border-white/40">
+                    <button
+                      type="button"
+                      onClick={() => startEdit(c)}
+                      disabled={isSubmitting}
+                      className="rounded border border-white/20 px-3 py-1 text-xs font-semibold text-white hover:border-white/40 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
                       Редактировать
                     </button>
                     <button
                       type="button"
                       onClick={() => setDeleteTarget(c)}
-                      className="rounded border border-red-400/40 px-3 py-1 text-xs font-semibold text-red-200 hover:border-red-400"
+                      disabled={isSubmitting}
+                      className="rounded border border-red-400/40 px-3 py-1 text-xs font-semibold text-red-200 hover:border-red-400 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       Удалить
                     </button>
