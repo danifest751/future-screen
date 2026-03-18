@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import AdminLayout from '../../components/admin/AdminLayout';
 import { Button, ConfirmModal, EmptyState, Field, Input, Textarea } from '../../components/admin/ui';
 import { useCategories } from '../../hooks/useCategories';
+import { useFormDraftPersistence } from '../../hooks/useFormDraftPersistence';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 import type { Category } from '../../data/categories';
 
@@ -44,10 +45,18 @@ const AdminCategoriesPage = () => {
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors, isSubmitting, isDirty },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues,
+  });
+
+  const { clearDraft: clearCategoryDraft, hasDraft: hasCategoryDraft, isHydrated } = useFormDraftPersistence<FormValues>({
+    enabled: true,
+    storageKey: 'admin-category-draft',
+    reset,
+    watch,
   });
 
   useUnsavedChangesGuard(isDirty);
@@ -70,6 +79,7 @@ const AdminCategoriesPage = () => {
     toast.success(editingId ? 'Категория обновлена' : 'Категория добавлена');
     setEditingId(null);
     reset(defaultValues);
+    clearCategoryDraft();
   };
 
   const startEdit = (item: Category) => {
@@ -86,6 +96,7 @@ const AdminCategoriesPage = () => {
   const cancelEdit = () => {
     setEditingId(null);
     reset(defaultValues);
+    clearCategoryDraft();
   };
 
   const handleDelete = async () => {
@@ -98,6 +109,7 @@ const AdminCategoriesPage = () => {
   const handleResetDefaults = async () => {
     await resetToDefault();
     toast.success('Категории сброшены к дефолту');
+    clearCategoryDraft();
   };
 
   const filteredCategories = useMemo(() => {
@@ -148,6 +160,9 @@ const AdminCategoriesPage = () => {
                   ? `Вы редактируете категорию ${String(editingId)}. Сохраните изменения или нажмите «Отмена».`
                   : 'Создайте новую категорию или выберите существующую справа для редактирования.'}
               </p>
+              {isHydrated && hasCategoryDraft && !editingId && (
+                <p className="mt-2 text-xs text-amber-200">Восстановлен черновик формы — можно продолжить с того же места.</p>
+              )}
             </div>
             <div className="flex flex-col items-end gap-2">
               {editingId && (
