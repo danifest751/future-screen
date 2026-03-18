@@ -133,6 +133,7 @@ const AdminPackagesPage = () => {
         description={deleteTarget ? `Пакет "${deleteTarget.name}" будет удален без возможности восстановления.` : ''}
         confirmText="Удалить"
         cancelText="Отмена"
+        confirmDisabled={isSubmitting}
         onCancel={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
       />
@@ -143,6 +144,7 @@ const AdminPackagesPage = () => {
         description="Текущие изменения будут перезаписаны демо-данными."
         confirmText="Сбросить"
         cancelText="Отмена"
+        confirmDisabled={isSubmitting}
         onCancel={() => setResetModalOpen(false)}
         onConfirm={handleResetDefaults}
       />
@@ -170,7 +172,12 @@ const AdminPackagesPage = () => {
                 </span>
               )}
               {editingId && (
-                <button type="button" onClick={cancelEdit} className="text-sm text-slate-300 hover:text-white">
+                <button
+                  type="button"
+                  onClick={cancelEdit}
+                  disabled={isSubmitting}
+                  className="text-sm text-slate-300 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+                >
                   Отмена
                 </button>
               )}
@@ -226,7 +233,12 @@ const AdminPackagesPage = () => {
                 Показано {filteredPackages.length} из {packages.length}
               </p>
             </div>
-            <button type="button" onClick={() => setResetModalOpen(true)} className="text-sm text-slate-300 hover:text-white">
+            <button
+              type="button"
+              onClick={() => setResetModalOpen(true)}
+              disabled={isSubmitting}
+              className="text-sm text-slate-300 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+            >
               Сброс к дефолту
             </button>
           </div>
@@ -259,14 +271,16 @@ const AdminPackagesPage = () => {
                     <button
                       type="button"
                       onClick={() => startEdit(p)}
-                      className="rounded border border-white/20 px-3 py-1 text-xs font-semibold text-white hover:border-white/40"
+                      disabled={isSubmitting}
+                      className="rounded border border-white/20 px-3 py-1 text-xs font-semibold text-white hover:border-white/40 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       Редактировать
                     </button>
                     <button
                       type="button"
                       onClick={() => setDeleteTarget(p)}
-                      className="rounded border border-red-400/40 px-3 py-1 text-xs font-semibold text-red-200 hover:border-red-400"
+                      disabled={isSubmitting}
+                      className="rounded border border-red-400/40 px-3 py-1 text-xs font-semibold text-red-200 hover:border-red-400 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       Удалить
                     </button>
