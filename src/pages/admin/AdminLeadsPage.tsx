@@ -1,19 +1,35 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import AdminLayout from '../../components/admin/AdminLayout';
 import toast from 'react-hot-toast';
 import { useLeads } from '../../hooks/useLeads';
 import type { LeadLog } from '../../types/leads';
+import { ConfirmModal, EmptyState, Input, LoadingState } from '../../components/admin/ui';
 
 const AdminLeadsPage = () => {
   const { leads: logs, loading, error: leadsError, clearLeads } = useLeads();
   const [filter, setFilter] = useState('');
+  const [debouncedFilter, setDebouncedFilter] = useState(filter);
   const [selectedSource, setSelectedSource] = useState<string>('all');
+  const [clearModalOpen, setClearModalOpen] = useState(false);
+  const [clearSubmitting, setClearSubmitting] = useState(false);
 
-  const clearLogs = async () => {
-    if (confirm('Вы уверены, что хотите очистить все записи?')) {
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      setDebouncedFilter(filter);
+    }, 250);
+    return () => {
+      window.clearTimeout(t);
+    };
+  }, [filter]);
+
+  const handleClearConfirm = async () => {
+    setClearSubmitting(true);
+    try {
       const ok = await clearLeads();
       if (ok) toast.success('Все заявки удалены');
       else toast.error('Не удалось удалить заявки');
+    } finally {
+      setClearSubmitting(false);
     }
   };
 
@@ -70,12 +86,13 @@ const AdminLeadsPage = () => {
 
   // Фильтрация
   const filteredLogs = logs.filter((log) => {
+    const q = debouncedFilter.trim();
     const matchesFilter =
-      filter === '' ||
-      log.name.toLowerCase().includes(filter.toLowerCase()) ||
-      log.phone.includes(filter) ||
-      log.email?.toLowerCase().includes(filter.toLowerCase()) ||
-      log.city?.toLowerCase().includes(filter.toLowerCase());
+      q === '' ||
+      log.name.toLowerCase().includes(q.toLowerCase()) ||
+      log.phone.includes(q) ||
+      log.email?.toLowerCase().includes(q.toLowerCase()) ||
+      log.city?.toLowerCase().includes(q.toLowerCase());
 
     const matchesSource = selectedSource === 'all' || log.source === selectedSource;
 
@@ -96,7 +113,19 @@ const AdminLeadsPage = () => {
 
   return (
     <AdminLayout title="Лента заявок" subtitle="Все отправленные КП и заявки с форм">
-      {loading && <div className="mb-4 text-sm text-slate-400">Загрузка заявок...</div>}
+      <ConfirmModal
+        open={clearModalOpen}
+        danger
+        title="Очистить все заявки?"
+        description="Удалим все записи из базы. Операцию нельзя отменить."
+        confirmText="Очистить"
+        cancelText="Отмена"
+        confirmDisabled={clearSubmitting}
+        onCancel={() => setClearModalOpen(false)}
+        onConfirm={() => handleClearConfirm()}
+      />
+
+      {loading && <div className="mb-4"><LoadingState title="Загрузка заявок" description="Пожалуйста, подождите" /></div>}
       {leadsError && <div className="mb-4 text-sm text-red-400">Ошибка: {leadsError}</div>}
 
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
@@ -120,7 +149,7 @@ const AdminLeadsPage = () => {
           </button>
           <button
             type="button"
-            onClick={clearLogs}
+            onClick={() => setClearModalOpen(true)}
             className="rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-200 hover:border-red-500/60"
           >
             🗑 Очистить всё
@@ -132,12 +161,11 @@ const AdminLeadsPage = () => {
         <div className="mb-6 grid gap-4 md:grid-cols-2">
           <label className="text-sm text-slate-200">
             Поиск
-            <input
+            <Input
               type="text"
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
               placeholder="Имя, телефон, email, город..."
-              className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-white placeholder:text-slate-500 focus:border-brand-500 focus:outline-none"
             />
           </label>
           <label className="text-sm text-slate-200">
@@ -157,11 +185,15 @@ const AdminLeadsPage = () => {
 
         {/* Лента */}
         {filteredLogs.length === 0 ? (
-          <div className="card text-center text-slate-400">
-            {logs.length === 0
-              ? 'Заявок пока нет. Заполните форму на сайте, чтобы увидеть первую запись.'
-              : 'Ничего не найдено по заданным фильтрам.'}
-          </div>
+          <EmptyState
+            icon="🔎"
+            title={logs.length === 0 ? 'Заявок пока нет' : 'Ничего не найдено'}
+            description={
+              logs.length === 0
+                ? 'Заполните форму на сайте, чтобы увидеть первую запись.'
+                : 'Попробуйте изменить поиск или выбрать другой источник.'
+            }
+          />
         ) : (
           <div className="space-y-6">
             {Object.entries(logsByDate).map(([date, dateLogs]) => (
@@ -176,7 +208,7 @@ const AdminLeadsPage = () => {
             ))}
           </div>
         )}
-    </AdminLayout>
+      </AdminLayout>
   );
 };
 

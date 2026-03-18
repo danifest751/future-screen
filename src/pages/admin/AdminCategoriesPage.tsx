@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import toast from 'react-hot-toast';
 import AdminLayout from '../../components/admin/AdminLayout';
-import AdminFieldError from '../../components/admin/AdminFieldError';
+import { Button, ConfirmModal, EmptyState, Field, Input, Textarea } from '../../components/admin/ui';
 import { useCategories } from '../../hooks/useCategories';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 import type { Category } from '../../data/categories';
@@ -36,6 +36,8 @@ const splitList = (value: string) =>
 const AdminCategoriesPage = () => {
   const { categories, upsert, remove, resetToDefault } = useCategories();
   const [editingId, setEditingId] = useState<Category['id'] | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
+  const [resetModalOpen, setResetModalOpen] = useState(false);
 
   const {
     register,
@@ -85,10 +87,43 @@ const AdminCategoriesPage = () => {
     reset(defaultValues);
   };
 
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    const ok = await remove(deleteTarget.id);
+    if (ok) toast.success('Категория удалена');
+    else toast.error('Ошибка удаления категории');
+  };
+
+  const handleResetDefaults = async () => {
+    await resetToDefault();
+    toast.success('Категории сброшены к дефолту');
+  };
+
   const sortedCategories = useMemo(() => [...categories], [categories]);
 
   return (
     <AdminLayout title="Категории" subtitle="Управление категориями аренды">
+      <ConfirmModal
+        open={Boolean(deleteTarget)}
+        danger
+        title="Удалить категорию?"
+        description={deleteTarget ? `Категория "${deleteTarget.title}" будет удалена без возможности восстановления.` : ''}
+        confirmText="Удалить"
+        cancelText="Отмена"
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+      />
+      <ConfirmModal
+        open={resetModalOpen}
+        danger
+        title="Сбросить категории к дефолту?"
+        description="Текущий список категорий будет перезаписан демо-данными."
+        confirmText="Сбросить"
+        cancelText="Отмена"
+        onCancel={() => setResetModalOpen(false)}
+        onConfirm={handleResetDefaults}
+      />
+
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="rounded-xl border border-white/10 bg-slate-800 p-6">
           <div className="mb-4 flex items-center justify-between">
@@ -106,39 +141,34 @@ const AdminCategoriesPage = () => {
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
-            <label className="text-sm text-slate-200">
-              ID*
-              <input className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2" disabled={Boolean(editingId)} {...register('id')} />
-              <AdminFieldError message={errors.id?.message} />
-            </label>
+            <Field label="ID" required error={errors.id?.message}>
+              <Input disabled={Boolean(editingId)} {...register('id')} />
+            </Field>
 
-            <label className="text-sm text-slate-200">
-              Название*
-              <input className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2" {...register('title')} />
-              <AdminFieldError message={errors.title?.message} />
-            </label>
+            <Field label="Название" required error={errors.title?.message}>
+              <Input {...register('title')} />
+            </Field>
 
-            <label className="text-sm text-slate-200">
-              Краткое описание*
-              <textarea className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2" rows={2} {...register('shortDescription')} />
-              <AdminFieldError message={errors.shortDescription?.message} />
-            </label>
+            <Field label="Краткое описание" required error={errors.shortDescription?.message}>
+              <Textarea rows={2} {...register('shortDescription')} />
+            </Field>
 
-            <label className="text-sm text-slate-200">
-              Буллеты* (каждый с новой строки)
-              <textarea className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2" rows={3} {...register('bulletsText')} />
-              <AdminFieldError message={errors.bulletsText?.message} />
-            </label>
+            <Field
+              label="Буллеты"
+              required
+              hint="Каждый пункт с новой строки"
+              error={errors.bulletsText?.message}
+            >
+              <Textarea rows={3} {...register('bulletsText')} />
+            </Field>
 
-            <label className="text-sm text-slate-200">
-              Путь страницы*
-              <input className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2" {...register('pagePath')} />
-              <AdminFieldError message={errors.pagePath?.message} />
-            </label>
+            <Field label="Путь страницы" required error={errors.pagePath?.message}>
+              <Input {...register('pagePath')} />
+            </Field>
 
-            <button type="submit" disabled={isSubmitting} className="w-full rounded-lg bg-brand-500 px-4 py-2 font-semibold text-white hover:bg-brand-400 disabled:opacity-60">
-              {isSubmitting ? 'Сохраняем...' : editingId ? 'Сохранить' : 'Добавить'}
-            </button>
+            <Button type="submit" loading={isSubmitting} className="w-full">
+              {editingId ? 'Сохранить' : 'Добавить'}
+            </Button>
           </form>
         </div>
 
@@ -147,10 +177,7 @@ const AdminCategoriesPage = () => {
             <h2 className="text-xl font-semibold text-white">Список категорий</h2>
             <button
               type="button"
-              onClick={async () => {
-                await resetToDefault();
-                toast.success('Категории сброшены к дефолту');
-              }}
+              onClick={() => setResetModalOpen(true)}
               className="text-sm text-slate-300 hover:text-white"
             >
               Сброс к дефолту
@@ -173,12 +200,7 @@ const AdminCategoriesPage = () => {
                     </button>
                     <button
                       type="button"
-                      onClick={async () => {
-                        if (!confirm(`Удалить категорию "${c.title}"?`)) return;
-                        const ok = await remove(c.id);
-                        if (ok) toast.success('Категория удалена');
-                        else toast.error('Ошибка удаления категории');
-                      }}
+                      onClick={() => setDeleteTarget(c)}
                       className="rounded border border-red-400/40 px-3 py-1 text-xs font-semibold text-red-200 hover:border-red-400"
                     >
                       Удалить
@@ -187,7 +209,13 @@ const AdminCategoriesPage = () => {
                 </div>
               </div>
             ))}
-            {sortedCategories.length === 0 && <div className="text-center text-slate-400">Категорий пока нет</div>}
+            {sortedCategories.length === 0 && (
+              <EmptyState
+                icon="🗂️"
+                title="Категорий пока нет"
+                description="Создайте первую категорию аренды через форму слева."
+              />
+            )}
           </div>
         </div>
       </div>

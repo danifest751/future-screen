@@ -1,10 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import toast from 'react-hot-toast';
 import AdminLayout from '../../components/admin/AdminLayout';
-import AdminFieldError from '../../components/admin/AdminFieldError';
+import { Button, ConfirmModal, EmptyState, Field, Input, Textarea } from '../../components/admin/ui';
 import { useContacts } from '../../hooks/useContacts';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 
@@ -32,6 +32,7 @@ const splitLines = (value: string) =>
 
 const AdminContactsPage = () => {
   const { contacts, update, resetToDefault } = useContacts();
+  const [resetModalOpen, setResetModalOpen] = useState(false);
 
   const {
     register,
@@ -66,8 +67,24 @@ const AdminContactsPage = () => {
     else toast.error('Ошибка сохранения контактов');
   };
 
+  const handleResetDefaults = async () => {
+    await resetToDefault();
+    toast.success('Контакты сброшены к дефолту');
+  };
+
   return (
     <AdminLayout title="Контакты" subtitle="Телефоны, email, адрес и рабочие часы">
+      <ConfirmModal
+        open={resetModalOpen}
+        danger
+        title="Сбросить контакты к дефолту?"
+        description="Текущие контакты будут перезаписаны демо-значениями."
+        confirmText="Сбросить"
+        cancelText="Отмена"
+        onCancel={() => setResetModalOpen(false)}
+        onConfirm={handleResetDefaults}
+      />
+
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="rounded-xl border border-white/10 bg-slate-800 p-6">
           <div className="mb-4 flex items-center justify-between">
@@ -79,10 +96,7 @@ const AdminContactsPage = () => {
             )}
             <button
               type="button"
-              onClick={async () => {
-                await resetToDefault();
-                toast.success('Контакты сброшены к дефолту');
-              }}
+              onClick={() => setResetModalOpen(true)}
               className="text-sm text-slate-300 hover:text-white"
             >
               Сброс к дефолту
@@ -90,56 +104,66 @@ const AdminContactsPage = () => {
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
-            <label className="text-sm text-slate-200">
-              Телефоны (каждый с новой строки)
-              <textarea className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2" rows={4} {...register('phonesText')} />
-              <AdminFieldError message={errors.phonesText?.message} />
-            </label>
+            <Field
+              label="Телефоны"
+              required
+              hint="Каждый телефон с новой строки"
+              error={errors.phonesText?.message}
+            >
+              <Textarea rows={4} {...register('phonesText')} />
+            </Field>
 
-            <label className="text-sm text-slate-200">
-              Email (каждый с новой строки)
-              <textarea className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2" rows={3} {...register('emailsText')} />
-              <AdminFieldError message={errors.emailsText?.message} />
-            </label>
+            <Field
+              label="Email"
+              required
+              hint="Каждый email с новой строки"
+              error={errors.emailsText?.message}
+            >
+              <Textarea rows={3} {...register('emailsText')} />
+            </Field>
 
-            <label className="text-sm text-slate-200">
-              Адрес
-              <input className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2" {...register('address')} />
-              <AdminFieldError message={errors.address?.message} />
-            </label>
+            <Field label="Адрес" required error={errors.address?.message}>
+              <Input {...register('address')} />
+            </Field>
 
-            <label className="text-sm text-slate-200">
-              Время работы
-              <input className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2" {...register('workingHours')} />
-              <AdminFieldError message={errors.workingHours?.message} />
-            </label>
+            <Field label="Время работы" required error={errors.workingHours?.message}>
+              <Input {...register('workingHours')} />
+            </Field>
 
-            <button type="submit" disabled={isSubmitting} className="w-full rounded-lg bg-brand-500 px-4 py-2 font-semibold text-white hover:bg-brand-400 disabled:opacity-60">
-              {isSubmitting ? 'Сохраняем...' : 'Сохранить контакты'}
-            </button>
+            <Button type="submit" loading={isSubmitting} className="w-full">
+              Сохранить контакты
+            </Button>
           </form>
         </div>
 
         <div className="rounded-xl border border-white/10 bg-slate-800 p-6 text-sm text-slate-200">
           <h2 className="mb-4 text-xl font-semibold text-white">Текущие данные</h2>
-          <div className="space-y-3">
-            <div>
-              <div className="text-xs text-slate-400">Телефоны</div>
-              <div>{contacts.phones.join(', ')}</div>
+          {!contacts.phones.length && !contacts.emails.length ? (
+            <EmptyState
+              icon="📞"
+              title="Контакты пока не заполнены"
+              description="Заполните форму слева и сохраните изменения."
+            />
+          ) : (
+            <div className="space-y-3">
+              <div>
+                <div className="text-xs text-slate-400">Телефоны</div>
+                <div>{contacts.phones.join(', ')}</div>
+              </div>
+              <div>
+                <div className="text-xs text-slate-400">Email</div>
+                <div>{contacts.emails.join(', ')}</div>
+              </div>
+              <div>
+                <div className="text-xs text-slate-400">Адрес</div>
+                <div>{contacts.address}</div>
+              </div>
+              <div>
+                <div className="text-xs text-slate-400">Время работы</div>
+                <div>{contacts.workingHours}</div>
+              </div>
             </div>
-            <div>
-              <div className="text-xs text-slate-400">Email</div>
-              <div>{contacts.emails.join(', ')}</div>
-            </div>
-            <div>
-              <div className="text-xs text-slate-400">Адрес</div>
-              <div>{contacts.address}</div>
-            </div>
-            <div>
-              <div className="text-xs text-slate-400">Время работы</div>
-              <div>{contacts.workingHours}</div>
-            </div>
-          </div>
+          )}
         </div>
       </div>
     </AdminLayout>

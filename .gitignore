@@ -9,3 +9,4 @@ dist/
 .env.*
 *.tsbuildinfo
 .DS_Store
+AUDIT.md

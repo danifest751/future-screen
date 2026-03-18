@@ -11,6 +11,7 @@ import type { Category } from '../../data/categories';
 import type { CaseItem } from '../../data/cases';
 import toast from 'react-hot-toast';
 import { contacts as baseContacts } from '../../data/contacts';
+import { Button, ConfirmModal, EmptyState, Field, Input, Textarea } from '../../components/admin/ui';
 
 const emptyPackage: Package = {
   id: 'light',
@@ -59,6 +60,10 @@ const AdminContentPage = ({
   subtitle = 'Управление пакетами, категориями, контактами и кейсами',
 }: AdminContentPageProps) => {
   const [activeTab, setActiveTab] = useState<Tab>(initialTab);
+  const [pkgDeleteTarget, setPkgDeleteTarget] = useState<Package | null>(null);
+  const [catDeleteTarget, setCatDeleteTarget] = useState<Category | null>(null);
+  const [caseDeleteTarget, setCaseDeleteTarget] = useState<Pick<CaseItem, 'slug' | 'title'> | null>(null);
+  const [resetTarget, setResetTarget] = useState<Tab | null>(null);
 
   useEffect(() => {
     setActiveTab(initialTab);
@@ -271,8 +276,115 @@ const AdminContentPage = ({
     setCaseEditing(item.slug);
   };
 
+  const handleDeletePackage = async () => {
+    if (!pkgDeleteTarget) return;
+    const ok = await removePackage(pkgDeleteTarget.id);
+    if (ok) toast.success('Пакет удалён');
+    else toast.error('Ошибка удаления пакета');
+  };
+
+  const handleDeleteCategory = async () => {
+    if (!catDeleteTarget) return;
+    const ok = await removeCategory(catDeleteTarget.id);
+    if (ok) toast.success('Категория удалена');
+    else toast.error('Ошибка удаления категории');
+  };
+
+  const handleDeleteCase = async () => {
+    if (!caseDeleteTarget) return;
+    const ok = await deleteCase(caseDeleteTarget.slug);
+    if (ok) toast.success('Кейс удален');
+    else toast.error('Ошибка удаления кейса');
+  };
+
+  const handleResetTarget = async () => {
+    if (!resetTarget) return;
+    if (resetTarget === 'packages') {
+      await resetPackages();
+      toast.success('Пакеты сброшены к дефолту');
+      return;
+    }
+    if (resetTarget === 'categories') {
+      await resetCategories();
+      toast.success('Категории сброшены к дефолту');
+      return;
+    }
+    if (resetTarget === 'contacts') {
+      await resetContacts();
+      setContactsDraft(baseContacts);
+      toast.success('Контакты сброшены к дефолту');
+      return;
+    }
+    if (resetTarget === 'calculator') {
+      resetCalcConfig();
+      toast.success('Настройки калькулятора сброшены');
+      return;
+    }
+    if (resetTarget === 'cases') {
+      await resetCases();
+      toast.success('Кейсы сброшены к дефолту');
+    }
+  };
+
+  const resetModalTitle: Record<Tab, string> = {
+    packages: 'Сбросить пакеты к дефолту?',
+    categories: 'Сбросить категории к дефолту?',
+    contacts: 'Сбросить контакты к дефолту?',
+    calculator: 'Сбросить настройки калькулятора?',
+    cases: 'Сбросить кейсы к дефолту?',
+  };
+
+  const resetModalDescription: Record<Tab, string> = {
+    packages: 'Текущий список пакетов будет перезаписан демо-данными.',
+    categories: 'Текущий список категорий будет перезаписан демо-данными.',
+    contacts: 'Контакты будут восстановлены из базового набора.',
+    calculator: 'Все несохраненные изменения конфигурации будут потеряны.',
+    cases: 'Текущий список кейсов будет перезаписан демо-данными.',
+  };
+
   return (
     <AdminLayout title={title} subtitle={subtitle}>
+      <ConfirmModal
+        open={Boolean(pkgDeleteTarget)}
+        danger
+        title="Удалить пакет?"
+        description={pkgDeleteTarget ? `Пакет "${pkgDeleteTarget.name}" будет удален без возможности восстановления.` : ''}
+        confirmText="Удалить"
+        cancelText="Отмена"
+        onCancel={() => setPkgDeleteTarget(null)}
+        onConfirm={handleDeletePackage}
+      />
+      <ConfirmModal
+        open={Boolean(catDeleteTarget)}
+        danger
+        title="Удалить категорию?"
+        description={catDeleteTarget ? `Категория "${catDeleteTarget.title}" будет удалена без возможности восстановления.` : ''}
+        confirmText="Удалить"
+        cancelText="Отмена"
+        onCancel={() => setCatDeleteTarget(null)}
+        onConfirm={handleDeleteCategory}
+      />
+      <ConfirmModal
+        open={Boolean(caseDeleteTarget)}
+        danger
+        title="Удалить кейс?"
+        description={caseDeleteTarget ? `Кейс "${caseDeleteTarget.title}" будет удален без возможности восстановления.` : ''}
+        confirmText="Удалить"
+        cancelText="Отмена"
+        onCancel={() => setCaseDeleteTarget(null)}
+        onConfirm={handleDeleteCase}
+      />
+      <ConfirmModal
+        open={Boolean(resetTarget)}
+        danger
+        title={resetTarget ? resetModalTitle[resetTarget] : ''}
+        description={resetTarget ? resetModalDescription[resetTarget] : ''}
+        confirmText="Сбросить"
+        cancelText="Отмена"
+        onCancel={() => setResetTarget(null)}
+        onConfirm={handleResetTarget}
+      />
+
       {tabsMode === 'all' && (
         <div className="mb-4 flex items-center justify-between">
           <div className="flex flex-wrap gap-2">
@@ -310,76 +422,64 @@ const AdminContentPage = ({
               <div className="flex items-center justify-between">
                 <div className="text-lg font-semibold text-white">{pkgEditing ? 'Редактировать пакет' : 'Создать пакет'}</div>
                 {pkgEditing && (
-                  <button type="button" className="text-sm text-slate-300 hover:text-white" onClick={() => { setPkgForm(emptyPackage); setPkgEditing(null); }}>
+                  <Button type="button" variant="ghost" size="sm" onClick={() => { setPkgForm(emptyPackage); setPkgEditing(null); }}>
                     Сбросить
-                  </button>
+                  </Button>
                 )}
               </div>
-              <label className="text-sm text-slate-200">
-                ID*
-                <input
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+              <Field label="ID" required>
+                <Input
                   value={pkgForm.id}
                   onChange={(e) => setPkgForm((f) => ({ ...f, id: e.target.value as Package['id'] }))}
                   required
                   disabled={!!pkgEditing}
                 />
-              </label>
-              <label className="text-sm text-slate-200">
-                Название*
-                <input
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+              </Field>
+              <Field label="Название" required>
+                <Input
                   value={pkgForm.name}
                   onChange={(e) => setPkgForm((f) => ({ ...f, name: e.target.value }))}
                   required
                 />
-              </label>
-              <label className="text-sm text-slate-200">
-                Для форматов (через запятую или строки)
-                <textarea
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+              </Field>
+              <Field label="Для форматов" hint="Через запятую или новую строку">
+                <Textarea
                   value={pkgForm.forFormats.join(', ')}
                   onChange={(e) => setPkgForm((f) => ({ ...f, forFormats: e.target.value.split(/[\n,]/).map((s) => s.trim()).filter(Boolean) }))}
                   rows={2}
                 />
-              </label>
-              <label className="text-sm text-slate-200">
-                Включает (список)
-                <textarea
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+              </Field>
+              <Field label="Состав" hint="Каждый пункт с новой строки">
+                <Textarea
                   value={pkgForm.includes.join('\n')}
                   onChange={(e) => setPkgForm((f) => ({ ...f, includes: e.target.value.split(/\n/).map((s) => s.trim()).filter(Boolean) }))}
                   rows={3}
                 />
-              </label>
-              <label className="text-sm text-slate-200">
-                Опции (опционально)
-                <textarea
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+              </Field>
+              <Field label="Опции" hint="Необязательно">
+                <Textarea
                   value={pkgForm.options?.join('\n') || ''}
                   onChange={(e) => setPkgForm((f) => ({ ...f, options: e.target.value ? e.target.value.split(/\n/).map((s) => s.trim()).filter(Boolean) : [] }))}
                   rows={2}
                 />
-              </label>
-              <label className="text-sm text-slate-200">
-                Подсказка цены
-                <input
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+              </Field>
+              <Field label="Подсказка цены">
+                <Input
                   value={pkgForm.priceHint || ''}
                   onChange={(e) => setPkgForm((f) => ({ ...f, priceHint: e.target.value }))}
                 />
-              </label>
-              <button type="submit" disabled={!pkgCanSubmit} className="rounded-lg bg-brand-500 px-4 py-2 font-semibold text-white hover:bg-brand-400 disabled:opacity-50">
+              </Field>
+              <Button type="submit" disabled={!pkgCanSubmit} className="w-full">
                 {pkgEditing ? 'Сохранить' : 'Добавить'}
-              </button>
+              </Button>
             </form>
 
             <div className="card space-y-3">
               <div className="flex items-center justify-between">
                 <div className="text-lg font-semibold text-white">Список пакетов</div>
-                <button type="button" className="text-sm text-slate-300 hover:text-white" onClick={resetPackages}>
+                <Button type="button" variant="ghost" size="sm" onClick={() => setResetTarget('packages')}>
                   Сброс к дефолту
-                </button>
+                </Button>
               </div>
               <div className="space-y-2 text-sm text-slate-200">
                 {packages.map((p) => (
@@ -393,24 +493,32 @@ const AdminContentPage = ({
                     {p.options && p.options.length > 0 && <div className="text-xs text-slate-400">Опции: {p.options.join(', ')}</div>}
                     {p.priceHint && <div className="text-xs text-brand-100">{p.priceHint}</div>}
                     <div className="mt-2 flex gap-2">
-                      <button
+                      <Button
                         type="button"
+                        variant="secondary"
+                        size="sm"
                         onClick={() => { setPkgForm(p); setPkgEditing(p.id); }}
-                        className="rounded-lg border border-white/20 px-3 py-1 text-xs font-semibold text-white hover:border-white/40"
                       >
                         Редактировать
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         type="button"
-                        onClick={() => removePackage(p.id)}
-                        className="rounded-lg border border-red-400/40 px-3 py-1 text-xs font-semibold text-red-200 hover:border-red-400"
+                        variant="danger"
+                        size="sm"
+                        onClick={() => setPkgDeleteTarget(p)}
                       >
                         Удалить
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 ))}
-                {packages.length === 0 && <div className="text-slate-400">Нет пакетов.</div>}
+                {packages.length === 0 && (
+                  <EmptyState
+                    icon="📦"
+                    title="Нет пакетов"
+                    description="Создайте первый пакет через форму слева."
+                  />
+                )}
               </div>
             </div>
           </div>
@@ -426,67 +534,57 @@ const AdminContentPage = ({
               <div className="flex items-center justify-between">
                 <div className="text-lg font-semibold text-white">{catEditing ? 'Редактировать категорию' : 'Создать категорию'}</div>
                 {catEditing && (
-                  <button type="button" className="text-sm text-slate-300 hover:text-white" onClick={() => { setCatForm(emptyCategory); setCatEditing(null); }}>
+                  <Button type="button" variant="ghost" size="sm" onClick={() => { setCatForm(emptyCategory); setCatEditing(null); }}>
                     Сбросить
-                  </button>
+                  </Button>
                 )}
               </div>
-              <label className="text-sm text-slate-200">
-                ID*
-                <input
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+              <Field label="ID" required>
+                <Input
                   value={catForm.id}
                   onChange={(e) => setCatForm((f) => ({ ...f, id: e.target.value as Category['id'] }))}
                   required
                   disabled={!!catEditing}
                 />
-              </label>
-              <label className="text-sm text-slate-200">
-                Заголовок*
-                <input
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+              </Field>
+              <Field label="Заголовок" required>
+                <Input
                   value={catForm.title}
                   onChange={(e) => setCatForm((f) => ({ ...f, title: e.target.value }))}
                   required
                 />
-              </label>
-              <label className="text-sm text-slate-200">
-                Краткое описание
-                <textarea
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+              </Field>
+              <Field label="Краткое описание">
+                <Textarea
                   value={catForm.shortDescription}
                   onChange={(e) => setCatForm((f) => ({ ...f, shortDescription: e.target.value }))}
                   rows={2}
                 />
-              </label>
-              <label className="text-sm text-slate-200">
-                Буллеты (каждый с новой строки или через запятую)
-                <textarea
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+              </Field>
+              <Field label="Буллеты" hint="Каждый с новой строки или через запятую">
+                <Textarea
                   value={catForm.bullets.join('\n')}
-                  onChange={(e) => setCatForm((f) => ({ ...f, bullets: e.target.value.split(/\n/).map((s) => s.trim()).filter(Boolean) }))}
+                  onChange={(e) => setCatForm((f) => ({ ...f, bullets: e.target.value.split(/[\n,]/).map((s) => s.trim()).filter(Boolean) }))}
                   rows={3}
                 />
-              </label>
-              <label className="text-sm text-slate-200">
-                Путь страницы
-                <input
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+              </Field>
+              <Field label="Путь страницы">
+                <Input
                   value={catForm.pagePath}
                   onChange={(e) => setCatForm((f) => ({ ...f, pagePath: e.target.value }))}
                 />
-              </label>
-              <button type="submit" disabled={!catCanSubmit} className="rounded-lg bg-brand-500 px-4 py-2 font-semibold text-white hover:bg-brand-400 disabled:opacity-50">
+              </Field>
+              <Button type="submit" disabled={!catCanSubmit} className="w-full">
                 {catEditing ? 'Сохранить' : 'Добавить'}
-              </button>
+              </Button>
             </form>
 
             <div className="card space-y-3">
               <div className="flex items-center justify-between">
                 <div className="text-lg font-semibold text-white">Список категорий</div>
-                <button type="button" className="text-sm text-slate-300 hover:text-white" onClick={resetCategories}>
+                <Button type="button" variant="ghost" size="sm" onClick={() => setResetTarget('categories')}>
                   Сброс к дефолту
-                </button>
+                </Button>
               </div>
               <div className="space-y-2 text-sm text-slate-200">
                 {categories.map((c) => (
@@ -499,24 +597,32 @@ const AdminContentPage = ({
                     <div className="mt-1 text-xs text-slate-300">{c.shortDescription}</div>
                     <div className="text-xs text-slate-400">Буллеты: {c.bullets.join(' · ')}</div>
                     <div className="mt-2 flex gap-2">
-                      <button
+                      <Button
                         type="button"
+                        variant="secondary"
+                        size="sm"
                         onClick={() => { setCatForm(c); setCatEditing(c.id); }}
-                        className="rounded-lg border border-white/20 px-3 py-1 text-xs font-semibold text-white hover:border-white/40"
                       >
                         Редактировать
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         type="button"
-                        onClick={() => removeCategory(c.id)}
-                        className="rounded-lg border border-red-400/40 px-3 py-1 text-xs font-semibold text-red-200 hover:border-red-400"
+                        variant="danger"
+                        size="sm"
+                        onClick={() => setCatDeleteTarget(c)}
                       >
                         Удалить
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 ))}
-                {categories.length === 0 && <div className="text-slate-400">Нет категорий.</div>}
+                {categories.length === 0 && (
+                  <EmptyState
+                    icon="🗂️"
+                    title="Нет категорий"
+                    description="Создайте первую категорию через форму слева."
+                  />
+                )}
               </div>
             </div>
           </div>
@@ -531,47 +637,39 @@ const AdminContentPage = ({
             <form className="card space-y-3" onSubmit={submitContacts}>
             <div className="flex items-center justify-between">
               <div className="text-lg font-semibold text-white">Редактирование контактов</div>
-              <button type="button" className="text-sm text-slate-300 hover:text-white" onClick={() => { setContactsDraft(baseContacts); resetContacts(); }}>
+              <Button type="button" variant="ghost" size="sm" onClick={() => setResetTarget('contacts')}>
                 Сброс к дефолту
-              </button>
+              </Button>
             </div>
-            <label className="text-sm text-slate-200">
-              Телефоны (каждый с новой строки)
-              <textarea
-                className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+            <Field label="Телефоны" hint="Каждый с новой строки">
+              <Textarea
                 value={contactsDraft.phones.join('\n')}
                 onChange={(e) => setContactsDraft((f) => ({ ...f, phones: e.target.value.split(/\n/).map((s) => s.trim()).filter(Boolean) }))}
                 rows={3}
               />
-            </label>
-            <label className="text-sm text-slate-200">
-              Email (каждый с новой строки)
-              <textarea
-                className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+            </Field>
+            <Field label="Email" hint="Каждый с новой строки">
+              <Textarea
                 value={contactsDraft.emails.join('\n')}
                 onChange={(e) => setContactsDraft((f) => ({ ...f, emails: e.target.value.split(/\n/).map((s) => s.trim()).filter(Boolean) }))}
                 rows={2}
               />
-            </label>
-            <label className="text-sm text-slate-200">
-              Адрес
-              <input
-                className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+            </Field>
+            <Field label="Адрес">
+              <Input
                 value={contactsDraft.address}
                 onChange={(e) => setContactsDraft((f) => ({ ...f, address: e.target.value }))}
               />
-            </label>
-            <label className="text-sm text-slate-200">
-              Время работы
-              <input
-                className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+            </Field>
+            <Field label="Время работы">
+              <Input
                 value={contactsDraft.workingHours}
                 onChange={(e) => setContactsDraft((f) => ({ ...f, workingHours: e.target.value }))}
               />
-            </label>
-            <button type="submit" className="rounded-lg bg-brand-500 px-4 py-2 font-semibold text-white hover:bg-brand-400">
+            </Field>
+            <Button type="submit" className="w-full">
               Сохранить контакты
-            </button>
+            </Button>
           </form>
 
           <div className="card space-y-3 text-sm text-slate-200">
@@ -598,13 +696,14 @@ const AdminContentPage = ({
             <div className="card space-y-3">
               <div className="flex items-center justify-between">
                 <div className="text-lg font-semibold text-white">Модели экранов</div>
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
+                  size="sm"
                   onClick={addProduct}
-                  className="rounded-lg border border-white/15 px-3 py-1 text-xs text-white hover:border-white/30"
                 >
                   Добавить
-                </button>
+                </Button>
               </div>
               <div className="space-y-3">
                 {screenProducts.map((p, idx) => (
@@ -624,7 +723,7 @@ const AdminContentPage = ({
                         <option value="indoor">Indoor</option>
                         <option value="outdoor">Outdoor</option>
                       </select>
-                      <button type="button" onClick={() => removeProduct(idx)} className="text-red-300 hover:text-red-200">✕</button>
+                      <Button type="button" variant="danger" size="sm" onClick={() => removeProduct(idx)}>✕</Button>
                     </div>
                     <div className="grid grid-cols-3 gap-2 text-xs text-slate-300">
                       <label>
@@ -753,35 +852,39 @@ const AdminContentPage = ({
           <p className="mb-6 text-sm text-slate-400">Настройки шагов пикселя и типовых размеров</p>
           <div className="space-y-4">
             <div className="flex flex-wrap items-center gap-3">
-            <button
+            <Button
               type="button"
+              variant="secondary"
+              size="md"
               onClick={addPitch}
-              className="rounded-lg border border-white/15 px-3 py-2 text-sm text-white hover:border-white/30"
             >
               Добавить шаг пикселя
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="secondary"
+              size="md"
               onClick={addSizePreset}
-              className="rounded-lg border border-white/15 px-3 py-2 text-sm text-white hover:border-white/30"
             >
               Добавить размер
-            </button>
+            </Button>
             <div className="flex-1" />
-            <button
+            <Button
               type="button"
-              onClick={resetCalcConfig}
-              className="rounded-lg border border-white/15 px-3 py-2 text-sm text-slate-300 hover:text-white"
+              variant="secondary"
+              size="md"
+              onClick={() => setResetTarget('calculator')}
             >
               Сбросить к дефолту
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="primary"
+              size="md"
               onClick={saveCalculatorConfig}
-              className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-400"
             >
               Сохранить
-            </button>
+            </Button>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
@@ -797,7 +900,7 @@ const AdminContentPage = ({
                         onChange={(e) => updatePitchField(idx, 'label', e.target.value)}
                         placeholder="Label"
                       />
-                      <button type="button" onClick={() => removePitch(idx)} className="text-xs text-red-300 hover:text-red-200">Удалить</button>
+                      <Button type="button" variant="danger" size="sm" onClick={() => removePitch(idx)}>Удалить</Button>
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       <label className="text-slate-300">
@@ -870,7 +973,7 @@ const AdminContentPage = ({
                         onChange={(e) => updateSizeField(idx, 'label', e.target.value)}
                         placeholder="Label"
                       />
-                      <button type="button" onClick={() => removeSize(idx)} className="text-xs text-red-300 hover:text-red-200">Удалить</button>
+                      <Button type="button" variant="danger" size="sm" onClick={() => removeSize(idx)}>Удалить</Button>
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       <label className="text-slate-300">
@@ -911,13 +1014,14 @@ const AdminContentPage = ({
               <h2 className="text-xl font-semibold text-white">Кейсы</h2>
               <p className="text-sm text-slate-400">Портфолио проектов</p>
             </div>
-            <button
-              onClick={resetCases}
-              className="rounded-lg border border-red-500/30 px-3 py-1.5 text-sm text-red-400 transition hover:bg-red-500/10"
-              title="Восстановить демо-данные"
+            <Button
+              type="button"
+              variant="danger"
+              size="sm"
+              onClick={() => setResetTarget('cases')}
             >
               Сброс
-            </button>
+            </Button>
           </div>
           
           <div className="grid gap-6 lg:grid-cols-2">
@@ -925,100 +1029,83 @@ const AdminContentPage = ({
               <div className="flex items-center justify-between">
                 <div className="text-lg font-semibold text-white">{caseEditing ? 'Редактировать кейс' : 'Добавить кейс'}</div>
                 {caseEditing && (
-                  <button type="button" className="text-sm text-slate-300 hover:text-white" onClick={() => { setCaseForm(emptyCaseForm); setCaseEditing(null); }}>
+                  <Button type="button" variant="ghost" size="sm" onClick={() => { setCaseForm(emptyCaseForm); setCaseEditing(null); }}>
                     Сбросить
-                  </button>
+                  </Button>
                 )}
               </div>
-              <label className="text-sm text-slate-200">
-                Slug* (латиницей, без пробелов)
-                <input
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+              <Field label="Slug" required hint="Латиницей, без пробелов">
+                <Input
                   value={caseForm.slug}
                   onChange={(e) => setCaseForm((f) => ({ ...f, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') }))}
                   required
                   disabled={!!caseEditing}
                 />
-              </label>
-              <label className="text-sm text-slate-200">
-                Заголовок*
-                <input
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+              </Field>
+              <Field label="Заголовок" required>
+                <Input
                   value={caseForm.title}
                   onChange={(e) => setCaseForm((f) => ({ ...f, title: e.target.value }))}
                   required
                 />
-              </label>
+              </Field>
               <div className="grid grid-cols-2 gap-3">
-                <label className="text-sm text-slate-200">
-                  Город
-                  <input
-                    className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                <Field label="Город">
+                  <Input
                     value={caseForm.city}
                     onChange={(e) => setCaseForm((f) => ({ ...f, city: e.target.value }))}
                   />
-                </label>
-                <label className="text-sm text-slate-200">
-                  Дата/Год
-                  <input
-                    className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                </Field>
+                <Field label="Дата/Год">
+                  <Input
                     value={caseForm.date}
                     onChange={(e) => setCaseForm((f) => ({ ...f, date: e.target.value }))}
                   />
-                </label>
+                </Field>
               </div>
-              <label className="text-sm text-slate-200">
-                Формат мероприятия
-                <input
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+              <Field label="Формат мероприятия">
+                <Input
                   value={caseForm.format}
                   onChange={(e) => setCaseForm((f) => ({ ...f, format: e.target.value }))}
                   placeholder="Концерт, Форум..."
                 />
-              </label>
-              <label className="text-sm text-slate-200">
-                Услуги (через запятую: led, sound, light, video, stage, support)
-                <input
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+              </Field>
+              <Field label="Услуги" hint="Через запятую: led, sound, light, video, stage, support">
+                <Input
                   value={caseForm.services}
                   onChange={(e) => setCaseForm((f) => ({ ...f, services: e.target.value }))}
                   placeholder="led, sound"
                 />
-              </label>
-              <label className="text-sm text-slate-200">
-                Краткое описание
-                <textarea
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+              </Field>
+              <Field label="Краткое описание">
+                <Textarea
                   rows={2}
                   value={caseForm.summary}
                   onChange={(e) => setCaseForm((f) => ({ ...f, summary: e.target.value }))}
                 />
-              </label>
-              <label className="text-sm text-slate-200">
-                Метрики (результат)
-                <input
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+              </Field>
+              <Field label="Метрики (результат)">
+                <Input
                   value={caseForm.metrics}
                   onChange={(e) => setCaseForm((f) => ({ ...f, metrics: e.target.value }))}
                 />
-              </label>
-              <label className="text-sm text-slate-200">
-                Ссылки на фото (через запятую)
-                <textarea
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs"
+              </Field>
+              <Field label="Ссылки на фото" hint="Через запятую">
+                <Textarea
                   rows={2}
+                  className="text-xs"
                   value={caseForm.imagesText}
                   onChange={(e) => setCaseForm((f) => ({ ...f, imagesText: e.target.value }))}
                   placeholder="https://..."
                 />
-              </label>
-              <button
+              </Field>
+              <Button
                 type="submit"
                 disabled={!caseCanSubmit}
-                className="w-full rounded-lg bg-brand-500 py-2.5 font-semibold text-white transition hover:bg-brand-400 disabled:opacity-50"
+                className="w-full"
               >
                 {caseEditing ? 'Сохранить изменения' : 'Добавить кейс'}
-              </button>
+              </Button>
             </form>
 
             <div className="space-y-3">
@@ -1036,15 +1123,22 @@ const AdminContentPage = ({
                     </div>
                   </div>
                   <div className="flex flex-col gap-2 opacity-0 transition group-hover:opacity-100">
-                    <button onClick={() => startEditCase(c)} className="text-xs text-brand-400 hover:text-brand-300">
+                    <Button type="button" variant="secondary" size="sm" onClick={() => startEditCase(c)}>
                       Ред.
-                    </button>
-                    <button onClick={() => deleteCase(c.slug)} className="text-xs text-red-400 hover:text-red-300">
+                    </Button>
+                    <Button type="button" variant="danger" size="sm" onClick={() => setCaseDeleteTarget({ slug: c.slug, title: c.title })}>
                       Удалить
-                    </button>
+                    </Button>
                   </div>
                 </div>
               ))}
+              {cases.length === 0 && (
+                <EmptyState
+                  icon="📁"
+                  title="Нет кейсов"
+                  description="Добавьте первый кейс через форму слева."
+                />
+              )}
             </div>
           </div>
         </div>
