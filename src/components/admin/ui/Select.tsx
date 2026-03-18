@@ -1,12 +1,16 @@
-import { type SelectHTMLAttributes } from 'react';
+import { forwardRef, type SelectHTMLAttributes } from 'react';
 
 export type SelectProps = SelectHTMLAttributes<HTMLSelectElement> & {
   hasError?: boolean;
 };
 
-export default function Select({ hasError, className = '', ...props }: SelectProps) {
+const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select(
+  { hasError, className = '', ...props },
+  ref
+) {
   return (
     <select
+      ref={ref}
       {...props}
       className={[
         'w-full rounded-lg border px-3 py-2',
@@ -18,5 +22,7 @@ export default function Select({ hasError, className = '', ...props }: SelectPro
       ].join(' ')}
     />
   );
-}
+});
+
+export default Select;
 

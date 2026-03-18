@@ -1,12 +1,16 @@
-import { type InputHTMLAttributes } from 'react';
+import { forwardRef, type InputHTMLAttributes } from 'react';
 
 export type InputProps = InputHTMLAttributes<HTMLInputElement> & {
   hasError?: boolean;
 };
 
-export default function Input({ hasError, className = '', ...props }: InputProps) {
+const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
+  { hasError, className = '', ...props },
+  ref
+) {
   return (
     <input
+      ref={ref}
       {...props}
       className={[
         'w-full rounded-lg border px-3 py-2',
@@ -18,5 +22,7 @@ export default function Input({ hasError, className = '', ...props }: InputProps
       ].join(' ')}
     />
   );
-}
+});
+
+export default Input;
 
