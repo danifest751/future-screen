@@ -24,6 +24,7 @@ const AdminCasesPage = () => {
   const { cases, addCase, updateCase, deleteCase, resetToDefault } = useCases();
   const [caseForm, setCaseForm] = useState<CaseFormState>(emptyCaseForm);
   const [caseEditing, setCaseEditing] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
 
   const caseCanSubmit = useMemo(() => 
     caseForm.slug.trim() && caseForm.title.trim(), 
@@ -63,24 +64,61 @@ const AdminCasesPage = () => {
     setCaseEditing(null);
   };
 
+  const filteredCases = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return [...cases];
+
+    return cases.filter((c) => {
+      const haystack = [
+        c.slug,
+        c.title,
+        c.city,
+        c.date,
+        c.format,
+        c.summary,
+        c.metrics ?? '',
+        ...(c.services ?? []),
+        ...(c.images ?? []),
+      ]
+        .join(' ')
+        .toLowerCase();
+
+      return haystack.includes(q);
+    });
+  }, [cases, search]);
+
   return (
     <AdminLayout title="Кейсы" subtitle="Реализованные проекты">
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Форма */}
         <div className="rounded-xl border border-white/10 bg-slate-800 p-6">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-white">
-              {caseEditing ? 'Редактировать кейс' : 'Новый кейс'}
-            </h2>
-            {caseEditing && (
-              <button 
-                type="button" 
-                onClick={cancelEdit}
-                className="text-sm text-slate-300 hover:text-white"
-              >
-                Отмена
-              </button>
-            )}
+            <div>
+              <h2 className="text-xl font-semibold text-white">
+                {caseEditing ? 'Редактирование кейса' : 'Новый кейс'}
+              </h2>
+              <p className="mt-1 text-sm text-slate-400">
+                {caseEditing
+                  ? `Вы редактируете кейс ${caseEditing}. Сохраните изменения или нажмите «Отмена».`
+                  : 'Создайте новый кейс или выберите существующий справа для редактирования.'}
+              </p>
+            </div>
+            <div className="flex flex-col items-end gap-2">
+              {caseEditing && (
+                <span className="rounded-full border border-brand-500/40 bg-brand-500/10 px-2 py-0.5 text-xs text-brand-100">
+                  Режим редактирования
+                </span>
+              )}
+              {caseEditing && (
+                <button
+                  type="button"
+                  onClick={cancelEdit}
+                  className="text-sm text-slate-300 hover:text-white"
+                >
+                  Отмена
+                </button>
+              )}
+            </div>
           </div>
           
           <form onSubmit={submitCase} className="space-y-3">
@@ -185,7 +223,7 @@ const AdminCasesPage = () => {
               disabled={!caseCanSubmit}
               className="w-full rounded-lg bg-brand-500 px-4 py-2 font-semibold text-white hover:bg-brand-400 disabled:opacity-50"
             >
-              {caseEditing ? 'Сохранить' : 'Добавить кейс'}
+              {caseEditing ? 'Сохранить кейс' : 'Добавить кейс'}
             </button>
           </form>
         </div>
@@ -193,7 +231,12 @@ const AdminCasesPage = () => {
         {/* Список кейсов */}
         <div className="rounded-xl border border-white/10 bg-slate-800 p-6">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-white">Список кейсов</h2>
+            <div>
+              <h2 className="text-xl font-semibold text-white">Список кейсов</h2>
+              <p className="mt-1 text-sm text-slate-400">
+                Показано {filteredCases.length} из {cases.length}
+              </p>
+            </div>
             <button
               type="button"
               onClick={resetToDefault}
@@ -203,8 +246,26 @@ const AdminCasesPage = () => {
             </button>
           </div>
 
+          <div className="mb-4 flex items-center gap-2">
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Поиск по slug, названию, городу, услугам..."
+              className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-slate-500 outline-none focus:border-brand-500"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch('')}
+                className="rounded-lg border border-white/10 px-3 py-2 text-sm text-slate-300 hover:text-white"
+              >
+                Очистить
+              </button>
+            )}
+          </div>
+
           <div className="space-y-3">
-            {cases.map((c) => (
+            {filteredCases.map((c) => (
               <div 
                 key={c.slug} 
                 className="rounded-lg border border-white/10 bg-white/5 p-4"
@@ -243,7 +304,7 @@ const AdminCasesPage = () => {
                       onClick={() => startEdit(c)}
                       className="rounded border border-white/20 px-3 py-1 text-xs font-semibold text-white hover:border-white/40"
                     >
-                      ✏️
+                      Редактировать
                     </button>
                     <button
                       type="button"
@@ -260,9 +321,11 @@ const AdminCasesPage = () => {
                 </div>
               </div>
             ))}
-            {cases.length === 0 && (
+            {filteredCases.length === 0 && (
               <div className="text-center text-slate-400">
-                Кейсов пока нет. Добавьте первый!
+                {cases.length === 0
+                  ? 'Кейсов пока нет. Добавьте первый!'
+                  : 'Ничего не найдено. Попробуйте изменить поисковый запрос.'}
               </div>
             )}
           </div>

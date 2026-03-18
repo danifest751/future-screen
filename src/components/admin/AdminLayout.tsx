@@ -217,6 +217,34 @@ const AdminLayout = ({ title, subtitle, children }: Props) => {
             </div>
           </header>
 
+          <div className="border-b border-white/10 bg-slate-900/40 px-6 py-3">
+            <div className="flex items-center gap-3 overflow-x-auto text-xs text-slate-300">
+              <span className="whitespace-nowrap text-slate-500">Быстрый переход:</span>
+              {navItems.map((item) => {
+                const isActive =
+                  item.to === '/admin'
+                    ? location.pathname === '/admin'
+                    : location.pathname.startsWith(item.to);
+
+                return (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    className={`whitespace-nowrap rounded-full border px-3 py-1.5 transition ${
+                      isActive
+                        ? 'border-brand-500/50 bg-brand-500/10 text-white'
+                        : 'border-white/10 bg-white/5 hover:border-white/25 hover:text-white'
+                    }`}
+                    aria-current={isActive ? 'page' : undefined}
+                  >
+                    <span className="mr-1">{item.icon}</span>
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Контент */}
           <div className="p-6">{children}</div>
         </div>
