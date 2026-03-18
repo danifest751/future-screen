@@ -1,32 +1,4 @@
-import { useContext, useEffect } from 'react';
-import { UNSAFE_NavigationContext as NavigationContext } from 'react-router-dom';
-
-type Transition = {
-  retry(): void;
-};
-
-const useRouteBlocker = (blocker: (tx: Transition) => void, when = true) => {
-  const { navigator } = useContext(NavigationContext) as unknown as {
-    navigator: { block: (cb: (tx: Transition) => void) => () => void };
-  };
-
-  useEffect(() => {
-    if (!when || typeof navigator.block !== 'function') return undefined;
-
-    const unblock = navigator.block((tx) => {
-      const autoUnblockingTx: Transition = {
-        ...tx,
-        retry() {
-          unblock();
-          tx.retry();
-        },
-      };
-      blocker(autoUnblockingTx);
-    });
-
-    return unblock;
-  }, [navigator, blocker, when]);
-};
+import { useEffect, useLayoutEffect } from 'react';
 
 export const useUnsavedChangesGuard = (hasUnsavedChanges: boolean) => {
   useEffect(() => {
@@ -44,10 +16,43 @@ export const useUnsavedChangesGuard = (hasUnsavedChanges: boolean) => {
     };
   }, [hasUnsavedChanges]);
 
-  useRouteBlocker((tx) => {
-    const shouldProceed = window.confirm('Есть несохраненные изменения. Уйти со страницы?');
-    if (shouldProceed) {
-      tx.retry();
-    }
-  }, hasUnsavedChanges);
+  useLayoutEffect(() => {
+    if (!hasUnsavedChanges || typeof document === 'undefined') return undefined;
+
+    const handleClickCapture = (event: MouseEvent) => {
+      if (event.defaultPrevented) return;
+      if (event.button !== 0) return;
+      if (event.metaKey || event.altKey || event.ctrlKey || event.shiftKey) return;
+
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+
+      const link = target.closest('a[href]');
+      if (!link || link.hasAttribute('download')) return;
+
+      const href = link.getAttribute('href');
+      if (!href || href.startsWith('#')) return;
+
+      const nextUrl = new URL(link.getAttribute('href') ?? '', window.location.href);
+      if (nextUrl.origin !== window.location.origin) return;
+      if (
+        nextUrl.pathname === window.location.pathname &&
+        nextUrl.search === window.location.search &&
+        nextUrl.hash === window.location.hash
+      ) {
+        return;
+      }
+
+      const shouldProceed = window.confirm('Есть несохраненные изменения. Уйти со страницы?');
+      if (!shouldProceed) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    };
+
+    document.addEventListener('click', handleClickCapture, true);
+    return () => {
+      document.removeEventListener('click', handleClickCapture, true);
+    };
+  }, [hasUnsavedChanges]);
 };
