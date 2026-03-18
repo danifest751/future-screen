@@ -1,12 +1,16 @@
-import { type TextareaHTMLAttributes } from 'react';
+import { forwardRef, type TextareaHTMLAttributes } from 'react';
 
 export type TextareaProps = TextareaHTMLAttributes<HTMLTextAreaElement> & {
   hasError?: boolean;
 };
 
-export default function Textarea({ hasError, className = '', ...props }: TextareaProps) {
+const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function Textarea(
+  { hasError, className = '', ...props },
+  ref
+) {
   return (
     <textarea
+      ref={ref}
       {...props}
       className={[
         'w-full rounded-lg border px-3 py-2',
@@ -18,5 +22,7 @@ export default function Textarea({ hasError, className = '', ...props }: Textare
       ].join(' ')}
     />
   );
-}
+});
+
+export default Textarea;
 
