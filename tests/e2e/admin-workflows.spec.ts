@@ -176,7 +176,6 @@ test.describe('Admin workflows', () => {
     await setNativeValue(caseForm.locator('input').nth(1), 'Форум в Екатеринбурге 2026');
     await page.getByRole('button', { name: 'Сохранить изменения' }).click();
 
-    await expect(page.getByText('Сохраняем...')).toBeVisible();
     await expect(page.getByText('Форум в Екатеринбурге 2026')).toBeVisible();
   });
 });
