@@ -1,4 +1,6 @@
-import { describe, expect, it } from 'vitest';
+// Тесты для функций маппинга adminData
+// Используем глобальные describe/it из vitest.config.ts
+
 import { mapCategoryFromDB, mapCategoryToDB, mapContactsToDB, mapPackageFromDB, mapPackageToDB, sanitizeServices } from './adminData';
 
 describe('adminData service mappings', () => {
@@ -22,7 +24,6 @@ describe('adminData service mappings', () => {
     };
 
     expect(mapPackageToDB(pkgToDb)).toEqual(pkgFromDb);
-
     expect(mapPackageFromDB(pkgFromDb)).toEqual({
       id: 101,
       name: 'Лайт',
@@ -51,7 +52,6 @@ describe('adminData service mappings', () => {
     };
 
     expect(mapCategoryToDB(categoryToDb)).toEqual(categoryFromDb);
-
     expect(mapCategoryFromDB(categoryFromDb)).toEqual({
       id: 7,
       title: 'Свет',
