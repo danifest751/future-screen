@@ -15,7 +15,7 @@ type BreadcrumbItem = {
   to?: string;
 };
 
-const navItems = [
+const defaultNavItems = [
   { to: '/admin', label: 'Дашборд', icon: '📊' },
   { to: '/admin/leads', label: 'Заявки', icon: '📬', badge: true },
   { to: '/admin/cases', label: 'Кейсы', icon: '📁' },
@@ -32,6 +32,23 @@ const AdminLayout = ({ title, subtitle, children }: Props) => {
   const { logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [leadCount, setLeadCount] = useState<number>(0);
+  const [navItems, setNavItems] = useState<typeof defaultNavItems>(() => {
+    const saved = localStorage.getItem('adminNavOrder');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        // Merge with default to handle new/removed items
+        const savedKeys = parsed.map((item: {to: string}) => item.to);
+        const defaultItems = defaultNavItems.filter(item => !savedKeys.includes(item.to));
+        return [...parsed, ...defaultItems];
+      } catch {
+        return defaultNavItems;
+      }
+    }
+    return defaultNavItems;
+  });
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   const activeNavItem = navItems.find((item) =>
     item.to === '/admin'
@@ -69,6 +86,44 @@ const AdminLayout = ({ title, subtitle, children }: Props) => {
   const handleLogout = async () => {
     await logout();
     navigate('/');
+  };
+
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(index));
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverIndex(index);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverIndex(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === dropIndex) {
+      setDraggedIndex(null);
+      setDragOverIndex(null);
+      return;
+    }
+
+    const newItems = [...navItems];
+    const [draggedItem] = newItems.splice(draggedIndex, 1);
+    newItems.splice(dropIndex, 0, draggedItem);
+    setNavItems(newItems);
+    localStorage.setItem('adminNavOrder', JSON.stringify(newItems));
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
   };
 
   return (
@@ -122,13 +177,24 @@ const AdminLayout = ({ title, subtitle, children }: Props) => {
 
           {/* Навигация */}
           <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
-            {navItems.map((item) => {
+            {navItems.map((item, index) => {
               const isActive =
                 item.to === '/admin'
                   ? location.pathname === '/admin'
                   : location.pathname.startsWith(item.to);
+              const isDragging = draggedIndex === index;
+              const isDragOver = dragOverIndex === index;
 
               return (
+                <div
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, index)}
+                  onDragOver={(e) => handleDragOver(e, index)}
+                  onDragLeave={handleDragLeave}
+                  onDrop={(e) => handleDrop(e, index)}
+                  onDragEnd={handleDragEnd}
+                  className={`group relative cursor-grab ${isDragging ? 'opacity-50' : ''} ${isDragOver ? 'ring-2 ring-brand-400 ring-offset-2 ring-offset-slate-800 rounded-lg' : ''}`}
+                >
                 <Link
                   key={item.to}
                   to={item.to}
@@ -140,6 +206,7 @@ const AdminLayout = ({ title, subtitle, children }: Props) => {
                   }`}
                 >
                   <div className="flex items-center gap-3">
+                    <span className="opacity-0 transition-opacity group-hover:opacity-100">⋮⋮</span>
                     <span>{item.icon}</span>
                     <span>{item.label}</span>
                   </div>
@@ -153,6 +220,7 @@ const AdminLayout = ({ title, subtitle, children }: Props) => {
                      </>
                   )}
                 </Link>
+                </div>
               );
             })}
           </nav>
