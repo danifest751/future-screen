@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import nodemailer from 'nodemailer';
 import 'dotenv/config';
 
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'https://future-screen.ru,http://localhost:5173,http://127.0.0.1:5173')
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'https://future-screen.ru,https://future-screen.vercel.app,http://localhost:5173,http://127.0.0.1:5173')
   .split(',')
   .map((v) => v.trim())
   .filter(Boolean);
