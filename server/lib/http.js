@@ -50,8 +50,20 @@ export const getClientIp = (req) => {
 };
 
 export const isOriginAllowed = (origin, allowedOrigins) => {
-  if (!origin) return true;
-  return allowedOrigins.includes(origin);
+  if (!origin) {
+    console.log('[CORS] Origin не предоставлен, разрешаем');
+    return true;
+  }
+  // Нормализуем origin: убираем trailing slash и приводим к нижнему регистру для сравнения
+  const normalizedOrigin = origin.replace(/\/$/, '').toLowerCase();
+  const normalizedAllowed = allowedOrigins.map(o => o.replace(/\/$/, '').toLowerCase());
+  const isAllowed = normalizedAllowed.includes(normalizedOrigin);
+  
+  if (!isAllowed) {
+    console.log(`[CORS] Origin "${origin}" (normalized: "${normalizedOrigin}") не в списке разрешенных:`, normalizedAllowed);
+  }
+  
+  return isAllowed;
 };
 
 export const createRateLimiter = ({ windowMs, max }) => {
