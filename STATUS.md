@@ -55,8 +55,8 @@
 |------|-------|
 | `VITE_ADMIN_LOGIN` | `admin` |
 | `VITE_ADMIN_PASSWORD` | `fs2024` (или свой) |
-| `VITE_TG_BOT_TOKEN` | Токен от @BotFather |
-| `VITE_TG_CHAT_ID` | Chat ID от @userinfobot |
+| `TG_BOT_TOKEN` | Токен от @BotFather |
+| `TG_CHAT_ID` | Chat ID от @userinfobot |
 | `SMTP_USER` | futurescreen@list.ru |
 | `SMTP_PASS` | Пароль SMTP |
 | `SMTP_TO` | futurescreen@list.ru |

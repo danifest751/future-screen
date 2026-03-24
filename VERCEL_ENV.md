@@ -13,8 +13,8 @@
 |------|-------|
 | `VITE_ADMIN_LOGIN` | `admin` |
 | `VITE_ADMIN_PASSWORD` | `fs2024` (или свой пароль) |
-| `VITE_TG_BOT_TOKEN` | Токен бота от @BotFather |
-| `VITE_TG_CHAT_ID` | Chat ID для уведомлений |
+| `TG_BOT_TOKEN` | Токен бота от @BotFather |
+| `TG_CHAT_ID` | Chat ID для уведомлений |
 | `SMTP_USER` | futurescreen@list.ru |
 | `SMTP_PASS` | Пароль от почты (или app password) |
 | `SMTP_TO` | futurescreen@list.ru |

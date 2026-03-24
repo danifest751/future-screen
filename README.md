@@ -122,8 +122,8 @@ cp .env.example .env
 
 - `VITE_ADMIN_LOGIN` — логин админки
 - `VITE_ADMIN_PASSWORD` — пароль админки
-- `VITE_TG_BOT_TOKEN` — токен Telegram бота
-- `VITE_TG_CHAT_ID` — Chat ID для уведомлений
+- `TG_BOT_TOKEN` — токен Telegram бота
+- `TG_CHAT_ID` — Chat ID для уведомлений
 - `SMTP_USER` — email для отправки
 - `SMTP_PASS` — пароль SMTP
 - `SMTP_TO` — email получателя
