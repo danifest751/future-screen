@@ -13,7 +13,10 @@ const requestsByIp = new Map<string, number[]>();
 
 const isOriginAllowed = (origin?: string) => {
   if (!origin) return true;
-  return allowedOrigins.includes(origin);
+  // Нормализуем origin: убираем trailing slash и приводим к нижнему регистру для сравнения
+  const normalizedOrigin = origin.replace(/\/$/, '').toLowerCase();
+  const normalizedAllowed = allowedOrigins.map(o => o.replace(/\/$/, '').toLowerCase());
+  return normalizedAllowed.includes(normalizedOrigin);
 };
 
 const getClientIp = (req: VercelRequest) => {
