@@ -21,8 +21,8 @@
 | `SMTP_USER` | Email отправителя | `futurescreen@list.ru` |
 | `SMTP_PASS` | Пароль SMTP | `lEhFPgfbasP9MeqBpW2a` |
 | `SMTP_TO` | Email получателя | `futurescreen@list.ru` |
-| `VITE_TG_BOT_TOKEN` | Токен бота Telegram | `123456789:ABCdef...` |
-| `VITE_TG_CHAT_ID` | Chat ID для уведомлений | `123456789` |
+| `TG_BOT_TOKEN` | Токен бота Telegram | `123456789:ABCdef...` |
+| `TG_CHAT_ID` | Chat ID для уведомлений | `123456789` |
 
 ## Как получить переменные
 

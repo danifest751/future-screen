@@ -23,8 +23,8 @@ VITE_ADMIN_PASSWORD = fs2024
 
 ### Telegram (для уведомлений о заявках)
 ```
-VITE_TG_BOT_TOKEN = 
-VITE_TG_CHAT_ID = 
+TG_BOT_TOKEN = 
+TG_CHAT_ID = 
 ```
 *Заполни если нужны уведомления в Telegram*
 
@@ -49,8 +49,8 @@ VITE_SUPABASE_ANON_KEY = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 |------|-------|
 | `VITE_ADMIN_LOGIN` | `admin` |
 | `VITE_ADMIN_PASSWORD` | `fs2024` |
-| `VITE_TG_BOT_TOKEN` | *(оставь пустым если не нужно)* |
-| `VITE_TG_CHAT_ID` | *(оставь пустым если не нужно)* |
+| `TG_BOT_TOKEN` | *(оставь пустым если не нужно)* |
+| `TG_CHAT_ID` | *(оставь пустым если не нужно)* |
 | `SMTP_USER` | `futurescreen@list.ru` |
 | `SMTP_PASS` | `lEhFPgfbasP9MeqBpW2a` |
 | `SMTP_TO` | `futurescreen@list.ru` |

@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import nodemailer from 'nodemailer';
 import 'dotenv/config';
+import { processEmailSubmission } from '../server/lib/emailCore.js';
 
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'https://future-screen.ru,https://future-screen.vercel.app,http://localhost:5173,http://127.0.0.1:5173')
   .split(',')
@@ -10,6 +11,13 @@ const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'https://future-screen.ru
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
 const RATE_LIMIT_MAX = 10;
 const requestsByIp = new Map<string, number[]>();
+
+type SubmissionBody = {
+  requestId?: string;
+  email?: boolean;
+  clientEmail?: boolean;
+  telegram?: boolean;
+};
 
 const isOriginAllowed = (origin?: string) => {
   if (!origin) return true;
@@ -67,6 +75,7 @@ type EmailSendResult = {
   adminSent: boolean;
   clientSent: boolean;
   errorMessage: string;
+  clientErrorMessage: string;
 };
 
 const escapeHtml = (value = ''): string => String(value)
@@ -266,6 +275,7 @@ const sendEmail = async (payload: EmailPayload, requestId: string): Promise<Emai
   let adminSent = false;
   let clientSent = false;
   let errorMessage = '';
+  let clientErrorMessage = '';
 
   try {
     await retryAsync(() => transporter.sendMail({
@@ -286,57 +296,62 @@ const sendEmail = async (payload: EmailPayload, requestId: string): Promise<Emai
 
     // Отправка подтверждения клиенту (если указан email)
     if (payload.email && payload.email.trim()) {
-      const clientText = [
-        `Здравствуйте, ${payload.name}!`,
-        '',
-        'Ваша заявка принята. Мы свяжемся с вами в течение 15 минут.',
-        '',
-        'Детали заявки:',
-        `Источник: ${payload.source}`,
-        `Телефон: ${payload.phone}`,
-      ];
+      try {
+        const clientText = [
+          `Здравствуйте, ${payload.name}!`,
+          '',
+          'Ваша заявка принята. Мы свяжемся с вами в течение 15 минут.',
+          '',
+          'Детали заявки:',
+          `Источник: ${payload.source}`,
+          `Телефон: ${payload.phone}`,
+        ];
 
-      if (payload.city) clientText.push(`Город: ${payload.city}`);
-      if (payload.date) clientText.push(`Дата: ${payload.date}`);
-      if (payload.format) clientText.push(`Формат: ${payload.format}`);
-      if (payload.comment) clientText.push(`Комментарий: ${payload.comment}`);
+        if (payload.city) clientText.push(`Город: ${payload.city}`);
+        if (payload.date) clientText.push(`Дата: ${payload.date}`);
+        if (payload.format) clientText.push(`Формат: ${payload.format}`);
+        if (payload.comment) clientText.push(`Комментарий: ${payload.comment}`);
 
-      if (payload.extra) {
-        clientText.push('');
-        clientText.push('Детали расчёта:');
-        for (const [key, value] of Object.entries(payload.extra)) {
-          clientText.push(`${key}: ${value}`);
+        if (payload.extra) {
+          clientText.push('');
+          clientText.push('Детали расчёта:');
+          for (const [key, value] of Object.entries(payload.extra)) {
+            clientText.push(`${key}: ${value}`);
+          }
         }
+
+        clientText.push('');
+        clientText.push('С уважением,');
+        clientText.push('Команда Future Screen');
+        clientText.push('+7 (912) 246-65-66');
+        clientText.push('futurescreen@list.ru');
+
+        const clientHtml = clientText.map((l) => {
+          if (!l) return '<br>';
+          const [label, ...rest] = l.split(': ');
+          if (rest.length > 0) return `<b>${label}:</b> ${rest.join(': ')}`;
+          return l;
+        }).join('<br>');
+
+        await retryAsync(() => transporter.sendMail({
+          from: `"Future Screen" <${process.env.SMTP_USER}>`,
+          to: payload.email,
+          subject: 'Ваша заявка принята — Future Screen',
+          text: clientText.join('\n'),
+          html: clientHtml,
+        }), {
+          attempts: 2,
+          delayMs: 700,
+          onRetry: (err, attempt, attempts) => {
+            console.warn(`[EmailClient][${requestId}] Retry ${attempt}/${attempts - 1}: ${toErrorMessage(err)}`);
+          },
+        });
+
+        clientSent = true;
+      } catch (err) {
+        clientErrorMessage = toErrorMessage(err);
+        console.warn(`[EmailClient][${requestId}] Ошибка отправки клиенту:`, clientErrorMessage);
       }
-
-      clientText.push('');
-      clientText.push('С уважением,');
-      clientText.push('Команда Future Screen');
-      clientText.push('+7 (912) 246-65-66');
-      clientText.push('futurescreen@list.ru');
-
-      const clientHtml = clientText.map((l) => {
-        if (!l) return '<br>';
-        const [label, ...rest] = l.split(': ');
-        if (rest.length > 0) return `<b>${label}:</b> ${rest.join(': ')}`;
-        return l;
-      }).join('<br>');
-
-      await retryAsync(() => transporter.sendMail({
-        from: `"Future Screen" <${process.env.SMTP_USER}>`,
-        to: payload.email,
-        subject: 'Ваша заявка принята — Future Screen',
-        text: clientText.join('\n'),
-        html: clientHtml,
-      }), {
-        attempts: 2,
-        delayMs: 700,
-        onRetry: (err, attempt, attempts) => {
-          console.warn(`[EmailClient][${requestId}] Retry ${attempt}/${attempts - 1}: ${toErrorMessage(err)}`);
-        },
-      });
-
-      clientSent = true;
     }
   } catch (err) {
     errorMessage = toErrorMessage(err);
@@ -347,6 +362,7 @@ const sendEmail = async (payload: EmailPayload, requestId: string): Promise<Emai
     adminSent,
     clientSent,
     errorMessage,
+    clientErrorMessage,
   };
 };
 
@@ -376,85 +392,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const ip = getClientIp(req);
   if (isRateLimited(ip)) {
-    return res.status(429).json({ error: 'Too many requests' });
+    return res.status(429).json({ ok: false, error: 'Too many requests' });
   }
 
-  try {
-    const { source, name, phone, email, telegram, city, date, format, comment, extra } = req.body;
-    const requestId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+  const result = await processEmailSubmission({
+    body: req.body,
+    sendTelegram,
+    sendEmail: sendEmail as unknown as (payload: unknown, requestId: string) => Promise<EmailSendResult>,
+    formatTelegramMessage: formatTelegramMessage as unknown as (payload: unknown) => string,
+    formatEmailFailureAlertMessage: formatEmailFailureAlertMessage as unknown as (payload: {
+      requestId: string;
+      source?: string;
+      name?: string;
+      phone?: string;
+      email?: string;
+      errorMessage: string;
+    }) => string,
+  });
 
-    console.log('[API] Получена заявка', { source, hasEmail: Boolean(email), hasTelegram: Boolean(telegram), ip });
+  const responseBody = result.body as SubmissionBody;
 
-    // Валидация
-    if (!name || !phone) {
-      return res.status(400).json({ error: 'Имя и телефон обязательны' });
-    }
-
-    const payload: EmailPayload = {
-      source,
-      name,
-      phone,
-      email,
-      telegram,
-      city,
-      date,
-      format,
-      comment,
-      extra,
-    };
-
-    // Отправка параллельно
-    const [tg, emailResult] = await Promise.allSettled([
-      sendTelegram(formatTelegramMessage(payload)),
-      sendEmail(payload, requestId),
-    ]);
-
-    const tgOk = tg.status === 'fulfilled' && tg.value;
-    const emailSend = emailResult.status === 'fulfilled'
-      ? emailResult.value
-      : { adminSent: false, clientSent: false, errorMessage: toErrorMessage(emailResult.reason) };
-
-    const emailOk = emailSend.adminSent;
-    const ok = tgOk || emailOk;
-
-    let tgEmailAlertSent = false;
-    if (!emailSend.adminSent && emailSend.errorMessage) {
-      tgEmailAlertSent = await sendTelegram(formatEmailFailureAlertMessage({
-        requestId,
-        source,
-        name,
-        phone,
-        email,
-        errorMessage: emailSend.errorMessage,
-      }));
-    }
-
-    console.log(`[API][${requestId}] source=${source} email=${emailSend.adminSent} clientEmail=${emailSend.clientSent} tg=${tgOk}`);
-
-    if (!ok) {
-      return res.status(502).json({
-        ok: false,
-        requestId,
-        telegram: tgOk,
-        email: emailOk,
-        clientEmail: emailSend.clientSent,
-        tgEmailAlertSent,
-        emailError: emailSend.errorMessage,
-        error: 'Не удалось отправить ни Telegram, ни Email',
-      });
-    }
-
-    res.status(200).json({
-      ok: true,
-      requestId,
-      telegram: tgOk,
-      email: emailOk,
-      clientEmail: emailSend.clientSent,
-      tgEmailAlertSent,
-      ...(emailSend.adminSent ? {} : { emailError: emailSend.errorMessage }),
-    });
-  } catch (err) {
-    console.error('[API] Ошибка:', err);
-    res.status(500).json({ error: 'Ошибка отправки' });
+  if (responseBody.requestId) {
+    console.log(`[API][${responseBody.requestId}] status=${result.status} email=${Boolean(responseBody.email)} clientEmail=${Boolean(responseBody.clientEmail)} tg=${Boolean(responseBody.telegram)}`);
   }
+
+  return res.status(result.status).json(result.body);
 }
