@@ -20,6 +20,7 @@ const LeadForm = ({ inputs, result, open, onClose }: Props) => {
   const [sent, setSent] = useState(false);
   const [sending, setSending] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [showMoreFields, setShowMoreFields] = useState(false);
 
   if (!open) return null;
 
@@ -118,59 +119,73 @@ const LeadForm = ({ inputs, result, open, onClose }: Props) => {
               />
             </label>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className="block text-sm text-slate-200">
-                Email
-                <input
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  type="email"
-                  className="mt-1 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white placeholder:text-slate-500 focus:border-brand-500 focus:outline-none"
-                  placeholder="example@mail.ru"
-                />
-              </label>
-              <label className="block text-sm text-slate-200">
-                Telegram
-                <input
-                  value={telegram}
-                  onChange={(e) => setTelegram(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white placeholder:text-slate-500 focus:border-brand-500 focus:outline-none"
-                  placeholder="@username"
-                />
-              </label>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className="block text-sm text-slate-200">
-                Город
-                <input
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white placeholder:text-slate-500 focus:border-brand-500 focus:outline-none"
-                  placeholder="Москва"
-                />
-              </label>
-              <label className="block text-sm text-slate-200">
-                Дата мероприятия
-                <input
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white placeholder:text-slate-500 focus:border-brand-500 focus:outline-none"
-                  placeholder="Примерно или точно"
-                />
-              </label>
-            </div>
-
             <label className="block text-sm text-slate-200">
-              Комментарий
-              <textarea
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                rows={2}
+              Email
+              <input
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                type="email"
                 className="mt-1 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white placeholder:text-slate-500 focus:border-brand-500 focus:outline-none"
-                placeholder="Дополнительные пожелания"
+                placeholder="example@mail.ru"
               />
             </label>
+
+            <button
+              type="button"
+              onClick={() => setShowMoreFields((value) => !value)}
+              className="flex items-center gap-2 text-sm font-medium text-slate-300 transition hover:text-white"
+            >
+              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-white/15 text-xs">
+                {showMoreFields ? '−' : '+'}
+              </span>
+              {showMoreFields ? 'Скрыть дополнительные поля' : 'Ещё поля'}
+            </button>
+
+            {showMoreFields && (
+              <>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="block text-sm text-slate-200">
+                    Город
+                    <input
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                      className="mt-1 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white placeholder:text-slate-500 focus:border-brand-500 focus:outline-none"
+                      placeholder="Москва"
+                    />
+                  </label>
+                  <label className="block text-sm text-slate-200">
+                    Дата мероприятия
+                    <input
+                      value={date}
+                      onChange={(e) => setDate(e.target.value)}
+                      className="mt-1 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white placeholder:text-slate-500 focus:border-brand-500 focus:outline-none"
+                      placeholder="Примерно или точно"
+                    />
+                  </label>
+                </div>
+
+                <label className="block text-sm text-slate-200">
+                  Telegram
+                  <input
+                    value={telegram}
+                    onChange={(e) => setTelegram(e.target.value)}
+                    className="mt-1 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white placeholder:text-slate-500 focus:border-brand-500 focus:outline-none"
+                    placeholder="@username"
+                  />
+                </label>
+
+                <label className="block text-sm text-slate-200">
+                  Комментарий
+                  <textarea
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    rows={2}
+                    className="mt-1 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white placeholder:text-slate-500 focus:border-brand-500 focus:outline-none"
+                    placeholder="Дополнительные пожелания"
+                  />
+                </label>
+              </>
+            )}
 
             <button
               type="submit"
