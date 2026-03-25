@@ -12,6 +12,7 @@ import type { CaseItem } from '../../data/cases';
 import toast from 'react-hot-toast';
 import { contacts as baseContacts } from '../../data/contacts';
 import { Button, ConfirmModal, EmptyState, Field, Input, Textarea } from '../../components/admin/ui';
+import { Package, Tag, FolderOpen, X } from 'lucide-react';
 
 const emptyPackage: Package = {
   id: 'light',
@@ -406,7 +407,7 @@ const AdminContentPage = ({
             href="/admin/leads"
             className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-100 hover:border-emerald-500/60"
           >
-            📊 Лента заявок
+            Лента заявок
           </a>
         </div>
       )}
@@ -514,7 +515,7 @@ const AdminContentPage = ({
                 ))}
                 {packages.length === 0 && (
                   <EmptyState
-                    icon="📦"
+                    icon={<Package size={32} className="text-brand-400" />}
                     title="Нет пакетов"
                     description="Создайте первый пакет через форму слева."
                   />
@@ -618,7 +619,7 @@ const AdminContentPage = ({
                 ))}
                 {categories.length === 0 && (
                   <EmptyState
-                    icon="🗂️"
+                    icon={<Tag size={32} className="text-brand-400" />}
                     title="Нет категорий"
                     description="Создайте первую категорию через форму слева."
                   />
@@ -723,7 +724,7 @@ const AdminContentPage = ({
                         <option value="indoor">Indoor</option>
                         <option value="outdoor">Outdoor</option>
                       </select>
-                      <Button type="button" variant="danger" size="sm" onClick={() => removeProduct(idx)}>✕</Button>
+                      <Button type="button" variant="danger" size="sm" onClick={() => removeProduct(idx)}><X size={14} /></Button>
                     </div>
                     <div className="grid grid-cols-3 gap-2 text-xs text-slate-300">
                       <label>
@@ -1134,7 +1135,7 @@ const AdminContentPage = ({
               ))}
               {cases.length === 0 && (
                 <EmptyState
-                  icon="📁"
+                  icon={<FolderOpen size={32} className="text-brand-400" />}
                   title="Нет кейсов"
                   description="Добавьте первый кейс через форму слева."
                 />
