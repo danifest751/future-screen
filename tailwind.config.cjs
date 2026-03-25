@@ -3,18 +3,22 @@ module.exports = {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        display: ['Space Grotesk', 'system-ui', 'sans-serif'],
+      },
       colors: {
         brand: {
           50: 'var(--brand-50)',
           100: 'var(--brand-100)',
-          200: '#b2d0ff',
-          300: '#89b3ff',
+          200: '#b2a8ff',
+          300: '#9b8ff5',
           400: 'var(--brand-400)',
           500: 'var(--brand-500)',
           600: 'var(--brand-600)',
-          700: '#1731b4',
-          800: '#142b8c',
-          900: '#14266f',
+          700: '#5a3a8a',
+          800: '#3e2460',
+          900: '#261540',
         },
         surface: 'var(--bg-primary)',
         'th-primary': 'var(--text-primary)',
