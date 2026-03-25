@@ -8,7 +8,7 @@ const Layout = ({ children }: PropsWithChildren) => (
   <div className="relative min-h-screen" style={{ color: 'var(--text-primary)' }}>
     <BackgroundDecor />
     <Header />
-    <main className="pb-20">{children}</main>
+    <main className="pb-20 pt-16 lg:pt-20">{children}</main>
     <Footer />
     <AdminGearButton />
   </div>
