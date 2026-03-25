@@ -125,7 +125,7 @@ const extraEquipment = [
   },
 ];
 
-// ─── Event types data ─────────────────────────────────────────────────────────
+// ─���─ Event types data ─────────────────────────────────────────────────────────
 const eventTypes = [
   {
     title: 'Корпоративы',
@@ -222,7 +222,7 @@ const HomePage = () => {
       </Helmet>
 
       {/* ── 1. HERO ────────────────────────────────────────────────────────── */}
-      <section className="relative flex min-h-screen items-center overflow-hidden">
+      <section className="relative flex min-h-screen items-center overflow-hidden -mt-16 lg:-mt-20">
         {/* Animated gradient blobs */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <div
@@ -361,7 +361,7 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* ── 3. EQUIPMENT ──────────────────────────────────────────────────── */}
+      {/* ── 3. EQUIPMENT ──────────────────────────────────────────���───────── */}
       <section id="equipment" className="py-24 md:py-32">
         <div className="container-page">
           <RevealSection>

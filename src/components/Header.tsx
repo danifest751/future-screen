@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, NavLink } from 'react-router-dom';
+import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import LoginModal from './LoginModal';
 import { useAuth } from '../context/AuthContext';
 
@@ -15,12 +15,31 @@ const Header = () => {
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const { isAuthenticated, logout } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
+
+  // After navigation to '/', scroll to the pending hash
+  useEffect(() => {
+    const pending = sessionStorage.getItem('scrollTo');
+    if (pending && location.pathname === '/') {
+      sessionStorage.removeItem('scrollTo');
+      const tryScroll = (attempts = 0) => {
+        const el = document.getElementById(pending);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth' });
+        } else if (attempts < 10) {
+          setTimeout(() => tryScroll(attempts + 1), 100);
+        }
+      };
+      setTimeout(() => tryScroll(), 100);
+    }
+  }, [location.pathname]);
 
   const closeMenu = () => setMenuOpen(false);
 
@@ -29,9 +48,12 @@ const Header = () => {
     if (!hash) return;
     e.preventDefault();
     closeMenu();
-    const el = document.getElementById(hash);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth' });
+    if (location.pathname === '/') {
+      const el = document.getElementById(hash);
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      sessionStorage.setItem('scrollTo', hash);
+      navigate('/');
     }
   };
 
