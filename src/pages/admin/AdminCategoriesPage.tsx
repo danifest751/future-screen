@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import toast from 'react-hot-toast';
 import AdminLayout from '../../components/admin/AdminLayout';
 import { Button, ConfirmModal, EmptyState, Field, Input, Textarea } from '../../components/admin/ui';
+import { Tag } from 'lucide-react';
 import { useCategories } from '../../hooks/useCategories';
 import { useFormDraftPersistence } from '../../hooks/useFormDraftPersistence';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
@@ -284,7 +285,7 @@ const AdminCategoriesPage = () => {
             ))}
             {filteredCategories.length === 0 && (
               <EmptyState
-                icon="🗂️"
+                icon={<Tag size={32} className="text-brand-400" />}
                 title={categories.length === 0 ? 'Категорий пока нет' : 'Ничего не найдено'}
                 description={
                   categories.length === 0

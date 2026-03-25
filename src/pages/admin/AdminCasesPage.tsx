@@ -300,7 +300,7 @@ const AdminCasesPage = () => {
                     </div>
                     {c.metrics && (
                       <div className="mt-1 text-xs text-brand-100">
-                        📊 {c.metrics}
+                        {c.metrics}
                       </div>
                     )}
                     <div className="mt-2 flex flex-wrap gap-1">
@@ -333,7 +333,7 @@ const AdminCasesPage = () => {
                       }}
                       className="rounded border border-red-400/40 px-3 py-1 text-xs font-semibold text-red-200 hover:border-red-400 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      🗑
+                      Удалить
                     </button>
                   </div>
                 </div>

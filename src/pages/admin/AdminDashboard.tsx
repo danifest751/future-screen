@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import AdminLayout from '../../components/admin/AdminLayout';
 import { useLeads } from '../../hooks/useLeads';
+import { Inbox, CalendarDays, BarChart3, PhoneCall } from 'lucide-react';
 
 const AdminDashboard = () => {
   const { leads: logs, loading, error } = useLeads();
@@ -66,28 +67,28 @@ const AdminDashboard = () => {
           <StatCard
             title="Всего заявок"
             value={stats.total}
-            icon="📬"
+            Icon={Inbox}
             trend={stats.today > 0 ? `+${stats.today} сегодня` : 'Нет новых'}
             trendColor={stats.today > 0 ? 'text-emerald-400' : 'text-slate-400'}
           />
           <StatCard
             title="За неделю"
             value={stats.week}
-            icon="📅"
+            Icon={CalendarDays}
             trend={`${stats.today} за сегодня`}
             trendColor="text-blue-400"
           />
           <StatCard
             title="За месяц"
             value={stats.month}
-            icon="📊"
+            Icon={BarChart3}
             trend={`${stats.withContacts} с контактами`}
             trendColor="text-purple-400"
           />
           <StatCard
-            title="Контакты"
+            title="Конверсия"
             value={`${stats.contactRate}%`}
-            icon="📞"
+            Icon={PhoneCall}
             trend={`${stats.withContacts} из ${stats.total}`}
             trendColor={stats.contactRate >= 50 ? 'text-emerald-400' : 'text-amber-400'}
           />
@@ -202,13 +203,13 @@ const AdminDashboard = () => {
 const StatCard = ({
   title,
   value,
-  icon,
+  Icon,
   trend,
   trendColor,
 }: {
   title: string;
   value: number | string;
-  icon: string;
+  Icon: React.ComponentType<{ size?: number; className?: string }>;
   trend: string;
   trendColor: string;
 }) => (
@@ -218,8 +219,11 @@ const StatCard = ({
         <div className="text-sm text-slate-400">{title}</div>
         <div className="mt-1 text-3xl font-bold text-white">{value}</div>
       </div>
-      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-700 text-2xl">
-        {icon}
+      <div
+        className="flex h-12 w-12 items-center justify-center rounded-xl"
+        style={{ background: 'linear-gradient(135deg, rgba(102,126,234,0.2) 0%, rgba(118,75,162,0.15) 100%)', border: '1px solid rgba(102,126,234,0.2)' }}
+      >
+        <Icon size={22} className="text-brand-400" />
       </div>
     </div>
     <div className={`mt-3 text-sm ${trendColor}`}>{trend}</div>

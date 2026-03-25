@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import toast from 'react-hot-toast';
 import AdminLayout from '../../components/admin/AdminLayout';
 import { Button, ConfirmModal, EmptyState, Field, Input, Textarea } from '../../components/admin/ui';
+import { Package } from 'lucide-react';
 import { usePackages } from '../../hooks/usePackages';
 import { useFormDraftPersistence } from '../../hooks/useFormDraftPersistence';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
@@ -305,7 +306,7 @@ const AdminPackagesPage = () => {
             ))}
             {filteredPackages.length === 0 && (
               <EmptyState
-                icon="📦"
+                icon={<Package size={32} className="text-brand-400" />}
                 title={packages.length === 0 ? 'Пакетов пока нет' : 'Ничего не найдено'}
                 description={
                   packages.length === 0
