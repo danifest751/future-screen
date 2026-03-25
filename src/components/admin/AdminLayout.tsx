@@ -3,6 +3,20 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Toaster } from 'react-hot-toast';
 import { supabase } from '../../lib/supabase';
+import {
+  LayoutDashboard,
+  Inbox,
+  FolderOpen,
+  Package,
+  Tag,
+  Phone,
+  Settings,
+  LogOut,
+  Menu,
+  X,
+  ChevronRight,
+  Zap,
+} from 'lucide-react';
 
 interface Props {
   title: string;
@@ -15,15 +29,21 @@ type BreadcrumbItem = {
   to?: string;
 };
 
-const defaultNavItems = [
-  { to: '/admin', label: 'Дашборд', icon: '📊' },
-  { to: '/admin/leads', label: 'Заявки', icon: '📬', badge: true },
-  { to: '/admin/cases', label: 'Кейсы', icon: '📁' },
-  { to: '/admin/packages', label: 'Пакеты', icon: '📦' },
-  { to: '/admin/categories', label: 'Категории', icon: '🗂️' },
-  { to: '/admin/contacts', label: 'Контакты', icon: '📞' },
-  { to: '/admin/calculator', label: 'Калькулятор', icon: '🧮' },
-  { to: '/admin/content', label: 'Все настройки', icon: '⚙️' },
+type NavItem = {
+  to: string;
+  label: string;
+  Icon: React.ComponentType<{ size?: number; className?: string }>;
+  badge?: boolean;
+};
+
+const defaultNavItems: NavItem[] = [
+  { to: '/admin', label: 'Дашборд', Icon: LayoutDashboard },
+  { to: '/admin/leads', label: 'Заявки', Icon: Inbox, badge: true },
+  { to: '/admin/cases', label: 'Кейсы', Icon: FolderOpen },
+  { to: '/admin/packages', label: 'Пакеты', Icon: Package },
+  { to: '/admin/categories', label: 'Категории', Icon: Tag },
+  { to: '/admin/contacts', label: 'Контакты', Icon: Phone },
+  { to: '/admin/content', label: 'Настройки', Icon: Settings },
 ];
 
 const AdminLayout = ({ title, subtitle, children }: Props) => {
@@ -32,15 +52,18 @@ const AdminLayout = ({ title, subtitle, children }: Props) => {
   const { logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [leadCount, setLeadCount] = useState<number>(0);
-  const [navItems, setNavItems] = useState<typeof defaultNavItems>(() => {
+  const [navItems, setNavItems] = useState<NavItem[]>(() => {
     const saved = localStorage.getItem('adminNavOrder');
     if (saved) {
       try {
-        const parsed = JSON.parse(saved);
-        // Merge with default to handle new/removed items
-        const savedKeys = parsed.map((item: {to: string}) => item.to);
-        const defaultItems = defaultNavItems.filter(item => !savedKeys.includes(item.to));
-        return [...parsed, ...defaultItems];
+        const parsed: { to: string }[] = JSON.parse(saved);
+        // Merge with defaults to restore Icon references (not serializable)
+        const rehydrated = parsed
+          .map((p) => defaultNavItems.find((d) => d.to === p.to))
+          .filter((x): x is NavItem => Boolean(x));
+        const savedKeys = rehydrated.map((i) => i.to);
+        const extras = defaultNavItems.filter((d) => !savedKeys.includes(d.to));
+        return [...rehydrated, ...extras];
       } catch {
         return defaultNavItems;
       }
@@ -116,7 +139,8 @@ const AdminLayout = ({ title, subtitle, children }: Props) => {
     const [draggedItem] = newItems.splice(draggedIndex, 1);
     newItems.splice(dropIndex, 0, draggedItem);
     setNavItems(newItems);
-    localStorage.setItem('adminNavOrder', JSON.stringify(newItems));
+    // Only persist the `to` keys — Icons are not serializable
+    localStorage.setItem('adminNavOrder', JSON.stringify(newItems.map((i) => ({ to: i.to }))));
     setDraggedIndex(null);
     setDragOverIndex(null);
   };
@@ -143,7 +167,7 @@ const AdminLayout = ({ title, subtitle, children }: Props) => {
         aria-expanded={sidebarOpen}
         className="fixed left-4 top-4 z-50 flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-slate-800 text-white lg:hidden"
       >
-        {sidebarOpen ? '✕' : '☰'}
+        {sidebarOpen ? <X size={18} /> : <Menu size={18} />}
       </button>
 
       {/* Overlay для мобильных */}
@@ -164,13 +188,19 @@ const AdminLayout = ({ title, subtitle, children }: Props) => {
         <div className="flex h-full flex-col">
           {/* Логотип */}
           <div className="flex h-16 items-center border-b border-white/10 px-6">
-            <div className="flex items-center gap-2 text-white">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-500 text-sm font-bold">
+            <div className="flex items-center gap-3 text-white">
+              <div
+                className="flex h-9 w-9 items-center justify-center rounded-xl text-sm font-bold text-white"
+                style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)' }}
+              >
                 FS
               </div>
               <div>
-                <div className="text-sm font-semibold">Admin</div>
-                <div className="text-xs text-slate-400">Future Screen</div>
+                <div className="text-sm font-semibold leading-none">Future Screen</div>
+                <div className="mt-0.5 flex items-center gap-1 text-xs text-slate-400">
+                  <Zap size={10} className="text-brand-400" />
+                  Панель управления
+                </div>
               </div>
             </div>
           </div>
@@ -184,9 +214,11 @@ const AdminLayout = ({ title, subtitle, children }: Props) => {
                   : location.pathname.startsWith(item.to);
               const isDragging = draggedIndex === index;
               const isDragOver = dragOverIndex === index;
+              const { Icon } = item;
 
               return (
                 <div
+                  key={item.to}
                   draggable
                   onDragStart={(e) => handleDragStart(e, index)}
                   onDragOver={(e) => handleDragOver(e, index)}
@@ -195,31 +227,27 @@ const AdminLayout = ({ title, subtitle, children }: Props) => {
                   onDragEnd={handleDragEnd}
                   className={`group relative cursor-grab ${isDragging ? 'opacity-50' : ''} ${isDragOver ? 'ring-2 ring-brand-400 ring-offset-2 ring-offset-slate-800 rounded-lg' : ''}`}
                 >
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  onClick={() => setSidebarOpen(false)}
-                  className={`flex items-center justify-between rounded-lg px-4 py-3 text-sm font-medium transition ${
-                    isActive
-                      ? 'bg-brand-500 text-white'
-                      : 'text-slate-300 hover:bg-white/5 hover:text-white'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="opacity-0 transition-opacity group-hover:opacity-100">⋮⋮</span>
-                    <span>{item.icon}</span>
-                    <span>{item.label}</span>
-                  </div>
-                  {item.badge && (
-                     <>
-                       {item.to === '/admin/leads' && leadCount > 0 ? (
-                         <span className="flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-red-500 px-1 text-xs font-bold">
-                           {leadCount}
-                         </span>
-                       ) : null}
-                     </>
-                  )}
-                </Link>
+                  <Link
+                    to={item.to}
+                    onClick={() => setSidebarOpen(false)}
+                    className={`flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${
+                      isActive
+                        ? 'text-white'
+                        : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                    }`}
+                    style={isActive ? { background: 'linear-gradient(135deg, rgba(102,126,234,0.25) 0%, rgba(118,75,162,0.2) 100%)', borderLeft: '2px solid #667eea' } : {}}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Icon size={16} className={isActive ? 'text-brand-400' : 'text-slate-500 group-hover:text-slate-300'} />
+                      <span>{item.label}</span>
+                    </div>
+                    {item.badge && item.to === '/admin/leads' && leadCount > 0 && (
+                      <span className="flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-red-500 px-1 text-xs font-bold text-white">
+                        {leadCount}
+                      </span>
+                    )}
+                    {isActive && <ChevronRight size={14} className="ml-auto text-brand-400" />}
+                  </Link>
                 </div>
               );
             })}
@@ -229,9 +257,9 @@ const AdminLayout = ({ title, subtitle, children }: Props) => {
           <div className="border-t border-white/10 p-3">
             <button
               onClick={handleLogout}
-              className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-slate-300 transition hover:bg-white/5 hover:text-white"
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-400 transition hover:bg-white/5 hover:text-white"
             >
-              <span>🚪</span>
+              <LogOut size={16} className="text-slate-500" />
               <span>Выйти</span>
             </button>
           </div>
@@ -293,19 +321,20 @@ const AdminLayout = ({ title, subtitle, children }: Props) => {
                   item.to === '/admin'
                     ? location.pathname === '/admin'
                     : location.pathname.startsWith(item.to);
+                const { Icon } = item;
 
                 return (
                   <Link
                     key={item.to}
                     to={item.to}
-                    className={`whitespace-nowrap rounded-full border px-3 py-1.5 transition ${
+                    className={`flex items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1.5 transition ${
                       isActive
                         ? 'border-brand-500/50 bg-brand-500/10 text-white'
                         : 'border-white/10 bg-white/5 hover:border-white/25 hover:text-white'
                     }`}
                     aria-current={isActive ? 'page' : undefined}
                   >
-                    <span className="mr-1">{item.icon}</span>
+                    <Icon size={12} />
                     {item.label}
                   </Link>
                 );

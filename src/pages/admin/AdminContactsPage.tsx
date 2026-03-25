@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import toast from 'react-hot-toast';
 import AdminLayout from '../../components/admin/AdminLayout';
 import { Button, ConfirmModal, EmptyState, Field, Input, Textarea } from '../../components/admin/ui';
+import { Phone } from 'lucide-react';
 import { useContacts } from '../../hooks/useContacts';
 import { useFormDraftPersistence } from '../../hooks/useFormDraftPersistence';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
@@ -161,7 +162,7 @@ const AdminContactsPage = () => {
           <h2 className="mb-4 text-xl font-semibold text-white">Текущие данные</h2>
           {!contacts.phones.length && !contacts.emails.length ? (
             <EmptyState
-              icon="📞"
+                icon={<Phone size={32} className="text-brand-400" />}
               title="Контакты пока не заполнены"
               description="Заполните форму слева и сохраните изменения."
             />

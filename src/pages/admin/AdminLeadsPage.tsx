@@ -163,7 +163,7 @@ const AdminLeadsPage = () => {
             onClick={() => setClearModalOpen(true)}
             className="rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-200 hover:border-red-500/60"
           >
-            🗑 Очистить всё
+            Очистить всё
           </button>
         </div>
       </div>

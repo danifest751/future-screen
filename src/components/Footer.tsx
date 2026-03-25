@@ -1,53 +1,130 @@
 import { Link } from 'react-router-dom';
-import { useContacts } from '../hooks/useContacts';
-import { PhoneIcon } from './icons/PhoneIcon';
+
+const navLinks = [
+  { to: '/#about', label: 'О нас' },
+  { to: '/#equipment', label: 'Оборудование' },
+  { to: '/#services', label: 'Услуги' },
+  { to: '/cases', label: 'Кейсы' },
+  { to: '/#contacts', label: 'Контакты' },
+];
+
+const handleHashNav = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+  const hash = href.split('#')[1];
+  if (!hash) return;
+  e.preventDefault();
+  const el = document.getElementById(hash);
+  if (el) el.scrollIntoView({ behavior: 'smooth' });
+};
 
 const Footer = () => {
-  const { contacts } = useContacts();
-
   return (
-  <footer className="border-t py-10" style={{ borderColor: 'var(--border-color)', background: 'color-mix(in srgb, var(--bg-primary) 80%, transparent)' }}>
-    <div className="container-page grid gap-8 md:grid-cols-3">
-      <div className="space-y-3">
-        <div className="flex items-center gap-2 text-lg font-semibold text-white">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-500 text-white">FS</div>
+    <footer
+      className="relative border-t"
+      style={{
+        borderColor: 'rgba(255,255,255,0.08)',
+        background: 'rgba(10,10,10,0.9)',
+        backdropFilter: 'blur(20px)',
+      }}
+    >
+      <div className="container-page py-14 md:py-16">
+        <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-4">
+
+          {/* Col 1-2: Logo + description */}
+          <div className="lg:col-span-2">
+            <Link to="/" className="mb-5 flex items-center gap-3">
+              <div
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold text-white"
+                style={{ background: 'var(--accent-gradient)', boxShadow: 'var(--glow)' }}
+              >
+                FS
+              </div>
+              <div>
+                <div className="font-display text-base font-semibold text-white">Future Screen</div>
+                <div className="text-xs text-gray-500">Техсопровождение мероприятий</div>
+              </div>
+            </Link>
+            <p className="max-w-xs text-sm leading-relaxed text-gray-400">
+              Техническое оснащение мероприятий любой сложности. LED-экраны, свет, звук, сцены.
+            </p>
+            <p className="mt-4 text-xs text-gray-600">
+              ООО «Фьючер Скрин» · ИНН/КПП по запросу
+            </p>
+          </div>
+
+          {/* Col 3: Navigation */}
           <div>
-            Future Screen
-            <div className="text-xs text-slate-400">Техсопровождение мероприятий</div>
+            <div className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-500">
+              Навигация
+            </div>
+            <ul className="space-y-3">
+              {navLinks.map((item) => (
+                <li key={item.to}>
+                  {item.to.includes('#') ? (
+                    <a
+                      href={item.to}
+                      onClick={(e) => handleHashNav(e, item.to)}
+                      className="text-sm text-gray-400 transition-colors hover:text-white"
+                    >
+                      {item.label}
+                    </a>
+                  ) : (
+                    <Link to={item.to} className="text-sm text-gray-400 transition-colors hover:text-white">
+                      {item.label}
+                    </Link>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Col 4: Contacts + Hours */}
+          <div>
+            <div className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-500">
+              Контакты
+            </div>
+            <ul className="space-y-3 text-sm text-gray-400">
+              <li>
+                <a
+                  href="tel:+79122466566"
+                  className="flex items-center gap-2 transition-colors hover:text-white"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 shrink-0">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.4 2 2 0 0 1 3.6 1.22h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.1a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92Z"/>
+                  </svg>
+                  8 (912) 246-65-66
+                </a>
+              </li>
+              <li className="flex items-start gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 h-4 w-4 shrink-0">
+                  <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>
+                </svg>
+                Екатеринбург, работаем по всей России
+              </li>
+              <li className="flex items-start gap-2 pt-2" style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 h-4 w-4 shrink-0">
+                  <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                </svg>
+                <div>
+                  <div>Ежедневно: 9:00 — 22:00</div>
+                  <div className="mt-1 text-gray-500">Техподдержка: 24/7</div>
+                </div>
+              </li>
+            </ul>
           </div>
         </div>
-        <p className="text-sm text-slate-300">
-          LED-экраны, свет, звук, сцены и комплекты «под ключ». Работаем по РФ с 2007 года.
-        </p>
-      </div>
-      <div>
-        <div className="font-semibold text-white">Навигация</div>
-        <div className="mt-3 grid grid-cols-2 gap-2 text-sm text-slate-300">
-          <Link to="/">Главная</Link>
-          <Link to="/led">LED-экраны</Link>
-          <Link to="/support">Техсопровождение</Link>
-          <Link to="/rent">Аренда</Link>
-          <Link to="/cases">Кейсы</Link>
-          <Link to="/prices">Пакеты</Link>
-          <Link to="/about">О компании</Link>
-          <Link to="/contacts">Контакты</Link>
+
+        {/* Bottom bar */}
+        <div
+          className="mt-12 flex flex-col items-center justify-between gap-3 border-t pt-6 text-xs text-gray-600 sm:flex-row"
+          style={{ borderColor: 'rgba(255,255,255,0.07)' }}
+        >
+          <div>© 2007–2026 Future Screen. Все права защищены.</div>
+          <Link to="/privacy" className="transition-colors hover:text-gray-400">
+            Политика конфиденциальности
+          </Link>
         </div>
       </div>
-      <div className="space-y-3 text-sm text-slate-200">
-        <div className="font-semibold text-white">Контакты</div>
-        <div className="space-y-2">
-          {contacts.phones.map((p) => (
-            <a key={p} href={`tel:${p.replace(/[^\d+]/g, '')}`} className="flex items-center gap-2 hover:text-white">
-              <PhoneIcon className="h-4 w-4" /> {p}
-            </a>
-          ))}
-          <div className="text-slate-300">{contacts.emails.join(', ')}</div>
-          <div className="text-slate-400">{contacts.address}</div>
-          <div className="text-slate-400">{contacts.workingHours}</div>
-        </div>
-      </div>
-    </div>
-  </footer>
+    </footer>
   );
 };
 
