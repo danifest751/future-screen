@@ -17,6 +17,7 @@ import {
   ChevronRight,
   Zap,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 interface Props {
   title: string;
@@ -32,7 +33,7 @@ type BreadcrumbItem = {
 type NavItem = {
   to: string;
   label: string;
-  Icon: React.ComponentType<{ size?: number; className?: string }>;
+  Icon: LucideIcon;
   badge?: boolean;
 };
 

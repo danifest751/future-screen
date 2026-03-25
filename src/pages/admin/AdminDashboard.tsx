@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import AdminLayout from '../../components/admin/AdminLayout';
 import { useLeads } from '../../hooks/useLeads';
 import { Inbox, CalendarDays, BarChart3, PhoneCall } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 const AdminDashboard = () => {
   const { leads: logs, loading, error } = useLeads();
@@ -209,7 +210,7 @@ const StatCard = ({
 }: {
   title: string;
   value: number | string;
-  Icon: React.ComponentType<{ size?: number; className?: string }>;
+  Icon: LucideIcon;
   trend: string;
   trendColor: string;
 }) => (
