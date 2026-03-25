@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import AdminLayout from '../../components/admin/AdminLayout';
 import AdminFieldError from '../../components/admin/AdminFieldError';
 import { ConfirmModal, EmptyState } from '../../components/admin/ui';
+import { FolderOpen, X } from 'lucide-react';
 import { useCases } from '../../hooks/useCases';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 import type { CaseItem } from '../../data/cases';
@@ -320,7 +321,7 @@ const AdminCasesManagerPage = () => {
                         onClick={() => setUploadedImages((prev) => prev.filter((item) => item !== url))}
                         className="absolute right-1 top-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] text-white opacity-0 transition group-hover:opacity-100"
                       >
-                        ✕
+                        <X size={10} />
                       </button>
                     </div>
                   ))}
@@ -395,7 +396,7 @@ const AdminCasesManagerPage = () => {
             ))}
             {sortedCases.length === 0 && (
               <EmptyState
-                icon="📁"
+                icon={<FolderOpen size={32} className="text-brand-400" />}
                 title="Кейсов пока нет"
                 description="Добавьте первый кейс через форму слева."
               />
