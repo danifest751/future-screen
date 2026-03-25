@@ -6,7 +6,7 @@ import { useContacts } from '../../hooks/useContacts';
 import { useCases } from '../../hooks/useCases';
 import { useCalculatorConfig } from '../../hooks/useCalculatorConfig';
 import type { PitchOption, ScreenSizePreset, ScreenProduct, CostParams, Location } from '../../data/calculatorConfig';
-import type { Package } from '../../data/packages';
+import type { Package as PackageData } from '../../data/packages';
 import type { Category } from '../../data/categories';
 import type { CaseItem } from '../../data/cases';
 import toast from 'react-hot-toast';
@@ -14,7 +14,7 @@ import { contacts as baseContacts } from '../../data/contacts';
 import { Button, ConfirmModal, EmptyState, Field, Input, Textarea } from '../../components/admin/ui';
 import { Package, Tag, FolderOpen, X } from 'lucide-react';
 
-const emptyPackage: Package = {
+const emptyPackage: PackageData = {
   id: 'light',
   name: '',
   forFormats: [],
@@ -61,7 +61,7 @@ const AdminContentPage = ({
   subtitle = 'Управление пакетами, категориями, контактами и кейсами',
 }: AdminContentPageProps) => {
   const [activeTab, setActiveTab] = useState<Tab>(initialTab);
-  const [pkgDeleteTarget, setPkgDeleteTarget] = useState<Package | null>(null);
+  const [pkgDeleteTarget, setPkgDeleteTarget] = useState<PackageData | null>(null);
   const [catDeleteTarget, setCatDeleteTarget] = useState<Category | null>(null);
   const [caseDeleteTarget, setCaseDeleteTarget] = useState<Pick<CaseItem, 'slug' | 'title'> | null>(null);
   const [resetTarget, setResetTarget] = useState<Tab | null>(null);
@@ -181,8 +181,8 @@ const AdminContentPage = ({
 
   // Packages
   const { packages, upsert: upsertPackage, remove: removePackage, resetToDefault: resetPackages } = usePackages();
-  const [pkgForm, setPkgForm] = useState<Package>(emptyPackage);
-  const [pkgEditing, setPkgEditing] = useState<Package['id'] | null>(null);
+  const [pkgForm, setPkgForm] = useState<PackageData>(emptyPackage);
+  const [pkgEditing, setPkgEditing] = useState<PackageData['id'] | null>(null);
   const pkgCanSubmit = useMemo(() => String(pkgForm.id).trim() && pkgForm.name.trim(), [pkgForm]);
 
   const submitPackage = async (e: FormEvent) => {
@@ -431,7 +431,7 @@ const AdminContentPage = ({
               <Field label="ID" required>
                 <Input
                   value={pkgForm.id}
-                  onChange={(e) => setPkgForm((f) => ({ ...f, id: e.target.value as Package['id'] }))}
+                  onChange={(e) => setPkgForm((f) => ({ ...f, id: e.target.value as PackageData['id'] }))}
                   required
                   disabled={!!pkgEditing}
                 />

@@ -1,12 +1,13 @@
 import { Link } from 'react-router-dom';
 import AdminLayout from '../../components/admin/AdminLayout';
 import { Package, Tag, Phone, FolderOpen, Inbox } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 type Section = {
   to: string;
   title: string;
   desc: string;
-  Icon: React.ComponentType<{ size?: number; className?: string }>;
+  Icon: LucideIcon;
 };
 
 const sections: Section[] = [
