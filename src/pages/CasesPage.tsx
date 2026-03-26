@@ -14,8 +14,8 @@ const CasesPage = () => {
     const videos = item.videos || [];
     const hasVideo = videos.length > 0;
     
-    // Take up to 4 preview items
-    const previewImages = images.slice(0, 4);
+    // Show max 2 images side-by-side
+    const previewImages = images.slice(0, 2);
     
     return { previewImages, hasVideo, videoCount: videos.length, imageCount: images.length };
   };
@@ -48,30 +48,11 @@ const CasesPage = () => {
                         className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                         placeholderClassName="h-full w-full"
                       />
-                    ) : previewImages.length === 2 ? (
-                      // Two images - side by side
+                    ) : (
+                      // Two images - side by side (always max 2)
                       <div className="flex h-full gap-0.5">
                         {previewImages.map((src, idx) => (
                           <div key={src} className="relative flex-1 overflow-hidden">
-                            <LazyImage
-                              src={src}
-                              alt={`${item.title} ${idx + 1}`}
-                              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                              placeholderClassName="h-full w-full"
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      // 3+ images - grid layout
-                      <div className="grid h-full grid-cols-2 grid-rows-2 gap-0.5">
-                        {previewImages.map((src, idx) => (
-                          <div 
-                            key={src} 
-                            className={`relative overflow-hidden ${
-                              idx === 0 && previewImages.length >= 3 ? 'row-span-2' : ''
-                            }`}
-                          >
                             <LazyImage
                               src={src}
                               alt={`${item.title} ${idx + 1}`}
