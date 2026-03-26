@@ -11,6 +11,7 @@ import { useCases } from '../../hooks/useCases';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 import type { CaseItem } from '../../data/cases';
 import { supabase } from '../../lib/supabase';
+import { compressImages, isImageFile, formatFileSize } from '../../lib/imageCompression';
 
 const caseSchema = z.object({
   slug: z
@@ -140,9 +141,28 @@ const AdminCasesManagerPage = () => {
     const imageUrls: string[] = [];
     const videoUrls: string[] = [];
 
-    for (const file of list) {
+    // Separate images and videos
+    const imageFiles = list.filter(isImageFile);
+    const videoFiles = list.filter((f) => !isImageFile(f));
+
+    // Compress images before upload
+    let compressedImages = imageFiles;
+    if (imageFiles.length > 0) {
+      toast.loading(`Сжатие ${imageFiles.length} изображений...`, { id: 'compression' });
+      compressedImages = await compressImages(imageFiles, {
+        maxWidth: 1920,
+        maxHeight: 1080,
+        quality: 0.85,
+      });
+      toast.success(`Сжато ${compressedImages.length} изображений`, { id: 'compression' });
+    }
+
+    // Upload all files
+    const filesToUpload = [...compressedImages, ...videoFiles];
+
+    for (const file of filesToUpload) {
       const ext = file.name.split('.').pop()?.toLowerCase() || '';
-      const isVideo = ['mp4', 'webm', 'mov', 'avi'].includes(ext);
+      const isVideo = !isImageFile(file);
       const folder = isVideo ? 'videos' : 'cases';
       const filePath = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
 
@@ -164,11 +184,15 @@ const AdminCasesManagerPage = () => {
 
     if (imageUrls.length) {
       setUploadedImages((prev) => [...prev, ...imageUrls]);
-      toast.success(`Загружено изображений: ${imageUrls.length}`);
+      const originalSize = imageFiles.reduce((acc, f) => acc + f.size, 0);
+      const compressedSize = compressedImages.reduce((acc, f) => acc + f.size, 0);
+      toast.success(
+        `Загружено ${imageUrls.length} изображений (${formatFileSize(originalSize)} → ${formatFileSize(compressedSize)})`
+      );
     }
     if (videoUrls.length) {
       setUploadedVideos((prev) => [...prev, ...videoUrls]);
-      toast.success(`Загружено видео: ${videoUrls.length}`);
+      toast.success(`Загружено ${videoUrls.length} видео`);
     }
 
     setUploading(false);
