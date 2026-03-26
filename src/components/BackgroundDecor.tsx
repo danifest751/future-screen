@@ -165,25 +165,41 @@ const NeonDecor = () => (
 );
 
 const AuroraDecor = ({ settings }: { settings: AuroraSettings }) => {
-  const { intensity, contrast, motion, bloom, hueShift } = settings;
-  const motionSpeed = motionMultiplier[motion];
+  const { intensity, contrast, motion, color1, color2, color3, speed, blend, amplitude } = settings;
+  const motionSpeed = motionMultiplier[motion] / Math.max(0.2, speed);
+  const ampScale = Math.max(0.3, amplitude);
   return (
-  <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden style={{ filter: `contrast(${contrast}) hue-rotate(${hueShift}deg)` }}>
+  <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden style={{ filter: `contrast(${contrast})` }}>
     <div
       className="absolute inset-0"
-      style={{ background: 'linear-gradient(160deg, rgba(10,14,40,0.72), rgba(22,18,48,0.72))', opacity: withAlpha(1, intensity * bloom) }}
+      style={{ background: 'linear-gradient(160deg, rgba(10,14,40,0.72), rgba(22,18,48,0.72))', opacity: withAlpha(0.92, intensity) }}
     />
     <div
       className="animate-float absolute -left-20 -top-20 h-[560px] w-[560px] rounded-full opacity-45 blur-[120px]"
-      style={{ background: 'radial-gradient(circle, rgba(102,126,234,0.8) 0%, transparent 70%)', opacity: withAlpha(0.45, intensity * bloom), animationDuration: `${6 * motionSpeed}s` }}
+      style={{
+        background: `radial-gradient(circle, ${color1} 0%, transparent 70%)`,
+        opacity: withAlpha(0.45 + blend * 0.2, intensity),
+        animationDuration: `${6 * motionSpeed}s`,
+        transform: `scale(${0.9 + ampScale * 0.14})`,
+      }}
     />
     <div
       className="animate-float-delayed absolute right-[-120px] top-[15%] h-[520px] w-[520px] rounded-full opacity-40 blur-[120px]"
-      style={{ background: 'radial-gradient(circle, rgba(236,72,153,0.7) 0%, transparent 68%)', opacity: withAlpha(0.4, intensity * bloom), animationDuration: `${8 * motionSpeed}s` }}
+      style={{
+        background: `radial-gradient(circle, ${color2} 0%, transparent 68%)`,
+        opacity: withAlpha(0.4 + blend * 0.2, intensity),
+        animationDuration: `${8 * motionSpeed}s`,
+        transform: `scale(${0.88 + ampScale * 0.12})`,
+      }}
     />
     <div
       className="animate-blob-pulse absolute bottom-[-140px] left-[20%] h-[460px] w-[460px] rounded-full opacity-35 blur-[100px]"
-      style={{ background: 'radial-gradient(circle, rgba(14,165,233,0.65) 0%, transparent 72%)', opacity: withAlpha(0.35, intensity * bloom), animationDuration: `${5 * motionSpeed}s` }}
+      style={{
+        background: `radial-gradient(circle, ${color3} 0%, transparent 72%)`,
+        opacity: withAlpha(0.35 + blend * 0.18, intensity),
+        animationDuration: `${5 * motionSpeed}s`,
+        transform: `scale(${0.92 + ampScale * 0.1})`,
+      }}
     />
   </div>
   );
@@ -223,54 +239,140 @@ const MeshDecor = ({ settings }: { settings: MeshSettings }) => {
 };
 
 const DotsDecor = ({ settings }: { settings: DotsSettings }) => {
-  const { intensity, contrast, motion, dotSize, density } = settings;
+  const {
+    intensity,
+    contrast,
+    motion,
+    dotSize,
+    gap,
+    baseColor,
+    activeColor,
+    proximity,
+    speedTrigger,
+    shockRadius,
+    shockStrength,
+    maxSpeed,
+    resistance,
+    returnDuration,
+  } = settings;
   const motionSpeed = motionMultiplier[motion];
+  const pulseDuration = (Math.max(0.2, speedTrigger / 100) * motionSpeed).toFixed(2);
+  const dotsOpacity = Math.min(0.55, (maxSpeed / 10000) * 0.4 + 0.12);
+  const shimmer = Math.max(0.05, 1 - resistance / 2500);
   return (
   <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden style={{ filter: `contrast(${contrast})` }}>
     <div
       className="absolute inset-0"
       style={{
-        background: 'linear-gradient(145deg, rgba(2,6,23,0.98), rgba(15,23,42,0.98))',
+        background: `radial-gradient(circle at 20% 20%, ${baseColor}33, transparent 42%), linear-gradient(145deg, rgba(2,6,23,0.98), rgba(15,23,42,0.98))`,
         opacity: withAlpha(1, intensity),
       }}
     />
-    <svg className="animate-pulse-slow absolute inset-0 h-full w-full" style={{ opacity: withAlpha(0.22, intensity * density), animationDuration: `${3.5 * motionSpeed}s` }}>
+    <svg className="animate-pulse-slow absolute inset-0 h-full w-full" style={{ opacity: withAlpha(dotsOpacity, intensity), animationDuration: `${pulseDuration}s` }}>
       <defs>
-        <pattern id="dots-grid" width={22 / density} height={22 / density} patternUnits="userSpaceOnUse">
-          <circle cx="1.8" cy="1.8" r={dotSize} fill="rgba(148,163,184,0.65)" />
+        <pattern id="dots-grid" width={gap} height={gap} patternUnits="userSpaceOnUse">
+          <circle cx={Math.max(2, gap * 0.25)} cy={Math.max(2, gap * 0.25)} r={dotSize} fill={baseColor} />
         </pattern>
       </defs>
       <rect width="100%" height="100%" fill="url(#dots-grid)" />
     </svg>
     <div
       className="absolute left-0 right-0 top-1/3 h-px opacity-30"
-      style={{ background: 'linear-gradient(90deg, transparent, rgba(96,165,250,0.9), transparent)', opacity: withAlpha(0.3, intensity) }}
+      style={{
+        background: `linear-gradient(90deg, transparent, ${activeColor}, transparent)`,
+        opacity: withAlpha(Math.min(0.75, 0.2 + shockStrength * 0.06), intensity),
+        boxShadow: `0 0 ${Math.round(shockRadius * 0.25)}px ${activeColor}`,
+      }}
+    />
+    <div
+      className="animate-pulse-slow absolute rounded-full blur-[80px]"
+      style={{
+        left: `calc(50% - ${Math.round(proximity / 2)}px)`,
+        top: `calc(50% - ${Math.round(proximity / 2)}px)`,
+        width: proximity,
+        height: proximity,
+        background: activeColor,
+        opacity: withAlpha(0.06 + shimmer * 0.2, intensity),
+        animationDuration: `${Math.max(0.2, returnDuration) * motionSpeed}s`,
+      }}
     />
   </div>
   );
 };
 
 const WavesDecor = ({ settings }: { settings: WavesSettings }) => {
-  const { intensity, contrast, motion, amplitude, thickness } = settings;
+  const {
+    intensity,
+    contrast,
+    motion,
+    lineColor,
+    backgroundColor,
+    waveSpeedX,
+    waveSpeedY,
+    waveAmpX,
+    waveAmpY,
+    xGap,
+    yGap,
+    friction,
+    tension,
+    maxCursorMove,
+  } = settings;
   const motionSpeed = motionMultiplier[motion];
+  const lineCount = Math.max(6, Math.min(24, Math.round(420 / yGap)));
+  const width = 1440;
+  const height = 900;
+  const step = Math.max(14, xGap * 5);
+
+  const makePath = (idx: number, phase: number) => {
+    const baseY = 120 + idx * yGap * 1.25;
+    let d = `M0 ${baseY}`;
+    for (let x = step; x <= width; x += step) {
+      const offsetA = Math.sin(x * waveSpeedX + phase + idx * tension * 30) * waveAmpY;
+      const offsetB = Math.cos(x * waveSpeedY * 0.9 + phase * 0.8 + idx * 0.35) * (waveAmpX * 0.22);
+      const drift = Math.sin((idx + 1) * 0.6 + phase * friction) * (maxCursorMove * 0.08);
+      d += ` L${x} ${baseY + offsetA + offsetB + drift}`;
+    }
+    return d;
+  };
+
+  const phaseA = (waveSpeedX * 120) / motionSpeed;
+  const phaseB = (waveSpeedY * 140) / motionSpeed;
+
   return (
   <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden style={{ filter: `contrast(${contrast})` }}>
     <div
       className="absolute inset-0"
-      style={{ background: 'linear-gradient(160deg, rgba(10,10,26,0.98), rgba(30,27,75,0.98))', opacity: withAlpha(1, intensity) }}
+      style={{ background: `linear-gradient(160deg, ${backgroundColor}, rgba(10,10,26,0.98))`, opacity: withAlpha(1, intensity) }}
     />
-    <svg className="animate-float absolute inset-0 h-full w-full" style={{ opacity: withAlpha(0.35, intensity), animationDuration: `${7 * motionSpeed}s` }} viewBox="0 0 1440 900" preserveAspectRatio="none">
-      <path d={`M0,${280 * amplitude} C260,${220 * amplitude} 420,${360 * amplitude} 690,${300 * amplitude} C950,${240 * amplitude} 1130,${350 * amplitude} 1440,${280 * amplitude}`} stroke="rgba(56,189,248,0.8)" strokeWidth={thickness} fill="none" />
-      <path d={`M0,${360 * amplitude} C280,${300 * amplitude} 460,${430 * amplitude} 730,${365 * amplitude} C1020,${300 * amplitude} 1210,${420 * amplitude} 1440,${350 * amplitude}`} stroke="rgba(167,139,250,0.7)" strokeWidth={thickness} fill="none" />
-      <path d={`M0,${450 * amplitude} C300,${390 * amplitude} 510,${520 * amplitude} 790,${445 * amplitude} C1040,${378 * amplitude} 1240,${510 * amplitude} 1440,${430 * amplitude}`} stroke="rgba(244,114,182,0.55)" strokeWidth={thickness} fill="none" />
+    <svg className="animate-float absolute inset-0 h-full w-full" style={{ opacity: withAlpha(0.42, intensity), animationDuration: `${Math.max(2, 9 * motionSpeed / (waveSpeedX * 100))}s` }} viewBox="0 0 1440 900" preserveAspectRatio="none">
+      {Array.from({ length: lineCount }).map((_, idx) => (
+        <path
+          key={`wave-a-${idx}`}
+          d={makePath(idx, phaseA)}
+          stroke={lineColor}
+          strokeWidth={Math.max(0.6, 2 - idx * 0.04 + tension * 35)}
+          strokeOpacity={Math.max(0.08, 0.6 - idx * 0.02)}
+          fill="none"
+        />
+      ))}
+      {Array.from({ length: Math.max(4, Math.floor(lineCount / 2)) }).map((_, idx) => (
+        <path
+          key={`wave-b-${idx}`}
+          d={makePath(idx + 1, phaseB)}
+          stroke={lineColor}
+          strokeWidth={Math.max(0.5, 1.4 - idx * 0.03)}
+          strokeOpacity={Math.max(0.05, 0.28 - idx * 0.02)}
+          fill="none"
+        />
+      ))}
     </svg>
     <div
       className="absolute -left-28 top-1/4 h-[380px] w-[380px] rounded-full opacity-20 blur-[100px]"
-      style={{ background: 'rgba(56,189,248,0.6)', opacity: withAlpha(0.2, intensity) }}
+      style={{ background: lineColor, opacity: withAlpha(0.14 + tension * 8, intensity) }}
     />
     <div
       className="absolute -right-24 bottom-1/4 h-[340px] w-[340px] rounded-full opacity-20 blur-[90px]"
-      style={{ background: 'rgba(244,114,182,0.55)', opacity: withAlpha(0.2, intensity) }}
+      style={{ background: lineColor, opacity: withAlpha(0.08 + (1 - friction) * 0.9, intensity) }}
     />
   </div>
   );
