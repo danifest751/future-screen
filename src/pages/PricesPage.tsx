@@ -10,7 +10,7 @@ const PricesPage = () => {
   return (
     <div className="space-y-2">
       <Helmet>
-        <title>Пакеты и цены | Future Screen</title>
+        <title>Пакеты и цены | Фьючер Скрин</title>
         <meta name="description" content="Пакеты техсопровождения: Лайт, Медиум, Биг. Прозрачные цены на LED, звук, свет, сцены." />
       </Helmet>
       <Section title="Пакеты и ориентиры" subtitle="Лайт · Медиум · Биг — подберите базовый комплект">

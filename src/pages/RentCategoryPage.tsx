@@ -20,7 +20,7 @@ const RentCategoryPage = ({ categoryId }: Props) => {
   return (
     <div className="space-y-2">
       <Helmet>
-        <title>{category.title} — аренда | Future Screen</title>
+        <title>{category.title} — аренда | Фьючер Скрин</title>
         <meta name="description" content={`${category.shortDescription} ${content.description}`} />
       </Helmet>
       <Section title={category.title} subtitle={content.description}>

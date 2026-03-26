@@ -9,8 +9,8 @@ const ContactsPage = () => {
   return (
   <div className="space-y-2">
     <Helmet>
-      <title>Контакты | Future Screen</title>
-      <meta name="description" content="Контакты Future Screen: телефон, email, адрес. Свяжитесь любым удобным способом." />
+      <title>Контакты | Фьючер Скрин</title>
+      <meta name="description" content="Контакты Фьючер Скрин: телефон, email, адрес. Свяжитесь любым удобным способом." />
     </Helmet>
     <Section title="Контакты" subtitle="Свяжитесь любым удобным способом">
       <div className="grid gap-6 md:grid-cols-2">

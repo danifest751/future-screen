@@ -11,7 +11,7 @@ const RentPage = () => {
   return (
   <div className="space-y-2">
     <Helmet>
-      <title>Аренда оборудования для мероприятий | Future Screen</title>
+      <title>Аренда оборудования для мероприятий | Фьючер Скрин</title>
       <meta name="description" content="Аренда светового, звукового, видеооборудования, сцен и инструментов для мероприятий." />
     </Helmet>
     <Section title="Аренда оборудования" subtitle="Свет, звук, видео, сцены, инструменты">

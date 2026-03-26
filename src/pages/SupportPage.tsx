@@ -10,7 +10,7 @@ const SupportPage = () => {
   return (
   <div className="space-y-2">
     <Helmet>
-      <title>Техсопровождение мероприятий | Future Screen</title>
+      <title>Техсопровождение мероприятий | Фьючер Скрин</title>
       <meta name="description" content="Пакеты техсопровождения мероприятий: LED, звук, свет, сцены. Лайт, Медиум, Биг — под любой формат." />
     </Helmet>
     <Section title="Техсопровождение под ключ" subtitle="Лайт · Медиум · Биг — под формат мероприятия">

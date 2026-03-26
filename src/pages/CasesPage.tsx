@@ -9,7 +9,7 @@ const CasesPage = () => {
   return (
   <div className="space-y-2">
     <Helmet>
-      <title>Кейсы — реализованные проекты | Future Screen</title>
+      <title>Кейсы — реализованные проекты | Фьючер Скрин</title>
       <meta name="description" content="Портфолио реализованных проектов: форумы, концерты, выставки. Цифры, состав работ и фото." />
     </Helmet>
     <Section title="Кейсы" subtitle="Реализованные проекты с цифрами и составом работ">

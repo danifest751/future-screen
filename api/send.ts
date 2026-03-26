@@ -279,7 +279,7 @@ const sendEmail = async (payload: EmailPayload, requestId: string): Promise<Emai
 
   try {
     await retryAsync(() => transporter.sendMail({
-      from: `"Future Screen" <${process.env.SMTP_USER}>`,
+      from: `"Фьючер Скрин" <${process.env.SMTP_USER}>`,
       to: process.env.SMTP_TO || process.env.SMTP_USER,
       subject: `Заявка: ${payload.source || 'Сайт'} — ${payload.name}`,
       text,
@@ -322,7 +322,7 @@ const sendEmail = async (payload: EmailPayload, requestId: string): Promise<Emai
 
         clientText.push('');
         clientText.push('С уважением,');
-        clientText.push('Команда Future Screen');
+        clientText.push('Команда Фьючер Скрин');
         clientText.push('+7 (912) 246-65-66');
         clientText.push('futurescreen@list.ru');
 
@@ -336,7 +336,7 @@ const sendEmail = async (payload: EmailPayload, requestId: string): Promise<Emai
         await retryAsync(() => transporter.sendMail({
           from: `"Future Screen" <${process.env.SMTP_USER}>`,
           to: payload.email,
-          subject: 'Ваша заявка принята — Future Screen',
+          subject: 'Ваша заявка принята — Фьючер Скрин',
           text: clientText.join('\n'),
           html: clientHtml,
         }), {

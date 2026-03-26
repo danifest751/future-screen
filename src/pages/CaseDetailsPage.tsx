@@ -22,7 +22,7 @@ const CaseDetailsPage = () => {
   return (
     <div className="space-y-2">
       <Helmet>
-        <title>{item.title} — кейс | Future Screen</title>
+        <title>{item.title} — кейс | Фьючер Скрин</title>
         <meta name="description" content={item.summary} />
       </Helmet>
       <Section title={item.title} subtitle={`${item.city} · ${item.date} · ${item.format}`}>

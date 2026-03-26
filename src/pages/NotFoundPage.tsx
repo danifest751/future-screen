@@ -5,7 +5,7 @@ import Section from '../components/Section';
 const NotFoundPage = () => (
   <div className="space-y-2">
     <Helmet>
-      <title>Страница не найдена | Future Screen</title>
+      <title>Страница не найдена | Фьючер Скрин</title>
     </Helmet>
     <Section title="Страница не найдена" subtitle="Проверьте адрес или вернитесь на главную">
       <div className="card space-y-3 text-sm text-slate-200">

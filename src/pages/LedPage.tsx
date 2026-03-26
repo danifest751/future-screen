@@ -27,7 +27,7 @@ const faq = [
 const LedPage = () => (
   <div className="space-y-2">
     <Helmet>
-      <title>LED-экраны — аренда и монтаж | Future Screen</title>
+      <title>LED-экраны — аренда и монтаж | Фьючер Скрин</title>
       <meta name="description" content="Аренда LED-экранов для мероприятий: задники сцен, порталы, вогнутые конструкции. Монтаж, процессинг, инженеры." />
     </Helmet>
     <Section title="LED-экраны" subtitle="Задники сцен, порталы, вогнутые и подвесные конструкции">
