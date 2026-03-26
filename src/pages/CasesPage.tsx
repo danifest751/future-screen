@@ -4,6 +4,7 @@ import { Play, Image as ImageIcon } from 'lucide-react';
 import Section from '../components/Section';
 import { useCases } from '../hooks/useCases';
 import type { CaseItem } from '../data/cases';
+import { LazyImage } from '../components/LazyImage';
 
 const CasesPage = () => {
   const { cases } = useCases();
@@ -48,10 +49,11 @@ const CasesPage = () => {
                           idx === 0 ? 'w-1/2' : 'w-1/4'
                         }`}
                       >
-                        <img 
-                          src={src} 
+                        <LazyImage
+                          src={src}
                           alt={`${item.title} ${idx + 1}`}
                           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                          placeholderClassName="h-full w-full"
                         />
                         {/* Video indicator overlay on last image if video exists */}
                         {hasVideo && idx === previewImages.length - 1 && (
