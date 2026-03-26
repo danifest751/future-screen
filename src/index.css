@@ -387,3 +387,49 @@ select:focus-visible {
 [data-theme="neon"] .shadow-brand-500\/30 {
   box-shadow: 0 4px 14px -2px var(--shadow-brand) !important;
 }
+
+/* ===== Accessibility Utilities ===== */
+
+/**
+ * Screen reader only - скрывает визуально, но доступно для скринридеров.
+ * Используется для ARIA-лейблов и дополнительного контента.
+ */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Skip link для навигации с клавиатуры */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: var(--brand-500);
+  color: white;
+  padding: 8px;
+  text-decoration: none;
+  z-index: 100;
+  border-radius: 0 0 4px 0;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+/* Focus visible outline для всех интерактивных элементов */
+:focus-visible {
+  outline: 2px solid var(--brand-500);
+  outline-offset: 2px;
+}
+
+/* Отключаем outline для мыши, но сохраняем для клавиатуры */
+:focus:not(:focus-visible) {
+  outline: none;
+}
