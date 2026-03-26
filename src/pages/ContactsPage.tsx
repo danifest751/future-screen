@@ -112,16 +112,24 @@ const ContactsPage = () => {
 
           {/* Map */}
           <div className="overflow-hidden rounded-xl border border-white/10">
+            <iframe
+              src={`https://yandex.ru/map-widget/v1/?text=${encodeURIComponent(contacts.address)}&z=16`}
+              width="100%"
+              height="200"
+              frameBorder="0"
+              allowFullScreen
+              title="Карта"
+              className="grayscale-[30%] transition-all duration-300 hover:grayscale-0"
+              style={{ border: 0, display: 'block' }}
+            />
             <a
               href={`https://yandex.ru/maps/?text=${encodeURIComponent(contacts.address)}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="group relative flex h-48 items-center justify-center bg-gradient-to-br from-brand-500/20 to-brand-600/20 transition hover:from-brand-500/30 hover:to-brand-600/30"
+              className="flex items-center justify-center gap-2 border-t border-white/10 bg-white/5 py-2 text-sm text-gray-400 transition hover:bg-white/10 hover:text-white"
             >
-              <div className="text-center">
-                <MapPinIcon />
-                <span className="mt-2 block text-sm font-medium text-white group-hover:underline">Открыть в Яндекс.Картах</span>
-              </div>
+              <MapPinIcon />
+              Открыть в Яндекс.Картах
             </a>
           </div>
         </div>
