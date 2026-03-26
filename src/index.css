@@ -46,6 +46,13 @@ body {
   transition: background-color 0.3s, color 0.3s;
 }
 
+:root[data-background='aurora'] body,
+:root[data-background='mesh'] body,
+:root[data-background='dots'] body,
+:root[data-background='waves'] body {
+  background-image: none;
+}
+
 /* Grid background pattern */
 .grid-bg {
   background-image:
