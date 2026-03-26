@@ -19,7 +19,7 @@ const handleHashNav = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => 
 const Footer = () => {
   return (
     <footer
-      className="relative border-t"
+      className="relative z-10 border-t"
       style={{
         borderColor: 'rgba(255,255,255,0.08)',
         background: 'rgba(10,10,10,0.9)',

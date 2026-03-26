@@ -3,4 +3,9 @@
   height: 100%;
   position: relative;
   overflow: hidden;
+  pointer-events: none;
+}
+
+.pixel-blast-container canvas {
+  pointer-events: none;
 }
