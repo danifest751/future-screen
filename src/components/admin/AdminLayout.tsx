@@ -199,7 +199,7 @@ const AdminLayout = ({ title, subtitle, children }: Props) => {
                 FS
               </div>
               <div>
-                <div className="text-sm font-semibold leading-none">Future Screen</div>
+                <div className="text-sm font-semibold leading-none">Фьючер Скрин</div>
                 <div className="mt-0.5 flex items-center gap-1 text-xs text-slate-400">
                   <Zap size={10} className="text-brand-400" />
                   Панель управления

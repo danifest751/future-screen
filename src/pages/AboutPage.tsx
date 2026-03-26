@@ -4,8 +4,8 @@ import Section from '../components/Section';
 const AboutPage = () => (
   <div className="space-y-2">
     <Helmet>
-      <title>О компании | Future Screen</title>
-      <meta name="description" content="Future Screen — техсопровождение мероприятий с 2007 года. Инженеры, монтажные бригады, работа по всей РФ." />
+      <title>О компании | Фьючер Скрин</title>
+      <meta name="description" content="Фьючер Скрин — техсопровождение мероприятий с 2007 года. Инженеры, монтажные бригады, работа по всей РФ." />
     </Helmet>
     <Section title="О компании" subtitle="С 2007 года, технический партнёр для событий по всей РФ">
       <div className="grid gap-6 md:grid-cols-2">

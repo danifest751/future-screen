@@ -6,7 +6,7 @@ export const StructuredData = () => (
       {JSON.stringify({
         '@context': 'https://schema.org',
         '@type': 'Organization',
-        'name': 'Future Screen',
+        'name': 'Фьючер Скрин',
         'url': 'https://future-screen.vercel.app',
         'telephone': '+79122466566',
         'alternateName': 'Фьюче Скрин',

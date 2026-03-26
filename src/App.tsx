@@ -146,7 +146,7 @@ const App = () => {
   return (
     <Layout>
       <Helmet>
-        <title>Future Screen — LED, звук, свет, сцены</title>
+        <title>Фьючер Скрин — LED, звук, свет, сцены</title>
         <meta
           name="description"
           content="Техсопровождение мероприятий: LED-экраны, звук, свет, сцены. КП за 15 минут. Работаем по РФ с 2007 года."

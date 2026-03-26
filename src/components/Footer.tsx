@@ -39,7 +39,7 @@ const Footer = () => {
                 FS
               </div>
               <div>
-                <div className="font-display text-base font-semibold text-white">Future Screen</div>
+                <div className="font-display text-base font-semibold text-white">Фьючер Скрин</div>
                 <div className="text-xs text-gray-500">Техсопровождение мероприятий</div>
               </div>
             </Link>
@@ -118,7 +118,7 @@ const Footer = () => {
           className="mt-12 flex flex-col items-center justify-between gap-3 border-t pt-6 text-xs text-gray-600 sm:flex-row"
           style={{ borderColor: 'rgba(255,255,255,0.07)' }}
         >
-          <div>© 2007–2026 Future Screen. Все права защищены.</div>
+          <div>© 2007–2026 Фьючер Скрин. Все права защищены.</div>
           <Link to="/privacy" className="transition-colors hover:text-gray-400">
             Политика конфиденциальности
           </Link>

@@ -5,7 +5,7 @@ import Calculator from '../components/calculator/Calculator';
 const CalculatorPage = () => (
   <div className="space-y-2 pb-16">
     <Helmet>
-      <title>Калькулятор LED-экрана | Future Screen</title>
+      <title>Калькулятор LED-экрана | Фьючер Скрин</title>
       <meta name="description" content="Онлайн-калькулятор LED-экрана: подберите размер, шаг пикселя и стоимость аренды за 2 минуты." />
     </Helmet>
     <Section

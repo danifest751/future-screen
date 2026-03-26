@@ -79,7 +79,7 @@ const Header = () => {
           </div>
           <div className="min-w-0 leading-tight">
             <div className="font-display truncate text-[15px] font-semibold text-white lg:text-base">
-              Future Screen
+              Фьючер Скрин
             </div>
             <div className="hidden text-[10px] text-gray-400 lg:block">
               Техсопровождение мероприятий

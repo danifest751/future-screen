@@ -5,7 +5,7 @@ import { RequestForm } from '../components/RequestForm';
 const ConsultPage = () => (
   <div className="space-y-2">
     <Helmet>
-      <title>Консультация по оборудованию | Future Screen</title>
+      <title>Консультация по оборудованию | Фьючер Скрин</title>
       <meta name="description" content="Бесплатная консультация: подбор LED, звука, света, сцен под вашу площадку и формат мероприятия." />
     </Helmet>
     <Section title="Консультация" subtitle="Подбор оборудования и схемы площадки">
