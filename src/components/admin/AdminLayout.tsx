@@ -173,7 +173,7 @@ const AdminLayout = ({ title, subtitle, children }: Props) => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900">
+    <div className="min-h-screen bg-transparent">
       <Toaster 
         position="top-right" 
         toastOptions={{ 
