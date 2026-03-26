@@ -83,6 +83,18 @@ const AdminBackgroundsPage = () => {
     patchStoredBackgroundSettings(backgroundId, patch);
   };
 
+  const updateColorSetting = (backgroundId: CustomBackgroundId, key: string, value: string) => {
+    const patch = { [key]: value } as Partial<AnyBackgroundSettings>;
+    setSettingsMap((prev) => ({
+      ...prev,
+      [backgroundId]: {
+        ...prev[backgroundId],
+        [key]: value,
+      },
+    }));
+    patchStoredBackgroundSettings(backgroundId, patch);
+  };
+
   const resetBackgroundSettings = (backgroundId: CustomBackgroundId) => {
     const nextMap = {
       ...settingsMap,
@@ -199,18 +211,39 @@ const AdminBackgroundsPage = () => {
                   </label>
 
                   {backgroundSettingsControls[option.id].map((control) => {
+                    if (control.control === 'color') {
+                      const value = String(settings[control.key as keyof AnyBackgroundSettings] ?? '#FFFFFF');
+                      return (
+                        <label key={control.key} className="block text-sm text-slate-300">
+                          <div className="mb-1 flex items-center justify-between gap-2">
+                            <span>{control.label}</span>
+                            <span className="text-xs text-slate-400">{value}</span>
+                          </div>
+                          <input
+                            type="color"
+                            value={value}
+                            onChange={(e) => updateColorSetting(option.id, control.key, e.target.value.toUpperCase())}
+                            className="h-10 w-full cursor-pointer rounded-lg border border-white/10 bg-slate-900 px-1 py-1"
+                          />
+                        </label>
+                      );
+                    }
+
+                    const step = control.step ?? 1;
+                    const min = control.min ?? 0;
+                    const max = control.max ?? 100;
                     const value = Number(settings[control.key as keyof AnyBackgroundSettings]);
                     return (
                       <label key={control.key} className="block text-sm text-slate-300">
                         <div className="mb-1 flex items-center justify-between gap-2">
                           <span>{control.label}</span>
-                          <span className="text-xs text-slate-400">{formatValue(value, control.step)}</span>
+                          <span className="text-xs text-slate-400">{formatValue(value, step)}</span>
                         </div>
                         <input
                           type="range"
-                          min={control.min}
-                          max={control.max}
-                          step={control.step}
+                          min={min}
+                          max={max}
+                          step={step}
                           value={value}
                           onChange={(e) => updateNumericSetting(option.id, control.key, Number(e.target.value))}
                           className="w-full accent-brand-500"
