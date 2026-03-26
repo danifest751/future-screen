@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import LoginModal from './LoginModal';
 import { useAuth } from '../context/AuthContext';
+import { PrefetchLink } from './PrefetchLink';
 
 const navLinks = [
   { to: '/#about', label: 'О нас', hash: true },
@@ -98,22 +99,18 @@ const Header = () => {
               {item.label}
             </a>
           ))}
-          <NavLink
+          <PrefetchLink
             to="/cases"
-            className={({ isActive }) =>
-              `rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 hover:bg-white/5 hover:text-white ${isActive ? 'text-white' : 'text-gray-300'}`
-            }
+            className="rounded-full px-4 py-2 text-sm font-medium text-gray-300 transition-all duration-200 hover:bg-white/5 hover:text-white"
           >
             Кейсы
-          </NavLink>
-          <NavLink
+          </PrefetchLink>
+          <PrefetchLink
             to="/contacts"
-            className={({ isActive }) =>
-              `rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 hover:bg-white/5 hover:text-white ${isActive ? 'text-white' : 'text-gray-300'}`
-            }
+            className="rounded-full px-4 py-2 text-sm font-medium text-gray-300 transition-all duration-200 hover:bg-white/5 hover:text-white"
           >
             Контакты
-          </NavLink>
+          </PrefetchLink>
         </nav>
 
         {/* Right controls */}
@@ -194,24 +191,20 @@ const Header = () => {
                 {item.label}
               </a>
             ))}
-            <NavLink
+            <PrefetchLink
               to="/cases"
               onClick={closeMenu}
-              className={({ isActive }) =>
-                `rounded-xl px-4 py-3 text-sm font-medium transition hover:bg-white/5 hover:text-white ${isActive ? 'text-white' : 'text-gray-300'}`
-              }
+              className="rounded-xl px-4 py-3 text-sm font-medium text-gray-300 transition hover:bg-white/5 hover:text-white"
             >
               Кейсы
-            </NavLink>
-            <NavLink
+            </PrefetchLink>
+            <PrefetchLink
               to="/contacts"
               onClick={closeMenu}
-              className={({ isActive }) =>
-                `rounded-xl px-4 py-3 text-sm font-medium transition hover:bg-white/5 hover:text-white ${isActive ? 'text-white' : 'text-gray-300'}`
-              }
+              className="rounded-xl px-4 py-3 text-sm font-medium text-gray-300 transition hover:bg-white/5 hover:text-white"
             >
               Контакты
-            </NavLink>
+            </PrefetchLink>
             <div className="mt-3 border-t pt-4" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
               <a
                 href="tel:+79122466566"
