@@ -49,7 +49,9 @@ body {
 :root[data-background='aurora'] body,
 :root[data-background='mesh'] body,
 :root[data-background='dots'] body,
-:root[data-background='waves'] body {
+:root[data-background='waves'] body,
+:root[data-background='rings'] body,
+:root[data-background='nebula'] body {
   background-image: none;
 }
 
