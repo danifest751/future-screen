@@ -14,8 +14,8 @@ const CasesPage = () => {
     const videos = item.videos || [];
     const hasVideo = videos.length > 0;
     
-    // Take up to 3 preview items (mix of images and video indicator)
-    const previewImages = images.slice(0, hasVideo ? 2 : 3);
+    // Take up to 4 preview items
+    const previewImages = images.slice(0, 4);
     
     return { previewImages, hasVideo, videoCount: videos.length, imageCount: images.length };
   };
@@ -39,37 +39,64 @@ const CasesPage = () => {
               >
                 {/* Preview Gallery */}
                 {previewImages.length > 0 && (
-                  <div className="relative flex h-40 overflow-hidden">
-                    {previewImages.map((src, idx) => (
-                      <div 
-                        key={src} 
-                        className={`relative overflow-hidden ${
-                          previewImages.length === 1 ? 'w-full' : 
-                          previewImages.length === 2 ? 'w-1/2' : 
-                          idx === 0 ? 'w-1/2' : 'w-1/4'
-                        }`}
-                      >
-                        <LazyImage
-                          src={src}
-                          alt={`${item.title} ${idx + 1}`}
-                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-                          placeholderClassName="h-full w-full"
-                        />
-                        {/* Video indicator overlay on last image if video exists */}
-                        {hasVideo && idx === previewImages.length - 1 && (
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                            <div className="flex items-center gap-2 rounded-full bg-brand-500/90 px-3 py-1.5 text-xs font-medium text-white">
-                              <Play size={12} fill="currentColor" />
-                              {videoCount > 1 ? `${videoCount} видео` : 'Видео'}
-                            </div>
+                  <div className="relative aspect-[16/10] overflow-hidden bg-slate-800">
+                    {previewImages.length === 1 ? (
+                      // Single image - full cover
+                      <LazyImage
+                        src={previewImages[0]}
+                        alt={item.title}
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        placeholderClassName="h-full w-full"
+                      />
+                    ) : previewImages.length === 2 ? (
+                      // Two images - side by side
+                      <div className="flex h-full gap-0.5">
+                        {previewImages.map((src, idx) => (
+                          <div key={src} className="relative flex-1 overflow-hidden">
+                            <LazyImage
+                              src={src}
+                              alt={`${item.title} ${idx + 1}`}
+                              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                              placeholderClassName="h-full w-full"
+                            />
                           </div>
-                        )}
+                        ))}
                       </div>
-                    ))}
+                    ) : (
+                      // 3+ images - grid layout
+                      <div className="grid h-full grid-cols-2 grid-rows-2 gap-0.5">
+                        {previewImages.map((src, idx) => (
+                          <div 
+                            key={src} 
+                            className={`relative overflow-hidden ${
+                              idx === 0 && previewImages.length >= 3 ? 'row-span-2' : ''
+                            }`}
+                          >
+                            <LazyImage
+                              src={src}
+                              alt={`${item.title} ${idx + 1}`}
+                              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                              placeholderClassName="h-full w-full"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {/* Video indicator overlay */}
+                    {hasVideo && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                        <div className="flex items-center gap-2 rounded-full bg-brand-500 px-4 py-2 text-sm font-medium text-white shadow-lg">
+                          <Play size={16} fill="currentColor" />
+                          {videoCount > 1 ? `${videoCount} видео` : 'Смотреть видео'}
+                        </div>
+                      </div>
+                    )}
+                    
                     {/* More images indicator */}
                     {imageCount > previewImages.length && (
-                      <div className="absolute bottom-2 right-2 flex items-center gap-1 rounded-full bg-black/70 px-2 py-1 text-xs text-white">
-                        <ImageIcon size={12} />
+                      <div className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-full bg-black/80 px-3 py-1.5 text-sm font-medium text-white backdrop-blur-sm">
+                        <ImageIcon size={14} />
                         +{imageCount - previewImages.length}
                       </div>
                     )}
@@ -114,10 +141,10 @@ const CasesPage = () => {
                   
                   {/* Services tags */}
                   <div className="mt-3 flex flex-wrap gap-1">
-                    {item.services.slice(0, 4).map((s) => (
+                    {item.services.slice(0, 4).map((s, idx) => (
                       <span key={s} className="text-[10px] uppercase text-slate-500">
                         {s}
-                        {item.services.indexOf(s) < Math.min(item.services.length, 4) - 1 && (
+                        {idx < Math.min(item.services.length, 4) - 1 && (
                           <span className="ml-1 text-slate-600">·</span>
                         )}
                       </span>
