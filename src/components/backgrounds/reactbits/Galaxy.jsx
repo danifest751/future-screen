@@ -329,5 +329,5 @@ export default function Galaxy({
     transparent
   ]);
 
-  return <div ref={ctnDom} className="galaxy-container" {...rest} />;
+  return <div ref={ctnDom} className="galaxy-container" aria-hidden="true" {...rest} />;
 }
