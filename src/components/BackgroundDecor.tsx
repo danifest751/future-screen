@@ -12,17 +12,15 @@ import {
   type WavesSettings,
   type RingsSettings,
   type NebulaSettings,
-  type ColorBendsSettings,
-  type PixelBlastSettings,
-  type LineWavesSettings,
-  type GalaxySettings,
   getStoredBackground,
   getStoredBackgroundSettingsMap,
 } from '../lib/backgrounds';
-import ReactBitsColorBends from './backgrounds/reactbits/ColorBends.jsx';
-import ReactBitsPixelBlast from './backgrounds/reactbits/PixelBlast.jsx';
-import ReactBitsLineWaves from './backgrounds/reactbits/LineWaves.jsx';
-import ReactBitsGalaxy from './backgrounds/reactbits/Galaxy.jsx';
+import {
+  ColorBendsDecorLazy,
+  PixelBlastDecorLazy,
+  LineWavesDecorLazy,
+  GalaxyDecorLazy,
+} from './backgrounds/ReactBitsLazy';
 
 const motionMultiplier = {
   slow: 1.5,
@@ -30,195 +28,11 @@ const motionMultiplier = {
   fast: 0.7,
 };
 
-const ColorBendsDecor = ({ settings }: { settings: ColorBendsSettings }) => {
-  const {
-    intensity,
-    contrast,
-    motion,
-    color1,
-    color2,
-    color3,
-    speed,
-    rotation,
-    autoRotate,
-    scale,
-    frequency,
-    warpStrength,
-    mouseInfluence,
-    parallax,
-    noise,
-  } = settings;
-  return (
-    <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden style={{ filter: `contrast(${contrast})` }}>
-      <ReactBitsColorBends
-        className="h-full w-full"
-        style={{ opacity: withAlpha(1, intensity) }}
-        rotation={rotation}
-        speed={Math.max(0.01, speed / motionMultiplier[motion])}
-        colors={[color1, color2, color3]}
-        transparent
-        autoRotate={autoRotate}
-        scale={scale}
-        frequency={frequency}
-        warpStrength={warpStrength}
-        mouseInfluence={mouseInfluence}
-        parallax={parallax}
-        noise={noise}
-      />
-    </div>
-  );
-};
-
-const PixelBlastDecor = ({ settings }: { settings: PixelBlastSettings }) => {
-  const {
-    intensity,
-    contrast,
-    motion,
-    color,
-    pixelSize,
-    patternScale,
-    patternDensity,
-    pixelJitter,
-    rippleIntensity,
-    rippleThickness,
-    rippleSpeed,
-    edgeFade,
-    liquidStrength,
-    liquidRadius,
-    wobbleSpeed,
-  } = settings;
-  return (
-    <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden style={{ filter: `contrast(${contrast})` }}>
-      <ReactBitsPixelBlast
-        className="h-full w-full"
-        style={{ opacity: withAlpha(1, intensity) }}
-        color={color}
-        pixelSize={pixelSize}
-        patternScale={patternScale}
-        patternDensity={patternDensity}
-        liquid
-        liquidStrength={liquidStrength}
-        liquidRadius={liquidRadius}
-        pixelSizeJitter={pixelJitter}
-        enableRipples
-        rippleIntensityScale={rippleIntensity}
-        rippleThickness={rippleThickness}
-        rippleSpeed={rippleSpeed}
-        liquidWobbleSpeed={wobbleSpeed}
-        speed={Math.max(0.01, 0.5 / motionMultiplier[motion])}
-        edgeFade={edgeFade}
-        transparent
-      />
-    </div>
-  );
-};
-
-const LineWavesDecor = ({ settings }: { settings: LineWavesSettings }) => {
-  const {
-    intensity,
-    contrast,
-    motion,
-    color1,
-    color2,
-    color3,
-    speed,
-    innerLineCount,
-    outerLineCount,
-    warpIntensity,
-    rotation,
-    edgeFadeWidth,
-    colorCycleSpeed,
-    brightness,
-    mouseInfluence,
-  } = settings;
-  return (
-    <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden style={{ filter: `contrast(${contrast})` }}>
-      <div
-        className="absolute inset-0"
-        style={{
-          background: 'linear-gradient(150deg, rgba(5,10,24,0.96), rgba(12,18,38,0.96))',
-          opacity: withAlpha(1, intensity),
-        }}
-      />
-      <ReactBitsLineWaves
-        speed={Math.max(0.01, speed / motionMultiplier[motion])}
-        innerLineCount={innerLineCount}
-        outerLineCount={outerLineCount}
-        warpIntensity={warpIntensity}
-        rotation={rotation}
-        edgeFadeWidth={edgeFadeWidth}
-        colorCycleSpeed={colorCycleSpeed}
-        brightness={brightness}
-        color1={color1}
-        color2={color2}
-        color3={color3}
-        enableMouseInteraction
-        mouseInfluence={mouseInfluence}
-      />
-      <div
-        className="absolute inset-0"
-        style={{ background: `radial-gradient(circle at 50% 50%, transparent ${Math.round(58 - edgeFadeWidth * 28)}%, rgba(0,0,0,0.78) 100%)` }}
-      />
-    </div>
-  );
-};
-
-const GalaxyDecor = ({ settings }: { settings: GalaxySettings }) => {
-  const {
-    intensity,
-    contrast,
-    motion,
-    focalX,
-    focalY,
-    rotationX,
-    rotationY,
-    starSpeed,
-    density,
-    hueShift,
-    speed,
-    glowIntensity,
-    saturation,
-    repulsionStrength,
-    twinkleIntensity,
-    rotationSpeed,
-    autoCenterRepulsion,
-  } = settings;
-  return (
-    <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden style={{ filter: `contrast(${contrast}) hue-rotate(${hueShift}deg) saturate(${1 + saturation * 0.65})` }}>
-      <ReactBitsGalaxy
-        focal={[focalX, focalY]}
-        rotation={[rotationX, rotationY]}
-        starSpeed={starSpeed}
-        density={density}
-        hueShift={hueShift}
-        speed={Math.max(0.01, speed / motionMultiplier[motion])}
-        mouseInteraction
-        glowIntensity={glowIntensity}
-        saturation={saturation}
-        mouseRepulsion
-        repulsionStrength={repulsionStrength}
-        twinkleIntensity={twinkleIntensity}
-        rotationSpeed={rotationSpeed}
-        autoCenterRepulsion={autoCenterRepulsion}
-        transparent
-      />
-      <div
-        className="absolute inset-0"
-        style={{
-          background: `radial-gradient(circle at ${Math.round(focalX * 100)}% ${Math.round(focalY * 100)}%, rgba(120,175,255,${0.08 + glowIntensity * 0.35}), transparent 54%)`,
-        }}
-      />
-      <div
-        className="absolute inset-0"
-        style={{
-          background: `radial-gradient(circle at 50% 50%, transparent ${Math.round(40 + autoCenterRepulsion * 12)}%, rgba(0,0,0,0.78) 100%)`,
-          transform: `rotate(${rotationSpeed * 42}deg)`,
-          opacity: withAlpha(0.48 + repulsionStrength * 0.05, intensity),
-        }}
-      />
-    </div>
-  );
-};
+// Lazy-loaded heavy ReactBits backgrounds
+const ColorBendsDecor = ColorBendsDecorLazy;
+const PixelBlastDecor = PixelBlastDecorLazy;
+const LineWavesDecor = LineWavesDecorLazy;
+const GalaxyDecor = GalaxyDecorLazy;
 
 const withAlpha = (alpha: number, intensity: number) => Math.min(1, alpha * intensity);
 
