@@ -36,7 +36,7 @@ const BackgroundDecor = () => {
 };
 
 const DefaultDecor = () => (
-  <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden>
+  <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden>
     {/* Большой glow сверху-слева */}
     <div
       className="absolute -left-40 -top-40 h-[600px] w-[600px] rounded-full opacity-30 blur-[120px]"
@@ -65,7 +65,7 @@ const DefaultDecor = () => (
 );
 
 const LightDecor = () => (
-  <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden>
+  <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden>
     {/* Мягкий glow сверху */}
     <div
       className="absolute -left-20 -top-20 h-[500px] w-[500px] rounded-full opacity-40 blur-[150px]"
@@ -93,7 +93,7 @@ const LightDecor = () => (
 );
 
 const NeonDecor = () => (
-  <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden>
+  <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden>
     {/* Зелёный glow сверху-слева */}
     <div
       className="absolute -left-32 -top-32 h-[500px] w-[500px] rounded-full opacity-25 blur-[100px]"
@@ -126,7 +126,7 @@ const NeonDecor = () => (
 );
 
 const AuroraDecor = () => (
-  <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden>
+  <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden>
     <div
       className="absolute -left-20 -top-20 h-[560px] w-[560px] rounded-full opacity-30 blur-[120px]"
       style={{ background: 'radial-gradient(circle, rgba(102,126,234,0.8) 0%, transparent 70%)' }}
@@ -143,7 +143,7 @@ const AuroraDecor = () => (
 );
 
 const MeshDecor = () => (
-  <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden>
+  <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden>
     <div
       className="absolute inset-0 opacity-55"
       style={{
@@ -163,7 +163,7 @@ const MeshDecor = () => (
 );
 
 const DotsDecor = () => (
-  <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden>
+  <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden>
     <div
       className="absolute inset-0"
       style={{
@@ -186,7 +186,7 @@ const DotsDecor = () => (
 );
 
 const WavesDecor = () => (
-  <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden>
+  <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden>
     <div
       className="absolute inset-0"
       style={{ background: 'linear-gradient(160deg, rgba(10,10,26,0.95), rgba(30,27,75,0.95))' }}
