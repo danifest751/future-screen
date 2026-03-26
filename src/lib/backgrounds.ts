@@ -1,4 +1,15 @@
-export type BackgroundId = 'theme' | 'aurora' | 'mesh' | 'dots' | 'waves' | 'rings' | 'nebula';
+export type BackgroundId =
+  | 'theme'
+  | 'aurora'
+  | 'mesh'
+  | 'dots'
+  | 'waves'
+  | 'rings'
+  | 'nebula'
+  | 'color-bends'
+  | 'pixel-blast'
+  | 'line-waves'
+  | 'galaxy';
 export type CustomBackgroundId = Exclude<BackgroundId, 'theme'>;
 export type BackgroundMotion = 'slow' | 'normal' | 'fast';
 
@@ -60,6 +71,68 @@ export type NebulaSettings = CommonSettings & {
   hueShift: number;
 };
 
+export type ColorBendsSettings = CommonSettings & {
+  color1: string;
+  color2: string;
+  color3: string;
+  speed: number;
+  rotation: number;
+  autoRotate: number;
+  scale: number;
+  frequency: number;
+  warpStrength: number;
+  mouseInfluence: number;
+  parallax: number;
+  noise: number;
+};
+
+export type PixelBlastSettings = CommonSettings & {
+  color: string;
+  pixelSize: number;
+  patternScale: number;
+  patternDensity: number;
+  pixelJitter: number;
+  rippleIntensity: number;
+  rippleThickness: number;
+  rippleSpeed: number;
+  edgeFade: number;
+  liquidStrength: number;
+  liquidRadius: number;
+  wobbleSpeed: number;
+};
+
+export type LineWavesSettings = CommonSettings & {
+  color1: string;
+  color2: string;
+  color3: string;
+  speed: number;
+  innerLineCount: number;
+  outerLineCount: number;
+  warpIntensity: number;
+  rotation: number;
+  edgeFadeWidth: number;
+  colorCycleSpeed: number;
+  brightness: number;
+  mouseInfluence: number;
+};
+
+export type GalaxySettings = CommonSettings & {
+  focalX: number;
+  focalY: number;
+  rotationX: number;
+  rotationY: number;
+  starSpeed: number;
+  density: number;
+  hueShift: number;
+  speed: number;
+  glowIntensity: number;
+  saturation: number;
+  repulsionStrength: number;
+  twinkleIntensity: number;
+  rotationSpeed: number;
+  autoCenterRepulsion: number;
+};
+
 export type BackgroundSettingsById = {
   aurora: AuroraSettings;
   mesh: MeshSettings;
@@ -67,6 +140,10 @@ export type BackgroundSettingsById = {
   waves: WavesSettings;
   rings: RingsSettings;
   nebula: NebulaSettings;
+  'color-bends': ColorBendsSettings;
+  'pixel-blast': PixelBlastSettings;
+  'line-waves': LineWavesSettings;
+  galaxy: GalaxySettings;
 };
 
 export type AnyBackgroundSettings = BackgroundSettingsById[CustomBackgroundId];
@@ -123,6 +200,76 @@ export const defaultBackgroundSettingsById: BackgroundSettingsById = {
   },
   rings: { motion: 'normal', intensity: 1, contrast: 1, rings: 5, spread: 1 },
   nebula: { motion: 'normal', intensity: 1, contrast: 1, grain: 0.18, hueShift: 0 },
+  'color-bends': {
+    motion: 'normal',
+    intensity: 1,
+    contrast: 1,
+    color1: '#5227FF',
+    color2: '#FF7A00',
+    color3: '#00D1FF',
+    speed: 0.2,
+    rotation: 45,
+    autoRotate: 0,
+    scale: 1,
+    frequency: 1,
+    warpStrength: 1,
+    mouseInfluence: 1,
+    parallax: 0.5,
+    noise: 0.1,
+  },
+  'pixel-blast': {
+    motion: 'normal',
+    intensity: 1,
+    contrast: 1,
+    color: '#B19EEF',
+    pixelSize: 3,
+    patternScale: 2,
+    patternDensity: 1,
+    pixelJitter: 0,
+    rippleIntensity: 1,
+    rippleThickness: 0.1,
+    rippleSpeed: 0.3,
+    edgeFade: 0.5,
+    liquidStrength: 0.1,
+    liquidRadius: 1,
+    wobbleSpeed: 4.5,
+  },
+  'line-waves': {
+    motion: 'normal',
+    intensity: 1,
+    contrast: 1,
+    color1: '#FFFFFF',
+    color2: '#9AD0FF',
+    color3: '#FFD0F3',
+    speed: 0.3,
+    innerLineCount: 32,
+    outerLineCount: 36,
+    warpIntensity: 1,
+    rotation: -45,
+    edgeFadeWidth: 0,
+    colorCycleSpeed: 1,
+    brightness: 0.2,
+    mouseInfluence: 2,
+  },
+  galaxy: {
+    motion: 'normal',
+    intensity: 1,
+    contrast: 1,
+    focalX: 0.5,
+    focalY: 0.5,
+    rotationX: 1,
+    rotationY: 0,
+    starSpeed: 0.5,
+    density: 1,
+    hueShift: 140,
+    speed: 1,
+    glowIntensity: 0.3,
+    saturation: 0,
+    repulsionStrength: 2,
+    twinkleIntensity: 0.3,
+    rotationSpeed: 0.1,
+    autoCenterRepulsion: 0,
+  },
 };
 
 export type BackgroundSettingControl = {
@@ -193,6 +340,72 @@ export const backgroundSettingsControls: Record<CustomBackgroundId, BackgroundSe
     { key: 'grain', label: 'Шум', control: 'range', min: 0.05, max: 0.35, step: 0.01 },
     { key: 'hueShift', label: 'Сдвиг оттенка', control: 'range', min: -60, max: 60, step: 1 },
   ],
+  'color-bends': [
+    { key: 'intensity', label: 'Интенсивность', control: 'range', min: 0.6, max: 1.8, step: 0.1 },
+    { key: 'contrast', label: 'Контраст', control: 'range', min: 0.7, max: 1.6, step: 0.1 },
+    { key: 'color1', label: 'Color 1', control: 'color' },
+    { key: 'color2', label: 'Color 2', control: 'color' },
+    { key: 'color3', label: 'Color 3', control: 'color' },
+    { key: 'speed', label: 'Speed', control: 'range', min: 0.05, max: 2, step: 0.05 },
+    { key: 'rotation', label: 'Rotation', control: 'range', min: -180, max: 180, step: 1 },
+    { key: 'autoRotate', label: 'Auto Rotate', control: 'range', min: -2, max: 2, step: 0.05 },
+    { key: 'scale', label: 'Scale', control: 'range', min: 0.4, max: 2.5, step: 0.1 },
+    { key: 'frequency', label: 'Frequency', control: 'range', min: 0.3, max: 3, step: 0.1 },
+    { key: 'warpStrength', label: 'Warp Strength', control: 'range', min: 0, max: 2.5, step: 0.1 },
+    { key: 'mouseInfluence', label: 'Mouse Influence', control: 'range', min: 0, max: 3, step: 0.1 },
+    { key: 'parallax', label: 'Parallax', control: 'range', min: 0, max: 2, step: 0.1 },
+    { key: 'noise', label: 'Noise', control: 'range', min: 0, max: 0.6, step: 0.01 },
+  ],
+  'pixel-blast': [
+    { key: 'intensity', label: 'Интенсивность', control: 'range', min: 0.6, max: 1.8, step: 0.1 },
+    { key: 'contrast', label: 'Контраст', control: 'range', min: 0.7, max: 1.6, step: 0.1 },
+    { key: 'color', label: 'Color', control: 'color' },
+    { key: 'pixelSize', label: 'Pixel Size', control: 'range', min: 1, max: 10, step: 1 },
+    { key: 'patternScale', label: 'Pattern Scale', control: 'range', min: 0.5, max: 6, step: 0.1 },
+    { key: 'patternDensity', label: 'Pattern Density', control: 'range', min: 0.2, max: 2, step: 0.1 },
+    { key: 'pixelJitter', label: 'Pixel Jitter', control: 'range', min: 0, max: 1, step: 0.05 },
+    { key: 'rippleIntensity', label: 'Ripple Intensity', control: 'range', min: 0, max: 3, step: 0.1 },
+    { key: 'rippleThickness', label: 'Ripple Thickness', control: 'range', min: 0.02, max: 0.8, step: 0.01 },
+    { key: 'rippleSpeed', label: 'Ripple Speed', control: 'range', min: 0.05, max: 1.5, step: 0.05 },
+    { key: 'edgeFade', label: 'Edge Fade', control: 'range', min: 0, max: 1, step: 0.05 },
+    { key: 'liquidStrength', label: 'Liquid Strength', control: 'range', min: 0, max: 1, step: 0.05 },
+    { key: 'liquidRadius', label: 'Liquid Radius', control: 'range', min: 0.2, max: 3, step: 0.1 },
+    { key: 'wobbleSpeed', label: 'Wobble Speed', control: 'range', min: 0.5, max: 10, step: 0.1 },
+  ],
+  'line-waves': [
+    { key: 'intensity', label: 'Интенсивность', control: 'range', min: 0.6, max: 1.8, step: 0.1 },
+    { key: 'contrast', label: 'Контраст', control: 'range', min: 0.7, max: 1.6, step: 0.1 },
+    { key: 'color1', label: 'Color 1', control: 'color' },
+    { key: 'color2', label: 'Color 2', control: 'color' },
+    { key: 'color3', label: 'Color 3', control: 'color' },
+    { key: 'speed', label: 'Speed', control: 'range', min: 0.05, max: 1.5, step: 0.05 },
+    { key: 'innerLineCount', label: 'Inner Lines', control: 'range', min: 8, max: 80, step: 1 },
+    { key: 'outerLineCount', label: 'Outer Lines', control: 'range', min: 8, max: 100, step: 1 },
+    { key: 'warpIntensity', label: 'Warp Intensity', control: 'range', min: 0, max: 3, step: 0.1 },
+    { key: 'rotation', label: 'Rotation', control: 'range', min: -180, max: 180, step: 1 },
+    { key: 'edgeFadeWidth', label: 'Edge Fade Width', control: 'range', min: 0, max: 1, step: 0.05 },
+    { key: 'colorCycleSpeed', label: 'Color Cycle Speed', control: 'range', min: 0, max: 3, step: 0.1 },
+    { key: 'brightness', label: 'Brightness', control: 'range', min: 0.05, max: 1, step: 0.05 },
+    { key: 'mouseInfluence', label: 'Mouse Influence', control: 'range', min: 0, max: 5, step: 0.1 },
+  ],
+  galaxy: [
+    { key: 'intensity', label: 'Интенсивность', control: 'range', min: 0.6, max: 1.8, step: 0.1 },
+    { key: 'contrast', label: 'Контраст', control: 'range', min: 0.7, max: 1.6, step: 0.1 },
+    { key: 'focalX', label: 'Focal X', control: 'range', min: 0, max: 1, step: 0.01 },
+    { key: 'focalY', label: 'Focal Y', control: 'range', min: 0, max: 1, step: 0.01 },
+    { key: 'rotationX', label: 'Rotation X', control: 'range', min: -1, max: 1, step: 0.01 },
+    { key: 'rotationY', label: 'Rotation Y', control: 'range', min: -1, max: 1, step: 0.01 },
+    { key: 'starSpeed', label: 'Star Speed', control: 'range', min: 0, max: 2, step: 0.05 },
+    { key: 'density', label: 'Density', control: 'range', min: 0.3, max: 3, step: 0.1 },
+    { key: 'hueShift', label: 'Hue Shift', control: 'range', min: -180, max: 180, step: 1 },
+    { key: 'speed', label: 'Speed', control: 'range', min: 0, max: 3, step: 0.1 },
+    { key: 'glowIntensity', label: 'Glow Intensity', control: 'range', min: 0, max: 1, step: 0.05 },
+    { key: 'saturation', label: 'Saturation', control: 'range', min: 0, max: 2, step: 0.05 },
+    { key: 'repulsionStrength', label: 'Repulsion Strength', control: 'range', min: 0, max: 6, step: 0.1 },
+    { key: 'twinkleIntensity', label: 'Twinkle Intensity', control: 'range', min: 0, max: 1, step: 0.05 },
+    { key: 'rotationSpeed', label: 'Rotation Speed', control: 'range', min: -1, max: 1, step: 0.01 },
+    { key: 'autoCenterRepulsion', label: 'Auto Center Repulsion', control: 'range', min: 0, max: 2, step: 0.05 },
+  ],
 };
 
 export type BackgroundOption = {
@@ -209,6 +422,10 @@ export const backgroundOptions: BackgroundOption[] = [
   { id: 'waves', name: 'Waves', description: 'Линейные волны и glow-слои' },
   { id: 'rings', name: 'Rings', description: 'Концентрические кольца и мягкий glow' },
   { id: 'nebula', name: 'Nebula', description: 'Туманность, зерно и цветовые сдвиги' },
+  { id: 'color-bends', name: 'Color Bends', description: 'Плавные жидкие переливы цвета' },
+  { id: 'pixel-blast', name: 'Pixel Blast', description: 'Пиксельный шум, рябь и glitch-настроение' },
+  { id: 'line-waves', name: 'Line Waves', description: 'Динамические волны из тонких линий' },
+  { id: 'galaxy', name: 'Galaxy', description: 'Звёздное поле с глубиной и свечением' },
 ];
 
 export const isBackgroundId = (value: string | null): value is BackgroundId =>
@@ -302,6 +519,80 @@ const normalizeById = <T extends CustomBackgroundId>(id: T, value: unknown): Bac
     } as BackgroundSettingsById[T];
   }
 
+  if (id === 'color-bends') {
+    return {
+      ...common,
+      color1: normalizeColor(raw.color1, String(fallback.color1)),
+      color2: normalizeColor(raw.color2, String(fallback.color2)),
+      color3: normalizeColor(raw.color3, String(fallback.color3)),
+      speed: clamp(Number(raw.speed ?? fallback.speed), 0.05, 2),
+      rotation: clamp(Number(raw.rotation ?? fallback.rotation), -180, 180),
+      autoRotate: clamp(Number(raw.autoRotate ?? fallback.autoRotate), -2, 2),
+      scale: clamp(Number(raw.scale ?? fallback.scale), 0.4, 2.5),
+      frequency: clamp(Number(raw.frequency ?? fallback.frequency), 0.3, 3),
+      warpStrength: clamp(Number(raw.warpStrength ?? fallback.warpStrength), 0, 2.5),
+      mouseInfluence: clamp(Number(raw.mouseInfluence ?? fallback.mouseInfluence), 0, 3),
+      parallax: clamp(Number(raw.parallax ?? fallback.parallax), 0, 2),
+      noise: clamp(Number(raw.noise ?? fallback.noise), 0, 0.6),
+    } as BackgroundSettingsById[T];
+  }
+
+  if (id === 'pixel-blast') {
+    return {
+      ...common,
+      color: normalizeColor(raw.color, String(fallback.color)),
+      pixelSize: Math.round(clamp(Number(raw.pixelSize ?? fallback.pixelSize), 1, 10)),
+      patternScale: clamp(Number(raw.patternScale ?? fallback.patternScale), 0.5, 6),
+      patternDensity: clamp(Number(raw.patternDensity ?? fallback.patternDensity), 0.2, 2),
+      pixelJitter: clamp(Number(raw.pixelJitter ?? fallback.pixelJitter), 0, 1),
+      rippleIntensity: clamp(Number(raw.rippleIntensity ?? fallback.rippleIntensity), 0, 3),
+      rippleThickness: clamp(Number(raw.rippleThickness ?? fallback.rippleThickness), 0.02, 0.8),
+      rippleSpeed: clamp(Number(raw.rippleSpeed ?? fallback.rippleSpeed), 0.05, 1.5),
+      edgeFade: clamp(Number(raw.edgeFade ?? fallback.edgeFade), 0, 1),
+      liquidStrength: clamp(Number(raw.liquidStrength ?? fallback.liquidStrength), 0, 1),
+      liquidRadius: clamp(Number(raw.liquidRadius ?? fallback.liquidRadius), 0.2, 3),
+      wobbleSpeed: clamp(Number(raw.wobbleSpeed ?? fallback.wobbleSpeed), 0.5, 10),
+    } as BackgroundSettingsById[T];
+  }
+
+  if (id === 'line-waves') {
+    return {
+      ...common,
+      color1: normalizeColor(raw.color1, String(fallback.color1)),
+      color2: normalizeColor(raw.color2, String(fallback.color2)),
+      color3: normalizeColor(raw.color3, String(fallback.color3)),
+      speed: clamp(Number(raw.speed ?? fallback.speed), 0.05, 1.5),
+      innerLineCount: Math.round(clamp(Number(raw.innerLineCount ?? fallback.innerLineCount), 8, 80)),
+      outerLineCount: Math.round(clamp(Number(raw.outerLineCount ?? fallback.outerLineCount), 8, 100)),
+      warpIntensity: clamp(Number(raw.warpIntensity ?? fallback.warpIntensity), 0, 3),
+      rotation: clamp(Number(raw.rotation ?? fallback.rotation), -180, 180),
+      edgeFadeWidth: clamp(Number(raw.edgeFadeWidth ?? fallback.edgeFadeWidth), 0, 1),
+      colorCycleSpeed: clamp(Number(raw.colorCycleSpeed ?? fallback.colorCycleSpeed), 0, 3),
+      brightness: clamp(Number(raw.brightness ?? fallback.brightness), 0.05, 1),
+      mouseInfluence: clamp(Number(raw.mouseInfluence ?? fallback.mouseInfluence), 0, 5),
+    } as BackgroundSettingsById[T];
+  }
+
+  if (id === 'galaxy') {
+    return {
+      ...common,
+      focalX: clamp(Number(raw.focalX ?? fallback.focalX), 0, 1),
+      focalY: clamp(Number(raw.focalY ?? fallback.focalY), 0, 1),
+      rotationX: clamp(Number(raw.rotationX ?? fallback.rotationX), -1, 1),
+      rotationY: clamp(Number(raw.rotationY ?? fallback.rotationY), -1, 1),
+      starSpeed: clamp(Number(raw.starSpeed ?? fallback.starSpeed), 0, 2),
+      density: clamp(Number(raw.density ?? fallback.density), 0.3, 3),
+      hueShift: clamp(Number(raw.hueShift ?? fallback.hueShift), -180, 180),
+      speed: clamp(Number(raw.speed ?? fallback.speed), 0, 3),
+      glowIntensity: clamp(Number(raw.glowIntensity ?? fallback.glowIntensity), 0, 1),
+      saturation: clamp(Number(raw.saturation ?? fallback.saturation), 0, 2),
+      repulsionStrength: clamp(Number(raw.repulsionStrength ?? fallback.repulsionStrength), 0, 6),
+      twinkleIntensity: clamp(Number(raw.twinkleIntensity ?? fallback.twinkleIntensity), 0, 1),
+      rotationSpeed: clamp(Number(raw.rotationSpeed ?? fallback.rotationSpeed), -1, 1),
+      autoCenterRepulsion: clamp(Number(raw.autoCenterRepulsion ?? fallback.autoCenterRepulsion), 0, 2),
+    } as BackgroundSettingsById[T];
+  }
+
   return {
     ...common,
     grain: clamp(Number(raw.grain ?? fallback.grain), 0.05, 0.35),
@@ -316,6 +607,10 @@ const getDefaultSettingsMap = (): BackgroundSettingsById => ({
   waves: { ...defaultBackgroundSettingsById.waves },
   rings: { ...defaultBackgroundSettingsById.rings },
   nebula: { ...defaultBackgroundSettingsById.nebula },
+  'color-bends': { ...defaultBackgroundSettingsById['color-bends'] },
+  'pixel-blast': { ...defaultBackgroundSettingsById['pixel-blast'] },
+  'line-waves': { ...defaultBackgroundSettingsById['line-waves'] },
+  galaxy: { ...defaultBackgroundSettingsById.galaxy },
 });
 
 export const getStoredBackground = (): BackgroundId => {
@@ -341,6 +636,10 @@ export const getStoredBackgroundSettingsMap = (): BackgroundSettingsById => {
         waves: normalizeById('waves', legacy),
         rings: normalizeById('rings', legacy),
         nebula: normalizeById('nebula', legacy),
+        'color-bends': normalizeById('color-bends', legacy),
+        'pixel-blast': normalizeById('pixel-blast', legacy),
+        'line-waves': normalizeById('line-waves', legacy),
+        galaxy: normalizeById('galaxy', legacy),
       };
     }
 
@@ -352,6 +651,10 @@ export const getStoredBackgroundSettingsMap = (): BackgroundSettingsById => {
       waves: normalizeById('waves', map.waves),
       rings: normalizeById('rings', map.rings),
       nebula: normalizeById('nebula', map.nebula),
+      'color-bends': normalizeById('color-bends', map['color-bends']),
+      'pixel-blast': normalizeById('pixel-blast', map['pixel-blast']),
+      'line-waves': normalizeById('line-waves', map['line-waves']),
+      galaxy: normalizeById('galaxy', map.galaxy),
     };
   } catch {
     return defaults;
@@ -376,6 +679,10 @@ export const setStoredBackgroundSettingsMap = (settingsMap: BackgroundSettingsBy
     waves: normalizeById('waves', settingsMap.waves),
     rings: normalizeById('rings', settingsMap.rings),
     nebula: normalizeById('nebula', settingsMap.nebula),
+    'color-bends': normalizeById('color-bends', settingsMap['color-bends']),
+    'pixel-blast': normalizeById('pixel-blast', settingsMap['pixel-blast']),
+    'line-waves': normalizeById('line-waves', settingsMap['line-waves']),
+    galaxy: normalizeById('galaxy', settingsMap.galaxy),
   };
 
   localStorage.setItem(BACKGROUND_SETTINGS_STORAGE_KEY, JSON.stringify(normalized));
