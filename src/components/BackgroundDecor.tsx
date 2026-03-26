@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTheme } from '../context/ThemeContext';
 import {
   BACKGROUND_CHANGED_EVENT,
@@ -19,6 +19,10 @@ import {
   getStoredBackground,
   getStoredBackgroundSettingsMap,
 } from '../lib/backgrounds';
+import ReactBitsColorBends from './backgrounds/reactbits/ColorBends.jsx';
+import ReactBitsPixelBlast from './backgrounds/reactbits/PixelBlast.jsx';
+import ReactBitsLineWaves from './backgrounds/reactbits/LineWaves.jsx';
+import ReactBitsGalaxy from './backgrounds/reactbits/Galaxy.jsx';
 
 const motionMultiplier = {
   slow: 1.5,
@@ -44,53 +48,22 @@ const ColorBendsDecor = ({ settings }: { settings: ColorBendsSettings }) => {
     parallax,
     noise,
   } = settings;
-  const motionSpeed = motionMultiplier[motion] / Math.max(0.08, speed);
-
   return (
     <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden style={{ filter: `contrast(${contrast})` }}>
-      <div
-        className="absolute inset-0"
-        style={{
-          background: `linear-gradient(${rotation}deg, ${color1}, ${color2}, ${color3})`,
-          opacity: withAlpha(0.8, intensity),
-          transform: `scale(${scale})`,
-        }}
-      />
-      <div
-        className="animate-float absolute -left-[12%] -top-[18%] h-[74%] w-[74%] rounded-full blur-[120px]"
-        style={{
-          background: `radial-gradient(circle, ${color1} 0%, transparent 70%)`,
-          opacity: withAlpha(0.3 + warpStrength * 0.12, intensity),
-          animationDuration: `${Math.max(2, 7 * motionSpeed)}s`,
-          transform: `translate(${mouseInfluence * 2}px, ${parallax * 6}px) scale(${0.8 + frequency * 0.25})`,
-        }}
-      />
-      <div
-        className="animate-float-delayed absolute right-[-12%] top-[8%] h-[70%] w-[70%] rounded-full blur-[120px]"
-        style={{
-          background: `radial-gradient(circle, ${color2} 0%, transparent 70%)`,
-          opacity: withAlpha(0.32 + warpStrength * 0.12, intensity),
-          animationDuration: `${Math.max(2, 8.5 * motionSpeed)}s`,
-          transform: `translate(${parallax * -8}px, ${mouseInfluence * 1.5}px) scale(${0.8 + frequency * 0.2})`,
-        }}
-      />
-      <div
-        className="animate-blob-pulse absolute bottom-[-16%] left-[18%] h-[64%] w-[64%] rounded-full blur-[110px]"
-        style={{
-          background: `radial-gradient(circle, ${color3} 0%, transparent 72%)`,
-          opacity: withAlpha(0.28 + warpStrength * 0.14, intensity),
-          animationDuration: `${Math.max(2, 6.2 * motionSpeed)}s`,
-          transform: `rotate(${autoRotate * 24}deg) scale(${0.82 + frequency * 0.22})`,
-        }}
-      />
-      <div
-        className="absolute inset-0"
-        style={{
-          backgroundImage:
-            'radial-gradient(rgba(255,255,255,0.32) 1px, transparent 1px), radial-gradient(rgba(255,255,255,0.2) 1px, transparent 1px)',
-          backgroundSize: `${Math.round(36 - Math.min(28, noise * 40))}px ${Math.round(36 - Math.min(28, noise * 40))}px, ${Math.round(18 - Math.min(14, noise * 24))}px ${Math.round(18 - Math.min(14, noise * 24))}px`,
-          opacity: withAlpha(noise * 0.55, intensity),
-        }}
+      <ReactBitsColorBends
+        className="h-full w-full"
+        style={{ opacity: withAlpha(1, intensity) }}
+        rotation={rotation}
+        speed={Math.max(0.01, speed / motionMultiplier[motion])}
+        colors={[color1, color2, color3]}
+        transparent
+        autoRotate={autoRotate}
+        scale={scale}
+        frequency={frequency}
+        warpStrength={warpStrength}
+        mouseInfluence={mouseInfluence}
+        parallax={parallax}
+        noise={noise}
       />
     </div>
   );
@@ -114,50 +87,27 @@ const PixelBlastDecor = ({ settings }: { settings: PixelBlastSettings }) => {
     liquidRadius,
     wobbleSpeed,
   } = settings;
-  const motionSpeed = motionMultiplier[motion];
-  const cell = Math.max(6, Math.round(pixelSize * patternScale * 8));
-  const dots = Math.max(1, Math.round(2 + patternDensity * 4));
-
   return (
     <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden style={{ filter: `contrast(${contrast})` }}>
-      <div
-        className="absolute inset-0"
-        style={{
-          background: `linear-gradient(160deg, rgba(8,10,20,0.98), ${color}22)`,
-          opacity: withAlpha(1, intensity),
-        }}
-      />
-      <div
-        className="absolute inset-0"
-        style={{
-          backgroundImage: `repeating-linear-gradient(0deg, ${color}44 0 ${Math.max(1, dots)}px, transparent ${Math.max(1, dots)}px ${cell}px), repeating-linear-gradient(90deg, ${color}33 0 ${Math.max(1, dots)}px, transparent ${Math.max(1, dots)}px ${cell}px)`,
-          opacity: withAlpha(0.24 + liquidStrength * 0.2, intensity),
-          transform: `scale(${1 + pixelJitter * 0.06})`,
-        }}
-      />
-      <div
-        className="animate-pulse-slow absolute inset-0"
-        style={{
-          background: `radial-gradient(circle at 50% 50%, ${color}88 0%, transparent ${Math.round(32 + liquidRadius * 16)}%)`,
-          opacity: withAlpha(0.15 + rippleIntensity * 0.1, intensity),
-          animationDuration: `${Math.max(1.2, (7 - rippleSpeed * 3) * motionSpeed)}s`,
-          filter: `blur(${Math.round(26 + rippleThickness * 160)}px)`,
-        }}
-      />
-      <div
-        className="absolute inset-0"
-        style={{
-          background: `radial-gradient(circle at 50% 50%, transparent ${Math.round(36 + edgeFade * 20)}%, rgba(0,0,0,0.75) 100%)`,
-          opacity: withAlpha(0.55, intensity),
-        }}
-      />
-      <div
-        className="animate-float absolute -left-20 top-1/4 h-[320px] w-[320px] rounded-full blur-[110px]"
-        style={{
-          background: color,
-          opacity: withAlpha(0.12 + liquidStrength * 0.2, intensity),
-          animationDuration: `${Math.max(2, wobbleSpeed * motionSpeed)}s`,
-        }}
+      <ReactBitsPixelBlast
+        className="h-full w-full"
+        style={{ opacity: withAlpha(1, intensity) }}
+        color={color}
+        pixelSize={pixelSize}
+        patternScale={patternScale}
+        patternDensity={patternDensity}
+        liquid
+        liquidStrength={liquidStrength}
+        liquidRadius={liquidRadius}
+        pixelSizeJitter={pixelJitter}
+        enableRipples
+        rippleIntensityScale={rippleIntensity}
+        rippleThickness={rippleThickness}
+        rippleSpeed={rippleSpeed}
+        liquidWobbleSpeed={wobbleSpeed}
+        speed={Math.max(0.01, 0.5 / motionMultiplier[motion])}
+        edgeFade={edgeFade}
+        transparent
       />
     </div>
   );
@@ -181,39 +131,33 @@ const LineWavesDecor = ({ settings }: { settings: LineWavesSettings }) => {
     brightness,
     mouseInfluence,
   } = settings;
-  const motionSpeed = motionMultiplier[motion] / Math.max(0.08, speed);
-  const lineCount = Math.max(8, Math.min(90, Math.round((innerLineCount + outerLineCount) / 2)));
-
   return (
     <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden style={{ filter: `contrast(${contrast})` }}>
       <div
         className="absolute inset-0"
         style={{
-          background: 'linear-gradient(150deg, rgba(5,10,24,0.95), rgba(12,18,38,0.95))',
+          background: 'linear-gradient(150deg, rgba(5,10,24,0.96), rgba(12,18,38,0.96))',
           opacity: withAlpha(1, intensity),
         }}
       />
-      <svg
-        className="animate-float absolute inset-0 h-full w-full"
-        style={{ opacity: withAlpha(0.28 + brightness * 0.42, intensity), animationDuration: `${Math.max(2, 8 * motionSpeed)}s`, transform: `rotate(${rotation}deg)` }}
-        viewBox="0 0 1440 900"
-        preserveAspectRatio="none"
-      >
-        {Array.from({ length: lineCount }).map((_, i) => {
-          const y = (i / Math.max(1, lineCount - 1)) * 900;
-          const amp = 10 + warpIntensity * 20 + (i % 5) * 2;
-          const freq = 0.005 + colorCycleSpeed * 0.0015;
-          const shift = i * 0.37 + mouseInfluence * 0.2;
-          const c = i % 3 === 0 ? color1 : i % 3 === 1 ? color2 : color3;
-          const d = `M0 ${y} C 240 ${y + Math.sin(shift) * amp}, 520 ${y - Math.cos(shift) * amp}, 760 ${y + Math.sin(shift * 1.2) * amp} C 1020 ${y - Math.sin(shift * 0.8) * amp}, 1220 ${y + Math.cos(shift * 1.1) * amp}, 1440 ${y + Math.sin(shift + freq * 400) * amp}`;
-          return <path key={`${i}-${c}`} d={d} stroke={c} strokeOpacity={Math.max(0.06, 0.6 - i * 0.01)} strokeWidth={Math.max(0.5, 1.8 - i * 0.012)} fill="none" />;
-        })}
-      </svg>
+      <ReactBitsLineWaves
+        speed={Math.max(0.01, speed / motionMultiplier[motion])}
+        innerLineCount={innerLineCount}
+        outerLineCount={outerLineCount}
+        warpIntensity={warpIntensity}
+        rotation={rotation}
+        edgeFadeWidth={edgeFadeWidth}
+        colorCycleSpeed={colorCycleSpeed}
+        brightness={brightness}
+        color1={color1}
+        color2={color2}
+        color3={color3}
+        enableMouseInteraction
+        mouseInfluence={mouseInfluence}
+      />
       <div
         className="absolute inset-0"
-        style={{
-          background: `radial-gradient(circle at 50% 50%, transparent ${Math.round(52 - edgeFadeWidth * 20)}%, rgba(0,0,0,0.7) 100%)`,
-        }}
+        style={{ background: `radial-gradient(circle at 50% 50%, transparent ${Math.round(58 - edgeFadeWidth * 28)}%, rgba(0,0,0,0.78) 100%)` }}
       />
     </div>
   );
@@ -239,57 +183,37 @@ const GalaxyDecor = ({ settings }: { settings: GalaxySettings }) => {
     rotationSpeed,
     autoCenterRepulsion,
   } = settings;
-  const motionSpeed = motionMultiplier[motion] / Math.max(0.08, speed || 0.1);
-  const starCount = Math.max(40, Math.min(260, Math.round(90 * density)));
-
   return (
-    <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden style={{ filter: `contrast(${contrast}) hue-rotate(${hueShift}deg) saturate(${1 + saturation * 0.5})` }}>
+    <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden style={{ filter: `contrast(${contrast}) hue-rotate(${hueShift}deg) saturate(${1 + saturation * 0.65})` }}>
+      <ReactBitsGalaxy
+        focal={[focalX, focalY]}
+        rotation={[rotationX, rotationY]}
+        starSpeed={starSpeed}
+        density={density}
+        hueShift={hueShift}
+        speed={Math.max(0.01, speed / motionMultiplier[motion])}
+        mouseInteraction
+        glowIntensity={glowIntensity}
+        saturation={saturation}
+        mouseRepulsion
+        repulsionStrength={repulsionStrength}
+        twinkleIntensity={twinkleIntensity}
+        rotationSpeed={rotationSpeed}
+        autoCenterRepulsion={autoCenterRepulsion}
+        transparent
+      />
       <div
         className="absolute inset-0"
         style={{
-          background: 'radial-gradient(circle at 50% 50%, rgba(7,13,34,0.95), rgba(2,5,14,1))',
-          opacity: withAlpha(1, intensity),
+          background: `radial-gradient(circle at ${Math.round(focalX * 100)}% ${Math.round(focalY * 100)}%, rgba(120,175,255,${0.08 + glowIntensity * 0.35}), transparent 54%)`,
         }}
       />
-      <div
-        className="animate-float absolute inset-0"
-        style={{
-          background: `radial-gradient(circle at ${Math.round(focalX * 100)}% ${Math.round(focalY * 100)}%, rgba(130,180,255,${0.08 + glowIntensity * 0.28}), transparent 55%)`,
-          animationDuration: `${Math.max(2, 10 * motionSpeed)}s`,
-          transform: `translate(${rotationY * 30}px, ${rotationX * 30}px)`,
-        }}
-      />
-      {Array.from({ length: starCount }).map((_, i) => {
-        const xSeed = Math.abs(Math.sin((i + 1) * 12.9898 + rotationX * 3.1));
-        const ySeed = Math.abs(Math.sin((i + 1) * 78.233 + rotationY * 4.7));
-        const sSeed = Math.abs(Math.sin((i + 1) * 45.164 + starSpeed * 2));
-        const left = Math.round(xSeed * 10000) / 100;
-        const top = Math.round(ySeed * 10000) / 100;
-        const size = Math.max(1, Math.min(4, 1 + sSeed * 3));
-        const pulse = Math.max(2, 6 * motionSpeed / Math.max(0.25, twinkleIntensity + 0.1));
-        return (
-          <span
-            key={`star-${i}`}
-            className="animate-pulse-slow absolute rounded-full"
-            style={{
-              left: `${left}%`,
-              top: `${top}%`,
-              width: `${size}px`,
-              height: `${size}px`,
-              background: 'rgba(230,240,255,0.9)',
-              opacity: withAlpha(0.25 + sSeed * 0.6, intensity),
-              boxShadow: `0 0 ${Math.round(4 + glowIntensity * 16)}px rgba(160,200,255,${0.2 + glowIntensity * 0.6})`,
-              animationDuration: `${pulse + (i % 7) * 0.25 + starSpeed * 0.8}s`,
-            }}
-          />
-        );
-      })}
       <div
         className="absolute inset-0"
         style={{
-          background: `radial-gradient(circle at 50% 50%, transparent ${Math.round(42 + autoCenterRepulsion * 10)}%, rgba(0,0,0,0.75) 100%)`,
-          opacity: withAlpha(0.45 + repulsionStrength * 0.06, intensity),
-          transform: `rotate(${rotationSpeed * 30}deg)`,
+          background: `radial-gradient(circle at 50% 50%, transparent ${Math.round(40 + autoCenterRepulsion * 12)}%, rgba(0,0,0,0.78) 100%)`,
+          transform: `rotate(${rotationSpeed * 42}deg)`,
+          opacity: withAlpha(0.48 + repulsionStrength * 0.05, intensity),
         }}
       />
     </div>
