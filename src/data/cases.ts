@@ -8,6 +8,7 @@ export type CaseItem = {
   summary: string;
   metrics?: string;
   images?: string[];
+  videos?: string[];
 };
 
 export const cases: CaseItem[] = [

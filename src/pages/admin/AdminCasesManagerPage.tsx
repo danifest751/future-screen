@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 import AdminLayout from '../../components/admin/AdminLayout';
 import AdminFieldError from '../../components/admin/AdminFieldError';
 import { ConfirmModal, EmptyState } from '../../components/admin/ui';
-import { FolderOpen, X } from 'lucide-react';
+import { FolderOpen, X, HelpCircle } from 'lucide-react';
 import { useCases } from '../../hooks/useCases';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 import type { CaseItem } from '../../data/cases';
@@ -41,6 +41,19 @@ const defaultValues: CaseFormValues = {
   imagesText: '',
 };
 
+// Format options for dropdown
+const FORMAT_OPTIONS = [
+  'Корпоратив',
+  'Концерт',
+  'Конференция',
+  'Выставка',
+  'Свадьба',
+  'Презентация',
+  'Фестиваль',
+  'Тимбилдинг',
+  'Другое',
+];
+
 const normalizeSlug = (value: string) =>
   value
     .toLowerCase()
@@ -48,19 +61,50 @@ const normalizeSlug = (value: string) =>
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '');
 
+// Transliterate Russian to Latin for slug generation
+const transliterate = (text: string): string => {
+  const map: Record<string, string> = {
+    'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'е': 'e', 'ё': 'yo',
+    'ж': 'zh', 'з': 'z', 'и': 'i', 'й': 'y', 'к': 'k', 'л': 'l', 'м': 'm',
+    'н': 'n', 'о': 'o', 'п': 'p', 'р': 'r', 'с': 's', 'т': 't', 'у': 'u',
+    'ф': 'f', 'х': 'kh', 'ц': 'ts', 'ч': 'ch', 'ш': 'sh', 'щ': 'shch',
+    'ъ': '', 'ы': 'y', 'ь': '', 'э': 'e', 'ю': 'yu', 'я': 'ya',
+    ' ': '-', '_': '-',
+  };
+  return text
+    .toLowerCase()
+    .split('')
+    .map((char) => map[char] || char)
+    .join('')
+    .replace(/[^a-z0-9-]/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+};
+
+// Tooltip component
+const FieldHint = ({ children }: { children: React.ReactNode }) => (
+  <div className="mt-1 flex items-start gap-1 text-xs text-slate-500">
+    <HelpCircle size={12} className="mt-0.5 shrink-0" />
+    <span>{children}</span>
+  </div>
+);
+
 const AdminCasesManagerPage = () => {
   const { cases, addCase, updateCase, deleteCase, resetToDefault } = useCases();
   const [caseEditing, setCaseEditing] = useState<string | null>(null);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const [uploadedVideos, setUploadedVideos] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Pick<CaseItem, 'slug' | 'title'> | null>(null);
   const [resetModalOpen, setResetModalOpen] = useState(false);
+  const [autoSlug, setAutoSlug] = useState(true);
 
   const {
     register,
     handleSubmit,
     reset,
     setValue,
+    watch,
     formState: { errors, isSubmitting, isDirty },
   } = useForm<CaseFormValues>({
     resolver: zodResolver(caseSchema),
@@ -69,16 +113,38 @@ const AdminCasesManagerPage = () => {
 
   useUnsavedChangesGuard(isDirty);
 
-  const uploadImages = async (files: FileList | File[]) => {
+  const titleValue = watch('title');
+  const slugValue = watch('slug');
+
+  // Auto-generate slug from title
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newTitle = e.target.value;
+    setValue('title', newTitle);
+    if (autoSlug && !caseEditing) {
+      const generatedSlug = transliterate(newTitle);
+      setValue('slug', generatedSlug, { shouldValidate: true });
+    }
+  };
+
+  const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newSlug = normalizeSlug(e.target.value);
+    setValue('slug', newSlug, { shouldValidate: true });
+    setAutoSlug(false);
+  };
+
+  const uploadFiles = async (files: FileList | File[]) => {
     const list = Array.from(files);
     if (!list.length) return;
 
     setUploading(true);
-    const urls: string[] = [];
+    const imageUrls: string[] = [];
+    const videoUrls: string[] = [];
 
     for (const file of list) {
-      const ext = file.name.split('.').pop() || 'jpg';
-      const filePath = `cases/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const ext = file.name.split('.').pop()?.toLowerCase() || '';
+      const isVideo = ['mp4', 'webm', 'mov', 'avi'].includes(ext);
+      const folder = isVideo ? 'videos' : 'cases';
+      const filePath = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
 
       const { error } = await supabase.storage.from('images').upload(filePath, file, { upsert: false });
       if (error) {
@@ -87,12 +153,22 @@ const AdminCasesManagerPage = () => {
       }
 
       const { data } = supabase.storage.from('images').getPublicUrl(filePath);
-      if (data?.publicUrl) urls.push(data.publicUrl);
+      if (data?.publicUrl) {
+        if (isVideo) {
+          videoUrls.push(data.publicUrl);
+        } else {
+          imageUrls.push(data.publicUrl);
+        }
+      }
     }
 
-    if (urls.length) {
-      setUploadedImages((prev) => [...prev, ...urls]);
-      toast.success(`Загружено файлов: ${urls.length}`);
+    if (imageUrls.length) {
+      setUploadedImages((prev) => [...prev, ...imageUrls]);
+      toast.success(`Загружено изображений: ${imageUrls.length}`);
+    }
+    if (videoUrls.length) {
+      setUploadedVideos((prev) => [...prev, ...videoUrls]);
+      toast.success(`Загружено видео: ${videoUrls.length}`);
     }
 
     setUploading(false);
@@ -110,8 +186,9 @@ const AdminCasesManagerPage = () => {
       .filter(Boolean);
 
     const images = Array.from(new Set([...uploadedImages, ...manualImages]));
+    const videos = uploadedVideos.length ? uploadedVideos : undefined;
 
-    const payload: Omit<CaseItem, 'services'> & { services: string[] } = {
+    const payload: Omit<CaseItem, 'services'> & { services: string[]; videos?: string[] } = {
       slug: values.slug,
       title: values.title,
       city: values.city,
@@ -121,6 +198,7 @@ const AdminCasesManagerPage = () => {
       metrics: values.metrics || undefined,
       services,
       images: images.length ? images : undefined,
+      videos,
     };
 
     let ok = false;
@@ -134,6 +212,7 @@ const AdminCasesManagerPage = () => {
         metrics: payload.metrics,
         services: payload.services,
         images: payload.images,
+        videos: payload.videos,
       };
       ok = await updateCase(caseEditing, updates);
     } else {
@@ -148,12 +227,16 @@ const AdminCasesManagerPage = () => {
     toast.success(caseEditing ? 'Кейс обновлен' : 'Кейс добавлен');
     setCaseEditing(null);
     setUploadedImages([]);
+    setUploadedVideos([]);
+    setAutoSlug(true);
     reset(defaultValues);
   };
 
   const startEdit = (item: CaseItem) => {
     setCaseEditing(item.slug);
     setUploadedImages(item.images ?? []);
+    setUploadedVideos((item as CaseItem & { videos?: string[] }).videos ?? []);
+    setAutoSlug(false);
     reset({
       slug: item.slug,
       title: item.title,
@@ -170,6 +253,8 @@ const AdminCasesManagerPage = () => {
   const cancelEdit = () => {
     setCaseEditing(null);
     setUploadedImages([]);
+    setUploadedVideos([]);
+    setAutoSlug(true);
     reset(defaultValues);
   };
 
@@ -232,67 +317,113 @@ const AdminCasesManagerPage = () => {
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="text-sm text-slate-200">
-                Slug*
+                <span className="flex items-center gap-1">
+                  Slug*
+                  {!caseEditing && autoSlug && (
+                    <span className="text-[10px] text-brand-400">(авто)</span>
+                  )}
+                </span>
                 <input
                   className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
                   disabled={Boolean(caseEditing)}
-                  {...register('slug', {
-                    onChange: (e) => {
-                      const next = normalizeSlug(e.target.value);
-                      setValue('slug', next, { shouldValidate: true });
-                    },
-                  })}
+                  value={slugValue}
+                  onChange={handleSlugChange}
+                  placeholder="nazvanie-kejsa"
                 />
                 {errors.slug && <AdminFieldError message={errors.slug.message} />}
+                <FieldHint>Уникальный идентификатор для URL. Только латиница, цифры и дефис. Генерируется автоматически из названия.</FieldHint>
               </label>
 
               <label className="text-sm text-slate-200">
                 Название*
-                <input className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2" {...register('title')} />
+                <input 
+                  className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2" 
+                  value={titleValue}
+                  onChange={handleTitleChange}
+                  placeholder="Например: Корпоратив Газпром"
+                />
                 {errors.title && <AdminFieldError message={errors.title.message} />}
+                <FieldHint>Название кейса для отображения на сайте. От него автоматически генерируется slug.</FieldHint>
               </label>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="text-sm text-slate-200">
                 Город
-                <input className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2" {...register('city')} />
+                <input 
+                  className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2" 
+                  {...register('city')}
+                  placeholder="Екатеринбург"
+                />
+                <FieldHint>Город проведения мероприятия. Отображается в списке кейсов.</FieldHint>
               </label>
               <label className="text-sm text-slate-200">
                 Дата
-                <input className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2" {...register('date')} />
+                <input 
+                  type="date"
+                  className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-slate-200" 
+                  {...register('date')}
+                />
+                <FieldHint>Дата проведения мероприятия. Используется для сортировки кейсов.</FieldHint>
               </label>
             </div>
 
             <label className="text-sm text-slate-200">
               Формат
-              <input className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2" {...register('format')} />
+              <select 
+                className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-slate-200" 
+                {...register('format')}
+              >
+                <option value="">Выберите формат</option>
+                {FORMAT_OPTIONS.map((format) => (
+                  <option key={format} value={format}>{format}</option>
+                ))}
+              </select>
+              <FieldHint>Тип мероприятия. Помогает клиентам понять ваш опыт в конкретной сфере.</FieldHint>
             </label>
 
             <label className="text-sm text-slate-200">
               Краткое описание*
-              <textarea className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2" rows={3} {...register('summary')} />
+              <textarea 
+                className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2" 
+                rows={3} 
+                {...register('summary')}
+                placeholder="Описание задачи и что было сделано..."
+              />
               <AdminFieldError message={errors.summary?.message} />
+              <FieldHint>Краткое описание проекта (2-3 предложения). Отображается в списке кейсов и на детальной странице.</FieldHint>
             </label>
 
             <label className="text-sm text-slate-200">
-              Метрики
-              <input className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2" {...register('metrics')} />
+              <span className="flex items-center gap-1">
+                Метрики
+              </span>
+              <input 
+                className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2" 
+                {...register('metrics')}
+                placeholder="500+ гостей, 50 м² экран"
+              />
+              <FieldHint>Ключевые цифры проекта через запятую. Например: «500+ гостей, 50 м² экран, 3 дня». Отображаются в карточке кейса.</FieldHint>
             </label>
 
             <label className="text-sm text-slate-200">
               Услуги (через запятую)
-              <input className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2" {...register('servicesText')} />
+              <input 
+                className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2" 
+                {...register('servicesText')}
+                placeholder="LED-экран, звук, свет"
+              />
+              <FieldHint>Перечислите услуги, которые были оказаны. Отображаются как теги в карточке кейса.</FieldHint>
             </label>
 
             <div className="space-y-2 rounded-lg border border-dashed border-white/20 bg-white/5 p-3">
-              <div className="text-sm text-slate-200">Изображения (drag & drop / выбор файлов)</div>
+              <div className="text-sm text-slate-200">Изображения и видео (drag & drop / выбор файлов)</div>
               <input
                 type="file"
                 multiple
-                accept="image/*"
+                accept="image/*,video/mp4,video/webm,video/quicktime"
                 onChange={(e) => {
-                  if (e.target.files?.length) void uploadImages(e.target.files);
+                  if (e.target.files?.length) void uploadFiles(e.target.files);
                 }}
                 className="block w-full text-xs text-slate-300 file:mr-3 file:rounded-md file:border-0 file:bg-brand-500 file:px-3 file:py-1.5 file:text-white"
               />
@@ -301,10 +432,10 @@ const AdminCasesManagerPage = () => {
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => {
                   e.preventDefault();
-                  if (e.dataTransfer.files?.length) void uploadImages(e.dataTransfer.files);
+                  if (e.dataTransfer.files?.length) void uploadFiles(e.dataTransfer.files);
                 }}
               >
-                Перетащите изображения сюда
+                Перетащите изображения или видео сюда
               </div>
               {uploading && <div className="text-xs text-brand-200">Загрузка файлов...</div>}
             </div>
@@ -329,9 +460,36 @@ const AdminCasesManagerPage = () => {
               </div>
             )}
 
+            {uploadedVideos.length > 0 && (
+              <div className="space-y-2">
+                <div className="text-xs text-slate-400">Загруженные видео</div>
+                <div className="space-y-2">
+                  {uploadedVideos.map((url) => (
+                    <div key={url} className="group relative flex items-center gap-2 rounded border border-white/10 bg-slate-700/50 p-2">
+                      <video src={url} className="h-12 w-16 rounded object-cover" />
+                      <span className="flex-1 truncate text-xs text-slate-300">{url.split('/').pop()}</span>
+                      <button
+                        type="button"
+                        onClick={() => setUploadedVideos((prev) => prev.filter((item) => item !== url))}
+                        className="rounded bg-red-500/20 px-1.5 py-0.5 text-[10px] text-red-300 transition hover:bg-red-500/30"
+                      >
+                        <X size={10} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <label className="text-sm text-slate-200">
               Доп. ссылки на изображения (через запятую)
-              <textarea className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2" rows={2} {...register('imagesText')} />
+              <textarea 
+                className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2" 
+                rows={2} 
+                {...register('imagesText')}
+                placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
+              />
+              <FieldHint>Ссылки на внешние изображения. Используйте, если файлы уже загружены на другой хостинг.</FieldHint>
             </label>
 
             <button
