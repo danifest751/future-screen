@@ -3,6 +3,7 @@ type EventName =
   | 'click_cta_hero'
   | 'click_whatsapp'
   | 'submit_form'
+  | 'submit_cta_form'
   | 'submit_quiz'
   | 'view_case';
 
