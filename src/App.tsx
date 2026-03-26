@@ -32,7 +32,7 @@ const SupabaseTestPage = lazy(() => import('./pages/SupabaseTestPage'));
 const SupabaseCheckPage = lazy(() => import('./pages/SupabaseCheckPage'));
 
 const PageLoader = () => (
-  <div className="flex min-h-[40vh] items-center justify-center">
+  <div className="flex min-h-[60vh] items-center justify-center" style={{ backgroundColor: 'var(--bg-primary, #0a0a0a)' }}>
     <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />
   </div>
 );
