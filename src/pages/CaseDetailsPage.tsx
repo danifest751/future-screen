@@ -5,6 +5,7 @@ import Section from '../components/Section';
 import { useCases } from '../hooks/useCases';
 import { RequestForm } from '../components/RequestForm';
 import { trackEvent } from '../lib/analytics';
+import type { CaseItem } from '../data/cases';
 
 const CaseDetailsPage = () => {
   const { slug } = useParams();
@@ -34,8 +35,31 @@ const CaseDetailsPage = () => {
             {item.images && item.images.length > 0 && (
               <div className="mt-4 grid gap-3 md:grid-cols-2">
                 {item.images.map((src) => (
-                  <div key={src} className="h-40 rounded-xl bg-white/5" aria-label="case image placeholder" />
+                  <img
+                    key={src}
+                    src={src}
+                    alt={item.title}
+                    className="h-40 w-full rounded-xl object-cover"
+                    loading="lazy"
+                  />
                 ))}
+              </div>
+            )}
+
+            {(item as CaseItem & { videos?: string[] }).videos && (item as CaseItem & { videos?: string[] }).videos!.length > 0 && (
+              <div className="mt-4 space-y-3">
+                <div className="text-sm text-slate-400">Видео</div>
+                <div className="grid gap-3 md:grid-cols-2">
+                  {(item as CaseItem & { videos?: string[] }).videos!.map((src) => (
+                    <video
+                      key={src}
+                      src={src}
+                      controls
+                      className="h-48 w-full rounded-xl object-cover"
+                      preload="metadata"
+                    />
+                  ))}
+                </div>
               </div>
             )}
             <div className="mt-4 text-sm text-slate-400">
