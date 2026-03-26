@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { Play, Image as ImageIcon } from 'lucide-react';
+import { Play } from 'lucide-react';
 import Section from '../components/Section';
 import { useCases } from '../hooks/useCases';
 import type { CaseItem } from '../data/cases';
@@ -17,7 +17,7 @@ const CasesPage = () => {
     // Show max 2 images side-by-side
     const previewImages = images.slice(0, 2);
     
-    return { previewImages, hasVideo, videoCount: videos.length, imageCount: images.length };
+    return { previewImages, hasVideo, videoCount: videos.length };
   };
 
   return (
@@ -29,7 +29,7 @@ const CasesPage = () => {
       <Section title="Кейсы" subtitle="Реализованные проекты с цифрами и составом работ">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {cases.map((item) => {
-            const { previewImages, hasVideo, videoCount, imageCount } = getPreviewMedia(item as CaseItem & { videos?: string[] });
+            const { previewImages, hasVideo, videoCount } = getPreviewMedia(item as CaseItem & { videos?: string[] });
             
             return (
               <Link 
@@ -47,6 +47,7 @@ const CasesPage = () => {
                         alt={item.title}
                         className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                         placeholderClassName="h-full w-full"
+                        containerClassName="h-full w-full"
                       />
                     ) : (
                       // Two images - side by side (always max 2)
@@ -58,6 +59,7 @@ const CasesPage = () => {
                               alt={`${item.title} ${idx + 1}`}
                               className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                               placeholderClassName="h-full w-full"
+                              containerClassName="h-full w-full"
                             />
                           </div>
                         ))}
@@ -74,13 +76,7 @@ const CasesPage = () => {
                       </div>
                     )}
                     
-                    {/* More images indicator */}
-                    {imageCount > previewImages.length && (
-                      <div className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-full bg-black/80 px-3 py-1.5 text-sm font-medium text-white backdrop-blur-sm">
-                        <ImageIcon size={14} />
-                        +{imageCount - previewImages.length}
-                      </div>
-                    )}
+
                   </div>
                 )}
                 

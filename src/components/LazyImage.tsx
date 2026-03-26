@@ -5,6 +5,7 @@ interface LazyImageProps {
   alt: string;
   className?: string;
   placeholderClassName?: string;
+  containerClassName?: string;
 }
 
 /**
@@ -15,7 +16,8 @@ export const LazyImage = ({
   src, 
   alt, 
   className = '',
-  placeholderClassName = ''
+  placeholderClassName = '',
+  containerClassName = ''
 }: LazyImageProps) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isInView, setIsInView] = useState(false);
@@ -43,7 +45,7 @@ export const LazyImage = ({
   }, []);
 
   return (
-    <div ref={imgRef} className="relative overflow-hidden">
+    <div ref={imgRef} className={`relative overflow-hidden ${containerClassName}`}>
       {/* Placeholder / Skeleton */}
       {!isLoaded && (
         <div 
