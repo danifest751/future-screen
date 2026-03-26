@@ -31,6 +31,10 @@ const cloneDefaultSettingsMap = (): BackgroundSettingsById => ({
   waves: { ...defaultBackgroundSettingsById.waves },
   rings: { ...defaultBackgroundSettingsById.rings },
   nebula: { ...defaultBackgroundSettingsById.nebula },
+  'color-bends': { ...defaultBackgroundSettingsById['color-bends'] },
+  'pixel-blast': { ...defaultBackgroundSettingsById['pixel-blast'] },
+  'line-waves': { ...defaultBackgroundSettingsById['line-waves'] },
+  galaxy: { ...defaultBackgroundSettingsById.galaxy },
 });
 
 const customBackgroundOptions = backgroundOptions.filter(
