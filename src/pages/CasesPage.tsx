@@ -39,7 +39,7 @@ const CasesPage = () => {
               >
                 {/* Preview Gallery */}
                 {previewImages.length > 0 && (
-                  <div className="relative aspect-[16/10] overflow-hidden bg-slate-800">
+                  <div className="relative h-48 overflow-hidden bg-slate-800">
                     {previewImages.length === 1 ? (
                       // Single image - full cover
                       <LazyImage
