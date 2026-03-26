@@ -262,7 +262,14 @@ export const loadCases = async (): Promise<CaseItem[]> => {
 };
 
 export const addCase = async (payload: Omit<CaseItem, 'services'> & { services: string[] }): Promise<CaseItem> => {
-  const next: CaseItem = { ...payload, services: sanitizeServices(payload.services) };
+  const next: Record<string, unknown> = {
+    ...payload,
+    services: sanitizeServices(payload.services)
+  };
+  // Only include videos if column exists in DB (avoid 400 error)
+  if (!payload.videos || payload.videos.length === 0) {
+    delete next.videos;
+  }
   const { data, error } = await supabase.from('cases').insert(next).select();
   if (error) throw new Error(error.message);
   if (!data || !data[0]) throw new Error('Case was not returned after insert');
@@ -273,10 +280,14 @@ export const updateCase = async (
   slug: string,
   payload: Partial<Omit<CaseItem, 'services'>> & { services?: string[] },
 ): Promise<CaseItem> => {
-  const updates = {
+  const updates: Record<string, unknown> = {
     ...payload,
     services: payload.services ? sanitizeServices(payload.services) : undefined,
   };
+  // Only include videos if it has values (avoid 400 if column doesn't exist yet)
+  if (!payload.videos || payload.videos.length === 0) {
+    delete updates.videos;
+  }
 
   const { data, error } = await supabase
     .from('cases')
