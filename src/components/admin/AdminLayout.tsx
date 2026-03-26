@@ -4,6 +4,13 @@ import { useAuth } from '../../context/AuthContext';
 import { Toaster } from 'react-hot-toast';
 import { supabase } from '../../lib/supabase';
 import {
+  BACKGROUND_CHANGED_EVENT,
+  backgroundOptions,
+  getStoredBackground,
+  setStoredBackground,
+  type BackgroundId,
+} from '../../lib/backgrounds';
+import {
   LayoutDashboard,
   Inbox,
   FolderOpen,
@@ -52,6 +59,7 @@ const AdminLayout = ({ title, subtitle, children }: Props) => {
   const navigate = useNavigate();
   const { logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [background, setBackground] = useState<BackgroundId>(() => getStoredBackground());
   const [leadCount, setLeadCount] = useState<number>(0);
   const [navItems, setNavItems] = useState<NavItem[]>(() => {
     const saved = localStorage.getItem('adminNavOrder');
@@ -106,6 +114,19 @@ const AdminLayout = ({ title, subtitle, children }: Props) => {
       mounted = false;
     };
   }, [location.pathname]);
+
+  useEffect(() => {
+    const syncBackground = () => {
+      setBackground(getStoredBackground());
+    };
+
+    window.addEventListener('storage', syncBackground);
+    window.addEventListener(BACKGROUND_CHANGED_EVENT, syncBackground as EventListener);
+    return () => {
+      window.removeEventListener('storage', syncBackground);
+      window.removeEventListener(BACKGROUND_CHANGED_EVENT, syncBackground as EventListener);
+    };
+  }, []);
 
   const handleLogout = async () => {
     await logout();
@@ -298,6 +319,27 @@ const AdminLayout = ({ title, subtitle, children }: Props) => {
                 )}
               </div>
               <div className="flex items-center gap-4">
+                <div className="hidden md:block">
+                  <label htmlFor="admin-background" className="mb-1 block text-[11px] uppercase tracking-wide text-slate-400">
+                    Фон сайта
+                  </label>
+                  <select
+                    id="admin-background"
+                    value={background}
+                    onChange={(e) => {
+                      const nextBackground = e.target.value as BackgroundId;
+                      setBackground(nextBackground);
+                      setStoredBackground(nextBackground);
+                    }}
+                    className="rounded-lg border border-white/10 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-200 outline-none transition focus:border-brand-400"
+                  >
+                    {backgroundOptions.map((option) => (
+                      <option key={option.id} value={option.id}>
+                        {option.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
                 <div className="hidden text-right sm:block">
                   <div className="text-sm font-medium text-white">Admin</div>
                   <div className="text-xs text-slate-400">
