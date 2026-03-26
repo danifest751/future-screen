@@ -1,5 +1,6 @@
 import { type ReactNode, useMemo, useState } from 'react';
 import Button from './Button';
+import { useFocusTrap } from '../../../hooks/useFocusTrap';
 
 export type ConfirmModalProps = {
   open: boolean;
@@ -13,6 +14,10 @@ export type ConfirmModalProps = {
   onConfirm: () => Promise<void> | void;
 };
 
+/**
+ * Модальное окно подтверждения с поддержкой доступности.
+ * Реализует ловушку фокуса, ARIA-атрибуты и управление с клавиатуры.
+ */
 export default function ConfirmModal({
   open,
   title,
@@ -25,6 +30,12 @@ export default function ConfirmModal({
   onConfirm,
 }: ConfirmModalProps) {
   const [submitting, setSubmitting] = useState(false);
+
+  // Ловушка фокуса
+  const { containerRef } = useFocusTrap({
+    active: open,
+    onEscape: onCancel,
+  });
 
   const confirmVariant = useMemo(() => (danger ? 'danger' : 'primary'), [danger]);
 
@@ -41,17 +52,46 @@ export default function ConfirmModal({
     }
   };
 
+  const titleId = 'confirm-modal-title';
+  const descId = description ? 'confirm-modal-desc' : undefined;
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/60" onClick={onCancel} />
-      <div className="relative w-full max-w-md rounded-2xl border border-white/10 bg-slate-900 p-6 shadow-2xl">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center"
+      role="presentation"
+    >
+      <div
+        className="absolute inset-0 bg-black/60"
+        onClick={onCancel}
+        aria-hidden="true"
+      />
+      <div
+        ref={containerRef as React.RefObject<HTMLDivElement>}
+        className="relative w-full max-w-md rounded-2xl border border-white/10 bg-slate-900 p-6 shadow-2xl"
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        aria-describedby={descId}
+      >
         <div className="space-y-2">
-          <div className="text-lg font-semibold text-white">{title}</div>
-          {description ? <div className="text-sm text-slate-400">{description}</div> : null}
+          <div id={titleId} className="text-lg font-semibold text-white">
+            {title}
+          </div>
+          {description ? (
+            <div id={descId} className="text-sm text-slate-400">
+              {description}
+            </div>
+          ) : null}
         </div>
 
         <div className="mt-5 flex items-center justify-end gap-3">
-          <Button variant="secondary" size="md" onClick={onCancel} disabled={submitting}>
+          <Button
+            variant="secondary"
+            size="md"
+            onClick={onCancel}
+            disabled={submitting}
+            aria-label={cancelText}
+          >
             {cancelText}
           </Button>
           <Button
@@ -60,6 +100,7 @@ export default function ConfirmModal({
             loading={submitting}
             disabled={confirmDisabled}
             onClick={() => void handleConfirm()}
+            aria-label={confirmText}
           >
             {confirmText}
           </Button>
@@ -68,4 +109,3 @@ export default function ConfirmModal({
     </div>
   );
 }
-
