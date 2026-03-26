@@ -7,7 +7,6 @@ const navLinks = [
   { to: '/#about', label: 'О нас', hash: true },
   { to: '/#equipment', label: 'Оборудование', hash: true },
   { to: '/#services', label: 'Услуги', hash: true },
-  { to: '/#contacts', label: 'Контакты', hash: true },
 ];
 
 const Header = () => {
@@ -107,6 +106,14 @@ const Header = () => {
           >
             Кейсы
           </NavLink>
+          <NavLink
+            to="/contacts"
+            className={({ isActive }) =>
+              `rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 hover:bg-white/5 hover:text-white ${isActive ? 'text-white' : 'text-gray-300'}`
+            }
+          >
+            Контакты
+          </NavLink>
         </nav>
 
         {/* Right controls */}
@@ -195,6 +202,15 @@ const Header = () => {
               }
             >
               Кейсы
+            </NavLink>
+            <NavLink
+              to="/contacts"
+              onClick={closeMenu}
+              className={({ isActive }) =>
+                `rounded-xl px-4 py-3 text-sm font-medium transition hover:bg-white/5 hover:text-white ${isActive ? 'text-white' : 'text-gray-300'}`
+              }
+            >
+              Контакты
             </NavLink>
             <div className="mt-3 border-t pt-4" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
               <a
