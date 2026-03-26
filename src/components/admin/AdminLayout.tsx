@@ -4,20 +4,6 @@ import { useAuth } from '../../context/AuthContext';
 import { Toaster } from 'react-hot-toast';
 import { supabase } from '../../lib/supabase';
 import {
-  BACKGROUND_CHANGED_EVENT,
-  BACKGROUND_SETTINGS_CHANGED_EVENT,
-  isCustomBackgroundId,
-  backgroundOptions,
-  backgroundSettingsControls,
-  getStoredBackgroundSettingsMap,
-  patchStoredBackgroundSettings,
-  getStoredBackground,
-  setStoredBackground,
-  type AnyBackgroundSettings,
-  type BackgroundSettingsById,
-  type BackgroundId,
-} from '../../lib/backgrounds';
-import {
   LayoutDashboard,
   Inbox,
   FolderOpen,
@@ -25,6 +11,7 @@ import {
   Tag,
   Phone,
   Settings,
+  Palette,
   LogOut,
   Menu,
   X,
@@ -55,6 +42,7 @@ const defaultNavItems: NavItem[] = [
   { to: '/admin', label: 'Дашборд', Icon: LayoutDashboard },
   { to: '/admin/leads', label: 'Заявки', Icon: Inbox, badge: true },
   { to: '/admin/cases', label: 'Кейсы', Icon: FolderOpen },
+  { to: '/admin/backgrounds', label: 'Фоны', Icon: Palette },
   { to: '/admin/packages', label: 'Пакеты', Icon: Package },
   { to: '/admin/categories', label: 'Категории', Icon: Tag },
   { to: '/admin/contacts', label: 'Контакты', Icon: Phone },
@@ -66,8 +54,6 @@ const AdminLayout = ({ title, subtitle, children }: Props) => {
   const navigate = useNavigate();
   const { logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [background, setBackground] = useState<BackgroundId>(() => getStoredBackground());
-  const [backgroundSettingsMap, setBackgroundSettingsMap] = useState<BackgroundSettingsById>(() => getStoredBackgroundSettingsMap());
   const [leadCount, setLeadCount] = useState<number>(0);
   const [navItems, setNavItems] = useState<NavItem[]>(() => {
     const saved = localStorage.getItem('adminNavOrder');
@@ -122,27 +108,6 @@ const AdminLayout = ({ title, subtitle, children }: Props) => {
       mounted = false;
     };
   }, [location.pathname]);
-
-  useEffect(() => {
-    const syncBackground = () => {
-      setBackground(getStoredBackground());
-    };
-
-    const syncBackgroundSettings = () => {
-      setBackgroundSettingsMap(getStoredBackgroundSettingsMap());
-    };
-
-    window.addEventListener('storage', syncBackground);
-    window.addEventListener('storage', syncBackgroundSettings);
-    window.addEventListener(BACKGROUND_CHANGED_EVENT, syncBackground as EventListener);
-    window.addEventListener(BACKGROUND_SETTINGS_CHANGED_EVENT, syncBackgroundSettings as EventListener);
-    return () => {
-      window.removeEventListener('storage', syncBackground);
-      window.removeEventListener('storage', syncBackgroundSettings);
-      window.removeEventListener(BACKGROUND_CHANGED_EVENT, syncBackground as EventListener);
-      window.removeEventListener(BACKGROUND_SETTINGS_CHANGED_EVENT, syncBackgroundSettings as EventListener);
-    };
-  }, []);
 
   const handleLogout = async () => {
     await logout();
@@ -335,79 +300,6 @@ const AdminLayout = ({ title, subtitle, children }: Props) => {
                 )}
               </div>
               <div className="flex items-center gap-4">
-                <div className="hidden min-w-[320px] md:block">
-                  <label htmlFor="admin-background" className="mb-1 block text-[11px] uppercase tracking-wide text-slate-400">
-                    Фон сайта
-                  </label>
-                  <select
-                    id="admin-background"
-                    value={background}
-                    onChange={(e) => {
-                      const nextBackground = e.target.value as BackgroundId;
-                      setBackground(nextBackground);
-                      setStoredBackground(nextBackground);
-                    }}
-                    className="rounded-lg border border-white/10 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-200 outline-none transition focus:border-brand-400"
-                  >
-                    {backgroundOptions.map((option) => (
-                      <option key={option.id} value={option.id}>
-                        {option.name}
-                      </option>
-                    ))}
-                  </select>
-                  {isCustomBackgroundId(background) ? (
-                    <div className="mt-2 grid grid-cols-2 gap-2 text-[11px] text-slate-400">
-                      <label className="col-span-2">
-                        Анимация
-                        <select
-                          value={backgroundSettingsMap[background].motion}
-                          onChange={(e) => {
-                            const motion = e.target.value as BackgroundSettingsById[typeof background]['motion'];
-                            setBackgroundSettingsMap((prev) => ({
-                              ...prev,
-                              [background]: { ...prev[background], motion },
-                            }));
-                            patchStoredBackgroundSettings(background, { motion });
-                          }}
-                          className="mt-1 w-full rounded-lg border border-white/10 bg-slate-900 px-2 py-1.5 text-xs text-slate-200 outline-none transition focus:border-brand-400"
-                        >
-                          <option value="slow">Медленно</option>
-                          <option value="normal">Нормально</option>
-                          <option value="fast">Быстро</option>
-                        </select>
-                      </label>
-
-                      {backgroundSettingsControls[background].map((control) => {
-                        const value = Number(backgroundSettingsMap[background][control.key as keyof AnyBackgroundSettings]);
-                        return (
-                          <label key={control.key} className="col-span-2">
-                            {control.label}: {value.toFixed(control.step >= 1 ? 0 : control.step >= 0.1 ? 1 : 2)}
-                            <input
-                              type="range"
-                              min={control.min}
-                              max={control.max}
-                              step={control.step}
-                              value={value}
-                              onChange={(e) => {
-                                const numericValue = Number(e.target.value);
-                                const patch = { [control.key]: numericValue } as Partial<AnyBackgroundSettings>;
-                                setBackgroundSettingsMap((prev) => ({
-                                  ...prev,
-                                  [background]: {
-                                    ...prev[background],
-                                    [control.key]: numericValue,
-                                  },
-                                }));
-                                patchStoredBackgroundSettings(background, patch);
-                              }}
-                              className="mt-1 w-full accent-brand-500"
-                            />
-                          </label>
-                        );
-                      })}
-                    </div>
-                  ) : null}
-                </div>
                 <div className="hidden text-right sm:block">
                   <div className="text-sm font-medium text-white">Admin</div>
                   <div className="text-xs text-slate-400">

@@ -27,6 +27,7 @@ const AdminPackagesPage = lazy(() => import('./pages/admin/AdminPackagesPage'));
 const AdminCategoriesPage = lazy(() => import('./pages/admin/AdminCategoriesPage'));
 const AdminContactsPage = lazy(() => import('./pages/admin/AdminContactsPage'));
 const AdminCalculatorPage = lazy(() => import('./pages/admin/AdminCalculatorPage'));
+const AdminBackgroundsPage = lazy(() => import('./pages/admin/AdminBackgroundsPage'));
 const SupabaseTestPage = lazy(() => import('./pages/SupabaseTestPage'));
 const SupabaseCheckPage = lazy(() => import('./pages/SupabaseCheckPage'));
 
@@ -115,6 +116,10 @@ const App = () => {
       {
         path: '/admin/calculator',
         element: <ProtectedRoute><AdminCalculatorPage /></ProtectedRoute>,
+      },
+      {
+        path: '/admin/backgrounds',
+        element: <ProtectedRoute><AdminBackgroundsPage /></ProtectedRoute>,
       },
       {
         path: '/admin',

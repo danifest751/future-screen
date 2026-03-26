@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import AdminLayout from '../../components/admin/AdminLayout';
-import { Package, Tag, Phone, FolderOpen, Inbox } from 'lucide-react';
+import { Package, Tag, Phone, FolderOpen, Inbox, Palette } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 type Section = {
@@ -15,6 +15,7 @@ const sections: Section[] = [
   { to: '/admin/categories', title: 'Категории', desc: 'Категории аренды и контент страниц', Icon: Tag },
   { to: '/admin/contacts', title: 'Контакты', desc: 'Телефоны, email, адрес, график', Icon: Phone },
   { to: '/admin/cases', title: 'Кейсы', desc: 'Портфолио, метрики и изображения', Icon: FolderOpen },
+  { to: '/admin/backgrounds', title: 'Фоны', desc: 'Глобальный фон и все параметры анимаций', Icon: Palette },
   { to: '/admin/leads', title: 'Заявки', desc: 'Лента заявок и экспорт', Icon: Inbox },
 ];
 
