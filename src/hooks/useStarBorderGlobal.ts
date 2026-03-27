@@ -14,12 +14,14 @@ export const useStarBorderGlobal = () => {
     const speed = settings.starBorder?.speed ?? 6;
     const thickness = settings.starBorder?.thickness ?? 2.5;
     const intensity = settings.starBorder?.intensity ?? 1;
+    const cornerOffset = settings.starBorder?.cornerOffset ?? 0;
 
     // Устанавливаем CSS переменные
     document.documentElement.style.setProperty('--star-border-color', color);
     document.documentElement.style.setProperty('--star-border-speed', `${speed}s`);
     document.documentElement.style.setProperty('--star-border-thickness', `${thickness}px`);
     document.documentElement.style.setProperty('--star-border-intensity', String(intensity));
+    document.documentElement.style.setProperty('--star-border-corner-offset', `${cornerOffset}px`);
 
     if (!isEnabled) {
       // Удаляем все классы star-border если функция отключена
@@ -104,7 +106,7 @@ export const useStarBorderGlobal = () => {
     return () => {
       observer.disconnect();
     };
-  }, [settings.starBorder?.enabled, settings.starBorder?.color, settings.starBorder?.speed, settings.starBorder?.thickness, settings.starBorder?.intensity]);
+  }, [settings.starBorder?.enabled, settings.starBorder?.color, settings.starBorder?.speed, settings.starBorder?.thickness, settings.starBorder?.intensity, settings.starBorder?.cornerOffset]);
 };
 
 export default useStarBorderGlobal;

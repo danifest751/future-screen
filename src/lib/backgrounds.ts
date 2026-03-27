@@ -155,6 +155,7 @@ export type StarBorderSettings = {
   speed: number; // in seconds
   thickness: number;
   intensity: number;
+  cornerOffset: number;
 };
 
 export const defaultStarBorderSettings: StarBorderSettings = {
@@ -163,6 +164,7 @@ export const defaultStarBorderSettings: StarBorderSettings = {
   speed: 6,
   thickness: 2.5,
   intensity: 1,
+  cornerOffset: 0,
 };
 
 export const starBorderSettingsControls = [
@@ -170,6 +172,7 @@ export const starBorderSettingsControls = [
   { key: 'color', label: 'Цвет рамки', control: 'color' },
   { key: 'speed', label: 'Скорость анимации (сек)', control: 'range', min: 2, max: 15, step: 0.5 },
   { key: 'thickness', label: 'Толщина рамки', control: 'range', min: 1, max: 5, step: 0.5 },
+  { key: 'cornerOffset', label: 'Отступ старта от угла (px)', control: 'range', min: 0, max: 80, step: 1 },
 ] as const;
 
 export const BACKGROUND_STORAGE_KEY = 'fs-background';
