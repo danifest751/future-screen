@@ -543,7 +543,7 @@ const HomePage = () => {
             {equipment.map((item) => (
               <div
                 key={item.title}
-                className="card group cursor-pointer"
+                className="card group h-full cursor-pointer"
               >
                 <div
                   className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl text-white"
@@ -647,7 +647,7 @@ const HomePage = () => {
               style={{ background: 'linear-gradient(90deg, transparent, rgba(102,126,234,0.4), transparent)' }}
             />
             {processSteps.map((step, idx) => (
-              <div key={step.num} className="card relative text-center">
+              <div key={step.num} className="card relative h-full text-center">
                 <div
                   className="font-display mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full text-2xl font-bold text-white"
                   style={{ background: 'var(--accent-gradient)', boxShadow: 'var(--glow)' }}

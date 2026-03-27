@@ -2,9 +2,9 @@
 /* Animated border effect for hoverable elements using overlay technique */
 
 :root {
-  --star-border-color: #667eea;
+  --star-border-color: #8aa2ff;
   --star-border-speed: 3s;
-  --star-border-thickness: 2px;
+  --star-border-thickness: 2.5px;
   --star-border-intensity: 1;
 }
 
@@ -14,72 +14,90 @@
   overflow: hidden;
   border-radius: 0.75rem;
   transition: transform 0.2s ease;
-  /* Padding creates space for the border */
-  padding: var(--star-border-thickness);
+  padding: 0;
 }
 
-/* Animated gradient layer - rotates around the element */
+/* Animated top border line */
 .star-border-container::before {
   content: '';
   position: absolute;
-  /* Extend beyond container to create border thickness */
   top: 0;
   left: 0;
   right: 0;
-  bottom: 0;
-  background: conic-gradient(
-    from 0deg,
-    transparent 0deg,
-    var(--star-border-color) 60deg,
-    var(--star-border-color) 120deg,
-    transparent 180deg,
-    var(--star-border-color) 240deg,
-    transparent 300deg,
-    transparent 360deg
+  height: var(--star-border-thickness);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--star-border-color) 75%, transparent) 4%,
+    var(--star-border-color) 50%,
+    color-mix(in srgb, var(--star-border-color) 75%, transparent) 96%,
+    transparent 100%
   );
-  border-radius: inherit;
   opacity: 0;
   transition: opacity 0.3s ease;
-  z-index: 0;
-  animation: star-border-rotate var(--star-border-speed) linear infinite;
+  z-index: 2;
+  animation: star-movement-top var(--star-border-speed) linear infinite;
   animation-play-state: paused;
-  filter: blur(calc(var(--star-border-thickness) * 0.3));
+  filter: none;
+  pointer-events: none;
 }
 
-/* Overlay layer - masks the center to show only border */
+/* Animated bottom border line */
 .star-border-container::after {
   content: '';
   position: absolute;
-  /* Inset creates the visible border thickness */
-  top: var(--star-border-thickness);
-  left: var(--star-border-thickness);
-  right: var(--star-border-thickness);
-  bottom: var(--star-border-thickness);
-  background: inherit;
-  border-radius: calc(inherit - var(--star-border-thickness));
-  z-index: 1;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: var(--star-border-thickness);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--star-border-color) 75%, transparent) 4%,
+    var(--star-border-color) 50%,
+    color-mix(in srgb, var(--star-border-color) 75%, transparent) 96%,
+    transparent 100%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 2;
+  animation: star-movement-bottom var(--star-border-speed) linear infinite;
+  animation-play-state: paused;
+  filter: none;
+  pointer-events: none;
 }
 
 /* Hover state - activate animation */
-.star-border-container:hover::before {
+.star-border-container:hover::before,
+.star-border-container:hover::after {
   opacity: var(--star-border-intensity);
   animation-play-state: running;
 }
 
-/* Rotation animation */
-@keyframes star-border-rotate {
-  from {
-    transform: rotate(0deg);
+/* Top line movement */
+@keyframes star-movement-top {
+  0% {
+    transform: translateX(-100%);
   }
-  to {
-    transform: rotate(360deg);
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Bottom line movement (reverse direction) */
+@keyframes star-movement-bottom {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
   }
 }
 
 /* Inner content wrapper */
 .inner-content {
   position: relative;
-  z-index: 2;
+  z-index: 1;
   width: 100%;
   height: 100%;
   border-radius: inherit;
@@ -99,8 +117,9 @@
   border-radius: 0.5rem;
 }
 
-.star-border-button::before {
-  filter: blur(calc(var(--star-border-thickness) * 0.4));
+.star-border-button::before,
+.star-border-button::after {
+  filter: none;
 }
 
 /* Card variant */
@@ -108,8 +127,9 @@
   border-radius: 1rem;
 }
 
-.star-border-card::before {
-  filter: blur(calc(var(--star-border-thickness) * var(--star-border-intensity) * 0.5));
+.star-border-card::before,
+.star-border-card::after {
+  filter: none;
 }
 
 /* Link variant */
@@ -118,7 +138,8 @@
   display: inline-flex;
 }
 
-.star-border-link::before {
+.star-border-link::before,
+.star-border-link::after {
   animation-duration: calc(var(--star-border-speed) * 0.7);
 }
 
@@ -127,24 +148,28 @@
   border-radius: 0.5rem;
 }
 
-.star-border-input::before {
+.star-border-input::before,
+.star-border-input::after {
   animation-duration: calc(var(--star-border-speed) * 1.2);
 }
 
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
-  .star-border-container::before {
+  .star-border-container::before,
+  .star-border-container::after {
     animation: none !important;
   }
   
-  .star-border-container:hover::before {
+  .star-border-container:hover::before,
+  .star-border-container:hover::after {
     opacity: calc(0.6 * var(--star-border-intensity));
   }
 }
 
 /* High contrast mode */
 @media (prefers-contrast: high) {
-  .star-border-container::before {
+  .star-border-container::before,
+  .star-border-container::after {
     filter: none;
     opacity: 1;
   }
