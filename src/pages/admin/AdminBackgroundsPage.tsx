@@ -260,14 +260,14 @@ const AdminBackgroundsPage = () => {
                       : 'border border-white/20 text-slate-200 hover:border-white/40 hover:text-white'
                   }`}
                 >
-                  {starBorderSettings.enabled ? 'Активен' : 'Включить'}
+                  {starBorderSettings.enabled ? 'Выключить' : 'Включить'}
                 </button>
                 <button
                   type="button"
                   onClick={resetStarBorderSettings}
                   className="rounded-lg border border-white/20 px-3 py-1.5 text-xs font-semibold text-slate-200 transition hover:border-white/40 hover:text-white"
                 >
-                  Сбросить
+                  Сбросить настройки
                 </button>
               </div>
             </div>

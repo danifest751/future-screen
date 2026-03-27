@@ -23,15 +23,18 @@ export const useStarBorderGlobal = () => {
     document.documentElement.style.setProperty('--star-border-intensity', String(intensity));
     document.documentElement.style.setProperty('--star-border-corner-offset', `${cornerOffset}px`);
 
-    if (!isEnabled) {
-      // Удаляем все классы star-border если функция отключена
-      document.querySelectorAll('.star-border-container').forEach((el) => {
-        const inner = el.querySelector('.inner-content');
-        if (inner && inner.firstElementChild) {
-          // Восстанавливаем оригинальный элемент
-          el.replaceWith(inner.firstElementChild);
-        }
+    const STAR_BORDER_CLASSES = ['star-border-container', 'star-border-button', 'star-border-link', 'star-border-card'];
+
+    const clearStarBorderClasses = () => {
+      STAR_BORDER_CLASSES.forEach((className) => {
+        document.querySelectorAll(`.${className}`).forEach((el) => {
+          el.classList.remove(className);
+        });
       });
+    };
+
+    if (!isEnabled) {
+      clearStarBorderClasses();
       return;
     }
 
@@ -42,43 +45,24 @@ export const useStarBorderGlobal = () => {
       card: '.card:not(.star-border-ignore):not(.star-border-container *)',
     };
 
-    // Применяем классы к элементам
+    // Применяем классы к элементам без изменения структуры DOM
     const applyStarBorder = () => {
-      // Кнопки
       document.querySelectorAll(selectors.button).forEach((el) => {
-        if (!el.closest('.star-border-container')) {
-          wrapWithStarBorder(el as HTMLElement, 'star-border-button');
-        }
+        const element = el as HTMLElement;
+        element.classList.add('star-border-container', 'star-border-button');
       });
 
-      // Ссылки
       document.querySelectorAll(selectors.link).forEach((el) => {
-        if (!el.closest('.star-border-container') && el.textContent?.trim()) {
-          wrapWithStarBorder(el as HTMLElement, 'star-border-link');
+        const element = el as HTMLElement;
+        if (element.textContent?.trim()) {
+          element.classList.add('star-border-container', 'star-border-link');
         }
       });
 
-      // Карточки
       document.querySelectorAll(selectors.card).forEach((el) => {
-        if (!el.closest('.star-border-container')) {
-          wrapWithStarBorder(el as HTMLElement, 'star-border-card');
-        }
+        const element = el as HTMLElement;
+        element.classList.add('star-border-container', 'star-border-card');
       });
-    };
-
-    const wrapWithStarBorder = (element: HTMLElement, variantClass: string) => {
-      const wrapper = document.createElement('div');
-      wrapper.className = `star-border-container ${variantClass}`;
-
-      const inner = document.createElement('div');
-      inner.className = 'inner-content';
-
-      // Клонируем элемент во внутренний контейнер
-      inner.appendChild(element.cloneNode(true));
-
-      wrapper.appendChild(inner);
-
-      element.replaceWith(wrapper);
     };
 
     // Применяем сразу
@@ -105,6 +89,9 @@ export const useStarBorderGlobal = () => {
 
     return () => {
       observer.disconnect();
+      if (!isEnabled) {
+        clearStarBorderClasses();
+      }
     };
   }, [settings.starBorder?.enabled, settings.starBorder?.color, settings.starBorder?.speed, settings.starBorder?.thickness, settings.starBorder?.intensity, settings.starBorder?.cornerOffset]);
 };
