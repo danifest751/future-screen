@@ -1,5 +1,8 @@
 import { lazy, Suspense, type ComponentType } from 'react';
-import type { ColorBendsSettings, PixelBlastSettings, LineWavesSettings, GalaxySettings } from '../../lib/backgrounds';
+import type {
+  ColorBendsSettings, PixelBlastSettings, LineWavesSettings, GalaxySettings,
+  AuroraSettings, MeshSettings, DotsSettings, WavesSettings, RingsSettings, NebulaSettings
+} from '../../lib/backgrounds';
 
 // Lazy load heavy ReactBits components
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -10,6 +13,19 @@ const ReactBitsPixelBlast = lazy(() => import('./reactbits/PixelBlast.jsx')) as 
 const ReactBitsLineWaves = lazy(() => import('./reactbits/LineWaves.jsx')) as ComponentType<any>;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const ReactBitsGalaxy = lazy(() => import('./reactbits/Galaxy.jsx')) as ComponentType<any>;
+// New ReactBits components
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const ReactBitsAurora = lazy(() => import('./reactbits/Aurora.jsx')) as ComponentType<any>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const ReactBitsMesh = lazy(() => import('./reactbits/Mesh.jsx')) as ComponentType<any>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const ReactBitsDots = lazy(() => import('./reactbits/Dots.jsx')) as ComponentType<any>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const ReactBitsWaves = lazy(() => import('./reactbits/Waves.jsx')) as ComponentType<any>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const ReactBitsRings = lazy(() => import('./reactbits/Rings.jsx')) as ComponentType<any>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const ReactBitsNebula = lazy(() => import('./reactbits/Nebula.jsx')) as ComponentType<any>;
 
 const withAlpha = (alpha: number, intensity: number) => Math.min(1, alpha * intensity);
 
@@ -227,6 +243,204 @@ export const GalaxyDecorLazy = ({ settings }: { settings: GalaxySettings }) => {
             transform: `rotate(${rotationSpeed * 42}deg)`,
             opacity: withAlpha(0.48 + repulsionStrength * 0.05, intensity),
           }}
+        />
+      </div>
+    </Suspense>
+  );
+};
+
+// New ReactBits lazy exports
+export const AuroraDecorLazy = ({ settings }: { settings: AuroraSettings }) => {
+  const {
+    intensity,
+    contrast,
+    motion,
+    color1,
+    color2,
+    color3,
+    speed,
+    blend,
+    amplitude,
+  } = settings;
+
+  return (
+    <Suspense fallback={<BackgroundPlaceholder />}>
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden style={{ filter: `contrast(${contrast})` }}>
+        <ReactBitsAurora
+          className="h-full w-full"
+          style={{ opacity: withAlpha(1, intensity) }}
+          color1={color1}
+          color2={color2}
+          color3={color3}
+          speed={Math.max(0.01, speed / motionMultiplier[motion])}
+          amplitude={amplitude}
+          blend={blend}
+          mouseInteraction
+          transparent
+        />
+      </div>
+    </Suspense>
+  );
+};
+
+export const MeshDecorLazy = ({ settings }: { settings: MeshSettings }) => {
+  const {
+    intensity,
+    contrast,
+    motion,
+    gridOpacity,
+    glow,
+  } = settings;
+
+  return (
+    <Suspense fallback={<BackgroundPlaceholder />}>
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden style={{ filter: `contrast(${contrast})` }}>
+        <ReactBitsMesh
+          className="h-full w-full"
+          style={{ opacity: withAlpha(1, intensity) }}
+          gridOpacity={gridOpacity}
+          glow={glow}
+          speed={1 / motionMultiplier[motion]}
+          mouseInteraction
+          transparent
+        />
+      </div>
+    </Suspense>
+  );
+};
+
+export const DotsDecorLazy = ({ settings }: { settings: DotsSettings }) => {
+  const {
+    intensity,
+    contrast,
+    motion,
+    dotSize,
+    gap,
+    baseColor,
+    activeColor,
+    proximity,
+    speedTrigger,
+    shockRadius,
+    shockStrength,
+    maxSpeed,
+    resistance,
+    returnDuration,
+  } = settings;
+
+  return (
+    <Suspense fallback={<BackgroundPlaceholder />}>
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden style={{ filter: `contrast(${contrast})` }}>
+        <ReactBitsDots
+          className="h-full w-full"
+          style={{ opacity: withAlpha(1, intensity) }}
+          dotSize={dotSize}
+          gap={gap}
+          baseColor={baseColor}
+          activeColor={activeColor}
+          proximity={proximity}
+          speedTrigger={speedTrigger}
+          shockRadius={shockRadius}
+          shockStrength={shockStrength}
+          maxSpeed={maxSpeed}
+          resistance={resistance}
+          returnDuration={returnDuration * motionMultiplier[motion]}
+          mouseInteraction
+          transparent
+        />
+      </div>
+    </Suspense>
+  );
+};
+
+export const WavesDecorLazy = ({ settings }: { settings: WavesSettings }) => {
+  const {
+    intensity,
+    contrast,
+    motion,
+    lineColor,
+    backgroundColor,
+    waveSpeedX,
+    waveSpeedY,
+    waveAmpX,
+    waveAmpY,
+    xGap,
+    yGap,
+    friction,
+    tension,
+    maxCursorMove,
+  } = settings;
+
+  return (
+    <Suspense fallback={<BackgroundPlaceholder />}>
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden style={{ filter: `contrast(${contrast})` }}>
+        <ReactBitsWaves
+          className="h-full w-full"
+          style={{ opacity: withAlpha(1, intensity) }}
+          lineColor={lineColor}
+          backgroundColor={backgroundColor}
+          waveSpeedX={waveSpeedX * motionMultiplier[motion]}
+          waveSpeedY={waveSpeedY * motionMultiplier[motion]}
+          waveAmpX={waveAmpX}
+          waveAmpY={waveAmpY}
+          xGap={xGap}
+          yGap={yGap}
+          friction={friction}
+          tension={tension}
+          maxCursorMove={maxCursorMove}
+          mouseInteraction
+          transparent
+        />
+      </div>
+    </Suspense>
+  );
+};
+
+export const RingsDecorLazy = ({ settings }: { settings: RingsSettings }) => {
+  const {
+    intensity,
+    contrast,
+    motion,
+    rings,
+    spread,
+  } = settings;
+
+  return (
+    <Suspense fallback={<BackgroundPlaceholder />}>
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden style={{ filter: `contrast(${contrast})` }}>
+        <ReactBitsRings
+          className="h-full w-full"
+          style={{ opacity: withAlpha(1, intensity) }}
+          rings={rings}
+          spread={spread}
+          speed={1 / motionMultiplier[motion]}
+          mouseInteraction
+          transparent
+        />
+      </div>
+    </Suspense>
+  );
+};
+
+export const NebulaDecorLazy = ({ settings }: { settings: NebulaSettings }) => {
+  const {
+    intensity,
+    contrast,
+    motion,
+    grain,
+    hueShift,
+  } = settings;
+
+  return (
+    <Suspense fallback={<BackgroundPlaceholder />}>
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden style={{ filter: `contrast(${contrast})` }}>
+        <ReactBitsNebula
+          className="h-full w-full"
+          style={{ opacity: withAlpha(1, intensity) }}
+          grain={grain}
+          hueShift={hueShift}
+          speed={1 / motionMultiplier[motion]}
+          mouseInteraction
+          transparent
         />
       </div>
     </Suspense>
