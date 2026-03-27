@@ -31,19 +31,23 @@ export const StarBorder = ({
   const [isEnabled, setIsEnabled] = useState(false);
 
   useEffect(() => {
-    setIsEnabled(settings.starBorderEnabled ?? false);
-  }, [settings.starBorderEnabled]);
+    setIsEnabled(settings.starBorder?.enabled ?? false);
+  }, [settings.starBorder?.enabled]);
 
   if (!isEnabled || disabled) {
     return <>{children}</>;
   }
 
   const variantClass = variantClassMap[variant];
-  const combinedClassName = `star-border ${variantClass} ${className}`.trim();
+  const combinedClassName = `star-border-container ${variantClass} ${className}`.trim();
 
   return (
     <div className={combinedClassName} style={style}>
-      {children}
+      <div className="border-gradient-top" />
+      <div className="border-gradient-bottom" />
+      <div className="inner-content">
+        {children}
+      </div>
     </div>
   );
 };

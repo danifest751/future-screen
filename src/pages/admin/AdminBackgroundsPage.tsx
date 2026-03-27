@@ -5,11 +5,13 @@ import {
   backgroundOptions,
   backgroundSettingsControls,
   defaultBackgroundSettingsById,
+  defaultStarBorderSettings,
   type AnyBackgroundSettings,
   type BackgroundId,
   type BackgroundMotion,
   type BackgroundSettingsById,
   type CustomBackgroundId,
+  type StarBorderSettings,
 } from '../../lib/backgrounds';
 
 const formatValue = (value: number, step: number) => {
@@ -36,12 +38,12 @@ const customBackgroundOptions = backgroundOptions.filter(
 );
 
 const AdminBackgroundsPage = () => {
-  const { settings, loading, error, updateBackground, updateBackgroundSettings, updateStarBorderEnabled } = useSiteSettingsContext();
+  const { settings, loading, error, updateBackground, updateBackgroundSettings, updateStarBorder } = useSiteSettingsContext();
   
   // Локальное состояние для UI
   const [background, setBackground] = useState<BackgroundId>('theme');
   const [settingsMap, setSettingsMap] = useState<BackgroundSettingsById>(() => cloneDefaultSettingsMap());
-  const [starBorderEnabled, setStarBorderEnabled] = useState(false);
+  const [starBorderSettings, setStarBorderSettings] = useState<StarBorderSettings>({ ...defaultStarBorderSettings });
   const [saving, setSaving] = useState(false);
 
   // Синхронизация с загруженными настройками
@@ -49,7 +51,7 @@ const AdminBackgroundsPage = () => {
     if (!loading) {
       setBackground(settings.background);
       setSettingsMap(settings.backgroundSettings);
-      setStarBorderEnabled(settings.starBorderEnabled);
+      setStarBorderSettings(settings.starBorder ?? { ...defaultStarBorderSettings });
     }
   }, [settings, loading]);
 
@@ -131,11 +133,39 @@ const AdminBackgroundsPage = () => {
   };
 
   const handleStarBorderToggle = async () => {
-    const newValue = !starBorderEnabled;
-    setStarBorderEnabled(newValue);
+    const newValue = !starBorderSettings.enabled;
+    const newSettings = { ...starBorderSettings, enabled: newValue };
+    setStarBorderSettings(newSettings);
     
     setSaving(true);
-    await updateStarBorderEnabled(newValue);
+    await updateStarBorder(newSettings);
+    setSaving(false);
+  };
+
+  const updateStarBorderColor = async (color: string) => {
+    const newSettings = { ...starBorderSettings, color };
+    setStarBorderSettings(newSettings);
+    
+    setSaving(true);
+    await updateStarBorder(newSettings);
+    setSaving(false);
+  };
+
+  const updateStarBorderNumeric = async (key: keyof StarBorderSettings, value: number) => {
+    const newSettings = { ...starBorderSettings, [key]: value };
+    setStarBorderSettings(newSettings);
+    
+    setSaving(true);
+    await updateStarBorder(newSettings);
+    setSaving(false);
+  };
+
+  const resetStarBorderSettings = async () => {
+    const defaults = { ...defaultStarBorderSettings };
+    setStarBorderSettings(defaults);
+    
+    setSaving(true);
+    await updateStarBorder(defaults);
     setSaving(false);
   };
 
@@ -203,41 +233,123 @@ const AdminBackgroundsPage = () => {
           </div>
         </div>
 
-        {/* Star Border Toggle Section */}
-        <div className="rounded-xl border border-white/10 bg-slate-800 p-6">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h2 className="text-xl font-semibold text-white">Анимация рамки при наведении</h2>
-              <p className="mt-1 text-sm text-slate-400">
-                Эффект светящейся вращающейся рамки (Star Border) при наведении на интерактивные элементы: кнопки, карточки, ссылки.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={handleStarBorderToggle}
-              className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${
-                starBorderEnabled ? 'bg-brand-500' : 'bg-slate-600'
-              }`}
-              role="switch"
-              aria-checked={starBorderEnabled}
-            >
-              <span
-                className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
-                  starBorderEnabled ? 'translate-x-6' : 'translate-x-1'
-                }`}
-              />
-            </button>
-          </div>
-          
-          <div className="mt-4 flex items-center gap-3 rounded-lg bg-slate-900/50 p-3">
-            <div className={`h-4 w-4 rounded-full ${starBorderEnabled ? 'bg-green-500' : 'bg-slate-500'}`} />
-            <span className="text-sm text-slate-300">
-              Статус: <span className="font-medium text-white">{starBorderEnabled ? 'Включено' : 'Выключено'}</span>
-            </span>
-          </div>
-        </div>
-
         <div className="grid gap-4 xl:grid-cols-2">
+          {/* Star Border Card */}
+          <section
+            className={`rounded-xl border p-5 ${
+              starBorderSettings.enabled
+                ? 'border-brand-500/50 bg-brand-500/10'
+                : 'border-white/10 bg-slate-800'
+            }`}
+          >
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h3 className="text-lg font-semibold text-white">Star Border</h3>
+                <p className="mt-1 text-sm text-slate-400">
+                  Эффект светящейся вращающейся рамки при наведении на кнопки, карточки и ссылки
+                </p>
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleStarBorderToggle}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                    starBorderSettings.enabled
+                      ? 'bg-brand-500 text-white'
+                      : 'border border-white/20 text-slate-200 hover:border-white/40 hover:text-white'
+                  }`}
+                >
+                  {starBorderSettings.enabled ? 'Активен' : 'Включить'}
+                </button>
+                <button
+                  type="button"
+                  onClick={resetStarBorderSettings}
+                  className="rounded-lg border border-white/20 px-3 py-1.5 text-xs font-semibold text-slate-200 transition hover:border-white/40 hover:text-white"
+                >
+                  Сбросить
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-4 space-y-3">
+              <div className="flex items-center justify-between rounded-lg bg-slate-900/50 p-3">
+                <span className="text-sm text-slate-300">Состояние</span>
+                <span className={`text-xs font-medium ${starBorderSettings.enabled ? 'text-green-400' : 'text-slate-500'}`}>
+                  {starBorderSettings.enabled ? 'Работает' : 'Отключен'}
+                </span>
+              </div>
+
+              {/* Color Setting */}
+              <label className="block text-sm text-slate-300">
+                <div className="mb-1 flex items-center justify-between gap-2">
+                  <span>Цвет рамки</span>
+                  <span className="text-xs text-slate-400">{starBorderSettings.color}</span>
+                </div>
+                <input
+                  type="color"
+                  value={starBorderSettings.color}
+                  onChange={(e) => updateStarBorderColor(e.target.value.toUpperCase())}
+                  className="h-10 w-full cursor-pointer rounded-lg border border-white/10 bg-slate-900 px-1 py-1"
+                />
+              </label>
+
+              {/* Speed Setting */}
+              <label className="block text-sm text-slate-300">
+                <div className="mb-1 flex items-center justify-between gap-2">
+                  <span>Скорость анимации</span>
+                  <span className="text-xs text-slate-400">{starBorderSettings.speed}s</span>
+                </div>
+                <input
+                  type="range"
+                  min={1}
+                  max={20}
+                  step={0.5}
+                  value={starBorderSettings.speed}
+                  onChange={(e) => updateStarBorderNumeric('speed', Number(e.target.value))}
+                  className="w-full accent-brand-500"
+                />
+              </label>
+
+              {/* Thickness Setting */}
+              <label className="block text-sm text-slate-300">
+                <div className="mb-1 flex items-center justify-between gap-2">
+                  <span>Толщина рамки</span>
+                  <span className="text-xs text-slate-400">{starBorderSettings.thickness}px</span>
+                </div>
+                <input
+                  type="range"
+                  min={1}
+                  max={5}
+                  step={0.5}
+                  value={starBorderSettings.thickness}
+                  onChange={(e) => updateStarBorderNumeric('thickness', Number(e.target.value))}
+                  className="w-full accent-brand-500"
+                />
+              </label>
+
+              {/* Intensity Setting */}
+              <label className="block text-sm text-slate-300">
+                <div className="mb-1 flex items-center justify-between gap-2">
+                  <span>Интенсивность свечения</span>
+                  <span className="text-xs text-slate-400">{starBorderSettings.intensity}</span>
+                </div>
+                <input
+                  type="range"
+                  min={0.5}
+                  max={3}
+                  step={0.1}
+                  value={starBorderSettings.intensity}
+                  onChange={(e) => updateStarBorderNumeric('intensity', Number(e.target.value))}
+                  className="w-full accent-brand-500"
+                />
+              </label>
+              
+              <div className="text-xs text-slate-500">
+                Применяется к: кнопкам, ссылкам, карточкам .card
+              </div>
+            </div>
+          </section>
           {customBackgroundOptions.map((option) => {
             const isActive = activeCustomBackground === option.id;
             const settings = settingsMap[option.id];
