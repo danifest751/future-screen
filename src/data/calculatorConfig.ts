@@ -16,27 +16,6 @@ export interface ScreenSizePreset {
 export interface CalculatorConfig {
   pitchOptions: PitchOption[];
   sizePresets: ScreenSizePreset[];
-  screenProducts: ScreenProduct[];
-  costParams: CostParams;
-}
-
-export interface ScreenProduct {
-  id: string;
-  label: string;
-  location: Location;
-  pitch: number;
-  cabinetW: number;
-  cabinetH: number;
-  powerWPerM2: number;
-  pricePerM2: number;
-  availableArea?: number; // м² доступно
-}
-
-export interface CostParams {
-  assemblyCostPerM2: number;
-  technicianPerDay: number;
-  engineerPerDay: number;
-  discountFactors: number[]; // множители по дням (1й день=1, 2й=0.5...)
 }
 
 export const defaultCalculatorConfig: CalculatorConfig = {
@@ -53,51 +32,9 @@ export const defaultCalculatorConfig: CalculatorConfig = {
     { label: 'Широкий 3:1 — 9 × 3 м', width: 9, height: 3 },
     { label: 'Компактный 4 × 2 м', width: 4, height: 2 },
   ],
-  screenProducts: [
-    {
-      id: 'outdoor-p3.9',
-      label: 'Улица P3.9 (кабинет 1×0.5)',
-      location: 'outdoor',
-      pitch: 3.9,
-      cabinetW: 1,
-      cabinetH: 0.5,
-      powerWPerM2: 700,
-      pricePerM2: 6000,
-      availableArea: 200,
-    },
-    {
-      id: 'outdoor-p2.6',
-      label: 'Улица P2.6 (кабинет 0.5×0.5)',
-      location: 'outdoor',
-      pitch: 2.6,
-      cabinetW: 0.5,
-      cabinetH: 0.5,
-      powerWPerM2: 700,
-      pricePerM2: 7000,
-      availableArea: 150,
-    },
-    {
-      id: 'indoor-p1.9',
-      label: 'Помещение P1.9 (кабинет 0.5×0.5)',
-      location: 'indoor',
-      pitch: 1.9,
-      cabinetW: 0.5,
-      cabinetH: 0.5,
-      powerWPerM2: 700,
-      pricePerM2: 8500,
-      availableArea: 120,
-    },
-  ],
-  costParams: {
-    assemblyCostPerM2: 1500,
-    technicianPerDay: 8000,
-    engineerPerDay: 20000,
-    discountFactors: [1, 0.5, 0.4, 0.3],
-  },
 };
 
 export const pitchOptions = defaultCalculatorConfig.pitchOptions;
-export const screenProducts = defaultCalculatorConfig.screenProducts;
 
 export type EventType = 'conference' | 'concert' | 'exhibition' | 'sport' | 'corporate' | 'other';
 export type Location = 'indoor' | 'outdoor';
