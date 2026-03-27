@@ -1,9 +1,9 @@
-/* Star Border Animation - Running border effect around the entire perimeter */
-/* Uses conic-gradient with rotation animation for smooth border animation */
+/* Star Border Animation from ReactBits */
+/* Animated border effect for hoverable elements using overlay technique */
 
 :root {
   --star-border-color: #667eea;
-  --star-border-speed: 6s;
+  --star-border-speed: 3s;
   --star-border-thickness: 2px;
   --star-border-intensity: 1;
 }
@@ -13,41 +13,51 @@
   position: relative;
   overflow: hidden;
   border-radius: 0.75rem;
-  /* Padding creates space for the border using CSS variable */
-  padding: var(--star-border-thickness);
   transition: transform 0.2s ease;
+  /* Padding creates space for the border */
+  padding: var(--star-border-thickness);
 }
 
-/* Animated border using conic-gradient - rotates around the element */
+/* Animated gradient layer - rotates around the element */
 .star-border-container::before {
   content: '';
   position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: var(--star-border-thickness);
+  /* Extend beyond container to create border thickness */
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   background: conic-gradient(
     from 0deg,
     transparent 0deg,
-    transparent 60deg,
-    var(--star-border-color) 90deg,
-    var(--star-border-color) 150deg,
+    var(--star-border-color) 60deg,
+    var(--star-border-color) 120deg,
     transparent 180deg,
+    var(--star-border-color) 240deg,
+    transparent 300deg,
     transparent 360deg
   );
-  /* Create mask to show only the border (outer minus inner) */
-  -webkit-mask: 
-    linear-gradient(#fff 0 0) content-box, 
-    linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  /* Apply intensity via opacity */
+  border-radius: inherit;
   opacity: 0;
   transition: opacity 0.3s ease;
+  z-index: 0;
   animation: star-border-rotate var(--star-border-speed) linear infinite;
   animation-play-state: paused;
-  /* Blur effect for glow */
   filter: blur(calc(var(--star-border-thickness) * 0.3));
-  pointer-events: none;
+}
+
+/* Overlay layer - masks the center to show only border */
+.star-border-container::after {
+  content: '';
+  position: absolute;
+  /* Inset creates the visible border thickness */
+  top: var(--star-border-thickness);
+  left: var(--star-border-thickness);
+  right: var(--star-border-thickness);
+  bottom: var(--star-border-thickness);
+  background: inherit;
+  border-radius: calc(inherit - var(--star-border-thickness));
+  z-index: 1;
 }
 
 /* Hover state - activate animation */
@@ -56,12 +66,12 @@
   animation-play-state: running;
 }
 
-/* Rotation animation for the conic gradient */
+/* Rotation animation */
 @keyframes star-border-rotate {
-  0% {
+  from {
     transform: rotate(0deg);
   }
-  100% {
+  to {
     transform: rotate(360deg);
   }
 }
@@ -69,14 +79,14 @@
 /* Inner content wrapper */
 .inner-content {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   width: 100%;
   height: 100%;
   border-radius: inherit;
   background: inherit;
 }
 
-/* Legacy gradient elements - kept for backward compatibility but hidden by default */
+/* Legacy gradient elements - hidden, not used in this implementation */
 .border-gradient-top,
 .border-gradient-bottom {
   display: none;
@@ -90,7 +100,6 @@
 }
 
 .star-border-button::before {
-  padding: calc(var(--star-border-thickness) * 1.5);
   filter: blur(calc(var(--star-border-thickness) * 0.4));
 }
 
@@ -110,7 +119,6 @@
 }
 
 .star-border-link::before {
-  padding: calc(var(--star-border-thickness) * 0.8);
   animation-duration: calc(var(--star-border-speed) * 0.7);
 }
 
@@ -131,13 +139,6 @@
   
   .star-border-container:hover::before {
     opacity: calc(0.6 * var(--star-border-intensity));
-    background: var(--star-border-color);
-    /* Show static border instead of animated */
-    -webkit-mask: 
-      linear-gradient(#fff 0 0) content-box, 
-      linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
   }
 }
 
@@ -146,39 +147,5 @@
   .star-border-container::before {
     filter: none;
     opacity: 1;
-  }
-}
-
-/* Fallback for browsers without mask-composite support */
-@supports not (mask-composite: exclude) {
-  .star-border-container::before {
-    /* Fallback: use background on pseudo-element positioned at corners */
-    background: none;
-    border: var(--star-border-thickness) solid transparent;
-    border-top-color: var(--star-border-color);
-    border-radius: inherit;
-    animation: star-border-fallback var(--star-border-speed) linear infinite;
-    animation-play-state: paused;
-    -webkit-mask: none;
-    mask: none;
-  }
-  
-  .star-border-container:hover::before {
-    animation-play-state: running;
-  }
-  
-  @keyframes star-border-fallback {
-    0%, 100% {
-      border-color: var(--star-border-color) transparent transparent transparent;
-    }
-    25% {
-      border-color: transparent var(--star-border-color) transparent transparent;
-    }
-    50% {
-      border-color: transparent transparent var(--star-border-color) transparent;
-    }
-    75% {
-      border-color: transparent transparent transparent var(--star-border-color);
-    }
   }
 }
