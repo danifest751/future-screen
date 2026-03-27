@@ -10,9 +10,9 @@ export const useStarBorderGlobal = () => {
 
   useEffect(() => {
     const isEnabled = settings.starBorder?.enabled ?? false;
-    const color = settings.starBorder?.color ?? '#667eea';
+    const color = settings.starBorder?.color ?? '#8aa2ff';
     const speed = settings.starBorder?.speed ?? 6;
-    const thickness = settings.starBorder?.thickness ?? 2;
+    const thickness = settings.starBorder?.thickness ?? 2.5;
     const intensity = settings.starBorder?.intensity ?? 1;
 
     // Устанавливаем CSS переменные

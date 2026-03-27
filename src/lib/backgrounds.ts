@@ -159,9 +159,9 @@ export type StarBorderSettings = {
 
 export const defaultStarBorderSettings: StarBorderSettings = {
   enabled: false,
-  color: '#667eea',
+  color: '#8aa2ff',
   speed: 6,
-  thickness: 1,
+  thickness: 2.5,
   intensity: 1,
 };
 
