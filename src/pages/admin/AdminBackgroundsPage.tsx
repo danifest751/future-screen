@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import AdminLayout from '../../components/admin/AdminLayout';
-import { useSiteSettings } from '../../hooks/useSiteSettings';
+import { useSiteSettingsContext } from '../../context/SiteSettingsContext';
 import {
   backgroundOptions,
   backgroundSettingsControls,
@@ -36,7 +36,7 @@ const customBackgroundOptions = backgroundOptions.filter(
 );
 
 const AdminBackgroundsPage = () => {
-  const { settings, loading, error, updateBackground, updateBackgroundSettings } = useSiteSettings();
+  const { settings, loading, error, updateBackground, updateBackgroundSettings } = useSiteSettingsContext();
   
   // Локальное состояние для UI
   const [background, setBackground] = useState<BackgroundId>('theme');

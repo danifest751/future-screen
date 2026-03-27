@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useTheme } from '../context/ThemeContext';
-import { useSiteSettings } from '../hooks/useSiteSettings';
+import { useSiteSettingsContext } from '../context/SiteSettingsContext';
 import {
   isCustomBackgroundId,
   type BackgroundId,
@@ -32,7 +32,7 @@ const NebulaDecor = NebulaDecorLazy;
 
 const BackgroundDecor = () => {
   const { theme } = useTheme();
-  const { settings, loading } = useSiteSettings();
+  const { settings, loading } = useSiteSettingsContext();
 
   const background = settings.background;
   const settingsMap = settings.backgroundSettings;
