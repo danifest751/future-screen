@@ -43,8 +43,6 @@ export const StarBorder = ({
 
   return (
     <div className={combinedClassName} style={style}>
-      <div className="border-gradient-top" />
-      <div className="border-gradient-bottom" />
       <div className="inner-content">
         {children}
       </div>
