@@ -67,23 +67,15 @@ export const useStarBorderGlobal = () => {
     const wrapWithStarBorder = (element: HTMLElement, variantClass: string) => {
       const wrapper = document.createElement('div');
       wrapper.className = `star-border-container ${variantClass}`;
-      
-      const topGradient = document.createElement('div');
-      topGradient.className = 'border-gradient-top';
-      
-      const bottomGradient = document.createElement('div');
-      bottomGradient.className = 'border-gradient-bottom';
-      
+
       const inner = document.createElement('div');
       inner.className = 'inner-content';
-      
+
       // Клонируем элемент во внутренний контейнер
       inner.appendChild(element.cloneNode(true));
-      
-      wrapper.appendChild(topGradient);
-      wrapper.appendChild(bottomGradient);
+
       wrapper.appendChild(inner);
-      
+
       element.replaceWith(wrapper);
     };
 

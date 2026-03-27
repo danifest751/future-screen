@@ -1,10 +1,10 @@
-/* Star Border Animation from ReactBits */
-/* Animated border effect for hoverable elements using gradient masks */
+/* Star Border Animation - Running border effect around the entire perimeter */
+/* Uses conic-gradient with rotation animation for smooth border animation */
 
 :root {
   --star-border-color: #667eea;
   --star-border-speed: 6s;
-  --star-border-thickness: 1px;
+  --star-border-thickness: 2px;
   --star-border-intensity: 1;
 }
 
@@ -13,53 +13,57 @@
   position: relative;
   overflow: hidden;
   border-radius: 0.75rem;
-  /* Padding creates space for the border */
+  /* Padding creates space for the border using CSS variable */
   padding: var(--star-border-thickness);
   transition: transform 0.2s ease;
 }
 
-/* Top gradient border */
-.border-gradient-top {
+/* Animated border using conic-gradient - rotates around the element */
+.star-border-container::before {
+  content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: var(--star-border-thickness);
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    var(--star-border-color) 20%,
-    var(--star-border-color) 80%,
-    transparent 100%
+  inset: 0;
+  border-radius: inherit;
+  padding: var(--star-border-thickness);
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent 60deg,
+    var(--star-border-color) 90deg,
+    var(--star-border-color) 150deg,
+    transparent 180deg,
+    transparent 360deg
   );
+  /* Create mask to show only the border (outer minus inner) */
+  -webkit-mask: 
+    linear-gradient(#fff 0 0) content-box, 
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  /* Apply intensity via opacity */
   opacity: 0;
   transition: opacity 0.3s ease;
-  animation: star-movement-top var(--star-border-speed) linear infinite;
+  animation: star-border-rotate var(--star-border-speed) linear infinite;
   animation-play-state: paused;
-  filter: blur(calc(var(--star-border-thickness) * 0.5));
-  transform: scaleX(var(--star-border-intensity));
+  /* Blur effect for glow */
+  filter: blur(calc(var(--star-border-thickness) * 0.3));
+  pointer-events: none;
 }
 
-/* Bottom gradient border */
-.border-gradient-bottom {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: var(--star-border-thickness);
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    var(--star-border-color) 20%,
-    var(--star-border-color) 80%,
-    transparent 100%
-  );
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  animation: star-movement-bottom var(--star-border-speed) linear infinite;
-  animation-play-state: paused;
-  filter: blur(calc(var(--star-border-thickness) * 0.5));
-  transform: scaleX(var(--star-border-intensity));
+/* Hover state - activate animation */
+.star-border-container:hover::before {
+  opacity: var(--star-border-intensity);
+  animation-play-state: running;
+}
+
+/* Rotation animation for the conic gradient */
+@keyframes star-border-rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* Inner content wrapper */
@@ -72,31 +76,10 @@
   background: inherit;
 }
 
-/* Hover state - activate animations */
-.star-border-container:hover .border-gradient-top,
-.star-border-container:hover .border-gradient-bottom {
-  opacity: 1;
-  animation-play-state: running;
-}
-
-/* Top border animation */
-@keyframes star-movement-top {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(100%);
-  }
-}
-
-/* Bottom border animation (reverse direction) */
-@keyframes star-movement-bottom {
-  0% {
-    transform: translateX(100%);
-  }
-  100% {
-    transform: translateX(-100%);
-  }
+/* Legacy gradient elements - kept for backward compatibility but hidden by default */
+.border-gradient-top,
+.border-gradient-bottom {
+  display: none;
 }
 
 /* Variants for different element types */
@@ -106,9 +89,9 @@
   border-radius: 0.5rem;
 }
 
-.star-border-button .border-gradient-top,
-.star-border-button .border-gradient-bottom {
-  height: calc(var(--star-border-thickness) * 1.5);
+.star-border-button::before {
+  padding: calc(var(--star-border-thickness) * 1.5);
+  filter: blur(calc(var(--star-border-thickness) * 0.4));
 }
 
 /* Card variant */
@@ -116,9 +99,8 @@
   border-radius: 1rem;
 }
 
-.star-border-card .border-gradient-top,
-.star-border-card .border-gradient-bottom {
-  filter: blur(calc(var(--star-border-thickness) * var(--star-border-intensity)));
+.star-border-card::before {
+  filter: blur(calc(var(--star-border-thickness) * var(--star-border-intensity) * 0.5));
 }
 
 /* Link variant */
@@ -127,9 +109,8 @@
   display: inline-flex;
 }
 
-.star-border-link .border-gradient-top,
-.star-border-link .border-gradient-bottom {
-  height: calc(var(--star-border-thickness) * 0.8);
+.star-border-link::before {
+  padding: calc(var(--star-border-thickness) * 0.8);
   animation-duration: calc(var(--star-border-speed) * 0.7);
 }
 
@@ -138,30 +119,66 @@
   border-radius: 0.5rem;
 }
 
-.star-border-input .border-gradient-top,
-.star-border-input .border-gradient-bottom {
+.star-border-input::before {
   animation-duration: calc(var(--star-border-speed) * 1.2);
 }
 
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
-  .border-gradient-top,
-  .border-gradient-bottom {
+  .star-border-container::before {
     animation: none !important;
   }
   
-  .star-border-container:hover .border-gradient-top,
-  .star-border-container:hover .border-gradient-bottom {
-    opacity: 0.6;
-    transform: none;
+  .star-border-container:hover::before {
+    opacity: calc(0.6 * var(--star-border-intensity));
+    background: var(--star-border-color);
+    /* Show static border instead of animated */
+    -webkit-mask: 
+      linear-gradient(#fff 0 0) content-box, 
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
   }
 }
 
 /* High contrast mode */
 @media (prefers-contrast: high) {
-  .border-gradient-top,
-  .border-gradient-bottom {
+  .star-border-container::before {
     filter: none;
     opacity: 1;
+  }
+}
+
+/* Fallback for browsers without mask-composite support */
+@supports not (mask-composite: exclude) {
+  .star-border-container::before {
+    /* Fallback: use background on pseudo-element positioned at corners */
+    background: none;
+    border: var(--star-border-thickness) solid transparent;
+    border-top-color: var(--star-border-color);
+    border-radius: inherit;
+    animation: star-border-fallback var(--star-border-speed) linear infinite;
+    animation-play-state: paused;
+    -webkit-mask: none;
+    mask: none;
+  }
+  
+  .star-border-container:hover::before {
+    animation-play-state: running;
+  }
+  
+  @keyframes star-border-fallback {
+    0%, 100% {
+      border-color: var(--star-border-color) transparent transparent transparent;
+    }
+    25% {
+      border-color: transparent var(--star-border-color) transparent transparent;
+    }
+    50% {
+      border-color: transparent transparent var(--star-border-color) transparent;
+    }
+    75% {
+      border-color: transparent transparent transparent var(--star-border-color);
+    }
   }
 }
