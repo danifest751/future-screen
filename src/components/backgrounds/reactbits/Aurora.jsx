@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
-import './Aurora.css';
 
 const vert = `
 varying vec2 vUv;
