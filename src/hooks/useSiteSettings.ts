@@ -6,11 +6,13 @@ import { defaultBackgroundSettingsById } from '../lib/backgrounds';
 export type SiteSettings = {
   background: BackgroundId;
   backgroundSettings: BackgroundSettingsById;
+  starBorderEnabled: boolean;
 };
 
 const DEFAULT_SETTINGS: SiteSettings = {
   background: 'theme',
   backgroundSettings: { ...defaultBackgroundSettingsById },
+  starBorderEnabled: false,
 };
 
 export const useSiteSettings = () => {
@@ -46,6 +48,7 @@ export const useSiteSettings = () => {
             ...DEFAULT_SETTINGS.backgroundSettings,
             ...(data.background_settings || {}),
           },
+          starBorderEnabled: data.star_border_enabled ?? DEFAULT_SETTINGS.starBorderEnabled,
         });
       }
     } catch (err) {
@@ -72,6 +75,7 @@ export const useSiteSettings = () => {
           id: 'global',
           background: updatedSettings.background,
           background_settings: updatedSettings.backgroundSettings,
+          star_border_enabled: updatedSettings.starBorderEnabled,
           updated_at: new Date().toISOString(),
         }, {
           onConflict: 'id',
@@ -98,6 +102,11 @@ export const useSiteSettings = () => {
   // Обновление настроек фона
   const updateBackgroundSettings = useCallback(async (settingsMap: BackgroundSettingsById) => {
     return saveSettings({ backgroundSettings: settingsMap });
+  }, [saveSettings]);
+
+  // Обновление настройки Star Border
+  const updateStarBorderEnabled = useCallback(async (enabled: boolean) => {
+    return saveSettings({ starBorderEnabled: enabled });
   }, [saveSettings]);
 
   // Подписка на изменения в реальном времени
@@ -135,6 +144,7 @@ export const useSiteSettings = () => {
     saveSettings,
     updateBackground,
     updateBackgroundSettings,
+    updateStarBorderEnabled,
   };
 };
 

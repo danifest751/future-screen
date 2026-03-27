@@ -1,0 +1,51 @@
+import { useEffect, useState, type ReactNode, type CSSProperties } from 'react';
+import { useSiteSettingsContext } from '../../context/SiteSettingsContext';
+import './StarBorder.css';
+
+export type StarBorderVariant = 'button' | 'card' | 'link' | 'input' | 'default';
+
+export interface StarBorderProps {
+  children: ReactNode;
+  variant?: StarBorderVariant;
+  className?: string;
+  style?: CSSProperties;
+  disabled?: boolean;
+}
+
+const variantClassMap: Record<StarBorderVariant, string> = {
+  button: 'star-border-button',
+  card: 'star-border-card',
+  link: 'star-border-link',
+  input: 'star-border-input',
+  default: '',
+};
+
+export const StarBorder = ({
+  children,
+  variant = 'default',
+  className = '',
+  style,
+  disabled = false,
+}: StarBorderProps) => {
+  const { settings } = useSiteSettingsContext();
+  const [isEnabled, setIsEnabled] = useState(false);
+
+  useEffect(() => {
+    setIsEnabled(settings.starBorderEnabled ?? false);
+  }, [settings.starBorderEnabled]);
+
+  if (!isEnabled || disabled) {
+    return <>{children}</>;
+  }
+
+  const variantClass = variantClassMap[variant];
+  const combinedClassName = `star-border ${variantClass} ${className}`.trim();
+
+  return (
+    <div className={combinedClassName} style={style}>
+      {children}
+    </div>
+  );
+};
+
+export default StarBorder;

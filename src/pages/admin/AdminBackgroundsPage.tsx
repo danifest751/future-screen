@@ -36,11 +36,12 @@ const customBackgroundOptions = backgroundOptions.filter(
 );
 
 const AdminBackgroundsPage = () => {
-  const { settings, loading, error, updateBackground, updateBackgroundSettings } = useSiteSettingsContext();
+  const { settings, loading, error, updateBackground, updateBackgroundSettings, updateStarBorderEnabled } = useSiteSettingsContext();
   
   // Локальное состояние для UI
   const [background, setBackground] = useState<BackgroundId>('theme');
   const [settingsMap, setSettingsMap] = useState<BackgroundSettingsById>(() => cloneDefaultSettingsMap());
+  const [starBorderEnabled, setStarBorderEnabled] = useState(false);
   const [saving, setSaving] = useState(false);
 
   // Синхронизация с загруженными настройками
@@ -48,6 +49,7 @@ const AdminBackgroundsPage = () => {
     if (!loading) {
       setBackground(settings.background);
       setSettingsMap(settings.backgroundSettings);
+      setStarBorderEnabled(settings.starBorderEnabled);
     }
   }, [settings, loading]);
 
@@ -128,6 +130,15 @@ const AdminBackgroundsPage = () => {
     setSaving(false);
   };
 
+  const handleStarBorderToggle = async () => {
+    const newValue = !starBorderEnabled;
+    setStarBorderEnabled(newValue);
+    
+    setSaving(true);
+    await updateStarBorderEnabled(newValue);
+    setSaving(false);
+  };
+
   if (loading) {
     return (
       <AdminLayout title="Фоны" subtitle="Глобальный фон сайта">
@@ -189,6 +200,40 @@ const AdminBackgroundsPage = () => {
                 Сбросить все настройки фонов
               </button>
             </div>
+          </div>
+        </div>
+
+        {/* Star Border Toggle Section */}
+        <div className="rounded-xl border border-white/10 bg-slate-800 p-6">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-semibold text-white">Анимация рамки при наведении</h2>
+              <p className="mt-1 text-sm text-slate-400">
+                Эффект светящейся вращающейся рамки (Star Border) при наведении на интерактивные элементы: кнопки, карточки, ссылки.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleStarBorderToggle}
+              className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${
+                starBorderEnabled ? 'bg-brand-500' : 'bg-slate-600'
+              }`}
+              role="switch"
+              aria-checked={starBorderEnabled}
+            >
+              <span
+                className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
+                  starBorderEnabled ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+          
+          <div className="mt-4 flex items-center gap-3 rounded-lg bg-slate-900/50 p-3">
+            <div className={`h-4 w-4 rounded-full ${starBorderEnabled ? 'bg-green-500' : 'bg-slate-500'}`} />
+            <span className="text-sm text-slate-300">
+              Статус: <span className="font-medium text-white">{starBorderEnabled ? 'Включено' : 'Выключено'}</span>
+            </span>
           </div>
         </div>
 

@@ -1,0 +1,139 @@
+/* Star Border Animation from ReactBits */
+/* Animated border effect for hoverable elements */
+
+.star-border {
+  position: relative;
+  overflow: hidden;
+  border-radius: 0.75rem;
+  transition: transform 0.2s ease;
+}
+
+.star-border::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    var(--star-color, #667eea) 60deg,
+    var(--star-color-bright, #a78bfa) 120deg,
+    var(--star-color, #667eea) 180deg,
+    transparent 240deg,
+    var(--star-color-bright, #a78bfa) 300deg,
+    transparent 360deg
+  );
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: -1;
+  animation: star-rotate 3s linear infinite;
+  animation-play-state: paused;
+}
+
+.star-border::after {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  background: inherit;
+  border-radius: inherit;
+  z-index: -1;
+}
+
+.star-border:hover::before {
+  opacity: 1;
+  animation-play-state: running;
+}
+
+@keyframes star-rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Variants for different element types */
+
+/* Button variant */
+.star-border-button {
+  --star-color: var(--brand-500, #667eea);
+  --star-color-bright: var(--brand-400, #a78bfa);
+}
+
+.star-border-button::before {
+  inset: -3px;
+}
+
+/* Card variant */
+.star-border-card {
+  --star-color: var(--brand-500, #667eea);
+  --star-color-bright: var(--brand-300, #c4b5fd);
+}
+
+.star-border-card::before {
+  inset: -2px;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    var(--star-color) 80deg,
+    var(--star-color-bright) 160deg,
+    var(--star-color) 240deg,
+    transparent 320deg,
+    var(--star-color-bright) 360deg
+  );
+}
+
+/* Link variant */
+.star-border-link {
+  --star-color: var(--brand-400, #a78bfa);
+  --star-color-bright: var(--brand-300, #c4b5fd);
+}
+
+.star-border-link::before {
+  inset: -2px;
+  animation-duration: 2s;
+}
+
+/* Input variant */
+.star-border-input {
+  --star-color: var(--brand-500, #667eea);
+  --star-color-bright: var(--brand-400, #a78bfa);
+}
+
+.star-border-input::before {
+  inset: -2px;
+  animation-duration: 4s;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .star-border::before {
+    animation: none;
+  }
+  
+  .star-border:hover::before {
+    opacity: 0.6;
+  }
+}
+
+/* Dark theme adjustments */
+[data-theme="dark"] .star-border,
+.dark .star-border {
+  --star-color: #667eea;
+  --star-color-bright: #a78bfa;
+}
+
+/* Light theme adjustments */
+[data-theme="light"] .star-border,
+.light .star-border {
+  --star-color: #4f46e5;
+  --star-color-bright: #7c3aed;
+}
+
+/* Neon theme adjustments */
+[data-theme="neon"] .star-border,
+.neon .star-border {
+  --star-color: #00ff88;
+  --star-color-bright: #00c853;
+}
