@@ -12,7 +12,7 @@ export const useStarBorderGlobal = () => {
     const isEnabled = settings.starBorder?.enabled ?? false;
     const color = settings.starBorder?.color ?? '#667eea';
     const speed = settings.starBorder?.speed ?? 6;
-    const thickness = settings.starBorder?.thickness ?? 1;
+    const thickness = settings.starBorder?.thickness ?? 2;
     const intensity = settings.starBorder?.intensity ?? 1;
 
     // Устанавливаем CSS переменные
