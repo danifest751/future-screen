@@ -4,6 +4,7 @@
 This file defines how coding agents should work in this repository.
 
 ## Core Principles
+- **Always read `docs/PROJECT_CONTEXT.md` first** to understand the project structure and stack.
 - Follow existing project patterns before introducing new ones.
 - Prefer minimal, local changes over broad refactors.
 - Keep solutions simple and production-appropriate.
