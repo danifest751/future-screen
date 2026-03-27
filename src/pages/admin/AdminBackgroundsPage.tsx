@@ -1,16 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import AdminLayout from '../../components/admin/AdminLayout';
+import { useSiteSettings } from '../../hooks/useSiteSettings';
 import {
-  BACKGROUND_CHANGED_EVENT,
-  BACKGROUND_SETTINGS_CHANGED_EVENT,
   backgroundOptions,
   backgroundSettingsControls,
   defaultBackgroundSettingsById,
-  getStoredBackground,
-  getStoredBackgroundSettingsMap,
-  patchStoredBackgroundSettings,
-  setStoredBackground,
-  setStoredBackgroundSettingsMap,
   type AnyBackgroundSettings,
   type BackgroundId,
   type BackgroundMotion,
@@ -42,85 +36,132 @@ const customBackgroundOptions = backgroundOptions.filter(
 );
 
 const AdminBackgroundsPage = () => {
-  const [background, setBackground] = useState<BackgroundId>(() => getStoredBackground());
-  const [settingsMap, setSettingsMap] = useState<BackgroundSettingsById>(() => getStoredBackgroundSettingsMap());
+  const { settings, loading, error, updateBackground, updateBackgroundSettings } = useSiteSettings();
+  
+  // Локальное состояние для UI
+  const [background, setBackground] = useState<BackgroundId>('theme');
+  const [settingsMap, setSettingsMap] = useState<BackgroundSettingsById>(() => cloneDefaultSettingsMap());
+  const [saving, setSaving] = useState(false);
 
+  // Синхронизация с загруженными настройками
   useEffect(() => {
-    const syncBackground = () => setBackground(getStoredBackground());
-    const syncSettings = () => setSettingsMap(getStoredBackgroundSettingsMap());
-
-    window.addEventListener('storage', syncBackground);
-    window.addEventListener('storage', syncSettings);
-    window.addEventListener(BACKGROUND_CHANGED_EVENT, syncBackground as EventListener);
-    window.addEventListener(BACKGROUND_SETTINGS_CHANGED_EVENT, syncSettings as EventListener);
-
-    return () => {
-      window.removeEventListener('storage', syncBackground);
-      window.removeEventListener('storage', syncSettings);
-      window.removeEventListener(BACKGROUND_CHANGED_EVENT, syncBackground as EventListener);
-      window.removeEventListener(BACKGROUND_SETTINGS_CHANGED_EVENT, syncSettings as EventListener);
-    };
-  }, []);
+    if (!loading) {
+      setBackground(settings.background);
+      setSettingsMap(settings.backgroundSettings);
+    }
+  }, [settings, loading]);
 
   const activeCustomBackground = useMemo(
     () => (background !== 'theme' ? background : null),
     [background],
   );
 
-  const updateMotion = (backgroundId: CustomBackgroundId, motion: BackgroundMotion) => {
-    setSettingsMap((prev) => ({
-      ...prev,
-      [backgroundId]: { ...prev[backgroundId], motion },
-    }));
-    patchStoredBackgroundSettings(backgroundId, { motion });
+  const updateMotion = async (backgroundId: CustomBackgroundId, motion: BackgroundMotion) => {
+    const newSettingsMap = {
+      ...settingsMap,
+      [backgroundId]: { ...settingsMap[backgroundId], motion },
+    };
+    setSettingsMap(newSettingsMap);
+    
+    setSaving(true);
+    await updateBackgroundSettings(newSettingsMap);
+    setSaving(false);
   };
 
-  const updateNumericSetting = (backgroundId: CustomBackgroundId, key: string, value: number) => {
+  const updateNumericSetting = async (backgroundId: CustomBackgroundId, key: string, value: number) => {
     const patch = { [key]: value } as Partial<AnyBackgroundSettings>;
-    setSettingsMap((prev) => ({
-      ...prev,
+    const newSettingsMap = {
+      ...settingsMap,
       [backgroundId]: {
-        ...prev[backgroundId],
+        ...settingsMap[backgroundId],
         [key]: value,
       },
-    }));
-    patchStoredBackgroundSettings(backgroundId, patch);
+    };
+    setSettingsMap(newSettingsMap);
+    
+    setSaving(true);
+    await updateBackgroundSettings(newSettingsMap);
+    setSaving(false);
   };
 
-  const updateColorSetting = (backgroundId: CustomBackgroundId, key: string, value: string) => {
-    const patch = { [key]: value } as Partial<AnyBackgroundSettings>;
-    setSettingsMap((prev) => ({
-      ...prev,
+  const updateColorSetting = async (backgroundId: CustomBackgroundId, key: string, value: string) => {
+    const newSettingsMap = {
+      ...settingsMap,
       [backgroundId]: {
-        ...prev[backgroundId],
+        ...settingsMap[backgroundId],
         [key]: value,
       },
-    }));
-    patchStoredBackgroundSettings(backgroundId, patch);
+    };
+    setSettingsMap(newSettingsMap);
+    
+    setSaving(true);
+    await updateBackgroundSettings(newSettingsMap);
+    setSaving(false);
   };
 
-  const resetBackgroundSettings = (backgroundId: CustomBackgroundId) => {
+  const resetBackgroundSettings = async (backgroundId: CustomBackgroundId) => {
     const nextMap = {
       ...settingsMap,
       [backgroundId]: { ...defaultBackgroundSettingsById[backgroundId] },
     };
     setSettingsMap(nextMap);
-    setStoredBackgroundSettingsMap(nextMap);
+    
+    setSaving(true);
+    await updateBackgroundSettings(nextMap);
+    setSaving(false);
   };
 
-  const resetAllBackgroundSettings = () => {
+  const resetAllBackgroundSettings = async () => {
     const defaults = cloneDefaultSettingsMap();
     setSettingsMap(defaults);
-    setStoredBackgroundSettingsMap(defaults);
+    
+    setSaving(true);
+    await updateBackgroundSettings(defaults);
+    setSaving(false);
   };
+
+  const handleBackgroundChange = async (newBackground: BackgroundId) => {
+    setBackground(newBackground);
+    
+    setSaving(true);
+    await updateBackground(newBackground);
+    setSaving(false);
+  };
+
+  if (loading) {
+    return (
+      <AdminLayout title="Фоны" subtitle="Глобальный фон сайта">
+        <div className="flex h-64 items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <AdminLayout title="Фоны" subtitle="Глобальный фон сайта">
+        <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-6">
+          <h3 className="text-lg font-semibold text-red-400">Ошибка загрузки</h3>
+          <p className="mt-2 text-sm text-red-300">{error}</p>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout title="Фоны" subtitle="Глобальный фон сайта и полные настройки для каждого пресета">
+      {saving && (
+        <div className="fixed right-4 top-4 z-50 rounded-lg bg-brand-500 px-4 py-2 text-sm text-white shadow-lg">
+          Сохранение...
+        </div>
+      )}
+      
       <div className="space-y-6">
         <div className="rounded-xl border border-white/10 bg-slate-800 p-6">
           <h2 className="text-xl font-semibold text-white">Активный фон сайта</h2>
           <p className="mt-1 text-sm text-slate-400">
-            Выбор применяется ко всему сайту. Настройки ниже сохранены отдельно для каждого фона.
+            Выбор применяется ко всему сайту в реальном времени. Все посетители увидят изменения.
           </p>
 
           <div className="mt-4 grid gap-4 md:grid-cols-[minmax(0,380px)_1fr]">
@@ -128,11 +169,7 @@ const AdminBackgroundsPage = () => {
               Текущий фон
               <select
                 value={background}
-                onChange={(e) => {
-                  const nextBackground = e.target.value as BackgroundId;
-                  setBackground(nextBackground);
-                  setStoredBackground(nextBackground);
-                }}
+                onChange={(e) => handleBackgroundChange(e.target.value as BackgroundId)}
                 className="mt-1 w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-brand-400"
               >
                 {backgroundOptions.map((option) => (
@@ -178,10 +215,7 @@ const AdminBackgroundsPage = () => {
                   <div className="flex gap-2">
                     <button
                       type="button"
-                      onClick={() => {
-                        setBackground(option.id);
-                        setStoredBackground(option.id);
-                      }}
+                      onClick={() => handleBackgroundChange(option.id)}
                       className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
                         isActive
                           ? 'bg-brand-500 text-white'

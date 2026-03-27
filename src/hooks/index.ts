@@ -15,3 +15,7 @@ export { useFormDraftPersistence } from './useFormDraftPersistence';
 export { useLeads } from './useLeads';
 export { usePackages } from './usePackages';
 export { useUnsavedChangesGuard } from './useUnsavedChangesGuard';
+
+// Хук для глобальных настроек сайта (фон и т.д.)
+export { useSiteSettings } from './useSiteSettings';
+export type { SiteSettings } from './useSiteSettings';

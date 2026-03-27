@@ -1,19 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useTheme } from '../context/ThemeContext';
+import { useSiteSettings } from '../hooks/useSiteSettings';
 import {
-  BACKGROUND_CHANGED_EVENT,
-  BACKGROUND_SETTINGS_CHANGED_EVENT,
   isCustomBackgroundId,
   type BackgroundId,
-  type BackgroundSettingsById,
-  type AuroraSettings,
-  type MeshSettings,
-  type DotsSettings,
-  type WavesSettings,
-  type RingsSettings,
-  type NebulaSettings,
-  getStoredBackground,
-  getStoredBackgroundSettingsMap,
 } from '../lib/backgrounds';
 import {
   ColorBendsDecorLazy,
@@ -38,32 +28,10 @@ const withAlpha = (alpha: number, intensity: number) => Math.min(1, alpha * inte
 
 const BackgroundDecor = () => {
   const { theme } = useTheme();
-  const [background, setBackground] = useState<BackgroundId>('theme');
-  const [settingsMap, setSettingsMap] = useState<BackgroundSettingsById>(() => getStoredBackgroundSettingsMap());
+  const { settings, loading } = useSiteSettings();
 
-  useEffect(() => {
-    const syncBackground = () => {
-      setBackground(getStoredBackground());
-    };
-
-    const syncBackgroundSettings = () => {
-      setSettingsMap(getStoredBackgroundSettingsMap());
-    };
-
-    syncBackground();
-    syncBackgroundSettings();
-    window.addEventListener('storage', syncBackground);
-    window.addEventListener('storage', syncBackgroundSettings);
-    window.addEventListener(BACKGROUND_CHANGED_EVENT, syncBackground as EventListener);
-    window.addEventListener(BACKGROUND_SETTINGS_CHANGED_EVENT, syncBackgroundSettings as EventListener);
-
-    return () => {
-      window.removeEventListener('storage', syncBackground);
-      window.removeEventListener('storage', syncBackgroundSettings);
-      window.removeEventListener(BACKGROUND_CHANGED_EVENT, syncBackground as EventListener);
-      window.removeEventListener(BACKGROUND_SETTINGS_CHANGED_EVENT, syncBackgroundSettings as EventListener);
-    };
-  }, []);
+  const background = settings.background;
+  const settingsMap = settings.backgroundSettings;
 
   useEffect(() => {
     document.documentElement.setAttribute('data-background', background);
@@ -71,6 +39,11 @@ const BackgroundDecor = () => {
       document.documentElement.setAttribute('data-background', 'theme');
     };
   }, [background]);
+
+  // Показываем дефолтный фон пока загружаются настройки
+  if (loading) {
+    return theme.id === 'light' ? <LightDecor /> : <DefaultDecor />;
+  }
 
   if (isCustomBackgroundId(background)) {
     if (background === 'aurora') return <AuroraDecor settings={settingsMap.aurora} />;
@@ -179,6 +152,9 @@ const NeonDecor = () => (
     />
   </div>
 );
+
+// Types for settings
+import type { AuroraSettings, MeshSettings, DotsSettings, WavesSettings, RingsSettings, NebulaSettings } from '../lib/backgrounds';
 
 const AuroraDecor = ({ settings }: { settings: AuroraSettings }) => {
   const { intensity, contrast, motion, color1, color2, color3, speed, blend, amplitude } = settings;
