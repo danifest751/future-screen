@@ -6,6 +6,7 @@
   --star-border-speed: 3s;
   --star-border-thickness: 2.5px;
   --star-border-intensity: 1;
+  --star-border-corner-offset: 0px;
 }
 
 /* Main container - wraps the element */
@@ -22,17 +23,15 @@
   content: '';
   position: absolute;
   top: 0;
-  left: 0;
-  right: 0;
+  left: -52%;
+  width: 52%;
   height: var(--star-border-thickness);
   background: linear-gradient(
     90deg,
     transparent 0%,
-    transparent 42%,
-    color-mix(in srgb, var(--star-border-color) 65%, transparent) 47%,
+    color-mix(in srgb, var(--star-border-color) 72%, transparent) 24%,
     var(--star-border-color) 50%,
-    color-mix(in srgb, var(--star-border-color) 65%, transparent) 53%,
-    transparent 58%,
+    color-mix(in srgb, var(--star-border-color) 72%, transparent) 76%,
     transparent 100%
   );
   opacity: 0;
@@ -40,26 +39,23 @@
   z-index: 2;
   animation: star-movement-top var(--star-border-speed) linear infinite;
   animation-play-state: paused;
-  filter: none;
+  will-change: transform;
   pointer-events: none;
 }
 
-/* Animated bottom border line */
 .star-border-container::after {
   content: '';
   position: absolute;
   bottom: 0;
-  left: 0;
-  right: 0;
+  left: -52%;
+  width: 52%;
   height: var(--star-border-thickness);
   background: linear-gradient(
     90deg,
     transparent 0%,
-    transparent 42%,
-    color-mix(in srgb, var(--star-border-color) 65%, transparent) 47%,
+    color-mix(in srgb, var(--star-border-color) 72%, transparent) 24%,
     var(--star-border-color) 50%,
-    color-mix(in srgb, var(--star-border-color) 65%, transparent) 53%,
-    transparent 58%,
+    color-mix(in srgb, var(--star-border-color) 72%, transparent) 76%,
     transparent 100%
   );
   opacity: 0;
@@ -67,7 +63,7 @@
   z-index: 2;
   animation: star-movement-bottom var(--star-border-speed) linear infinite;
   animation-play-state: paused;
-  filter: none;
+  will-change: transform;
   pointer-events: none;
 }
 
@@ -81,20 +77,20 @@
 /* Top line movement */
 @keyframes star-movement-top {
   0% {
-    transform: translateX(-100%);
+    transform: translate3d(var(--star-border-corner-offset), 0, 0);
   }
   100% {
-    transform: translateX(100%);
+    transform: translate3d(calc(292% + var(--star-border-corner-offset)), 0, 0);
   }
 }
 
 /* Bottom line movement (reverse direction) */
 @keyframes star-movement-bottom {
   0% {
-    transform: translateX(100%);
+    transform: translate3d(calc(292% + var(--star-border-corner-offset)), 0, 0);
   }
   100% {
-    transform: translateX(-100%);
+    transform: translate3d(var(--star-border-corner-offset), 0, 0);
   }
 }
 
@@ -174,7 +170,6 @@
 @media (prefers-contrast: high) {
   .star-border-container::before,
   .star-border-container::after {
-    filter: none;
     opacity: 1;
   }
 }

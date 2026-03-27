@@ -344,6 +344,23 @@ const AdminBackgroundsPage = () => {
                   className="w-full accent-brand-500"
                 />
               </label>
+
+              {/* Corner Offset Setting */}
+              <label className="block text-sm text-slate-300">
+                <div className="mb-1 flex items-center justify-between gap-2">
+                  <span>Отступ старта от угла</span>
+                  <span className="text-xs text-slate-400">{starBorderSettings.cornerOffset}px</span>
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={80}
+                  step={1}
+                  value={starBorderSettings.cornerOffset}
+                  onChange={(e) => updateStarBorderNumeric('cornerOffset', Number(e.target.value))}
+                  className="w-full accent-brand-500"
+                />
+              </label>
               
               <div className="text-xs text-slate-500">
                 Применяется к: кнопкам, ссылкам, карточкам .card
