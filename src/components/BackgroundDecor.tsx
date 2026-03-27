@@ -50,16 +50,16 @@ const BackgroundDecor = () => {
   }
 
   if (isCustomBackgroundId(background)) {
-    if (background === 'aurora') return <AuroraDecor settings={settingsMap.aurora} />;
-    if (background === 'mesh') return <MeshDecor settings={settingsMap.mesh} />;
-    if (background === 'dots') return <DotsDecor settings={settingsMap.dots} />;
-    if (background === 'waves') return <WavesDecor settings={settingsMap.waves} />;
-    if (background === 'rings') return <RingsDecor settings={settingsMap.rings} />;
-    if (background === 'color-bends') return <ColorBendsDecor settings={settingsMap['color-bends']} />;
-    if (background === 'pixel-blast') return <PixelBlastDecor settings={settingsMap['pixel-blast']} />;
-    if (background === 'line-waves') return <LineWavesDecor settings={settingsMap['line-waves']} />;
-    if (background === 'galaxy') return <GalaxyDecor settings={settingsMap.galaxy} />;
-    return <NebulaDecor settings={settingsMap.nebula} />;
+    if (background === 'aurora') return <AuroraDecor key="aurora" settings={settingsMap.aurora} />;
+    if (background === 'mesh') return <MeshDecor key="mesh" settings={settingsMap.mesh} />;
+    if (background === 'dots') return <DotsDecor key="dots" settings={settingsMap.dots} />;
+    if (background === 'waves') return <WavesDecor key="waves" settings={settingsMap.waves} />;
+    if (background === 'rings') return <RingsDecor key="rings" settings={settingsMap.rings} />;
+    if (background === 'color-bends') return <ColorBendsDecor key="color-bends" settings={settingsMap['color-bends']} />;
+    if (background === 'pixel-blast') return <PixelBlastDecor key="pixel-blast" settings={settingsMap['pixel-blast']} />;
+    if (background === 'line-waves') return <LineWavesDecor key="line-waves" settings={settingsMap['line-waves']} />;
+    if (background === 'galaxy') return <GalaxyDecor key="galaxy" settings={settingsMap.galaxy} />;
+    return <NebulaDecor key="nebula" settings={settingsMap.nebula} />;
   }
 
   if (theme.id === 'light') return <LightDecor />;
