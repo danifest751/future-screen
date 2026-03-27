@@ -22,11 +22,7 @@ export const createApp = () => {
   }));
   app.use(express.json());
 
-  app.post('/api/client-log', createClientLogHandler({
-    clientLogsDir: CLIENT_LOGS_DIR,
-    clientLogsFile: CLIENT_LOGS_FILE,
-  }));
-
+  // Rate limiting middleware для всех API endpoints
   app.use('/api', (req, res, next) => {
     const ip = getClientIp(req);
     if (isRateLimited(ip)) {
@@ -34,6 +30,11 @@ export const createApp = () => {
     }
     return next();
   });
+
+  app.post('/api/client-log', createClientLogHandler({
+    clientLogsDir: CLIENT_LOGS_DIR,
+    clientLogsFile: CLIENT_LOGS_FILE,
+  }));
 
   app.post('/api/send', createSendHandler({
     sendTelegram,

@@ -5,11 +5,34 @@ const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'https://future-screen.ru
   .map((v) => v.trim())
   .filter(Boolean);
 
+// Rate limiting config (client-log менее критичен, поэтому более мягкие лимиты)
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 минута
+const RATE_LIMIT_MAX = 30; // 30 запросов в минуту
+const requestsByIp = new Map<string, number[]>();
+
 const isOriginAllowed = (origin?: string) => {
   if (!origin) return true;
   const normalizedOrigin = origin.replace(/\/$/, '').toLowerCase();
   const normalizedAllowed = allowedOrigins.map(o => o.replace(/\/$/, '').toLowerCase());
   return normalizedAllowed.includes(normalizedOrigin);
+};
+
+const getClientIp = (req: VercelRequest): string => {
+  const forwardedFor = req.headers['x-forwarded-for'];
+  const value = Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor;
+  return value?.split(',')[0]?.trim() || 'unknown';
+};
+
+const isRateLimited = (ip: string): boolean => {
+  const now = Date.now();
+  const attempts = (requestsByIp.get(ip) || []).filter((ts) => now - ts < RATE_LIMIT_WINDOW_MS);
+  if (attempts.length >= RATE_LIMIT_MAX) {
+    requestsByIp.set(ip, attempts);
+    return true;
+  }
+  attempts.push(now);
+  requestsByIp.set(ip, attempts);
+  return false;
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -34,6 +57,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  // Rate limiting check
+  const ip = getClientIp(req);
+  if (isRateLimited(ip)) {
+    return res.status(429).json({ ok: false, error: 'Too many requests' });
   }
 
   try {
