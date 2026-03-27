@@ -8,7 +8,6 @@ import StepAudience from './steps/StepAudience';
 import StepDistance from './steps/StepDistance';
 import StepPurpose from './steps/StepPurpose';
 import StepConstraints from './steps/StepConstraints';
-import ResultCard from './Result/ResultCard';
 import LeadForm from './LeadForm/LeadForm';
 
 const STEP_LABELS = [
@@ -24,10 +23,6 @@ const STEP_LABELS = [
 const Calculator = () => {
   const { config } = useCalculatorConfig();
   const pitchOptions = config.pitchOptions;
-  const sizePresets = config.sizePresets;
-  const screenProducts = config.screenProducts;
-  const costParams = config.costParams;
-  const [rentalDays, setRentalDays] = useState(1);
 
   const [step, setStep] = useState(0);
   const [showLead, setShowLead] = useState(false);
@@ -141,17 +136,69 @@ const Calculator = () => {
           />
         )}
         {isResult && (
-          <ResultCard
-            result={result}
-            location={inputs.location}
-            pitchOptions={pitchOptions}
-            sizePresets={sizePresets}
-            screenProducts={screenProducts}
-            costParams={costParams}
-            rentalDays={rentalDays}
-            onChangeDays={setRentalDays}
-            onRequestKP={() => setShowLead(true)}
-          />
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold text-white">Рекомендация</h2>
+              <p className="text-sm text-slate-400">На основе ваших параметров</p>
+            </div>
+
+            {/* Карточки результата */}
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+                <div className="text-xs text-slate-500">Размер экрана</div>
+                <div className="mt-1 text-2xl font-bold text-white">{result.width} × {result.height} м</div>
+                <div className="text-sm text-slate-400">Площадь: {result.area} м²</div>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+                <div className="text-xs text-slate-500">Шаг пикселя</div>
+                <div className="mt-1 text-2xl font-bold text-brand-400">{result.pitch.label}</div>
+                <div className="text-sm text-slate-400">{result.pitch.description}</div>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+                <div className="text-xs text-slate-500">Установка</div>
+                <div className="mt-1 text-lg font-semibold text-white">{result.installRecommendation}</div>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+                <div className="text-xs text-slate-500">Дистанция</div>
+                <div className="mt-1 text-lg font-semibold text-white">{result.distance} м</div>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+                <div className="text-xs text-slate-500">Питание (среднее)</div>
+                <div className="mt-1 text-lg font-semibold text-white">{result.powerAvg}</div>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+                <div className="text-xs text-slate-500">Питание (пик)</div>
+                <div className="mt-1 text-lg font-semibold text-white">{result.powerPeak}</div>
+              </div>
+            </div>
+
+            {result.warnings.length > 0 && (
+              <div className="space-y-2">
+                {result.warnings.map((w, i) => (
+                  <div key={i} className="rounded-xl border border-yellow-400/30 bg-yellow-400/10 px-4 py-2 text-sm text-yellow-200">
+                    ⚠️ {w}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {result.explanations.length > 0 && (
+              <div className="space-y-1">
+                <div className="text-sm font-semibold text-slate-300">Почему так:</div>
+                {result.explanations.map((e, i) => (
+                  <p key={i} className="text-sm text-slate-400">• {e}</p>
+                ))}
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={() => setShowLead(true)}
+              className="w-full rounded-xl bg-brand-500 px-6 py-4 text-center text-lg font-bold text-white shadow-lg shadow-brand-500/30 transition hover:bg-brand-400"
+            >
+              Получить КП за 15 минут
+            </button>
+          </div>
         )}
       </div>
 

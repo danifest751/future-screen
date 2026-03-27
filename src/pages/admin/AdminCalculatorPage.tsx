@@ -6,20 +6,11 @@ import { useCalculatorConfig } from '../../hooks/useCalculatorConfig';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 import type {
   CalculatorConfig,
-  CostParams,
-  Location,
   PitchOption,
-  ScreenProduct,
   ScreenSizePreset,
 } from '../../data/calculatorConfig';
 
 const asNumber = (value: string) => Number(value);
-
-const parseDiscountFactors = (value: string) =>
-  value
-    .split(',')
-    .map((s) => Number(s.trim()))
-    .filter((n) => Number.isFinite(n) && n > 0);
 
 const toComparableConfig = (cfg: CalculatorConfig) => ({
   ...cfg,
@@ -33,39 +24,25 @@ const AdminCalculatorPage = () => {
   const { config, updateConfig, resetConfig } = useCalculatorConfig();
   const [pitchList, setPitchList] = useState<PitchOption[]>(config.pitchOptions);
   const [sizePresets, setSizePresets] = useState<ScreenSizePreset[]>(config.sizePresets);
-  const [screenProducts, setScreenProducts] = useState<ScreenProduct[]>(config.screenProducts);
-  const [costParams, setCostParams] = useState<CostParams>(config.costParams);
-  const [discountFactorsText, setDiscountFactorsText] = useState(config.costParams.discountFactors.join(', '));
   const [resetModalOpen, setResetModalOpen] = useState(false);
 
   useEffect(() => {
     setPitchList(config.pitchOptions);
     setSizePresets(config.sizePresets);
-    setScreenProducts(config.screenProducts);
-    setCostParams(config.costParams);
-    setDiscountFactorsText(config.costParams.discountFactors.join(', '));
   }, [config]);
-
-  const parsedDiscountFactors = useMemo(() => parseDiscountFactors(discountFactorsText), [discountFactorsText]);
 
   const hasUnsavedChanges = useMemo(() => {
     const currentComparable = JSON.stringify(
       toComparableConfig({
         pitchOptions: pitchList,
         sizePresets,
-        screenProducts,
-        costParams: {
-          ...costParams,
-          discountFactors: parsedDiscountFactors.length ? parsedDiscountFactors : costParams.discountFactors,
-        },
       })
     );
 
     const savedComparable = JSON.stringify(toComparableConfig(config));
-    const discountTextChanged = discountFactorsText.trim() !== config.costParams.discountFactors.join(', ');
 
-    return currentComparable !== savedComparable || discountTextChanged;
-  }, [config, costParams, discountFactorsText, parsedDiscountFactors, pitchList, screenProducts, sizePresets]);
+    return currentComparable !== savedComparable;
+  }, [config, pitchList, sizePresets]);
 
   useUnsavedChangesGuard(hasUnsavedChanges);
 
@@ -109,51 +86,9 @@ const AdminCalculatorPage = () => {
     setSizePresets((list) => list.filter((_, i) => i !== idx));
   };
 
-  const addProduct = () => {
-    setScreenProducts((list) => [
-      ...list,
-      {
-        id: `product-${list.length + 1}`,
-        label: 'Новый экран',
-        location: 'indoor',
-        pitch: 2.6,
-        cabinetW: 0.5,
-        cabinetH: 0.5,
-        powerWPerM2: 700,
-        pricePerM2: 6000,
-        availableArea: 100,
-      },
-    ]);
-  };
-
-  const updateProductField = (idx: number, field: keyof ScreenProduct, value: string) => {
-    setScreenProducts((list) =>
-      list.map((item, i) => {
-        if (i !== idx) return item;
-        if (field === 'id' || field === 'label') return { ...item, [field]: value };
-        if (field === 'location') return { ...item, location: value as Location };
-        if (field === 'availableArea') return { ...item, availableArea: value.trim() === '' ? undefined : asNumber(value) };
-        return { ...item, [field]: asNumber(value) };
-      })
-    );
-  };
-
-  const removeProduct = (idx: number) => {
-    setScreenProducts((list) => list.filter((_, i) => i !== idx));
-  };
-
-  const updateCostField = (field: Exclude<keyof CostParams, 'discountFactors'>, value: string) => {
-    setCostParams((prev) => ({ ...prev, [field]: asNumber(value) }));
-  };
-
   const handleSave = () => {
-    if (!pitchList.length || !sizePresets.length || !screenProducts.length) {
+    if (!pitchList.length || !sizePresets.length) {
       toast.error('Добавьте хотя бы по одному элементу в каждый раздел');
-      return;
-    }
-
-    if (!parsedDiscountFactors.length) {
-      toast.error('Укажите корректные множители скидки (например: 1, 0.5, 0.4)');
       return;
     }
 
@@ -161,23 +96,8 @@ const AdminCalculatorPage = () => {
       (p) => !p.label.trim() || !Number.isFinite(p.value) || !Number.isFinite(p.minDistance) || !(Number.isFinite(p.maxDistance) || p.maxDistance === Infinity)
     );
     const hasInvalidSize = sizePresets.some((s) => !s.label.trim() || !Number.isFinite(s.width) || !Number.isFinite(s.height));
-    const hasInvalidProduct = screenProducts.some(
-      (p) =>
-        !p.id.trim() ||
-        !p.label.trim() ||
-        !Number.isFinite(p.pitch) ||
-        !Number.isFinite(p.cabinetW) ||
-        !Number.isFinite(p.cabinetH) ||
-        !Number.isFinite(p.powerWPerM2) ||
-        !Number.isFinite(p.pricePerM2) ||
-        (p.availableArea !== undefined && !Number.isFinite(p.availableArea))
-    );
-    const hasInvalidCosts =
-      !Number.isFinite(costParams.assemblyCostPerM2) ||
-      !Number.isFinite(costParams.technicianPerDay) ||
-      !Number.isFinite(costParams.engineerPerDay);
 
-    if (hasInvalidPitch || hasInvalidSize || hasInvalidProduct || hasInvalidCosts) {
+    if (hasInvalidPitch || hasInvalidSize) {
       toast.error('Проверьте заполнение полей: есть пустые или некорректные значения');
       return;
     }
@@ -185,11 +105,6 @@ const AdminCalculatorPage = () => {
     updateConfig({
       pitchOptions: pitchList,
       sizePresets,
-      screenProducts,
-      costParams: {
-        ...costParams,
-        discountFactors: parsedDiscountFactors,
-      },
     });
 
     toast.success('Конфигурация калькулятора сохранена');
@@ -201,7 +116,7 @@ const AdminCalculatorPage = () => {
   };
 
   return (
-    <AdminLayout title="Калькулятор" subtitle="Параметры, модели экранов и коэффициенты расчета">
+    <AdminLayout title="Калькулятор" subtitle="Параметры расчета экранов">
       <ConfirmModal
         open={resetModalOpen}
         danger
@@ -220,7 +135,7 @@ const AdminCalculatorPage = () => {
           </div>
         )}
 
-        <div className="mb-6 grid gap-3 md:grid-cols-4">
+        <div className="mb-6 grid gap-3 md:grid-cols-2">
           <div className="rounded-lg border border-white/10 bg-white/5 p-3">
             <div className="text-xs uppercase tracking-wide text-slate-400">Шаги пикселя</div>
             <div className="mt-1 text-xl font-semibold text-white">{pitchList.length}</div>
@@ -228,14 +143,6 @@ const AdminCalculatorPage = () => {
           <div className="rounded-lg border border-white/10 bg-white/5 p-3">
             <div className="text-xs uppercase tracking-wide text-slate-400">Типовые размеры</div>
             <div className="mt-1 text-xl font-semibold text-white">{sizePresets.length}</div>
-          </div>
-          <div className="rounded-lg border border-white/10 bg-white/5 p-3">
-            <div className="text-xs uppercase tracking-wide text-slate-400">Модели экранов</div>
-            <div className="mt-1 text-xl font-semibold text-white">{screenProducts.length}</div>
-          </div>
-          <div className="rounded-lg border border-white/10 bg-white/5 p-3">
-            <div className="text-xs uppercase tracking-wide text-slate-400">Discount factors</div>
-            <div className="mt-1 text-sm text-slate-200">{discountFactorsText || '—'}</div>
           </div>
         </div>
 
@@ -245,9 +152,6 @@ const AdminCalculatorPage = () => {
           </Button>
           <Button type="button" variant="secondary" size="md" onClick={addSizePreset}>
             Добавить типовой размер
-          </Button>
-          <Button type="button" variant="secondary" size="md" onClick={addProduct}>
-            Добавить модель экрана
           </Button>
           <div className="flex-1" />
           <Button type="button" variant="secondary" size="md" onClick={() => setResetModalOpen(true)}>
@@ -384,166 +288,6 @@ const AdminCalculatorPage = () => {
                 />
               )}
             </div>
-          </div>
-
-          <div className="space-y-3 rounded-lg border border-white/10 bg-white/5 p-4">
-            <div className="text-lg font-semibold text-white">Модели экранов</div>
-            {screenProducts.map((product, idx) => (
-              <div key={`${product.id}-${idx}`} className="rounded-lg border border-white/10 bg-slate-900/40 p-3">
-                <div className="mb-2 grid gap-2 md:grid-cols-3">
-                  <label className="text-xs text-slate-300">
-                    ID
-                    <input
-                      className="mt-1 w-full rounded-md border border-white/10 bg-white/5 px-2 py-1"
-                      value={product.id}
-                      onChange={(e) => updateProductField(idx, 'id', e.target.value)}
-                    />
-                  </label>
-                  <label className="text-xs text-slate-300 md:col-span-2">
-                    Название
-                    <input
-                      className="mt-1 w-full rounded-md border border-white/10 bg-white/5 px-2 py-1"
-                      value={product.label}
-                      onChange={(e) => updateProductField(idx, 'label', e.target.value)}
-                    />
-                  </label>
-                </div>
-                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-                  <label className="text-xs text-slate-300">
-                    Локация
-                    <select
-                      className="mt-1 w-full rounded-md border border-white/10 bg-white/5 px-2 py-1"
-                      value={product.location}
-                      onChange={(e) => updateProductField(idx, 'location', e.target.value)}
-                    >
-                      <option value="indoor">indoor</option>
-                      <option value="outdoor">outdoor</option>
-                    </select>
-                  </label>
-                  <label className="text-xs text-slate-300">
-                    Pitch (мм)
-                    <input
-                      type="number"
-                      step="0.1"
-                      className="mt-1 w-full rounded-md border border-white/10 bg-white/5 px-2 py-1"
-                      value={product.pitch}
-                      onChange={(e) => updateProductField(idx, 'pitch', e.target.value)}
-                    />
-                  </label>
-                  <label className="text-xs text-slate-300">
-                    Кабинет W (м)
-                    <input
-                      type="number"
-                      step="0.1"
-                      className="mt-1 w-full rounded-md border border-white/10 bg-white/5 px-2 py-1"
-                      value={product.cabinetW}
-                      onChange={(e) => updateProductField(idx, 'cabinetW', e.target.value)}
-                    />
-                  </label>
-                  <label className="text-xs text-slate-300">
-                    Кабинет H (м)
-                    <input
-                      type="number"
-                      step="0.1"
-                      className="mt-1 w-full rounded-md border border-white/10 bg-white/5 px-2 py-1"
-                      value={product.cabinetH}
-                      onChange={(e) => updateProductField(idx, 'cabinetH', e.target.value)}
-                    />
-                  </label>
-                  <label className="text-xs text-slate-300">
-                    Потребление (W/м²)
-                    <input
-                      type="number"
-                      step="1"
-                      className="mt-1 w-full rounded-md border border-white/10 bg-white/5 px-2 py-1"
-                      value={product.powerWPerM2}
-                      onChange={(e) => updateProductField(idx, 'powerWPerM2', e.target.value)}
-                    />
-                  </label>
-                  <label className="text-xs text-slate-300">
-                    Цена за м²
-                    <input
-                      type="number"
-                      step="1"
-                      className="mt-1 w-full rounded-md border border-white/10 bg-white/5 px-2 py-1"
-                      value={product.pricePerM2}
-                      onChange={(e) => updateProductField(idx, 'pricePerM2', e.target.value)}
-                    />
-                  </label>
-                  <label className="text-xs text-slate-300">
-                    Доступно, м²
-                    <input
-                      type="number"
-                      step="1"
-                      className="mt-1 w-full rounded-md border border-white/10 bg-white/5 px-2 py-1"
-                      value={product.availableArea ?? ''}
-                      onChange={(e) => updateProductField(idx, 'availableArea', e.target.value)}
-                    />
-                  </label>
-                </div>
-                <div className="mt-2">
-                  <Button type="button" variant="danger" size="sm" onClick={() => removeProduct(idx)}>
-                    Удалить модель
-                  </Button>
-                </div>
-              </div>
-            ))}
-            {screenProducts.length === 0 && (
-              <EmptyState
-                icon="🖥️"
-                title="Нет моделей экранов"
-                description="Добавьте хотя бы одну модель, чтобы калькулятор мог подбирать оборудование."
-              />
-            )}
-          </div>
-
-          <div className="rounded-lg border border-white/10 bg-white/5 p-4">
-            <div className="mb-3 text-lg font-semibold text-white">Параметры стоимости</div>
-            <div className="grid gap-3 md:grid-cols-3">
-              <label className="text-sm text-slate-200">
-                Монтаж за м²
-                <input
-                  type="number"
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
-                  value={costParams.assemblyCostPerM2}
-                  onChange={(e) => updateCostField('assemblyCostPerM2', e.target.value)}
-                />
-              </label>
-              <label className="text-sm text-slate-200">
-                Техник/день
-                <input
-                  type="number"
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
-                  value={costParams.technicianPerDay}
-                  onChange={(e) => updateCostField('technicianPerDay', e.target.value)}
-                />
-              </label>
-              <label className="text-sm text-slate-200">
-                Инженер/день
-                <input
-                  type="number"
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
-                  value={costParams.engineerPerDay}
-                  onChange={(e) => updateCostField('engineerPerDay', e.target.value)}
-                />
-              </label>
-            </div>
-
-            <label className="mt-3 block text-sm text-slate-200">
-              Discount factors (через запятую)
-              <input
-                className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
-                value={discountFactorsText}
-                onChange={(e) => setDiscountFactorsText(e.target.value)}
-                placeholder="1, 0.5, 0.4"
-              />
-            </label>
-
-            {!parsedDiscountFactors.length && (
-              <div className="mt-2 rounded-md border border-red-500/30 bg-red-500/10 px-2 py-1 text-xs text-red-300">
-                Укажите хотя бы один положительный множитель (пример: 1, 0.5, 0.4)
-              </div>
-            )}
           </div>
         </div>
       </div>

@@ -5,14 +5,14 @@ import { useCategories } from '../../hooks/useCategories';
 import { useContacts } from '../../hooks/useContacts';
 import { useCases } from '../../hooks/useCases';
 import { useCalculatorConfig } from '../../hooks/useCalculatorConfig';
-import type { PitchOption, ScreenSizePreset, ScreenProduct, CostParams, Location } from '../../data/calculatorConfig';
+import type { PitchOption, ScreenSizePreset } from '../../data/calculatorConfig';
 import type { Package as PackageData } from '../../data/packages';
 import type { Category } from '../../data/categories';
 import type { CaseItem } from '../../data/cases';
 import toast from 'react-hot-toast';
 import { contacts as baseContacts } from '../../data/contacts';
 import { Button, ConfirmModal, EmptyState, Field, Input, Textarea } from '../../components/admin/ui';
-import { Package, Tag, FolderOpen, X } from 'lucide-react';
+import { Package, Tag, FolderOpen } from 'lucide-react';
 
 const emptyPackage: PackageData = {
   id: 'light',
@@ -74,14 +74,10 @@ const AdminContentPage = ({
   const { config: calcConfig, updateConfig: updateCalcConfig, resetConfig: resetCalcConfig } = useCalculatorConfig();
   const [pitchList, setPitchList] = useState<PitchOption[]>(calcConfig.pitchOptions);
   const [sizePresets, setSizePresets] = useState<ScreenSizePreset[]>(calcConfig.sizePresets);
-  const [screenProducts, setScreenProducts] = useState<ScreenProduct[]>(calcConfig.screenProducts);
-  const [costParams, setCostParams] = useState<CostParams>(calcConfig.costParams);
 
   useEffect(() => {
     setPitchList(calcConfig.pitchOptions);
     setSizePresets(calcConfig.sizePresets);
-    setScreenProducts(calcConfig.screenProducts);
-    setCostParams(calcConfig.costParams);
   }, [calcConfig]);
 
   const addPitch = () => {
@@ -127,56 +123,8 @@ const AdminContentPage = ({
   };
 
   const saveCalculatorConfig = () => {
-    updateCalcConfig({ pitchOptions: pitchList, sizePresets, screenProducts, costParams });
+    updateCalcConfig({ pitchOptions: pitchList, sizePresets });
     toast.success('Настройки калькулятора сохранены');
-  };
-
-  const addProduct = () => {
-    setScreenProducts((list) => [
-      ...list,
-      {
-        id: `product-${list.length + 1}`,
-        label: 'Новый экран',
-        location: 'indoor',
-        pitch: 2.6,
-        cabinetW: 0.5,
-        cabinetH: 0.5,
-        powerWPerM2: 700,
-        pricePerM2: 6000,
-        availableArea: 100,
-      },
-    ]);
-  };
-
-  const updateProductField = (idx: number, field: keyof ScreenProduct, value: string) => {
-    setScreenProducts((list) =>
-      list.map((item, i) =>
-        i === idx
-          ? {
-              ...item,
-              [field]: field === 'label' || field === 'id' ? value : field === 'location' ? (value as Location) : Number(value),
-            }
-          : item
-      )
-    );
-  };
-
-  const removeProduct = (idx: number) => {
-    setScreenProducts((list) => list.filter((_, i) => i !== idx));
-  };
-
-  const updateCostField = (field: keyof CostParams, value: string) => {
-    if (field === 'discountFactors') {
-      const factors = value
-        .split(',')
-        .map((v) => v.trim())
-        .filter(Boolean)
-        .map((v) => Number(v))
-        .filter((v) => !Number.isNaN(v) && v > 0);
-      setCostParams((c) => ({ ...c, discountFactors: factors.length ? factors : c.discountFactors }));
-      return;
-    }
-    setCostParams((c) => ({ ...c, [field]: Number(value) }));
   };
 
   // Packages
@@ -690,157 +638,6 @@ const AdminContentPage = ({
             <div>
               <div className="text-xs text-slate-400">Время</div>
               <div>{contacts.workingHours}</div>
-            </div>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="card space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="text-lg font-semibold text-white">Модели экранов</div>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={addProduct}
-                >
-                  Добавить
-                </Button>
-              </div>
-              <div className="space-y-3">
-                {screenProducts.map((p, idx) => (
-                  <div key={idx} className="rounded-lg border border-white/10 bg-white/5 p-3 space-y-2">
-                    <div className="flex items-center gap-2 text-xs text-slate-300">
-                      <input
-                        className="flex-1 rounded-md border border-white/10 bg-white/5 px-2 py-1 text-sm"
-                        value={p.label}
-                        onChange={(e) => updateProductField(idx, 'label', e.target.value)}
-                        placeholder="Название"
-                      />
-                      <select
-                        className="rounded-md border border-white/10 bg-white/5 px-2 py-1"
-                        value={p.location}
-                        onChange={(e) => updateProductField(idx, 'location', e.target.value)}
-                      >
-                        <option value="indoor">Indoor</option>
-                        <option value="outdoor">Outdoor</option>
-                      </select>
-                      <Button type="button" variant="danger" size="sm" onClick={() => removeProduct(idx)}><X size={14} /></Button>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2 text-xs text-slate-300">
-                      <label>
-                        Pitch (мм)
-                        <input
-                          type="number"
-                          step="0.1"
-                          className="mt-1 w-full rounded-md border border-white/10 bg-white/5 px-2 py-1"
-                          value={p.pitch}
-                          onChange={(e) => updateProductField(idx, 'pitch', e.target.value)}
-                        />
-                      </label>
-                      <label>
-                        Каб. ширина
-                        <input
-                          type="number"
-                          step="0.1"
-                          className="mt-1 w-full rounded-md border border-white/10 bg-white/5 px-2 py-1"
-                          value={p.cabinetW}
-                          onChange={(e) => updateProductField(idx, 'cabinetW', e.target.value)}
-                        />
-                      </label>
-                      <label>
-                        Каб. высота
-                        <input
-                          type="number"
-                          step="0.1"
-                          className="mt-1 w-full rounded-md border border-white/10 bg-white/5 px-2 py-1"
-                          value={p.cabinetH}
-                          onChange={(e) => updateProductField(idx, 'cabinetH', e.target.value)}
-                        />
-                      </label>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2 text-xs text-slate-300">
-                      <label>
-                        Мощн. Вт/м²
-                        <input
-                          type="number"
-                          step="10"
-                          className="mt-1 w-full rounded-md border border-white/10 bg-white/5 px-2 py-1"
-                          value={p.powerWPerM2}
-                          onChange={(e) => updateProductField(idx, 'powerWPerM2', e.target.value)}
-                        />
-                      </label>
-                      <label>
-                        Цена ₽/м²
-                        <input
-                          type="number"
-                          step="100"
-                          className="mt-1 w-full rounded-md border border-white/10 bg-white/5 px-2 py-1"
-                          value={p.pricePerM2}
-                          onChange={(e) => updateProductField(idx, 'pricePerM2', e.target.value)}
-                        />
-                      </label>
-                      <label>
-                        Доступно м²
-                        <input
-                          type="number"
-                          step="1"
-                          className="mt-1 w-full rounded-md border border-white/10 bg-white/5 px-2 py-1"
-                          value={p.availableArea ?? ''}
-                          onChange={(e) => updateProductField(idx, 'availableArea', e.target.value)}
-                          placeholder="не ограничено"
-                        />
-                      </label>
-                    </div>
-                  </div>
-                ))}
-                {screenProducts.length === 0 && <div className="text-sm text-slate-400">Нет моделей. Добавьте.</div>}
-              </div>
-            </div>
-
-            <div className="card space-y-3">
-              <div className="text-lg font-semibold text-white">Стоимость и скидки</div>
-              <div className="grid gap-3 text-sm text-slate-300">
-                <label className="flex items-center gap-3">
-                  <span className="w-40 text-slate-400">Сборка ₽/м²</span>
-                  <input
-                    type="number"
-                    step="100"
-                    className="flex-1 rounded-md border border-white/10 bg-white/5 px-2 py-1"
-                    value={costParams.assemblyCostPerM2}
-                    onChange={(e) => updateCostField('assemblyCostPerM2', e.target.value)}
-                  />
-                </label>
-                <label className="flex items-center gap-3">
-                  <span className="w-40 text-slate-400">Техник ₽/день</span>
-                  <input
-                    type="number"
-                    step="500"
-                    className="flex-1 rounded-md border border-white/10 bg-white/5 px-2 py-1"
-                    value={costParams.technicianPerDay}
-                    onChange={(e) => updateCostField('technicianPerDay', e.target.value)}
-                  />
-                </label>
-                <label className="flex items-center gap-3">
-                  <span className="w-40 text-slate-400">Инженер ₽/день</span>
-                  <input
-                    type="number"
-                    step="500"
-                    className="flex-1 rounded-md border border-white/10 bg-white/5 px-2 py-1"
-                    value={costParams.engineerPerDay}
-                    onChange={(e) => updateCostField('engineerPerDay', e.target.value)}
-                  />
-                </label>
-                <label className="flex items-center gap-3">
-                  <span className="w-40 text-slate-400">Скидки по дням</span>
-                  <input
-                    type="text"
-                    className="flex-1 rounded-md border border-white/10 bg-white/5 px-2 py-1"
-                    value={costParams.discountFactors.join(', ')}
-                    onChange={(e) => updateCostField('discountFactors', e.target.value)}
-                    placeholder="1, 0.5, 0.4, 0.3"
-                  />
-                </label>
-              </div>
             </div>
           </div>
         </div>
