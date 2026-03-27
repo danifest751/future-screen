@@ -5,6 +5,7 @@ import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider } from './context/AuthContext';
 import { AdminDataProvider } from './context/AdminDataContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { SiteSettingsProvider } from './context/SiteSettingsContext';
 import App from './App';
 import { installClientErrorLogger } from './lib/clientErrorLogger';
 import './index.css';
@@ -18,7 +19,9 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
         <ThemeProvider>
           <AuthProvider>
             <AdminDataProvider>
-              <App />
+              <SiteSettingsProvider>
+                <App />
+              </SiteSettingsProvider>
             </AdminDataProvider>
           </AuthProvider>
         </ThemeProvider>
