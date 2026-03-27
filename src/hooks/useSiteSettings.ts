@@ -1,18 +1,18 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import type { BackgroundId, BackgroundSettingsById } from '../lib/backgrounds';
-import { defaultBackgroundSettingsById } from '../lib/backgrounds';
+import type { BackgroundId, BackgroundSettingsById, StarBorderSettings } from '../lib/backgrounds';
+import { defaultBackgroundSettingsById, defaultStarBorderSettings } from '../lib/backgrounds';
 
 export type SiteSettings = {
   background: BackgroundId;
   backgroundSettings: BackgroundSettingsById;
-  starBorderEnabled: boolean;
+  starBorder: StarBorderSettings;
 };
 
 const DEFAULT_SETTINGS: SiteSettings = {
   background: 'theme',
   backgroundSettings: { ...defaultBackgroundSettingsById },
-  starBorderEnabled: false,
+  starBorder: { ...defaultStarBorderSettings },
 };
 
 export const useSiteSettings = () => {
@@ -48,7 +48,10 @@ export const useSiteSettings = () => {
             ...DEFAULT_SETTINGS.backgroundSettings,
             ...(data.background_settings || {}),
           },
-          starBorderEnabled: data.star_border_enabled ?? DEFAULT_SETTINGS.starBorderEnabled,
+          starBorder: {
+            ...DEFAULT_SETTINGS.starBorder,
+            ...(data.star_border_settings || {}),
+          },
         });
       }
     } catch (err) {
@@ -75,7 +78,7 @@ export const useSiteSettings = () => {
           id: 'global',
           background: updatedSettings.background,
           background_settings: updatedSettings.backgroundSettings,
-          star_border_enabled: updatedSettings.starBorderEnabled,
+          star_border_settings: updatedSettings.starBorder,
           updated_at: new Date().toISOString(),
         }, {
           onConflict: 'id',
@@ -104,10 +107,12 @@ export const useSiteSettings = () => {
     return saveSettings({ backgroundSettings: settingsMap });
   }, [saveSettings]);
 
-  // Обновление настройки Star Border
-  const updateStarBorderEnabled = useCallback(async (enabled: boolean) => {
-    return saveSettings({ starBorderEnabled: enabled });
-  }, [saveSettings]);
+  // Обновление настроек Star Border
+  const updateStarBorder = useCallback(async (starBorder: Partial<StarBorderSettings>) => {
+    return saveSettings({
+      starBorder: { ...settings.starBorder, ...starBorder }
+    });
+  }, [saveSettings, settings.starBorder]);
 
   // Подписка на изменения в реальном времени
   useEffect(() => {
@@ -144,7 +149,7 @@ export const useSiteSettings = () => {
     saveSettings,
     updateBackground,
     updateBackgroundSettings,
-    updateStarBorderEnabled,
+    updateStarBorder,
   };
 };
 

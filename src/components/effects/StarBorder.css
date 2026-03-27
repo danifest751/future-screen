@@ -1,55 +1,101 @@
 /* Star Border Animation from ReactBits */
-/* Animated border effect for hoverable elements */
+/* Animated border effect for hoverable elements using gradient masks */
 
-.star-border {
+:root {
+  --star-border-color: #667eea;
+  --star-border-speed: 6s;
+  --star-border-thickness: 1px;
+  --star-border-intensity: 1;
+}
+
+/* Main container - wraps the element */
+.star-border-container {
   position: relative;
   overflow: hidden;
   border-radius: 0.75rem;
+  /* Padding creates space for the border */
+  padding: var(--star-border-thickness);
   transition: transform 0.2s ease;
 }
 
-.star-border::before {
-  content: '';
+/* Top gradient border */
+.border-gradient-top {
   position: absolute;
-  inset: -2px;
-  background: conic-gradient(
-    from 0deg,
-    transparent 0deg,
-    var(--star-color, #667eea) 60deg,
-    var(--star-color-bright, #a78bfa) 120deg,
-    var(--star-color, #667eea) 180deg,
-    transparent 240deg,
-    var(--star-color-bright, #a78bfa) 300deg,
-    transparent 360deg
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--star-border-thickness);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--star-border-color) 20%,
+    var(--star-border-color) 80%,
+    transparent 100%
   );
-  border-radius: inherit;
   opacity: 0;
   transition: opacity 0.3s ease;
-  z-index: -1;
-  animation: star-rotate 3s linear infinite;
+  animation: star-movement-top var(--star-border-speed) linear infinite;
   animation-play-state: paused;
+  filter: blur(calc(var(--star-border-thickness) * 0.5));
+  transform: scaleX(var(--star-border-intensity));
 }
 
-.star-border::after {
-  content: '';
+/* Bottom gradient border */
+.border-gradient-bottom {
   position: absolute;
-  inset: 1px;
-  background: inherit;
-  border-radius: inherit;
-  z-index: -1;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: var(--star-border-thickness);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--star-border-color) 20%,
+    var(--star-border-color) 80%,
+    transparent 100%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  animation: star-movement-bottom var(--star-border-speed) linear infinite;
+  animation-play-state: paused;
+  filter: blur(calc(var(--star-border-thickness) * 0.5));
+  transform: scaleX(var(--star-border-intensity));
 }
 
-.star-border:hover::before {
+/* Inner content wrapper */
+.inner-content {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  background: inherit;
+}
+
+/* Hover state - activate animations */
+.star-border-container:hover .border-gradient-top,
+.star-border-container:hover .border-gradient-bottom {
   opacity: 1;
   animation-play-state: running;
 }
 
-@keyframes star-rotate {
-  from {
-    transform: rotate(0deg);
+/* Top border animation */
+@keyframes star-movement-top {
+  0% {
+    transform: translateX(-100%);
   }
-  to {
-    transform: rotate(360deg);
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Bottom border animation (reverse direction) */
+@keyframes star-movement-bottom {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
   }
 }
 
@@ -57,83 +103,65 @@
 
 /* Button variant */
 .star-border-button {
-  --star-color: var(--brand-500, #667eea);
-  --star-color-bright: var(--brand-400, #a78bfa);
+  border-radius: 0.5rem;
 }
 
-.star-border-button::before {
-  inset: -3px;
+.star-border-button .border-gradient-top,
+.star-border-button .border-gradient-bottom {
+  height: calc(var(--star-border-thickness) * 1.5);
 }
 
 /* Card variant */
 .star-border-card {
-  --star-color: var(--brand-500, #667eea);
-  --star-color-bright: var(--brand-300, #c4b5fd);
+  border-radius: 1rem;
 }
 
-.star-border-card::before {
-  inset: -2px;
-  background: conic-gradient(
-    from 0deg,
-    transparent 0deg,
-    var(--star-color) 80deg,
-    var(--star-color-bright) 160deg,
-    var(--star-color) 240deg,
-    transparent 320deg,
-    var(--star-color-bright) 360deg
-  );
+.star-border-card .border-gradient-top,
+.star-border-card .border-gradient-bottom {
+  filter: blur(calc(var(--star-border-thickness) * var(--star-border-intensity)));
 }
 
 /* Link variant */
 .star-border-link {
-  --star-color: var(--brand-400, #a78bfa);
-  --star-color-bright: var(--brand-300, #c4b5fd);
+  border-radius: 0.25rem;
+  display: inline-flex;
 }
 
-.star-border-link::before {
-  inset: -2px;
-  animation-duration: 2s;
+.star-border-link .border-gradient-top,
+.star-border-link .border-gradient-bottom {
+  height: calc(var(--star-border-thickness) * 0.8);
+  animation-duration: calc(var(--star-border-speed) * 0.7);
 }
 
 /* Input variant */
 .star-border-input {
-  --star-color: var(--brand-500, #667eea);
-  --star-color-bright: var(--brand-400, #a78bfa);
+  border-radius: 0.5rem;
 }
 
-.star-border-input::before {
-  inset: -2px;
-  animation-duration: 4s;
+.star-border-input .border-gradient-top,
+.star-border-input .border-gradient-bottom {
+  animation-duration: calc(var(--star-border-speed) * 1.2);
 }
 
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
-  .star-border::before {
-    animation: none;
+  .border-gradient-top,
+  .border-gradient-bottom {
+    animation: none !important;
   }
   
-  .star-border:hover::before {
+  .star-border-container:hover .border-gradient-top,
+  .star-border-container:hover .border-gradient-bottom {
     opacity: 0.6;
+    transform: none;
   }
 }
 
-/* Dark theme adjustments */
-[data-theme="dark"] .star-border,
-.dark .star-border {
-  --star-color: #667eea;
-  --star-color-bright: #a78bfa;
-}
-
-/* Light theme adjustments */
-[data-theme="light"] .star-border,
-.light .star-border {
-  --star-color: #4f46e5;
-  --star-color-bright: #7c3aed;
-}
-
-/* Neon theme adjustments */
-[data-theme="neon"] .star-border,
-.neon .star-border {
-  --star-color: #00ff88;
-  --star-color-bright: #00c853;
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .border-gradient-top,
+  .border-gradient-bottom {
+    filter: none;
+    opacity: 1;
+  }
 }

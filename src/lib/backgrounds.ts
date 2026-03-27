@@ -148,6 +148,30 @@ export type BackgroundSettingsById = {
 
 export type AnyBackgroundSettings = BackgroundSettingsById[CustomBackgroundId];
 
+// Star Border Settings
+export type StarBorderSettings = {
+  enabled: boolean;
+  color: string;
+  speed: number; // in seconds
+  thickness: number;
+  intensity: number;
+};
+
+export const defaultStarBorderSettings: StarBorderSettings = {
+  enabled: false,
+  color: '#667eea',
+  speed: 6,
+  thickness: 1,
+  intensity: 1,
+};
+
+export const starBorderSettingsControls = [
+  { key: 'intensity', label: 'Интенсивность', control: 'range', min: 0.5, max: 2, step: 0.1 },
+  { key: 'color', label: 'Цвет рамки', control: 'color' },
+  { key: 'speed', label: 'Скорость анимации (сек)', control: 'range', min: 2, max: 15, step: 0.5 },
+  { key: 'thickness', label: 'Толщина рамки', control: 'range', min: 1, max: 5, step: 0.5 },
+] as const;
+
 export const BACKGROUND_STORAGE_KEY = 'fs-background';
 export const BACKGROUND_CHANGED_EVENT = 'fs-background-changed';
 export const BACKGROUND_SETTINGS_STORAGE_KEY = 'fs-background-settings';
