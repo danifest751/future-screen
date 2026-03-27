@@ -19,3 +19,6 @@ export { useUnsavedChangesGuard } from './useUnsavedChangesGuard';
 // Хук для глобальных настроек сайта (фон и т.д.)
 export { useSiteSettings } from './useSiteSettings';
 export type { SiteSettings } from './useSiteSettings';
+
+// Хук для глобального применения Star Border
+export { useStarBorderGlobal } from './useStarBorderGlobal';

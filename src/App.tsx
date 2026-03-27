@@ -2,6 +2,7 @@ import { lazy, Suspense, useMemo } from 'react';
 import { useRoutes } from 'react-router-dom';
 import Layout from './components/Layout';
 import { useCategories } from './hooks/useCategories';
+import { useStarBorderGlobal } from './hooks/useStarBorderGlobal';
 import { Helmet } from 'react-helmet-async';
 import ProtectedRoute from './components/ProtectedRoute';
 import { StructuredData } from './components/StructuredData';
@@ -39,6 +40,7 @@ const PageLoader = () => (
 
 const App = () => {
   const { categories } = useCategories();
+  useStarBorderGlobal();
   const routes = useMemo(
     () => [
       {
