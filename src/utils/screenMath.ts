@@ -1,15 +1,70 @@
-import {
-  pitchOptions,
-  heightDivisors,
-  aspectRatios,
-  powerPerM2,
-  type CalcInputs,
-  type CalcResult,
-  type Purpose,
-  type EventType,
-  type Location,
-  type PitchOption,
-} from '../data/calculatorConfig';
+// Types
+export type Purpose = 'video' | 'presentation' | 'branding';
+export type EventType = 'conference' | 'concert' | 'corporate' | 'exhibition' | 'festival';
+export type Location = 'indoor' | 'outdoor';
+
+export type PitchOption = {
+  label: string;
+  value: number;
+  minDistance: number;
+  maxDistance: number;
+  description: string;
+  stockArea?: number;
+};
+
+export type CalcInputs = {
+  eventType: EventType;
+  location: Location;
+  audience: number;
+  distanceKnown: boolean;
+  distance: number;
+  purpose: Purpose;
+  stageWidth: number | null;
+  maxHeight: number | null;
+  installType: 'unknown' | 'hanging' | 'floor';
+};
+
+export type CalcResult = {
+  distance: number;
+  height: number;
+  width: number;
+  area: number;
+  pitch: PitchOption;
+  installRecommendation: string;
+  powerAvg: string;
+  powerPeak: string;
+  warnings: string[];
+  explanations: string[];
+};
+
+// Constants
+export const pitchOptions: PitchOption[] = [
+  { label: 'P2.6', value: 2.6, minDistance: 2, maxDistance: 5, description: 'Премиум, ультра-близкая дистанция' },
+  { label: 'P3.9', value: 3.9, minDistance: 3, maxDistance: 8, description: 'Универсальный indoor / близкая дистанция' },
+  { label: 'P4.8', value: 4.8, minDistance: 4, maxDistance: 12, description: 'Средняя дистанция' },
+  { label: 'P6.9', value: 6.9, minDistance: 6, maxDistance: 18, description: 'Большие залы / дальняя дистанция' },
+  { label: 'P8.9', value: 8.9, minDistance: 8, maxDistance: 25, description: 'Очень дальняя дистанция' },
+];
+
+export const heightDivisors: Record<Purpose, number> = {
+  video: 6,
+  presentation: 5,
+  branding: 7,
+};
+
+export const aspectRatios: Record<EventType, number> = {
+  conference: 16 / 9,
+  concert: 3,
+  corporate: 16 / 9,
+  exhibition: 16 / 9,
+  festival: 21 / 9,
+};
+
+export const powerPerM2 = {
+  avgMin: 0.3,
+  avgMax: 0.5,
+  peakMax: 1.0,
+};
 
 export function estimateDistance(audience: number): number {
   return Math.sqrt(audience) * 2;

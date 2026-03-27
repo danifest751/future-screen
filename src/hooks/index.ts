@@ -7,7 +7,6 @@ export { useFocusTrap } from './useFocusTrap';
 export type { UseFocusTrapOptions, UseFocusTrapReturn } from './useFocusTrap';
 
 // Существующие хуки
-export { useCalculatorConfig } from './useCalculatorConfig';
 export { useCases } from './useCases';
 export { useCategories } from './useCategories';
 export { useContacts } from './useContacts';

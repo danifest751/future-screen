@@ -6,10 +6,10 @@ import {
   recommendInstall,
   estimatePower,
   calculate,
+  pitchOptions,
 } from './screenMath';
 import { expect } from 'vitest';
-import { pitchOptions } from '../data/calculatorConfig';
-import type { CalcInputs } from '../data/calculatorConfig';
+import type { CalcInputs } from './screenMath';
 
 describe('estimateDistance', () => {
   it('возвращает положительное число', () => {
@@ -149,7 +149,7 @@ describe('calculate', () => {
   it('учитывает ограничение maxHeight', () => {
     const r = calculate({ ...baseInputs, maxHeight: 1.5 });
     expect(r.height).toBeLessThanOrEqual(1.5);
-    expect(r.warnings.some((w) => w.includes('потолком'))).toBe(true);
+    expect(r.warnings.some((w: string) => w.includes('потолком'))).toBe(true);
   });
 
   it('учитывает ограничение stageWidth', () => {

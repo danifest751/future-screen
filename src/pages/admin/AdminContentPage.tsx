@@ -4,8 +4,6 @@ import { usePackages } from '../../hooks/usePackages';
 import { useCategories } from '../../hooks/useCategories';
 import { useContacts } from '../../hooks/useContacts';
 import { useCases } from '../../hooks/useCases';
-import { useCalculatorConfig } from '../../hooks/useCalculatorConfig';
-import type { PitchOption, ScreenSizePreset } from '../../data/calculatorConfig';
 import type { Package as PackageData } from '../../data/packages';
 import type { Category } from '../../data/categories';
 import type { CaseItem } from '../../data/cases';
@@ -31,13 +29,12 @@ const emptyCategory: Category = {
   pagePath: '/rent/light',
 };
 
-type Tab = 'packages' | 'categories' | 'contacts' | 'calculator' | 'cases';
+type Tab = 'packages' | 'categories' | 'contacts' | 'cases';
 
 const tabs: { key: Tab; label: string }[] = [
   { key: 'packages', label: 'Пакеты' },
   { key: 'categories', label: 'Категории' },
   { key: 'contacts', label: 'Контакты' },
-  { key: 'calculator', label: 'Калькулятор' },
   { key: 'cases', label: 'Кейсы' },
 ];
 
@@ -69,63 +66,6 @@ const AdminContentPage = ({
   useEffect(() => {
     setActiveTab(initialTab);
   }, [initialTab]);
-
-  // Calculator config
-  const { config: calcConfig, updateConfig: updateCalcConfig, resetConfig: resetCalcConfig } = useCalculatorConfig();
-  const [pitchList, setPitchList] = useState<PitchOption[]>(calcConfig.pitchOptions);
-  const [sizePresets, setSizePresets] = useState<ScreenSizePreset[]>(calcConfig.sizePresets);
-
-  useEffect(() => {
-    setPitchList(calcConfig.pitchOptions);
-    setSizePresets(calcConfig.sizePresets);
-  }, [calcConfig]);
-
-  const addPitch = () => {
-    setPitchList((list) => [...list, { label: 'Новый', value: 3.9, minDistance: 3, maxDistance: 6, description: '', stockArea: 0 }]);
-  };
-
-  const updatePitchField = (idx: number, field: keyof PitchOption, value: string) => {
-    setPitchList((list) =>
-      list.map((item, i) =>
-        i === idx
-          ? {
-              ...item,
-              [field]: field === 'label' || field === 'description' ? value : Number(value),
-            }
-          : item
-      )
-    );
-  };
-
-  const removePitch = (idx: number) => {
-    setPitchList((list) => list.filter((_, i) => i !== idx));
-  };
-
-  const addSizePreset = () => {
-    setSizePresets((list) => [...list, { label: 'Новый', width: 4, height: 2 }]);
-  };
-
-  const updateSizeField = (idx: number, field: keyof ScreenSizePreset, value: string) => {
-    setSizePresets((list) =>
-      list.map((item, i) =>
-        i === idx
-          ? {
-              ...item,
-              [field]: field === 'label' ? value : Number(value),
-            }
-          : item
-      )
-    );
-  };
-
-  const removeSize = (idx: number) => {
-    setSizePresets((list) => list.filter((_, i) => i !== idx));
-  };
-
-  const saveCalculatorConfig = () => {
-    updateCalcConfig({ pitchOptions: pitchList, sizePresets });
-    toast.success('Настройки калькулятора сохранены');
-  };
 
   // Packages
   const { packages, upsert: upsertPackage, remove: removePackage, resetToDefault: resetPackages } = usePackages();
@@ -264,11 +204,6 @@ const AdminContentPage = ({
       toast.success('Контакты сброшены к дефолту');
       return;
     }
-    if (resetTarget === 'calculator') {
-      resetCalcConfig();
-      toast.success('Настройки калькулятора сброшены');
-      return;
-    }
     if (resetTarget === 'cases') {
       await resetCases();
       toast.success('Кейсы сброшены к дефолту');
@@ -279,7 +214,6 @@ const AdminContentPage = ({
     packages: 'Сбросить пакеты к дефолту?',
     categories: 'Сбросить категории к дефолту?',
     contacts: 'Сбросить контакты к дефолту?',
-    calculator: 'Сбросить настройки калькулятора?',
     cases: 'Сбросить кейсы к дефолту?',
   };
 
@@ -287,7 +221,6 @@ const AdminContentPage = ({
     packages: 'Текущий список пакетов будет перезаписан демо-данными.',
     categories: 'Текущий список категорий будет перезаписан демо-данными.',
     contacts: 'Контакты будут восстановлены из базового набора.',
-    calculator: 'Все несохраненные изменения конфигурации будут потеряны.',
     cases: 'Текущий список кейсов будет перезаписан демо-данными.',
   };
 
@@ -638,167 +571,6 @@ const AdminContentPage = ({
             <div>
               <div className="text-xs text-slate-400">Время</div>
               <div>{contacts.workingHours}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-      )}
-
-      {activeTab === 'calculator' && (
-        <div className="rounded-xl border border-white/10 bg-slate-800 p-6">
-          <h2 className="mb-4 text-xl font-semibold text-white">Калькулятор</h2>
-          <p className="mb-6 text-sm text-slate-400">Настройки шагов пикселя и типовых размеров</p>
-          <div className="space-y-4">
-            <div className="flex flex-wrap items-center gap-3">
-            <Button
-              type="button"
-              variant="secondary"
-              size="md"
-              onClick={addPitch}
-            >
-              Добавить шаг пикселя
-            </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              size="md"
-              onClick={addSizePreset}
-            >
-              Добавить размер
-            </Button>
-            <div className="flex-1" />
-            <Button
-              type="button"
-              variant="secondary"
-              size="md"
-              onClick={() => setResetTarget('calculator')}
-            >
-              Сбросить к дефолту
-            </Button>
-            <Button
-              type="button"
-              variant="primary"
-              size="md"
-              onClick={saveCalculatorConfig}
-            >
-              Сохранить
-            </Button>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="card space-y-3">
-              <div className="text-lg font-semibold text-white">Шаги пикселя</div>
-              <div className="space-y-3">
-                {pitchList.map((p, idx) => (
-                  <div key={idx} className="rounded-lg border border-white/10 bg-white/5 p-3 space-y-2">
-                    <div className="flex items-center gap-2">
-                      <input
-                        className="flex-1 rounded-md border border-white/10 bg-white/5 px-2 py-1 text-sm"
-                        value={p.label}
-                        onChange={(e) => updatePitchField(idx, 'label', e.target.value)}
-                        placeholder="Label"
-                      />
-                      <Button type="button" variant="danger" size="sm" onClick={() => removePitch(idx)}>Удалить</Button>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <label className="text-slate-300">
-                        Значение (мм)
-                        <input
-                          type="number"
-                          step="0.1"
-                          className="mt-1 w-full rounded-md border border-white/10 bg-white/5 px-2 py-1"
-                          value={p.value}
-                          onChange={(e) => updatePitchField(idx, 'value', e.target.value)}
-                        />
-                      </label>
-                      <label className="text-slate-300">
-                        Min дистанция
-                        <input
-                          type="number"
-                          step="0.1"
-                          className="mt-1 w-full rounded-md border border-white/10 bg-white/5 px-2 py-1"
-                          value={p.minDistance}
-                          onChange={(e) => updatePitchField(idx, 'minDistance', e.target.value)}
-                        />
-                      </label>
-                      <label className="text-slate-300">
-                        Max дистанция
-                        <input
-                          type="number"
-                          step="0.1"
-                          className="mt-1 w-full rounded-md border border-white/10 bg-white/5 px-2 py-1"
-                          value={p.maxDistance === Infinity ? '' : p.maxDistance}
-                          onChange={(e) => updatePitchField(idx, 'maxDistance', e.target.value || `${Infinity}`)}
-                          placeholder="∞"
-                        />
-                      </label>
-                      <label className="text-slate-300">
-                        М² на складе
-                        <input
-                          type="number"
-                          step="1"
-                          className="mt-1 w-full rounded-md border border-white/10 bg-white/5 px-2 py-1"
-                          value={p.stockArea ?? ''}
-                          onChange={(e) => updatePitchField(idx, 'stockArea', e.target.value)}
-                          placeholder="0"
-                        />
-                      </label>
-                      <label className="text-slate-300 col-span-2">
-                        Описание
-                        <input
-                          className="mt-1 w-full rounded-md border border-white/10 bg-white/5 px-2 py-1"
-                          value={p.description}
-                          onChange={(e) => updatePitchField(idx, 'description', e.target.value)}
-                          placeholder="Подсказка пользователю"
-                        />
-                      </label>
-                    </div>
-                  </div>
-                ))}
-                {pitchList.length === 0 && <div className="text-sm text-slate-400">Пусто. Добавьте шаг.</div>}
-              </div>
-            </div>
-
-            <div className="card space-y-3">
-              <div className="text-lg font-semibold text-white">Типовые размеры</div>
-              <div className="space-y-3">
-                {sizePresets.map((s, idx) => (
-                  <div key={idx} className="rounded-lg border border-white/10 bg-white/5 p-3 space-y-2">
-                    <div className="flex items-center gap-2">
-                      <input
-                        className="flex-1 rounded-md border border-white/10 bg-white/5 px-2 py-1 text-sm"
-                        value={s.label}
-                        onChange={(e) => updateSizeField(idx, 'label', e.target.value)}
-                        placeholder="Label"
-                      />
-                      <Button type="button" variant="danger" size="sm" onClick={() => removeSize(idx)}>Удалить</Button>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <label className="text-slate-300">
-                        Ширина (м)
-                        <input
-                          type="number"
-                          step="0.1"
-                          className="mt-1 w-full rounded-md border border-white/10 bg-white/5 px-2 py-1"
-                          value={s.width}
-                          onChange={(e) => updateSizeField(idx, 'width', e.target.value)}
-                        />
-                      </label>
-                      <label className="text-slate-300">
-                        Высота (м)
-                        <input
-                          type="number"
-                          step="0.1"
-                          className="mt-1 w-full rounded-md border border-white/10 bg-white/5 px-2 py-1"
-                          value={s.height}
-                          onChange={(e) => updateSizeField(idx, 'height', e.target.value)}
-                        />
-                      </label>
-                    </div>
-                  </div>
-                ))}
-                {sizePresets.length === 0 && <div className="text-sm text-slate-400">Пусто. Добавьте размер.</div>}
-              </div>
             </div>
           </div>
         </div>
