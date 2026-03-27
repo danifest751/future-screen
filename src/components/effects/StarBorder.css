@@ -28,9 +28,11 @@
   background: linear-gradient(
     90deg,
     transparent 0%,
-    color-mix(in srgb, var(--star-border-color) 75%, transparent) 4%,
+    transparent 42%,
+    color-mix(in srgb, var(--star-border-color) 65%, transparent) 47%,
     var(--star-border-color) 50%,
-    color-mix(in srgb, var(--star-border-color) 75%, transparent) 96%,
+    color-mix(in srgb, var(--star-border-color) 65%, transparent) 53%,
+    transparent 58%,
     transparent 100%
   );
   opacity: 0;
@@ -53,9 +55,11 @@
   background: linear-gradient(
     90deg,
     transparent 0%,
-    color-mix(in srgb, var(--star-border-color) 75%, transparent) 4%,
+    transparent 42%,
+    color-mix(in srgb, var(--star-border-color) 65%, transparent) 47%,
     var(--star-border-color) 50%,
-    color-mix(in srgb, var(--star-border-color) 75%, transparent) 96%,
+    color-mix(in srgb, var(--star-border-color) 65%, transparent) 53%,
+    transparent 58%,
     transparent 100%
   );
   opacity: 0;
@@ -157,12 +161,12 @@
 @media (prefers-reduced-motion: reduce) {
   .star-border-container::before,
   .star-border-container::after {
-    animation: none !important;
+    animation-duration: calc(var(--star-border-speed) * 1.8);
   }
   
   .star-border-container:hover::before,
   .star-border-container:hover::after {
-    opacity: calc(0.6 * var(--star-border-intensity));
+    opacity: calc(0.8 * var(--star-border-intensity));
   }
 }
 
