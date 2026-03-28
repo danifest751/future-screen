@@ -35,7 +35,7 @@
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://mc.yandex.ru; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https://pyframwlnqrzeynqcvle.supabase.co wss://pyframwlnqrzeynqcvle.supabase.co https://mc.yandex.ru wss://mc.yandex.ru; media-src 'self' blob:; frame-src 'self' https://mc.yandex.ru; worker-src 'self' blob:;"
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://mc.yandex.ru https://mc.yandex.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https://pyframwlnqrzeynqcvle.supabase.co wss://pyframwlnqrzeynqcvle.supabase.co https://mc.yandex.ru wss://mc.yandex.ru https://mc.yandex.com wss://mc.yandex.com; media-src 'self' blob:; frame-src 'self' https://mc.yandex.ru https://mc.yandex.com; worker-src 'self' blob:;"
         },
         {
           "key": "X-Content-Type-Options",
