@@ -2,77 +2,72 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://future-screen.vercel.app/</loc>
-    <lastmod>2026-02-19</lastmod>
+    <lastmod>2026-03-28</lastmod>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>https://future-screen.vercel.app/led</loc>
-    <lastmod>2026-02-19</lastmod>
+    <lastmod>2026-03-28</lastmod>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://future-screen.vercel.app/support</loc>
-    <lastmod>2026-02-19</lastmod>
+    <lastmod>2026-03-28</lastmod>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://future-screen.vercel.app/rent</loc>
-    <lastmod>2026-02-19</lastmod>
+    <lastmod>2026-03-28</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://future-screen.vercel.app/rent/light</loc>
-    <lastmod>2026-02-19</lastmod>
+    <lastmod>2026-03-28</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://future-screen.vercel.app/rent/video</loc>
-    <lastmod>2026-02-19</lastmod>
+    <lastmod>2026-03-28</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://future-screen.vercel.app/rent/sound</loc>
-    <lastmod>2026-02-19</lastmod>
+    <lastmod>2026-03-28</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://future-screen.vercel.app/rent/stage</loc>
-    <lastmod>2026-02-19</lastmod>
+    <lastmod>2026-03-28</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://future-screen.vercel.app/rent/instruments</loc>
-    <lastmod>2026-02-19</lastmod>
+    <lastmod>2026-03-28</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://future-screen.vercel.app/cases</loc>
-    <lastmod>2026-02-19</lastmod>
+    <lastmod>2026-03-28</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://future-screen.vercel.app/prices</loc>
-    <lastmod>2026-02-19</lastmod>
+    <lastmod>2026-03-28</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://future-screen.vercel.app/about</loc>
-    <lastmod>2026-02-19</lastmod>
+    <lastmod>2026-03-28</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://future-screen.vercel.app/contacts</loc>
-    <lastmod>2026-02-19</lastmod>
+    <lastmod>2026-03-28</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://future-screen.vercel.app/calculator</loc>
-    <lastmod>2026-02-19</lastmod>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://future-screen.vercel.app/consult</loc>
-    <lastmod>2026-02-19</lastmod>
+    <lastmod>2026-03-28</lastmod>
     <priority>0.6</priority>
   </url>
 </urlset>
