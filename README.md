@@ -62,7 +62,7 @@ npm run build
 - **Telegram Bot API** — уведомления
 
 ### Тесты
-- **Vitest** — 26 тестов для калькулятора LED
+- **Vitest** — 26 тестов для утилит (screenMath)
 
 ---
 
@@ -78,7 +78,6 @@ future-screen/
 │   └── favicon.svg
 ├── src/
 │   ├── components/        # React компоненты
-│   │   ├── calculator/    # Калькулятор LED
 │   │   ├── Layout.tsx     # Обёрка страниц
 │   │   ├── Header.tsx     # Шапка
 │   │   └── ...
@@ -91,7 +90,6 @@ future-screen/
 │   ├── pages/             # Страницы
 │   │   ├── HomePage.tsx
 │   │   ├── LedPage.tsx
-│   │   ├── CalculatorPage.tsx
 │   │   └── admin/         # Админ-панель
 │   ├── themes/            # Темы оформления
 │   ├── utils/             # Утилиты
@@ -132,20 +130,15 @@ cp .env.example .env
 
 ---
 
-## 📊 Калькулятор LED
+## 📊 Калькулятор LED (не используется)
 
-7-шаговый калькулятор для подбора LED-экранов:
+> ⚠️ **Функционал калькулятора удалён из проекта по решению команды**
 
-1. Тип мероприятия
-2. Локация (indoor/outdoor)
-3. Количество зрителей
-4. Дистанция просмотра
-5. Назначение экрана
-6. Ограничения площадки
-7. Результат с расчётами
+~~7-шаговый калькулятор для подбора LED-экранов~~ — **не используется**
 
-**Математика:** `src/utils/screenMath.ts`  
-**Тесты:** `src/utils/screenMath.test.ts` (26 тестов)
+Математика и тесты оставлены в кодовой базе для справки:
+- `src/utils/screenMath.ts`
+- `src/utils/screenMath.test.ts` (26 тестов)
 
 ---
 
@@ -173,7 +166,6 @@ cp .env.example .env
 | `/prices` | Цены/пакеты |
 | `/about` | О компании |
 | `/contacts` | Контакты |
-| `/calculator` | Калькулятор LED |
 | `/admin/content` | Админ-панель (требует авторизации) |
 
 ---
@@ -229,7 +221,6 @@ vercel --prod
 
 ### v0.0.1 (2026-02-19)
 - Initial release
-- LED calculator
 - Admin panel
 - Forms with Telegram/Email
 - Multi-theme support
