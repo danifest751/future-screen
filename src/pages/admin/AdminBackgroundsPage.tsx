@@ -91,8 +91,8 @@ const AdminBackgroundsPage = () => {
   }
 
   const currentSettings = selectedBg !== 'theme' ? settingsMap[selectedBg] : null;
-  const controls = selectedBg !== 'theme' 
-    ? (import('../../lib/backgrounds').then(m => m.backgroundSettingsControls[selectedBg])) 
+  const controls = selectedBg !== 'theme'
+    ? backgroundSettingsControls[selectedBg]
     : [];
 
   return (
@@ -157,7 +157,7 @@ const AdminBackgroundsPage = () => {
               </label>
 
               {/* Динамические контролы */}
-              {controls && Promise.resolve(controls).then(ctrls => ctrls.map((control) => {
+              {controls && controls.map((control) => {
                 if (control.control === 'color') {
                   const value = String(currentSettings[control.key as keyof AnyBackgroundSettings] ?? '#FFFFFF');
                   return (
@@ -196,7 +196,7 @@ const AdminBackgroundsPage = () => {
                     />
                   </label>
                 );
-              }))}
+              })}
             </div>
           </div>
         )}
