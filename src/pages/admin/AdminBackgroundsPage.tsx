@@ -3,6 +3,7 @@ import AdminLayout from '../../components/admin/AdminLayout';
 import { useSiteSettingsContext } from '../../context/SiteSettingsContext';
 import {
   backgroundOptions,
+  backgroundSettingsControls,
   defaultBackgroundSettingsById,
   defaultStarBorderSettings,
   type BackgroundId,
@@ -39,41 +40,44 @@ const AdminBackgroundsPage = () => {
     }
   }, [settings, loading]);
 
-  const save = useCallback(async (action: () => Promise<void>) => {
+  const withSaving = async (action: () => Promise<unknown>) => {
     setSaving(true);
-    await action();
-    setSaving(false);
-  }, []);
+    try {
+      await action();
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleBgChange = async (bg: BackgroundId) => {
     setSelectedBg(bg);
     if (bg !== 'theme') {
-      await save(() => updateBackground(bg));
+      await withSaving(async () => { await updateBackground(bg); });
     }
   };
 
   const updateSetting = async (bgId: CustomBackgroundId, key: string, value: unknown) => {
     const newMap = { ...settingsMap, [bgId]: { ...settingsMap[bgId], [key]: value } };
     setSettingsMap(newMap);
-    await save(() => updateBackgroundSettings(newMap));
+    await withSaving(async () => { await updateBackgroundSettings(newMap); });
   };
 
   const resetBg = async (bgId: CustomBackgroundId) => {
     const newMap = { ...settingsMap, [bgId]: { ...defaultBackgroundSettingsById[bgId] } };
     setSettingsMap(newMap);
-    await save(() => updateBackgroundSettings(newMap));
+    await withSaving(async () => { await updateBackgroundSettings(newMap); });
   };
 
   const toggleStarBorder = async () => {
     const newSettings = { ...starBorder, enabled: !starBorder.enabled };
     setStarBorder(newSettings);
-    await save(() => updateStarBorder(newSettings));
+    await withSaving(async () => { await updateStarBorder(newSettings); });
   };
 
   const updateStarBorderSetting = async (key: keyof StarBorderSettings, value: unknown) => {
     const newSettings = { ...starBorder, [key]: value };
     setStarBorder(newSettings);
-    await save(() => updateStarBorder(newSettings));
+    await withSaving(async () => { await updateStarBorder(newSettings); });
   };
 
   if (loading) {
