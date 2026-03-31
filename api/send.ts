@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import nodemailer from 'nodemailer';
+import { z } from 'zod';
 import 'dotenv/config';
 import { processEmailSubmission } from '../server/lib/emailCore.js';
 
@@ -58,6 +59,19 @@ const transporter: any = nodemailer.createTransport({
 });
 
 // Схема валидации
+const emailPayloadSchema = z.object({
+  source: z.string().max(100).default('Сайт').optional(),
+  name: z.string().min(1, 'Имя обязательно').max(100),
+  phone: z.string().min(5, 'Телефон слишком короткий').max(20),
+  email: z.string().email('Некорректный email').max(100).optional().nullable(),
+  telegram: z.string().max(100).optional().nullable(),
+  city: z.string().max(100).optional().nullable(),
+  date: z.string().max(50).optional().nullable(),
+  format: z.string().max(100).optional().nullable(),
+  comment: z.string().max(1000).optional().nullable(),
+  extra: z.record(z.string()).optional().nullable(),
+});
+
 interface EmailPayload {
   source: string;
   name: string;
@@ -393,6 +407,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const ip = getClientIp(req);
   if (isRateLimited(ip)) {
     return res.status(429).json({ ok: false, error: 'Too many requests' });
+  }
+
+  // Zod валидация входных данных
+  const validation = emailPayloadSchema.safeParse(req.body);
+  if (!validation.success) {
+    return res.status(400).json({
+      ok: false,
+      error: 'Validation failed',
+      details: validation.error.errors.map(e => `${e.path.join('.')}: ${e.message}`),
+    });
   }
 
   const result = await processEmailSubmission({

@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import { contacts as baseContacts } from '../data/contacts';
 import { useAdminData } from '../context/AdminDataContext';
 
 export const useContacts = () => {
@@ -10,7 +9,7 @@ export const useContacts = () => {
   }, [ensureContacts]);
 
   return {
-    contacts: contacts.items || baseContacts,
+    contacts: contacts.items,
     loading: contacts.loading,
     error: contacts.error,
     update: updateContacts,

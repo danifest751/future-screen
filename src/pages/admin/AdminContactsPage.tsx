@@ -33,7 +33,7 @@ const splitLines = (value: string) =>
     .filter(Boolean);
 
 const AdminContactsPage = () => {
-  const { contacts, update, resetToDefault } = useContacts();
+  const { contacts, loading, update, resetToDefault } = useContacts();
   const [resetModalOpen, setResetModalOpen] = useState(false);
 
   const {
@@ -57,7 +57,7 @@ const AdminContactsPage = () => {
   useUnsavedChangesGuard(isDirty);
 
   useEffect(() => {
-    if (!isHydrated || hasContactsDraft) return;
+    if (!isHydrated || hasContactsDraft || !contacts) return;
 
     reset({
       phonesText: contacts.phones.join('\n'),
@@ -86,6 +86,27 @@ const AdminContactsPage = () => {
     toast.success('Контакты сброшены к дефолту');
     clearContactsDraft();
   };
+
+  if (loading) {
+    return (
+      <AdminLayout title="Контакты" subtitle="Загрузка...">
+        <div className="flex h-64 items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  if (!contacts) {
+    return (
+      <AdminLayout title="Контакты" subtitle="Не удалось загрузить">
+        <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-6 text-center text-red-300">
+          <p className="text-lg font-medium">Контакты не загружены</p>
+          <p className="mt-2 text-sm">Попробуйте обновить страницу или обратитесь к администратору</p>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout title="Контакты" subtitle="Телефоны, email, адрес и рабочие часы">

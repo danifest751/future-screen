@@ -31,7 +31,7 @@ const ClockIcon = () => (
 );
 
 const ContactsPage = () => {
-  const { contacts, loading } = useContacts();
+  const { contacts, loading, error } = useContacts();
 
   return (
   <div className="space-y-2">
@@ -44,6 +44,16 @@ const ContactsPage = () => {
         {loading ? (
           <div className="col-span-2 flex h-64 items-center justify-center text-slate-400">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />
+          </div>
+        ) : error ? (
+          <div className="col-span-2 rounded-xl border border-red-500/20 bg-red-500/10 p-6 text-center text-red-300">
+            <p className="text-lg font-medium">Не удалось загрузить контакты</p>
+            <p className="mt-1 text-sm text-red-400/80">{error}</p>
+          </div>
+        ) : !contacts ? (
+          <div className="col-span-2 rounded-xl border border-slate-700 bg-slate-800 p-6 text-center text-slate-400">
+            <p className="text-lg font-medium">Контакты не найдены</p>
+            <p className="mt-1 text-sm">Обратитесь к администратору сайта</p>
           </div>
         ) : (
         <div className="card space-y-6">

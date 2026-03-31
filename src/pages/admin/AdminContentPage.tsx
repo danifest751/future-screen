@@ -8,7 +8,6 @@ import type { Package as PackageData } from '../../data/packages';
 import type { Category } from '../../data/categories';
 import type { CaseItem } from '../../data/cases';
 import toast from 'react-hot-toast';
-import { contacts as baseContacts } from '../../data/contacts';
 import { Button, ConfirmModal, EmptyState, Field, Input, Textarea } from '../../components/admin/ui';
 import { Package, Tag, FolderOpen } from 'lucide-react';
 
@@ -107,16 +106,29 @@ const AdminContentPage = ({
   };
 
   // Contacts
-  const { contacts, update: updateContacts, resetToDefault: resetContacts } = useContacts();
-  const [contactsDraft, setContactsDraft] = useState(contacts);
+  const { contacts, loading: contactsLoading, update: updateContacts, resetToDefault: resetContacts } = useContacts();
+  const [contactsDraft, setContactsDraft] = useState<{ phones: string[]; emails: string[]; address: string; workingHours: string }>({
+    phones: [],
+    emails: [],
+    address: '',
+    workingHours: '',
+  });
 
   useEffect(() => {
-    setContactsDraft(contacts);
+    if (contacts) {
+      setContactsDraft({
+        phones: contacts.phones,
+        emails: contacts.emails,
+        address: contacts.address,
+        workingHours: contacts.workingHours,
+      });
+    }
   }, [contacts]);
 
   const submitContacts = async (e: FormEvent) => {
     e.preventDefault();
-    const ok = await updateContacts(contactsDraft);
+    if (!contactsDraft) return;
+    const ok = await updateContacts(contactsDraft as Parameters<typeof updateContacts>[0]);
     if (ok) {
       toast.success('Контакты успешно сохранены');
     } else {
@@ -200,7 +212,7 @@ const AdminContentPage = ({
     }
     if (resetTarget === 'contacts') {
       await resetContacts();
-      setContactsDraft(baseContacts);
+      setContactsDraft({ phones: [], emails: [], address: '', workingHours: '' });
       toast.success('Контакты сброшены к дефолту');
       return;
     }
@@ -515,66 +527,76 @@ const AdminContentPage = ({
         <div className="rounded-xl border border-white/10 bg-slate-800 p-6">
           <h2 className="mb-4 text-xl font-semibold text-white">Контакты</h2>
           <p className="mb-6 text-sm text-slate-400">Телефоны, email, адрес, время</p>
-          <div className="grid gap-6 md:grid-cols-2">
-            <form className="card space-y-3" onSubmit={submitContacts}>
-            <div className="flex items-center justify-between">
-              <div className="text-lg font-semibold text-white">Редактирование контактов</div>
-              <Button type="button" variant="ghost" size="sm" onClick={() => setResetTarget('contacts')}>
-                Сброс к дефолту
-              </Button>
+          {contactsLoading ? (
+            <div className="flex h-32 items-center justify-center">
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />
             </div>
-            <Field label="Телефоны" hint="Каждый с новой строки">
-              <Textarea
-                value={contactsDraft.phones.join('\n')}
-                onChange={(e) => setContactsDraft((f) => ({ ...f, phones: e.target.value.split(/\n/).map((s) => s.trim()).filter(Boolean) }))}
-                rows={3}
-              />
-            </Field>
-            <Field label="Email" hint="Каждый с новой строки">
-              <Textarea
-                value={contactsDraft.emails.join('\n')}
-                onChange={(e) => setContactsDraft((f) => ({ ...f, emails: e.target.value.split(/\n/).map((s) => s.trim()).filter(Boolean) }))}
-                rows={2}
-              />
-            </Field>
-            <Field label="Адрес">
-              <Input
-                value={contactsDraft.address}
-                onChange={(e) => setContactsDraft((f) => ({ ...f, address: e.target.value }))}
-              />
-            </Field>
-            <Field label="Время работы">
-              <Input
-                value={contactsDraft.workingHours}
-                onChange={(e) => setContactsDraft((f) => ({ ...f, workingHours: e.target.value }))}
-              />
-            </Field>
-            <Button type="submit" className="w-full">
-              Сохранить контакты
-            </Button>
-          </form>
+          ) : !contacts ? (
+            <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-red-300">
+              Контакты не загружены. Попробуйте обновить страницу.
+            </div>
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2">
+              <form className="card space-y-3" onSubmit={submitContacts}>
+                <div className="flex items-center justify-between">
+                  <div className="text-lg font-semibold text-white">Редактирование контактов</div>
+                  <Button type="button" variant="ghost" size="sm" onClick={() => setResetTarget('contacts')}>
+                    Сброс к дефолту
+                  </Button>
+                </div>
+                <Field label="Телефоны" hint="Каждый с новой строки">
+                  <Textarea
+                    value={contactsDraft.phones.join('\n')}
+                    onChange={(e) => setContactsDraft((f) => ({ ...f, phones: e.target.value.split(/\n/).map((s) => s.trim()).filter(Boolean) }))}
+                    rows={3}
+                  />
+                </Field>
+                <Field label="Email" hint="Каждый с новой строки">
+                  <Textarea
+                    value={contactsDraft.emails.join('\n')}
+                    onChange={(e) => setContactsDraft((f) => ({ ...f, emails: e.target.value.split(/\n/).map((s) => s.trim()).filter(Boolean) }))}
+                    rows={2}
+                  />
+                </Field>
+                <Field label="Адрес">
+                  <Input
+                    value={contactsDraft.address}
+                    onChange={(e) => setContactsDraft((f) => ({ ...f, address: e.target.value }))}
+                  />
+                </Field>
+                <Field label="Время работы">
+                  <Input
+                    value={contactsDraft.workingHours}
+                    onChange={(e) => setContactsDraft((f) => ({ ...f, workingHours: e.target.value }))}
+                  />
+                </Field>
+                <Button type="submit" className="w-full">
+                  Сохранить контакты
+                </Button>
+              </form>
 
-          <div className="card space-y-3 text-sm text-slate-200">
-            <div className="text-lg font-semibold text-white">Текущее значение</div>
-            <div>
-              <div className="text-xs text-slate-400">Телефоны</div>
-              <div>{contacts.phones.join(', ')}</div>
+              <div className="card space-y-3 text-sm text-slate-200">
+                <div className="text-lg font-semibold text-white">Текущее значение</div>
+                <div>
+                  <div className="text-xs text-slate-400">Телефоны</div>
+                  <div>{contacts.phones.join(', ')}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-slate-400">Email</div>
+                  <div>{contacts.emails.join(', ')}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-slate-400">Адрес</div>
+                  <div>{contacts.address}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-slate-400">Время</div>
+                  <div>{contacts.workingHours}</div>
+                </div>
+              </div>
             </div>
-            <div>
-              <div className="text-xs text-slate-400">Email</div>
-              <div>{contacts.emails.join(', ')}</div>
-            </div>
-            <div>
-              <div className="text-xs text-slate-400">Адрес</div>
-              <div>{contacts.address}</div>
-            </div>
-            <div>
-              <div className="text-xs text-slate-400">Время</div>
-              <div>{contacts.workingHours}</div>
-            </div>
-          </div>
+          )}
         </div>
-      </div>
       )}
 
       {activeTab === 'cases' && (
