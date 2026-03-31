@@ -1,11 +1,26 @@
 import { useState } from 'react';
 import AdminLayout from '../../components/admin/AdminLayout';
-import { useRentalCategories } from '../../services/rentalCategories';
+import { useRentalCategories, toggleRentalCategoryBlurTitle } from '../../services/rentalCategories';
 import { Link } from 'react-router-dom';
-import { Plus, Edit2, Eye, EyeOff } from 'lucide-react';
+import { Plus, Edit2, Eye, EyeOff, Sparkles } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const AdminRentalCategoriesPage = () => {
   const { items, loading, error, reload } = useRentalCategories();
+  const [togglingId, setTogglingId] = useState<number | null>(null);
+
+  const handleToggleBlurTitle = async (id: number, currentValue: boolean) => {
+    setTogglingId(id);
+    try {
+      await toggleRentalCategoryBlurTitle(id, !currentValue);
+      await reload();
+      toast.success('Настройка сохранена');
+    } catch {
+      toast.error('Ошибка сохранения');
+    } finally {
+      setTogglingId(null);
+    }
+  };
 
   return (
     <AdminLayout title="Категории аренды" subtitle="Управление разделами оборудования в аренду">
@@ -71,6 +86,18 @@ const AdminRentalCategoriesPage = () => {
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => handleToggleBlurTitle(cat.id, !!(cat.hero as Record<string, unknown>)?.showBlurTitle)}
+                          disabled={togglingId === cat.id}
+                          className={`rounded p-1 transition ${
+                            (cat.hero as Record<string, unknown>)?.showBlurTitle
+                              ? 'text-brand-400'
+                              : 'text-slate-600 hover:text-slate-400'
+                          }`}
+                          title={(cat.hero as Record<string, unknown>)?.showBlurTitle ? 'Blur-эффект включен' : 'Blur-эффект выключен'}
+                        >
+                          <Sparkles size={16} className={togglingId === cat.id ? 'animate-spin' : ''} />
+                        </button>
                         <Link
                           to={`/rent/${cat.slug}`}
                           target="_blank"

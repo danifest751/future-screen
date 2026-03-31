@@ -97,6 +97,14 @@ export const deleteRentalCategory = async (id: number): Promise<void> => {
   if (error) throw new Error(error.message);
 };
 
+export const toggleRentalCategoryBlurTitle = async (id: number, showBlurTitle: boolean): Promise<void> => {
+  const { error } = await supabase
+    .from('rental_categories')
+    .update({ hero: { showBlurTitle } })
+    .eq('id', id);
+  if (error) throw new Error(error.message);
+};
+
 export const useRentalCategories = () => {
   const [items, setItems] = useState<RentalCategory[]>([]);
   const [loading, setLoading] = useState(true);
