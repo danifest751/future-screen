@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import LoginModal from './LoginModal';
 import { useAuth } from '../context/AuthContext';
 import { PrefetchLink } from './PrefetchLink';
+import { RentalDropdown } from './RentalDropdown';
 
 const navLinks = [
   { to: '/#about', label: 'О нас', hash: true },
@@ -14,6 +15,9 @@ const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [rentalDropdownOpen, setRentalDropdownOpen] = useState(false);
+  const rentalLinkRef = useRef<HTMLDivElement>(null);
+  const rentalTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -42,6 +46,23 @@ const Header = () => {
   }, [location.pathname]);
 
   const closeMenu = () => setMenuOpen(false);
+
+  const handleRentalMouseEnter = () => {
+    if (rentalTimeoutRef.current) {
+      clearTimeout(rentalTimeoutRef.current);
+    }
+    setRentalDropdownOpen(true);
+  };
+
+  const handleRentalMouseLeave = () => {
+    rentalTimeoutRef.current = setTimeout(() => {
+      setRentalDropdownOpen(false);
+    }, 150);
+  };
+
+  const closeRentalDropdown = () => {
+    setRentalDropdownOpen(false);
+  };
 
   const handleHashNav = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     const hash = href.split('#')[1];
@@ -99,12 +120,23 @@ const Header = () => {
               {item.label}
             </a>
           ))}
-          <PrefetchLink
-            to="/rent"
-            className="rounded-full px-4 py-2 text-sm font-medium text-gray-300 transition-all duration-200 hover:bg-white/5 hover:text-white"
+          <div 
+            ref={rentalLinkRef}
+            className="relative"
+            onMouseEnter={handleRentalMouseEnter}
+            onMouseLeave={handleRentalMouseLeave}
           >
-            Аренда
-          </PrefetchLink>
+            <PrefetchLink
+              to="/rent"
+              className="rounded-full px-4 py-2 text-sm font-medium text-gray-300 transition-all duration-200 hover:bg-white/5 hover:text-white"
+            >
+              Аренда
+            </PrefetchLink>
+            <RentalDropdown 
+              isOpen={rentalDropdownOpen} 
+              onClose={closeRentalDropdown} 
+            />
+          </div>
           <PrefetchLink
             to="/cases"
             className="rounded-full px-4 py-2 text-sm font-medium text-gray-300 transition-all duration-200 hover:bg-white/5 hover:text-white"

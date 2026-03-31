@@ -33,6 +33,7 @@ const equipment = [
     desc: 'Интерьерные и уличные светодиодные экраны различного размера и разрешения от 2.6мм шаг пикселя',
     bullets: ['Экраны от 3×2м до 10×6м', 'Модульная система сборки', 'Фермовые конструкции до 7м'],
     gradient: 'linear-gradient(135deg, #667eea, #764ba2)',
+    link: '/rent/video',
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
         <rect width="20" height="15" x="2" y="3" rx="2"/><path d="m8 21 4-4 4 4"/><path d="M9 17h6"/>
@@ -44,6 +45,7 @@ const equipment = [
     desc: 'LED и OLED панели диагональю от 32" до 100" для презентаций и выставок',
     bullets: ['Диагонали 32"—100"', '4K Ultra HD разрешение', 'Более 300 панелей в парке'],
     gradient: 'linear-gradient(135deg, #4facfe, #00f2fe)',
+    link: '/rent/video',
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
         <rect width="20" height="15" x="2" y="3" rx="2"/><path d="m8 21 4-4 4 4"/><circle cx="12" cy="10" r="3"/>
@@ -55,6 +57,7 @@ const equipment = [
     desc: 'Профессиональные звуковые комплекты, микрофоны, микшеры для концертов и конференций',
     bullets: ['Активные акустические системы', 'Радиомикрофоны Shure/Sennheiser', 'Микшерные пульты'],
     gradient: 'linear-gradient(135deg, #f093fb, #f5576c)',
+    link: '/rent/sound',
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
         <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
@@ -66,6 +69,7 @@ const equipment = [
     desc: 'Прожекторы, PAR-ы, LED-панели, динамические головы для сценического освещения',
     bullets: ['LED PAR и прожекторы', 'Динамические световые приборы', 'Контроллеры DMX'],
     gradient: 'linear-gradient(135deg, #ffd89b, #19547b)',
+    link: '/rent/light',
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
         <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/>
@@ -77,6 +81,7 @@ const equipment = [
     desc: 'Модульные сцены, фермы, подиумы и трасты для создания площадок любой сложности',
     bullets: ['Модульные сценические площадки', 'Алюминиевые фермы', 'Подвес для света и экранов'],
     gradient: 'linear-gradient(135deg, #11998e, #38ef7d)',
+    link: '/rent/stage',
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
         <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
@@ -89,6 +94,7 @@ const extraEquipment = [
   {
     title: 'Компьютеры и ноутбуки',
     desc: 'Core i7/i5, игровые и офисные конфигурации',
+    link: '/rent/computers',
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
         <path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"/>
@@ -98,6 +104,7 @@ const extraEquipment = [
   {
     title: 'Тачскрины',
     desc: 'Интерактивные столы 42"–55" с 10-точечным касанием',
+    link: '/rent/touchscreens',
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
         <path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2"/><path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2"/><path d="M10 10.5a2 2 0 0 0-2-2a2 2 0 0 0-2 2V19a4 4 0 0 0 4 4h4a4 4 0 0 0 4-4v-5a2 2 0 0 0-2-2a2 2 0 0 0-2 2"/>
@@ -107,6 +114,7 @@ const extraEquipment = [
   {
     title: 'Технический персонал',
     desc: 'Видеооператоры, звукорежиссёры, техники',
+    link: '/rent/staff',
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
@@ -530,8 +538,9 @@ const HomePage = () => {
           {/* Main equipment cards */}
           <RevealSection className="flex flex-wrap justify-center gap-5">
             {equipment.map((item) => (
-              <div
+              <Link
                 key={item.title}
+                to={item.link}
                 className="card group h-full w-full cursor-pointer sm:w-[calc(50%-10px)] lg:w-[calc(33.333%-14px)]"
               >
                 <div
@@ -540,7 +549,7 @@ const HomePage = () => {
                 >
                   {item.icon}
                 </div>
-                <h3 className="font-display mb-2 text-lg font-semibold text-white">{item.title}</h3>
+                <h3 className="font-display mb-2 text-lg font-semibold text-white group-hover:text-brand-300 transition-colors">{item.title}</h3>
                 <p className="mb-4 text-sm leading-relaxed text-gray-400">{item.desc}</p>
                 <ul className="space-y-2">
                   {item.bullets.map((b) => (
@@ -550,22 +559,22 @@ const HomePage = () => {
                     </li>
                   ))}
                 </ul>
-              </div>
+              </Link>
             ))}
           </RevealSection>
 
           {/* Extra 3 */}
           <RevealSection className="mt-5 grid gap-5 sm:grid-cols-3">
             {extraEquipment.map((item) => (
-              <div key={item.title} className="card flex items-start gap-4">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 text-gray-400">
+              <Link key={item.title} to={item.link} className="card flex items-start gap-4 group">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 text-gray-400 group-hover:border-brand-500/40 group-hover:text-brand-300 transition-colors">
                   {item.icon}
                 </div>
                 <div>
-                  <div className="font-medium text-white">{item.title}</div>
+                  <div className="font-medium text-white group-hover:text-brand-300 transition-colors">{item.title}</div>
                   <div className="mt-1 text-sm text-gray-400">{item.desc}</div>
                 </div>
-              </div>
+              </Link>
             ))}
           </RevealSection>
         </div>
