@@ -19,6 +19,7 @@ const schema = z.object({
   seoDescription: z.string().default(''),
   heroTitle: z.string().default(''),
   heroSubtitle: z.string().default(''),
+  heroShowBlurTitle: z.boolean().default(false),
   heroCtaPrimary: z.string().default(''),
   heroCtaSecondary: z.string().default(''),
   heroHighlightsText: z.string().default(''),
@@ -52,6 +53,7 @@ const defaultValues: FormValues = {
   seoDescription: '',
   heroTitle: '',
   heroSubtitle: '',
+  heroShowBlurTitle: false,
   heroCtaPrimary: '',
   heroCtaSecondary: '',
   heroHighlightsText: '',
@@ -179,6 +181,7 @@ const AdminRentalCategoryEditPage = () => {
           seoDescription: (cat.seo?.description as string) || '',
           heroTitle: (cat.hero?.title as string) || '',
           heroSubtitle: (cat.hero?.subtitle as string) || '',
+          heroShowBlurTitle: (cat.hero?.showBlurTitle as boolean) || false,
           heroCtaPrimary: (cat.hero?.ctaPrimary as string) || '',
           heroCtaSecondary: (cat.hero?.ctaSecondary as string) || '',
           heroHighlightsText: highlights.map((h: { text: string }) => h.text).join('\n'),
@@ -252,6 +255,7 @@ const AdminRentalCategoryEditPage = () => {
       hero: {
         title: values.heroTitle,
         subtitle: values.heroSubtitle,
+        showBlurTitle: values.heroShowBlurTitle,
         ctaPrimary: values.heroCtaPrimary,
         ctaSecondary: values.heroCtaSecondary,
         highlights,
@@ -370,6 +374,16 @@ const AdminRentalCategoryEditPage = () => {
               <Field label="Заголовок H1" error={errors.heroTitle?.message}>
                 <input className={inputClass} {...register('heroTitle')} placeholder="Аренда светового оборудования" />
               </Field>
+              <div className="flex items-center gap-4">
+                <label className="flex items-center gap-2 text-sm text-slate-300">
+                  <input
+                    type="checkbox"
+                    {...register('heroShowBlurTitle')}
+                    className="rounded border-white/20 bg-white/5 text-brand-500"
+                  />
+                  Эффект blur-появления заголовка
+                </label>
+              </div>
               <Field label="Подзаголовок" error={errors.heroSubtitle?.message}>
                 <textarea className={textareaClass} rows={2} {...register('heroSubtitle')} />
               </Field>

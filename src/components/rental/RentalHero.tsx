@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { StarBorder } from '../effects/StarBorder';
+import { BlurText } from '../effects/BlurText';
 
 interface RentalHeroProps {
   title: string;
@@ -9,6 +10,7 @@ interface RentalHeroProps {
   secondaryCtaText?: string;
   secondaryCtaLink?: string;
   highlights?: string[];
+  showBlurTitle?: boolean;
 }
 
 export const RentalHero = ({
@@ -19,6 +21,7 @@ export const RentalHero = ({
   secondaryCtaText,
   secondaryCtaLink,
   highlights,
+  showBlurTitle = false,
 }: RentalHeroProps) => {
   const hasHighlights = Array.isArray(highlights) && highlights.length > 0;
 
@@ -31,7 +34,18 @@ export const RentalHero = ({
         <div className="max-w-4xl">
           {/* Title */}
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-6 leading-tight">
-            {title}
+            {showBlurTitle ? (
+              <BlurText 
+                text={title} 
+                className="inline-block" 
+                animateBy="words" 
+                direction="top" 
+                delay={150} 
+                stepDuration={0.5}
+              />
+            ) : (
+              title
+            )}
           </h1>
 
           {/* Subtitle */}

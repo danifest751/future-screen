@@ -69,6 +69,7 @@ const RentalCategoryPage = () => {
         secondaryCtaText={hero.secondaryCta as string}
         secondaryCtaLink={hero.secondaryCtaLink as string}
         highlights={Array.isArray(hero.highlights) ? hero.highlights : []}
+        showBlurTitle={(hero.showBlurTitle as boolean) || false}
       />
 
       {about && (about.text || (Array.isArray(about.items) && about.items.length > 0)) && (
