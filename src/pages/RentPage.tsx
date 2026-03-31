@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import Section from '../components/Section';
@@ -6,6 +7,11 @@ import { RequestForm } from '../components/RequestForm';
 
 const RentPage = () => {
   const { items, loading, error } = useRentalCategories();
+
+  // Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   return (
     <div className="space-y-2">

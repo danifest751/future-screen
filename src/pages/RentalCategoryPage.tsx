@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { useRentalCategory } from '../services/rentalCategories';
@@ -13,6 +14,11 @@ import { RentalCta } from '../components/rental/RentalCta';
 const RentalCategoryPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const { item: category, loading, error } = useRentalCategory(slug ?? '');
+
+  // Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   if (loading) {
     return (
