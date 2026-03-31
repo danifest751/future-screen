@@ -1,15 +1,70 @@
-node_modules
+```
+# Dependencies
+node_modules/
+
+# Build artifacts
 dist/
-.vite
-.idea
-.vscode
-.vercel
-*.log
+build/
+*.js
+*.ts
+*.tsx
+
+# Environment
 .env
+.env.local
 .env.*
-*.tsbuildinfo
+
+# Editors
+.vscode/
+.idea/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Logs
+*.log
+
+# Temp files
+*.tmp
+*.temp
+*.swp
+
+# OS
 .DS_Store
-AUDIT*.md
-audit*.md
-AUDIT_CODE_REVIEW.md
-PROJECT_AUDIT*.md
+Thumbs.db
+
+# Coverage
+coverage/
+htmlcov/
+.coverage
+
+# Testing
+.pytest_cache/
+.mypy_cache/
+
+# Distribution
+*.tar.gz
+*.zip
+*.tar
+*.gz
+
+# Compiled
+*.o
+*.obj
+*.so
+*.a
+*.dll
+*.exe
+*.out
+
+# Gradle
+.gradle/
+target/
+
+# Virtual environments
+.venv/
+venv/
+```

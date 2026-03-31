@@ -40,17 +40,6 @@ const equipment = [
     ),
   },
   {
-    title: 'Видеостены',
-    desc: 'LCD панели для создания бесшовных видеостен конфигураций 2×2, 3×3, 4×4',
-    bullets: ['Панели 55" 4K разрешение', 'Шов 3.5мм между панелями', 'До 40 панелей в наличии'],
-    gradient: 'linear-gradient(135deg, #764ba2, #f093fb)',
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
-        <rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/>
-      </svg>
-    ),
-  },
-  {
     title: 'Плазменные панели',
     desc: 'LED и OLED панели диагональю от 32" до 100" для презентаций и выставок',
     bullets: ['Диагонали 32"—100"', '4K Ultra HD разрешение', 'Более 300 панелей в парке'],
@@ -170,7 +159,7 @@ const eventTypes = [
   },
   {
     title: 'Выставки',
-    desc: 'Видеостены для стендов, интерактивные панели',
+    desc: 'Светодиодные экраны для стендов, интерактивные панели',
     gradient: 'linear-gradient(135deg, rgba(17,153,142,0.8), rgba(56,239,125,0.8))',
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8">
