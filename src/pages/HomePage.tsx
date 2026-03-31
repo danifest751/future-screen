@@ -532,7 +532,7 @@ const HomePage = () => {
             {equipment.map((item) => (
               <div
                 key={item.title}
-                className="card group h-full w-full cursor-pointer sm:w-[calc(50%-10px)] lg:w-[calc(33.333%-10px)]"
+                className="card group h-full w-full cursor-pointer sm:w-[calc(50%-10px)] lg:w-[calc(33.333%-14px)]"
               >
                 <div
                   className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl text-white"
