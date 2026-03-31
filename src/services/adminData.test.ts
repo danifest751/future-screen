@@ -1,83 +1,212 @@
-// Тесты для функций маппинга adminData
-// Используем глобальные describe/it из vitest.config.ts
+import { describe, it, expect } from 'vitest';
+import {
+  mapPackageFromDB,
+  mapPackageToDB,
+  mapCategoryFromDB,
+  mapCategoryToDB,
+  mapContactsFromDB,
+  mapContactsToDB,
+  sanitizeServices,
+} from './adminData';
 
-import { mapCategoryFromDB, mapCategoryToDB, mapContactsToDB, mapPackageFromDB, mapPackageToDB, sanitizeServices } from './adminData';
-
-describe('adminData service mappings', () => {
-  it('maps packages to and from database shape', () => {
-    const pkgToDb = {
-      id: '101',
+describe('mapPackageFromDB', () => {
+  it('converts snake_case to camelCase', () => {
+    const row = {
+      id: 1,
       name: 'Лайт',
-      forFormats: ['Выставка', 'Презентация'],
-      includes: ['Экран', 'Монтаж'],
+      for_formats: ['выставка', 'презентация'],
+      includes: ['LED', 'Звук'],
       options: ['Доставка'],
-      priceHint: 'от 120 000 ₽',
+      price_hint: 'от 50 000',
     };
 
-    const pkgFromDb = {
-      id: 101,
-      name: 'Лайт',
-      for_formats: ['Выставка', 'Презентация'],
-      includes: ['Экран', 'Монтаж'],
-      options: ['Доставка'],
-      price_hint: 'от 120 000 ₽',
-    };
+    const result = mapPackageFromDB(row as any);
 
-    expect(mapPackageToDB(pkgToDb)).toEqual(pkgFromDb);
-    expect(mapPackageFromDB(pkgFromDb)).toEqual({
-      id: 101,
+    expect(result).toEqual({
+      id: 1,
       name: 'Лайт',
-      forFormats: ['Выставка', 'Презентация'],
-      includes: ['Экран', 'Монтаж'],
+      forFormats: ['выставка', 'презентация'],
+      includes: ['LED', 'Звук'],
       options: ['Доставка'],
-      priceHint: 'от 120 000 ₽',
+      priceHint: 'от 50 000',
     });
   });
 
-  it('maps categories to and from database shape', () => {
-    const categoryToDb = {
-      id: '7',
-      title: 'Свет',
-      shortDescription: 'Световое оборудование',
-      bullets: ['Сцена', 'Монтаж'],
-      pagePath: '/rent/light',
+  it('handles null options', () => {
+    const row = {
+      id: 2,
+      name: 'Медиум',
+      for_formats: ['форум'],
+      includes: ['LED'],
+      options: null,
+      price_hint: 'от 100 000',
     };
 
-    const categoryFromDb = {
-      id: 7,
+    const result = mapPackageFromDB(row as any);
+    expect(result.options).toBeNull();
+  });
+});
+
+describe('mapPackageToDB', () => {
+  it('converts camelCase to snake_case', () => {
+    const pkg = {
+      id: 1,
+      name: 'Лайт',
+      forFormats: ['выставка'],
+      includes: ['LED'],
+      options: ['Доставка'],
+      priceHint: 'от 50 000',
+    };
+
+    const result = mapPackageToDB(pkg);
+
+    expect(result).toEqual({
+      id: 1,
+      name: 'Лайт',
+      for_formats: ['выставка'],
+      includes: ['LED'],
+      options: ['Доставка'],
+      price_hint: 'от 50 000',
+    });
+  });
+
+  it('handles string id conversion', () => {
+    const pkg = {
+      id: '123',
+      name: 'Test',
+      forFormats: [],
+      includes: [],
+      priceHint: '',
+    };
+
+    const result = mapPackageToDB(pkg);
+    expect(result.id).toBe(123);
+  });
+});
+
+describe('mapCategoryFromDB', () => {
+  it('converts snake_case to camelCase', () => {
+    const row = {
+      id: 1,
       title: 'Свет',
-      short_description: 'Световое оборудование',
-      bullets: ['Сцена', 'Монтаж'],
+      short_description: 'Описание',
+      bullets: ['пункт1', 'пункт2'],
       page_path: '/rent/light',
     };
 
-    expect(mapCategoryToDB(categoryToDb)).toEqual(categoryFromDb);
-    expect(mapCategoryFromDB(categoryFromDb)).toEqual({
-      id: 7,
+    const result = mapCategoryFromDB(row as any);
+
+    expect(result).toEqual({
+      id: 1,
       title: 'Свет',
-      shortDescription: 'Световое оборудование',
-      bullets: ['Сцена', 'Монтаж'],
+      shortDescription: 'Описание',
+      bullets: ['пункт1', 'пункт2'],
       pagePath: '/rent/light',
     });
   });
+});
 
-  it('sanitizes services to allowed case values', () => {
-    expect(sanitizeServices(['LED', ' support ', 'invalid', 'video'])).toEqual(['led', 'support', 'video']);
+describe('mapCategoryToDB', () => {
+  it('converts camelCase to snake_case', () => {
+    const cat = {
+      id: 1,
+      title: 'Свет',
+      shortDescription: 'Описание',
+      bullets: ['пункт1'],
+      pagePath: '/rent/light',
+    };
+
+    const result = mapCategoryToDB(cat);
+
+    expect(result).toEqual({
+      id: 1,
+      title: 'Свет',
+      short_description: 'Описание',
+      bullets: ['пункт1'],
+      page_path: '/rent/light',
+    });
+  });
+});
+
+describe('mapContactsFromDB', () => {
+  it('converts snake_case to camelCase', () => {
+    const row = {
+      id: 1,
+      phones: ['+79121234567'],
+      emails: ['test@example.com'],
+      address: 'Екатеринбург',
+      working_hours: '10:00-20:00',
+    };
+
+    const result = mapContactsFromDB(row as any);
+
+    expect(result).toEqual({
+      id: 1,
+      phones: ['+79121234567'],
+      emails: ['test@example.com'],
+      address: 'Екатеринбург',
+      workingHours: '10:00-20:00',
+    });
   });
 
-  it('maps contacts to database shape', () => {
-    expect(mapContactsToDB({
-      id: 3,
-      phones: ['+7 (900) 000-00-00'],
+  it('handles null values', () => {
+    const row = {
+      phones: null,
+      emails: null,
+      address: null,
+      working_hours: null,
+    };
+
+    const result = mapContactsFromDB(row as any);
+
+    expect(result.phones).toEqual([]);
+    expect(result.emails).toEqual([]);
+    expect(result.address).toBe('');
+    expect(result.workingHours).toBe('');
+  });
+});
+
+describe('mapContactsToDB', () => {
+  it('converts camelCase to snake_case', () => {
+    const contacts = {
+      id: 1,
+      phones: ['+79121234567'],
       emails: ['test@example.com'],
       address: 'Екатеринбург',
-      workingHours: '10:00–20:00',
-    })).toEqual({
-      id: 3,
-      phones: ['+7 (900) 000-00-00'],
+      workingHours: '10:00-20:00',
+    };
+
+    const result = mapContactsToDB(contacts as any);
+
+    expect(result).toEqual({
+      id: 1,
+      phones: ['+79121234567'],
       emails: ['test@example.com'],
       address: 'Екатеринбург',
-      working_hours: '10:00–20:00',
+      working_hours: '10:00-20:00',
     });
+  });
+});
+
+describe('sanitizeServices', () => {
+  it('filters and normalizes services', () => {
+    const input = [' LED ', 'SOUND', 'invalid', 'light', ''];
+    const result = sanitizeServices(input);
+
+    expect(result).toEqual(['led', 'sound', 'light']);
+  });
+
+  it('returns empty array for invalid services', () => {
+    const input = ['invalid', 'unknown', ''];
+    const result = sanitizeServices(input);
+
+    expect(result).toEqual([]);
+  });
+
+  it('accepts all valid services', () => {
+    const input = ['led', 'sound', 'light', 'video', 'stage', 'support'];
+    const result = sanitizeServices(input);
+
+    expect(result).toEqual(['led', 'sound', 'light', 'video', 'stage', 'support']);
   });
 });
