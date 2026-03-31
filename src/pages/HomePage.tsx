@@ -528,11 +528,11 @@ const HomePage = () => {
           </RevealSection>
 
           {/* Main equipment cards */}
-          <RevealSection className="mx-auto max-w-5xl grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
+          <RevealSection className="flex flex-wrap justify-center gap-5">
             {equipment.map((item) => (
               <div
                 key={item.title}
-                className="card group h-full cursor-pointer"
+                className="card group h-full w-full cursor-pointer sm:w-[calc(50%-10px)] lg:w-[calc(33.333%-10px)]"
               >
                 <div
                   className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl text-white"
