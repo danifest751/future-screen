@@ -176,19 +176,19 @@ src/pages/admin/AdminRentalCategoryEditPage.tsx — Редактирование
 
 ## Чек-лист проверки
 
-- [ ] SQL миграция выполнена
-- [ ] Типы Supabase обновлены
-- [ ] Хуки загружают данные
-- [ ] 8 компонентов блоков созданы
-- [ ] Шаблон страницы работает
-- [ ] 5 категорий наполнены контентом
-- [ ] Роут `/rent/:slug` работает
-- [ ] SEO meta-теги динамические
-- [ ] Админка редактирования работает
-- [ ] Интеграция с существующим `/rent`
-- [ ] Адаптивность (mobile, tablet, desktop)
-- [ ] Пустые блоки скрываются
-- [ ] `npm run build` проходит
+- [x] SQL миграция выполнена ([`001_create_rental_categories.sql`](../sql/001_create_rental_categories.sql))
+- [x] Типы Supabase обновлены ([`database.types.ts`](../src/lib/database.types.ts))
+- [x] Хуки загружают данные ([`rentalCategories.ts`](../src/services/rentalCategories.ts))
+- [x] 8 компонентов блоков созданы ([`src/components/rental/`](../src/components/rental/))
+- [x] Шаблон страницы работает ([`RentalCategoryPage.tsx`](../src/pages/RentalCategoryPage.tsx))
+- [x] 5 категорий наполнены контентом ([`002_seed_rental_categories.sql`](../sql/002_seed_rental_categories.sql))
+- [x] Роут `/rent/:slug` работает ([`App.tsx`](../src/App.tsx))
+- [x] SEO meta-теги динамические (в [`RentalCategoryPage.tsx`](../src/pages/RentalCategoryPage.tsx))
+- [x] Админка редактирования работает ([`AdminRentalCategoriesPage.tsx`](../src/pages/admin/AdminRentalCategoriesPage.tsx), [`AdminRentalCategoryEditPage.tsx`](../src/pages/admin/AdminRentalCategoryEditPage.tsx))
+- [x] Интеграция с существующим `/rent`
+- [x] Адаптивность (mobile, tablet, desktop)
+- [x] Пустые блоки скрываются
+- [x] `npm run build` проходит
 
 ---
 

@@ -6,8 +6,6 @@ node_modules/
 dist/
 build/
 *.js
-*.ts
-*.tsx
 
 # Environment
 .env

@@ -1,7 +1,6 @@
-import { lazy, Suspense, useMemo } from 'react';
+import { lazy, Suspense } from 'react';
 import { useRoutes } from 'react-router-dom';
 import Layout from './components/Layout';
-import { useCategories } from './hooks/useCategories';
 import { useStarBorderGlobal } from './hooks/useStarBorderGlobal';
 import { Helmet } from 'react-helmet-async';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -11,7 +10,7 @@ const HomePage = lazy(() => import('./pages/HomePage'));
 const LedPage = lazy(() => import('./pages/LedPage'));
 const SupportPage = lazy(() => import('./pages/SupportPage'));
 const RentPage = lazy(() => import('./pages/RentPage'));
-const RentCategoryPage = lazy(() => import('./pages/RentCategoryPage'));
+const RentalCategoryPage = lazy(() => import('./pages/RentalCategoryPage'));
 const CasesPage = lazy(() => import('./pages/CasesPage'));
 const CaseDetailsPage = lazy(() => import('./pages/CaseDetailsPage'));
 const PricesPage = lazy(() => import('./pages/PricesPage'));
@@ -27,8 +26,8 @@ const AdminPackagesPage = lazy(() => import('./pages/admin/AdminPackagesPage'));
 const AdminCategoriesPage = lazy(() => import('./pages/admin/AdminCategoriesPage'));
 const AdminContactsPage = lazy(() => import('./pages/admin/AdminContactsPage'));
 const AdminBackgroundsPage = lazy(() => import('./pages/admin/AdminBackgroundsPage'));
-const SupabaseTestPage = lazy(() => import('./pages/SupabaseTestPage'));
-const SupabaseCheckPage = lazy(() => import('./pages/SupabaseCheckPage'));
+const AdminRentalCategoriesPage = lazy(() => import('./pages/admin/AdminRentalCategoriesPage'));
+const AdminRentalCategoryEditPage = lazy(() => import('./pages/admin/AdminRentalCategoryEditPage'));
 
 const PageLoader = () => (
   <div className="flex min-h-[60vh] items-center justify-center" style={{ backgroundColor: 'var(--bg-primary, #0a0a0a)' }}>
@@ -37,101 +36,97 @@ const PageLoader = () => (
 );
 
 const App = () => {
-  const { categories } = useCategories();
   useStarBorderGlobal();
-  const routes = useMemo(
-    () => [
-      {
-        path: '/',
-        element: <HomePage />,
-      },
-      {
-        path: '/led',
-        element: <LedPage />,
-      },
-      {
-        path: '/support',
-        element: <SupportPage />,
-      },
-      {
-        path: '/rent',
-        element: <RentPage />,
-      },
-      ...categories.map((c) => ({
-        path: c.pagePath,
-        element: <RentCategoryPage categoryId={c.id} />,
-      })),
-      {
-        path: '/cases',
-        element: <CasesPage />,
-      },
-      {
-        path: '/cases/:slug',
-        element: <CaseDetailsPage />,
-      },
-      {
-        path: '/prices',
-        element: <PricesPage />,
-      },
-      {
-        path: '/about',
-        element: <AboutPage />,
-      },
-      {
-        path: '/contacts',
-        element: <ContactsPage />,
-      },
-      {
-        path: '/consult',
-        element: <ConsultPage />,
-      },
-      {
-        path: '/admin/content',
-        element: <ProtectedRoute><AdminContentPage /></ProtectedRoute>,
-      },
-      {
-        path: '/admin/leads',
-        element: <ProtectedRoute><AdminLeadsPage /></ProtectedRoute>,
-      },
-      {
-        path: '/admin/cases',
-        element: <ProtectedRoute><AdminCasesPage /></ProtectedRoute>,
-      },
-      {
-        path: '/admin/packages',
-        element: <ProtectedRoute><AdminPackagesPage /></ProtectedRoute>,
-      },
-      {
-        path: '/admin/categories',
-        element: <ProtectedRoute><AdminCategoriesPage /></ProtectedRoute>,
-      },
-      {
-        path: '/admin/contacts',
-        element: <ProtectedRoute><AdminContactsPage /></ProtectedRoute>,
-      },
-      {
-        path: '/admin/backgrounds',
-        element: <ProtectedRoute><AdminBackgroundsPage /></ProtectedRoute>,
-      },
-      {
-        path: '/admin',
-        element: <ProtectedRoute><AdminDashboard /></ProtectedRoute>,
-      },
-      {
-        path: '/test-supabase',
-        element: <SupabaseTestPage />,
-      },
-      {
-        path: '/check-supabase',
-        element: <SupabaseCheckPage />,
-      },
-      {
-        path: '*',
-        element: <NotFoundPage />,
-      },
-    ],
-    [categories]
-  );
+  const routes = [
+    {
+      path: '/',
+      element: <HomePage />,
+    },
+    {
+      path: '/led',
+      element: <LedPage />,
+    },
+    {
+      path: '/support',
+      element: <SupportPage />,
+    },
+    {
+      path: '/rent',
+      element: <RentPage />,
+    },
+    {
+      path: '/rent/:slug',
+      element: <RentalCategoryPage />,
+    },
+    {
+      path: '/cases',
+      element: <CasesPage />,
+    },
+    {
+      path: '/cases/:slug',
+      element: <CaseDetailsPage />,
+    },
+    {
+      path: '/prices',
+      element: <PricesPage />,
+    },
+    {
+      path: '/about',
+      element: <AboutPage />,
+    },
+    {
+      path: '/contacts',
+      element: <ContactsPage />,
+    },
+    {
+      path: '/consult',
+      element: <ConsultPage />,
+    },
+    {
+      path: '/admin/content',
+      element: <ProtectedRoute><AdminContentPage /></ProtectedRoute>,
+    },
+    {
+      path: '/admin/leads',
+      element: <ProtectedRoute><AdminLeadsPage /></ProtectedRoute>,
+    },
+    {
+      path: '/admin/cases',
+      element: <ProtectedRoute><AdminCasesPage /></ProtectedRoute>,
+    },
+    {
+      path: '/admin/packages',
+      element: <ProtectedRoute><AdminPackagesPage /></ProtectedRoute>,
+    },
+    {
+      path: '/admin/categories',
+      element: <ProtectedRoute><AdminCategoriesPage /></ProtectedRoute>,
+    },
+    {
+      path: '/admin/contacts',
+      element: <ProtectedRoute><AdminContactsPage /></ProtectedRoute>,
+    },
+    {
+      path: '/admin/backgrounds',
+      element: <ProtectedRoute><AdminBackgroundsPage /></ProtectedRoute>,
+    },
+    {
+      path: '/admin/rental-categories',
+      element: <ProtectedRoute><AdminRentalCategoriesPage /></ProtectedRoute>,
+    },
+    {
+      path: '/admin/rental/:id',
+      element: <ProtectedRoute><AdminRentalCategoryEditPage /></ProtectedRoute>,
+    },
+    {
+      path: '/admin',
+      element: <ProtectedRoute><AdminDashboard /></ProtectedRoute>,
+    },
+    {
+      path: '*',
+      element: <NotFoundPage />,
+    },
+  ];
 
   const element = useRoutes(routes);
 
