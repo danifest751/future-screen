@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import AdminLayout from '../../components/admin/AdminLayout';
 import { useSiteSettingsContext } from '../../context/SiteSettingsContext';
 import {
@@ -13,11 +13,6 @@ import {
   type AnyBackgroundSettings,
 } from '../../lib/backgrounds';
 
-const customBackgroundOptions = backgroundOptions.filter(
-  (option): option is { id: CustomBackgroundId; name: string; description: string } => 
-    option.id !== 'theme'
-);
-
 const formatValue = (value: number, step: number) => {
   if (step >= 1) return value.toFixed(0);
   if (step >= 0.1) return value.toFixed(1);
@@ -25,11 +20,12 @@ const formatValue = (value: number, step: number) => {
 };
 
 const AdminBackgroundsPage = () => {
-  const { settings, loading, error, updateBackground, updateBackgroundSettings, updateStarBorder } = useSiteSettingsContext();
+  const { settings, loading, updateBackground, updateBackgroundSettings, updateStarBorder } = useSiteSettingsContext();
   
   const [selectedBg, setSelectedBg] = useState<BackgroundId>('theme');
   const [settingsMap, setSettingsMap] = useState<BackgroundSettingsById>(defaultBackgroundSettingsById);
   const [starBorder, setStarBorder] = useState<StarBorderSettings>(defaultStarBorderSettings);
+  const [starBorderOpen, setStarBorderOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -42,11 +38,7 @@ const AdminBackgroundsPage = () => {
 
   const withSaving = async (action: () => Promise<unknown>) => {
     setSaving(true);
-    try {
-      await action();
-    } finally {
-      setSaving(false);
-    }
+    try { await action(); } finally { setSaving(false); }
   };
 
   const handleBgChange = async (bg: BackgroundId) => {
@@ -68,12 +60,6 @@ const AdminBackgroundsPage = () => {
     await withSaving(async () => { await updateBackgroundSettings(newMap); });
   };
 
-  const toggleStarBorder = async () => {
-    const newSettings = { ...starBorder, enabled: !starBorder.enabled };
-    setStarBorder(newSettings);
-    await withSaving(async () => { await updateStarBorder(newSettings); });
-  };
-
   const updateStarBorderSetting = async (key: keyof StarBorderSettings, value: unknown) => {
     const newSettings = { ...starBorder, [key]: value };
     setStarBorder(newSettings);
@@ -91,46 +77,43 @@ const AdminBackgroundsPage = () => {
   }
 
   const currentSettings = selectedBg !== 'theme' ? settingsMap[selectedBg] : null;
-  const controls = selectedBg !== 'theme'
-    ? backgroundSettingsControls[selectedBg]
-    : [];
+  const controls = selectedBg !== 'theme' ? backgroundSettingsControls[selectedBg] : [];
 
   return (
-    <AdminLayout title="Фоны" subtitle="Выберите и настройте глобальный фон сайта">
+    <AdminLayout title="Фоны" subtitle="Глобальный фон сайта">
       {saving && (
         <div className="fixed right-4 top-4 z-50 rounded-lg bg-brand-500 px-3 py-1.5 text-sm text-white shadow-lg">
           Сохранение...
         </div>
       )}
 
-      {/* Сетка выбора фона */}
-      <div className="mb-6 rounded-xl border border-white/10 bg-slate-800 p-4">
-        <h3 className="mb-3 text-sm font-medium text-slate-300">Выбор фона</h3>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-          {backgroundOptions.map((bg) => (
-            <button
-              key={bg.id}
-              onClick={() => handleBgChange(bg.id)}
-              className={`rounded-lg border p-3 text-left transition ${
-                selectedBg === bg.id
-                  ? 'border-brand-500 bg-brand-500/20'
-                  : 'border-white/10 bg-slate-900 hover:border-white/30'
-              }`}
-            >
-              <div className="mb-2 aspect-video rounded bg-gradient-to-br from-slate-700 to-slate-800" />
-              <div className="text-xs font-medium text-slate-200">{bg.name}</div>
-              <div className="mt-0.5 text-[10px] text-slate-500 line-clamp-1">{bg.description}</div>
-            </button>
-          ))}
+      <div className="grid gap-4 lg:grid-cols-2">
+        {/* Выбор фона */}
+        <div className="rounded-xl border border-white/10 bg-slate-800 p-4">
+          <h3 className="mb-3 text-sm font-medium text-slate-300">Выбор фона</h3>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {backgroundOptions.map((bg) => (
+              <button
+                key={bg.id}
+                onClick={() => handleBgChange(bg.id)}
+                className={`rounded-lg border p-2.5 text-left transition ${
+                  selectedBg === bg.id
+                    ? 'border-brand-500 bg-brand-500/20'
+                    : 'border-white/10 bg-slate-900 hover:border-white/30'
+                }`}
+              >
+                <div className="text-xs font-medium text-slate-200">{bg.name}</div>
+                <div className="mt-0.5 text-[10px] text-slate-500 line-clamp-1">{bg.description}</div>
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Настройки выбранного фона */}
+        {/* Настройки фона */}
         {selectedBg !== 'theme' && currentSettings && (
           <div className="rounded-xl border border-white/10 bg-slate-800 p-4">
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="font-semibold text-white">
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-sm font-medium text-slate-300">
                 Настройки: {backgroundOptions.find(b => b.id === selectedBg)?.name}
               </h3>
               <button
@@ -141,8 +124,8 @@ const AdminBackgroundsPage = () => {
               </button>
             </div>
 
-            <div className="space-y-4">
-              {/* Анимация */}
+            <div className="space-y-3">
+              {/* Скорость анимации */}
               <label className="block">
                 <span className="mb-1 block text-xs text-slate-400">Скорость анимации</span>
                 <select
@@ -157,7 +140,7 @@ const AdminBackgroundsPage = () => {
               </label>
 
               {/* Динамические контролы */}
-              {controls && controls.map((control) => {
+              {controls?.map((control) => {
                 if (control.control === 'color') {
                   const value = String(currentSettings[control.key as keyof AnyBackgroundSettings] ?? '#FFFFFF');
                   return (
@@ -200,67 +183,87 @@ const AdminBackgroundsPage = () => {
             </div>
           </div>
         )}
+      </div>
 
-        {/* Star Border */}
-        <div className={`rounded-xl border p-4 ${starBorder.enabled ? 'border-brand-500/50 bg-brand-500/10' : 'border-white/10 bg-slate-800'}`}>
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h3 className="font-semibold text-white">Star Border</h3>
-              <p className="text-xs text-slate-400">Светящаяся рамка при наведении</p>
-            </div>
-            <button
-              onClick={toggleStarBorder}
-              className={`rounded px-3 py-1.5 text-xs font-medium transition ${
-                starBorder.enabled 
-                  ? 'bg-brand-500 text-white' 
-                  : 'border border-white/20 text-slate-400 hover:text-white'
-              }`}
-            >
-              {starBorder.enabled ? 'Вкл' : 'Выкл'}
-            </button>
+      {/* Star Border */}
+      <div className="mt-4 rounded-xl border border-white/10 bg-slate-800 p-4">
+        <button
+          onClick={() => setStarBorderOpen(!starBorderOpen)}
+          className="flex w-full items-center justify-between"
+        >
+          <div className="text-left">
+            <h3 className="text-sm font-medium text-slate-300">Star Border</h3>
+            <p className="text-xs text-slate-500">Светящаяся рамка при наведении</p>
           </div>
+          <div className="flex items-center gap-2">
+            <span className={`text-xs ${starBorder.enabled ? 'text-brand-400' : 'text-slate-500'}`}>
+              {starBorder.enabled ? 'Вкл' : 'Выкл'}
+            </span>
+            <span className="text-slate-400">{starBorderOpen ? '▲' : '▼'}</span>
+          </div>
+        </button>
 
-          {starBorder.enabled && (
-            <div className="grid gap-3 sm:grid-cols-2">
-              <label className="block">
-                <span className="mb-1 block text-xs text-slate-400">Цвет</span>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    value={starBorder.color}
-                    onChange={(e) => updateStarBorderSetting('color', e.target.value.toUpperCase())}
-                    className="h-8 w-16 rounded border border-white/10 bg-slate-900"
-                  />
-                  <span className="text-xs text-slate-500">{starBorder.color}</span>
-                </div>
-              </label>
-
-              {[
-                { key: 'speed', label: 'Скорость', min: 1, max: 20, step: 0.5, suffix: 's' },
-                { key: 'thickness', label: 'Толщина', min: 1, max: 5, step: 0.5, suffix: 'px' },
-                { key: 'intensity', label: 'Свечение', min: 0.5, max: 3, step: 0.1, suffix: '' },
-              ].map((ctrl) => (
-                <label key={ctrl.key} className="block">
-                  <div className="mb-1 flex items-center justify-between">
-                    <span className="text-xs text-slate-400">{ctrl.label}</span>
-                    <span className="text-xs text-slate-500">
-                      {starBorder[ctrl.key as keyof StarBorderSettings]}{ctrl.suffix}
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min={ctrl.min}
-                    max={ctrl.max}
-                    step={ctrl.step}
-                    value={starBorder[ctrl.key as keyof StarBorderSettings] as number}
-                    onChange={(e) => updateStarBorderSetting(ctrl.key as keyof StarBorderSettings, Number(e.target.value))}
-                    className="w-full accent-brand-500"
-                  />
-                </label>
-              ))}
+        {starBorderOpen && (
+          <div className="mt-3 space-y-3">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={async () => {
+                  const newSettings = { ...starBorder, enabled: !starBorder.enabled };
+                  setStarBorder(newSettings);
+                  await withSaving(async () => { await updateStarBorder(newSettings); });
+                }}
+                className={`rounded px-3 py-1.5 text-xs font-medium transition ${
+                  starBorder.enabled 
+                    ? 'bg-brand-500 text-white' 
+                    : 'border border-white/20 text-slate-400 hover:text-white'
+                }`}
+              >
+                {starBorder.enabled ? 'Выключить' : 'Включить'}
+              </button>
             </div>
-          )}
-        </div>
+
+            {starBorder.enabled && (
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="block">
+                  <span className="mb-1 block text-xs text-slate-400">Цвет</span>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={starBorder.color}
+                      onChange={(e) => updateStarBorderSetting('color', e.target.value.toUpperCase())}
+                      className="h-8 w-16 rounded border border-white/10 bg-slate-900"
+                    />
+                    <span className="text-xs text-slate-500">{starBorder.color}</span>
+                  </div>
+                </label>
+
+                {[
+                  { key: 'speed', label: 'Скорость', min: 1, max: 20, step: 0.5, suffix: 's' },
+                  { key: 'thickness', label: 'Толщина', min: 1, max: 5, step: 0.5, suffix: 'px' },
+                  { key: 'intensity', label: 'Свечение', min: 0.5, max: 3, step: 0.1, suffix: '' },
+                ].map((ctrl) => (
+                  <label key={ctrl.key} className="block">
+                    <div className="mb-1 flex items-center justify-between">
+                      <span className="text-xs text-slate-400">{ctrl.label}</span>
+                      <span className="text-xs text-slate-500">
+                        {starBorder[ctrl.key as keyof StarBorderSettings]}{ctrl.suffix}
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min={ctrl.min}
+                      max={ctrl.max}
+                      step={ctrl.step}
+                      value={starBorder[ctrl.key as keyof StarBorderSettings] as number}
+                      onChange={(e) => updateStarBorderSetting(ctrl.key as keyof StarBorderSettings, Number(e.target.value))}
+                      className="w-full accent-brand-500"
+                    />
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </AdminLayout>
   );
