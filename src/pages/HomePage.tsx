@@ -528,7 +528,7 @@ const HomePage = () => {
           </RevealSection>
 
           {/* Main equipment cards */}
-          <RevealSection className="grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
+          <RevealSection className="mx-auto max-w-5xl grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
             {equipment.map((item) => (
               <div
                 key={item.title}
