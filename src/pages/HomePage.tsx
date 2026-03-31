@@ -215,7 +215,7 @@ const CtaForm = () => {
       newErrors.name = 'Введите имя (минимум 2 символа)';
     }
     
-    const phoneRegex = /^[\+\d\s\-\(\)]{10,20}$/;
+    const phoneRegex = /^[+\d\s\-()]{10,20}$/;
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     
     const hasPhone = formData.phone.trim() && phoneRegex.test(formData.phone.trim());
