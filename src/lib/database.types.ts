@@ -187,6 +187,65 @@ export type Database = {
           status?: string | null;
         };
       };
+      rental_categories: {
+        Row: {
+          id: number;
+          slug: string;
+          name: string;
+          short_name: string;
+          is_published: boolean;
+          sort_order: number;
+          created_at: string;
+          updated_at: string;
+          seo: Json;
+          hero: Json;
+          about: Json;
+          use_cases: Json;
+          service_includes: Json;
+          benefits: Json;
+          gallery: Json;
+          faq: Json;
+          bottom_cta: Json;
+        };
+        Insert: {
+          id?: number;
+          slug: string;
+          name: string;
+          short_name: string;
+          is_published?: boolean;
+          sort_order?: number;
+          created_at?: string;
+          updated_at?: string;
+          seo?: Json;
+          hero?: Json;
+          about?: Json;
+          use_cases?: Json;
+          service_includes?: Json;
+          benefits?: Json;
+          gallery?: Json;
+          faq?: Json;
+          bottom_cta?: Json;
+        };
+        Update: {
+          id?: number;
+          slug?: string;
+          name?: string;
+          short_name?: string;
+          is_published?: boolean;
+          sort_order?: number;
+          created_at?: string;
+          updated_at?: string;
+          seo?: Json;
+          hero?: Json;
+          about?: Json;
+          use_cases?: Json;
+          service_includes?: Json;
+          benefits?: Json;
+          gallery?: Json;
+          faq?: Json;
+          bottom_cta?: Json;
+        };
+      };
     };
     Views: {
       [_ in never]: never;
