@@ -100,6 +100,12 @@ const Header = () => {
             </a>
           ))}
           <PrefetchLink
+            to="/rent"
+            className="rounded-full px-4 py-2 text-sm font-medium text-gray-300 transition-all duration-200 hover:bg-white/5 hover:text-white"
+          >
+            Аренда
+          </PrefetchLink>
+          <PrefetchLink
             to="/cases"
             className="rounded-full px-4 py-2 text-sm font-medium text-gray-300 transition-all duration-200 hover:bg-white/5 hover:text-white"
           >
@@ -191,6 +197,13 @@ const Header = () => {
                 {item.label}
               </a>
             ))}
+            <PrefetchLink
+              to="/rent"
+              onClick={closeMenu}
+              className="rounded-xl px-4 py-3 text-sm font-medium text-gray-300 transition hover:bg-white/5 hover:text-white"
+            >
+              Аренда
+            </PrefetchLink>
             <PrefetchLink
               to="/cases"
               onClick={closeMenu}

@@ -17,6 +17,7 @@ import {
   X,
   ChevronRight,
   Zap,
+  ShoppingCart,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -45,6 +46,7 @@ const defaultNavItems: NavItem[] = [
   { to: '/admin/backgrounds', label: 'Фоны', Icon: Palette },
   { to: '/admin/packages', label: 'Пакеты', Icon: Package },
   { to: '/admin/categories', label: 'Категории', Icon: Tag },
+  { to: '/admin/rental-categories', label: 'Аренда', Icon: ShoppingCart },
   { to: '/admin/contacts', label: 'Контакты', Icon: Phone },
   { to: '/admin/content', label: 'Настройки', Icon: Settings },
 ];
