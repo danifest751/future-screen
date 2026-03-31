@@ -2,7 +2,7 @@
 
 **Дата:** 31 марта 2026 г.  
 **Основа:** [`future-screen-rental-sections-brief.md`](../future-screen-rental-sections-brief.md)  
-**Принцип:** Единый шаблон → 5 категорий → CMS-редактирование
+**Принцип:** Единый шаблон → 8 категорий → CMS-редактирование
 
 ---
 
@@ -63,7 +63,7 @@ src/pages/admin/AdminRentalCategoryEditPage.tsx — Редактирование
 
 ---
 
-## 5 категорий
+## 8 категорий
 
 На основе текущих данных проекта (`src/data/categories.ts`):
 
@@ -74,6 +74,9 @@ src/pages/admin/AdminRentalCategoryEditPage.tsx — Редактирование
 | 3 | `sound` | Звуковое оборудование | Звуковые системы, микрофоны, микшеры |
 | 4 | `stage` | Сцены и подиумы | Сценические конструкции, фермы, подиумы |
 | 5 | `instruments` | Музыкальные инструменты | Бэклайн, инструменты для выступлений |
+| 6 | `computers` | Компьютеры и ноутбуки | Видеомикширование, стриминг, презентации |
+| 7 | `touchscreens` | Тачскрины | Интерактивные панели, навигация, опросы |
+| 8 | `staff` | Технический персонал | Звукорежиссёры, световики, монтажники |
 
 ---
 
@@ -181,7 +184,7 @@ src/pages/admin/AdminRentalCategoryEditPage.tsx — Редактирование
 - [x] Хуки загружают данные ([`rentalCategories.ts`](../src/services/rentalCategories.ts))
 - [x] 8 компонентов блоков созданы ([`src/components/rental/`](../src/components/rental/))
 - [x] Шаблон страницы работает ([`RentalCategoryPage.tsx`](../src/pages/RentalCategoryPage.tsx))
-- [x] 5 категорий наполнены контентом ([`002_seed_rental_categories.sql`](../sql/002_seed_rental_categories.sql))
+- [x] 8 категорий наполнены контентом ([`002_seed_rental_categories.sql`](../sql/002_seed_rental_categories.sql)) — 5 базовых + компьютеры, тачскрины, персонал
 - [x] Роут `/rent/:slug` работает ([`App.tsx`](../src/App.tsx))
 - [x] SEO meta-теги динамические (в [`RentalCategoryPage.tsx`](../src/pages/RentalCategoryPage.tsx))
 - [x] Админка редактирования работает ([`AdminRentalCategoriesPage.tsx`](../src/pages/admin/AdminRentalCategoriesPage.tsx), [`AdminRentalCategoryEditPage.tsx`](../src/pages/admin/AdminRentalCategoryEditPage.tsx))
