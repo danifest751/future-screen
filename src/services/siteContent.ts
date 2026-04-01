@@ -35,10 +35,10 @@ const mapFromDB = (row: SiteContentRow): SiteContent => ({
   contentHtml: row.content_html,
   metaTitle: row.meta_title,
   metaDescription: row.meta_description,
-  isPublished: row.is_published,
+  isPublished: row.is_published ?? false,
   fontSize: (row as Record<string, unknown>).font_size as string | null ?? null,
-  createdAt: row.created_at,
-  updatedAt: row.updated_at,
+  createdAt: row.created_at ?? '',
+  updatedAt: row.updated_at ?? '',
 });
 
 const mapToDB = (input: SiteContentInput): Record<string, unknown> => {
