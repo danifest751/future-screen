@@ -22,10 +22,10 @@ export function useSiteSettingsQuery() {
         .from('site_settings')
         .select('*')
         .eq('id', SETTINGS_ID)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
-      return data as SiteSettingsRow;
+      return data as SiteSettingsRow | null;
     },
   });
 }
