@@ -25,7 +25,7 @@ type LeadRow = {
 };
 
 type PackageRow = {
-  id: Package['id'];
+  id: number;
   name: string;
   for_formats: string[];
   includes: string[];
@@ -34,7 +34,7 @@ type PackageRow = {
 };
 
 type CategoryRow = {
-  id: Category['id'];
+  id: number;
   title: string;
   short_description: string;
   bullets: string[];
@@ -89,8 +89,13 @@ export const mapPackageToDB = (pkg: Package) => {
     price_hint: pkg.priceHint,
   };
 
+  // Only include id if it's a valid numeric value
   if (pkg.id !== undefined && pkg.id !== null && String(pkg.id).trim() !== '') {
-    row.id = typeof pkg.id === 'string' && /^\d+$/.test(pkg.id) ? Number(pkg.id) : pkg.id;
+    const numId = typeof pkg.id === 'string' ? parseInt(pkg.id, 10) : pkg.id;
+    if (!isNaN(numId)) {
+      row.id = numId;
+    }
+    // If id is not numeric, don't include it in the row (let DB auto-generate)
   }
 
   return row;
@@ -112,8 +117,13 @@ export const mapCategoryToDB = (cat: Category) => {
     page_path: cat.pagePath,
   };
 
+  // Only include id if it's a valid numeric value
   if (cat.id !== undefined && cat.id !== null && String(cat.id).trim() !== '') {
-    row.id = typeof cat.id === 'string' && /^\d+$/.test(cat.id) ? Number(cat.id) : cat.id;
+    const numId = typeof cat.id === 'string' ? parseInt(cat.id, 10) : cat.id;
+    if (!isNaN(numId)) {
+      row.id = numId;
+    }
+    // If id is not numeric, don't include it in the row (let DB auto-generate)
   }
 
   return row;
