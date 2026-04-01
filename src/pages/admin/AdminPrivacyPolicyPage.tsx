@@ -152,7 +152,6 @@ const AdminPrivacyPolicyPage = () => {
                 label="Meta Description"
                 hint="До 160 символов"
                 error={errors.metaDescription?.message}
-                className="mt-3"
               >
                 <Textarea
                   rows={2}
