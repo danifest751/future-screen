@@ -9,6 +9,7 @@ import { FileText } from 'lucide-react';
 import { usePrivacyPolicy } from '../../hooks/usePrivacyPolicy';
 import { useFormDraftPersistence } from '../../hooks/useFormDraftPersistence';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
+import Markdown from 'markdown-to-jsx';
 
 const schema = z.object({
   title: z.string().min(1, 'Заголовок обязателен'),
@@ -179,15 +180,9 @@ const AdminPrivacyPolicyPage = () => {
             </button>
           </div>
 
-          {content?.content ? (
-            <div className="prose prose-invert prose-sm max-w-none overflow-auto rounded-lg bg-slate-900/50 p-4 text-slate-200">
-              <div className="text-xs text-slate-500">
-                Markdown контент рендерится на странице /privacy
-              </div>
-              <div className="mt-2 whitespace-pre-wrap text-sm text-slate-400">
-                {watch('content')?.slice(0, 500)}
-                {(watch('content')?.length || 0) > 500 && '...'}
-              </div>
+          {watch('content') ? (
+            <div className="prose prose-invert prose-sm max-w-none overflow-auto rounded-lg bg-slate-900/50 p-4" style={{maxHeight: '600px'}}>
+              <Markdown>{watch('content')}</Markdown>
             </div>
           ) : (
             <EmptyState
