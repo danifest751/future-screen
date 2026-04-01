@@ -8,6 +8,15 @@ const navLinks = [
   { to: '/#contacts', label: 'Контакты' },
 ];
 
+const rentLinks = [
+  { to: '/rent', label: 'Вся аренда' },
+  { to: '/rent/video', label: 'Видеоэкраны' },
+  { to: '/rent/sound', label: 'Звук' },
+  { to: '/rent/light', label: 'Свет' },
+  { to: '/rent/stage', label: 'Сцены' },
+  { to: '/rent/instruments', label: 'Инструменты' },
+];
+
 const handleHashNav = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
   const hash = href.split('#')[1];
   if (!hash) return;
@@ -27,9 +36,9 @@ const Footer = () => {
       }}
     >
       <div className="container-page py-14 md:py-16">
-        <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-5">
 
-          {/* Col 1-2: Logo + description */}
+          {/* Col 1: Logo + description */}
           <div className="lg:col-span-2">
             <Link to="/" className="mb-5 flex items-center gap-3">
               <div
@@ -77,7 +86,23 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Col 4: Contacts + Hours */}
+          {/* Col 4: Rent */}
+          <div>
+            <div className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-500">
+              Аренда
+            </div>
+            <ul className="space-y-3">
+              {rentLinks.map((item) => (
+                <li key={item.to}>
+                  <Link to={item.to} className="text-sm text-gray-400 transition-colors hover:text-white">
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Col 5: Contacts + Hours */}
           <div>
             <div className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-500">
               Контакты
