@@ -30,14 +30,9 @@ export const useSiteSettings = () => {
         .from('site_settings')
         .select('*')
         .eq('id', 'default')
-        .single();
+        .maybeSingle();
 
       if (supabaseError) {
-        // Если записи нет, используем дефолтные
-        if (supabaseError.code === 'PGRST116') {
-          console.log('[useSiteSettings] Настройки не найдены, используем дефолтные');
-          return;
-        }
         throw supabaseError;
       }
 
@@ -53,6 +48,8 @@ export const useSiteSettings = () => {
             ...(data.star_border_settings || {}),
           },
         });
+      } else {
+        console.log('[useSiteSettings] Настройки не найдены, используем дефолтные');
       }
     } catch (err) {
       console.error('[useSiteSettings] Ошибка загрузки:', err);
