@@ -35,6 +35,7 @@ const splitLines = (value: string) =>
 const AdminContactsPage = () => {
   const { contacts, loading, update, resetToDefault } = useContacts();
   const [resetModalOpen, setResetModalOpen] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const {
     register,
@@ -57,7 +58,7 @@ const AdminContactsPage = () => {
   useUnsavedChangesGuard(isDirty);
 
   useEffect(() => {
-    if (!isHydrated || hasContactsDraft || !contacts) return;
+    if (isInitialized || !isHydrated || loading || !contacts) return;
 
     reset({
       phonesText: contacts.phones.join('\n'),
@@ -65,7 +66,8 @@ const AdminContactsPage = () => {
       address: contacts.address,
       workingHours: contacts.workingHours,
     });
-  }, [contacts, hasContactsDraft, isHydrated, reset]);
+    setIsInitialized(true);
+  }, [contacts, hasContactsDraft, isHydrated, loading, reset, isInitialized]);
 
   const onSubmit = async (values: FormValues) => {
     const ok = await update({
