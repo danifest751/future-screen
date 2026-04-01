@@ -16,6 +16,7 @@ const schema = z.object({
   content: z.string().min(1, 'Контент обязателен'),
   metaTitle: z.string().optional(),
   metaDescription: z.string().optional(),
+  fontSize: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -25,6 +26,7 @@ const defaultValues: FormValues = {
   content: '',
   metaTitle: '',
   metaDescription: '',
+  fontSize: '',
 };
 
 const AdminPrivacyPolicyPage = () => {
@@ -36,6 +38,7 @@ const AdminPrivacyPolicyPage = () => {
     handleSubmit,
     reset,
     watch,
+    setValue,
     formState: { errors, isSubmitting, isDirty },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -59,6 +62,7 @@ const AdminPrivacyPolicyPage = () => {
       content: content.content || '',
       metaTitle: content.metaTitle || '',
       metaDescription: content.metaDescription || '',
+      fontSize: content.fontSize || '',
     });
 
     if (content.updatedAt) {
@@ -72,6 +76,7 @@ const AdminPrivacyPolicyPage = () => {
       content: values.content,
       metaTitle: values.metaTitle?.trim() || null,
       metaDescription: values.metaDescription?.trim() || null,
+      fontSize: values.fontSize?.trim() || null,
     });
 
     if (ok) {
@@ -160,6 +165,36 @@ const AdminPrivacyPolicyPage = () => {
                   placeholder="Описание страницы для поисковых систем..."
                 />
               </Field>
+            </div>
+
+            <div className="border-t border-white/10 pt-4">
+              <h3 className="mb-3 text-sm font-medium text-slate-300">Размер шрифта</h3>
+              <Field
+                label="Масштаб шрифта"
+                hint=" например: 1rem, 1.25rem, 90%, 16px"
+                error={errors.fontSize?.message}
+              >
+                <Input
+                  {...register('fontSize')}
+                  placeholder="1rem"
+                />
+              </Field>
+              <div className="mt-2 flex gap-2 flex-wrap">
+                {['0.875rem', '1rem', '1.125rem', '1.25rem', '1.5rem'].map((size) => (
+                  <button
+                    key={size}
+                    type="button"
+                    onClick={() => setValue('fontSize', size)}
+                    className={`rounded px-2 py-1 text-xs transition ${
+                      watch('fontSize') === size
+                        ? 'bg-brand-500 text-white'
+                        : 'border border-white/20 text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    {size}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <Button type="submit" loading={isSubmitting || saving} className="w-full">

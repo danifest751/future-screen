@@ -41,7 +41,10 @@ const PrivacyPolicyPage = () => {
       </Helmet>
 
       <div className="container-page py-12 md:py-20">
-        <article className="prose prose-invert prose-lg mx-auto max-w-3xl">
+        <article
+          className="prose prose-invert prose-lg mx-auto max-w-3xl"
+          style={content.fontSize ? { fontSize: content.fontSize } : undefined}
+        >
           <h1 className="text-4xl font-bold text-white">{content.title}</h1>
           <Markdown>{content.content}</Markdown>
         </article>

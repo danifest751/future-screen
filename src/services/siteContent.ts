@@ -12,6 +12,7 @@ export type SiteContent = {
   metaTitle: string | null;
   metaDescription: string | null;
   isPublished: boolean;
+  fontSize: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -23,6 +24,7 @@ export type SiteContentInput = {
   metaTitle?: string | null;
   metaDescription?: string | null;
   isPublished?: boolean;
+  fontSize?: string | null;
 };
 
 const mapFromDB = (row: SiteContentRow): SiteContent => ({
@@ -34,6 +36,7 @@ const mapFromDB = (row: SiteContentRow): SiteContent => ({
   metaTitle: row.meta_title,
   metaDescription: row.meta_description,
   isPublished: row.is_published,
+  fontSize: (row as Record<string, unknown>).font_size as string | null ?? null,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
 });
@@ -46,6 +49,7 @@ const mapToDB = (input: SiteContentInput): Record<string, unknown> => {
   if (input.metaTitle !== undefined) result.meta_title = input.metaTitle;
   if (input.metaDescription !== undefined) result.meta_description = input.metaDescription;
   if (input.isPublished !== undefined) result.is_published = input.isPublished;
+  if (input.fontSize !== undefined) result.font_size = input.fontSize;
   return result;
 };
 
