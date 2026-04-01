@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { useRoutes } from 'react-router-dom';
 import Layout from './components/Layout';
 import { useStarBorderGlobal } from './hooks/useStarBorderGlobal';
@@ -36,6 +36,33 @@ const PageLoader = () => (
     <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />
   </div>
 );
+
+/**
+ * Обработчик глобальных ошибок загрузки чанков.
+ * При обнаружении ошибки "Failed to fetch dynamically imported module" перезагружает страницу.
+ */
+function ChunkErrorHandler() {
+  useEffect(() => {
+    const handleError = (event: ErrorEvent) => {
+      const message = event.message || '';
+      const target = event.target as HTMLElement | null;
+      const isScript = target?.tagName === 'SCRIPT';
+      const isChunkError = message.includes('Failed to fetch dynamically') ||
+        (isScript && target?.getAttribute('src')?.includes('/assets/'));
+
+      if (isChunkError) {
+        console.warn('[ChunkErrorHandler] Detected chunk load error, reloading...');
+        // Небольшая задержка чтобы избежать бесконечного цикла при проблемах с сетью
+        setTimeout(() => window.location.reload(), 500);
+      }
+    };
+
+    window.addEventListener('error', handleError);
+    return () => window.removeEventListener('error', handleError);
+  }, []);
+
+  return null;
+}
 
 const App = () => {
   useStarBorderGlobal();
@@ -142,6 +169,7 @@ const App = () => {
 
   return (
     <Layout>
+      <ChunkErrorHandler />
       <Helmet>
         <title>Фьючер Скрин — LED, звук, свет, сцены</title>
         <meta
