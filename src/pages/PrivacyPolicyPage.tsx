@@ -1,6 +1,7 @@
 import { Helmet } from 'react-helmet-async';
 import Markdown from 'markdown-to-jsx';
 import { usePrivacyPolicy } from '../hooks/usePrivacyPolicy';
+import { sanitizeMarkdown } from '../lib/sanitize';
 
 const PrivacyPolicyPage = () => {
   const { content, loading, error } = usePrivacyPolicy();
@@ -46,7 +47,7 @@ const PrivacyPolicyPage = () => {
           style={content.fontSize ? { fontSize: content.fontSize } : undefined}
         >
           <h1 className="text-4xl font-bold text-white">{content.title}</h1>
-          <Markdown>{content.content}</Markdown>
+          <Markdown>{sanitizeMarkdown(content.content)}</Markdown>
         </article>
       </div>
     </>

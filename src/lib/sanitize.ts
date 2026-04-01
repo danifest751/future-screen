@@ -1,0 +1,74 @@
+import DOMPurify from 'dompurify';
+
+/**
+ * Санитизирует HTML-строку с использованием DOMPurify для защиты от XSS-атак.
+ * 
+ * @param html - Исходная HTML-строка, которую необходимо санитизировать
+ * @returns Безопасная HTML-строка, очищенная от потенциально опасных скриптов
+ * 
+ * @example
+ * ```tsx
+ * import { sanitizeHtml } from '../lib/sanitize';
+ * 
+ * <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(content) }} />
+ * ```
+ */
+export function sanitizeHtml(html: string | null | undefined): string {
+  if (!html) return '';
+  return DOMPurify.sanitize(html);
+}
+
+/**
+ * Опции для санитизации Markdown перед рендерингом.
+ */
+export interface SanitizeMarkdownOptions {
+  /** Разрешенные HTML-теги (по умолчанию: базовые теги форматирования) */
+  allowedTags?: string[];
+  /** Разрешенные атрибуты (по умолчанию: базовые атрибуты) */
+  allowedAttributes?: Record<string, string[]>;
+}
+
+/**
+ * Санитизирует Markdown-контент перед рендерингом.
+ * Эта функция предназначена для предварительной обработки Markdown-контента,
+ * который будет передан в markdown-to-jsx или аналогичный рендерер.
+ * 
+ * @param markdown - Исходный Markdown-контент
+ * @param options - Опции санитизации
+ * @returns Безопасный Markdown-контент
+ * 
+ * @example
+ * ```tsx
+ * import { sanitizeMarkdown } from '../lib/sanitize';
+ * 
+ * <Markdown>{sanitizeMarkdown(content)}</Markdown>
+ * ```
+ */
+export function sanitizeMarkdown(
+  markdown: string | null | undefined,
+  options?: SanitizeMarkdownOptions
+): string {
+  if (!markdown) return '';
+
+  const {
+    allowedTags = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'hr', 'strong', 'em', 'u', 's', 'code', 'pre', 'blockquote', 'ul', 'ol', 'li', 'a', 'img', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'dl', 'dt', 'dd'],
+    allowedAttributes = {
+      a: ['href', 'title', 'target', 'rel'],
+      img: ['src', 'alt', 'title', 'width', 'height'],
+      '*': ['class', 'id', 'style'],
+    },
+  } = options || {};
+
+  // Сначала санитизируем HTML, который может содержаться в Markdown
+  const sanitized = DOMPurify.sanitize(markdown, {
+    ALLOWED_TAGS: allowedTags,
+    ALLOWED_ATTR: Object.entries(allowedAttributes).flatMap(([tag, attrs]) =>
+      tag === '*' ? attrs : attrs
+    ),
+    ALLOW_DATA_ATTR: false,
+    ALLOW_UNKNOWN_PROTOCOLS: false,
+    SANITIZE_DOM: true,
+  });
+
+  return sanitized;
+}

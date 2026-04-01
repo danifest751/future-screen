@@ -10,6 +10,7 @@ import { usePrivacyPolicy } from '../../hooks/usePrivacyPolicy';
 import { useFormDraftPersistence } from '../../hooks/useFormDraftPersistence';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 import Markdown from 'markdown-to-jsx';
+import { sanitizeMarkdown } from '../../lib/sanitize';
 
 const schema = z.object({
   title: z.string().min(1, 'Заголовок обязателен'),
@@ -225,7 +226,7 @@ const AdminPrivacyPolicyPage = () => {
               className="prose prose-invert prose-sm max-w-none overflow-auto rounded-lg bg-slate-900/50 p-4"
               style={{ maxHeight: '600px', fontSize: watch('fontSize') || undefined }}
             >
-              <Markdown>{watch('content')}</Markdown>
+              <Markdown>{sanitizeMarkdown(watch('content'))}</Markdown>
             </div>
           ) : (
             <EmptyState
