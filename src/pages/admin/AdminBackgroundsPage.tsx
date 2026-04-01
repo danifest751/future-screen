@@ -43,9 +43,7 @@ const AdminBackgroundsPage = () => {
 
   const handleBgChange = async (bg: BackgroundId) => {
     setSelectedBg(bg);
-    if (bg !== 'theme') {
-      await withSaving(async () => { await updateBackground(bg); });
-    }
+    await withSaving(async () => { await updateBackground(bg); });
   };
 
   const updateSetting = async (bgId: CustomBackgroundId, key: string, value: unknown) => {
