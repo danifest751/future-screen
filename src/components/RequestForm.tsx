@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { trackEvent } from '../lib/analytics';
 import { submitForm } from '../lib/submitForm';
 import { useState } from 'react';
+import { ConsentCheckbox } from './ConsentCheckbox';
 
 const schema = z.object({
   name: z.string().min(1, 'Укажите имя'),
@@ -29,6 +30,7 @@ export const RequestForm = ({ title = 'Запросить КП', subtitle, ctaTe
   const [sent, setSent] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [showMoreFields, setShowMoreFields] = useState(false);
+  const [consent, setConsent] = useState(false);
   const {
     register,
     handleSubmit,
@@ -125,9 +127,10 @@ export const RequestForm = ({ title = 'Запросить КП', subtitle, ctaTe
             </label>
           </div>
         )}
+        <ConsentCheckbox checked={consent} onChange={setConsent} className="mt-2" />
         <button
           type="submit"
-          disabled={isSubmitting}
+          disabled={isSubmitting || !consent}
           className="flex items-center justify-center rounded-lg bg-brand-500 px-4 py-3 font-semibold text-white transition hover:bg-brand-400 disabled:opacity-60"
         >
           {isSubmitting ? 'Отправляем...' : ctaText}

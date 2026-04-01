@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { trackEvent } from '../lib/analytics';
 import { submitForm } from '../lib/submitForm';
+import { ConsentCheckbox } from '../components/ConsentCheckbox';
 
 // ─── Scroll reveal hook ───────────────────────────────────────────────────────
 function useScrollReveal(threshold = 0.15) {
@@ -215,6 +216,7 @@ const CtaForm = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [consent, setConsent] = useState(false);
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
@@ -339,7 +341,7 @@ const CtaForm = () => {
         
         <button
           type="submit"
-          disabled={isSubmitting}
+          disabled={isSubmitting || !consent}
           className="btn-primary h-[52px] whitespace-nowrap px-8 disabled:opacity-50"
         >
           {isSubmitting ? (
@@ -360,9 +362,7 @@ const CtaForm = () => {
         <p className="mt-4 text-center text-sm text-red-400">{errors.submit}</p>
       )}
       
-      <p className="mt-4 text-center text-xs text-gray-500">
-        Нажимая кнопку, вы соглашаетесь с <Link to="/privacy" className="underline hover:text-gray-400">политикой конфиденциальности</Link>
-      </p>
+      <ConsentCheckbox checked={consent} onChange={setConsent} className="mt-4" />
     </form>
   );
 };

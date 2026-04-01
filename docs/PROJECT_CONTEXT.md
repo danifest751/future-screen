@@ -125,6 +125,31 @@ supabase/migrations/          # SQL миграции БД
 
 ---
 
+## Политика конфиденциальности
+
+### Структура
+- **Страница**: `/privacy` — публичная страница с текстом политики
+- **Админка**: `/admin/privacy-policy` — редактирование политики
+- **Контент хранится в БД**: таблица `site_content` с ключом `privacy_policy`
+
+### Компоненты
+- `ConsentCheckbox` (`src/components/ConsentCheckbox.tsx`) — чекбокс согласия на обработку персональных данных
+- Используется в `RequestForm` и `CtaForm` (HomePage)
+
+### SQL
+- `sql/003_create_site_content.sql` — миграция для таблицы site_content
+- `sql/004_seed_privacy_policy.sql` — начальные данные политики
+
+### Роуты
+- `/privacy` — публичная страница (`PrivacyPolicyPage.tsx`)
+- `/admin/privacy-policy` — страница редактирования (`AdminPrivacyPolicyPage.tsx`)
+
+### Сервисы
+- `src/services/siteContent.ts` — загрузка и сохранение контента
+- `src/hooks/usePrivacyPolicy.ts` — хук для работы с политикой
+
+---
+
 ## Environment Variables
 ```bash
 # Supabase

@@ -246,6 +246,44 @@ export type Database = {
           bottom_cta?: Json;
         };
       };
+      site_content: {
+        Row: {
+          id: string;
+          key: string;
+          title: string | null;
+          content: string | null;
+          content_html: string | null;
+          meta_title: string | null;
+          meta_description: string | null;
+          is_published: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          key: string;
+          title?: string | null;
+          content?: string | null;
+          content_html?: string | null;
+          meta_title?: string | null;
+          meta_description?: string | null;
+          is_published?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          key?: string;
+          title?: string | null;
+          content?: string | null;
+          content_html?: string | null;
+          meta_title?: string | null;
+          meta_description?: string | null;
+          is_published?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
     };
     Views: {
       [_ in never]: never;

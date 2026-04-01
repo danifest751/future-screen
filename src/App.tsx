@@ -28,6 +28,8 @@ const AdminContactsPage = lazy(() => import('./pages/admin/AdminContactsPage'));
 const AdminBackgroundsPage = lazy(() => import('./pages/admin/AdminBackgroundsPage'));
 const AdminRentalCategoriesPage = lazy(() => import('./pages/admin/AdminRentalCategoriesPage'));
 const AdminRentalCategoryEditPage = lazy(() => import('./pages/admin/AdminRentalCategoryEditPage'));
+const AdminPrivacyPolicyPage = lazy(() => import('./pages/admin/AdminPrivacyPolicyPage'));
+const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'));
 
 const PageLoader = () => (
   <div className="flex min-h-[60vh] items-center justify-center" style={{ backgroundColor: 'var(--bg-primary, #0a0a0a)' }}>
@@ -83,6 +85,10 @@ const App = () => {
       element: <ConsultPage />,
     },
     {
+      path: '/privacy',
+      element: <PrivacyPolicyPage />,
+    },
+    {
       path: '/admin/content',
       element: <ProtectedRoute><AdminContentPage /></ProtectedRoute>,
     },
@@ -117,6 +123,10 @@ const App = () => {
     {
       path: '/admin/rental/:id',
       element: <ProtectedRoute><AdminRentalCategoryEditPage /></ProtectedRoute>,
+    },
+    {
+      path: '/admin/privacy-policy',
+      element: <ProtectedRoute><AdminPrivacyPolicyPage /></ProtectedRoute>,
     },
     {
       path: '/admin',
