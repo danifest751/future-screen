@@ -29,6 +29,8 @@ const defaultValues: FormValues = {
   fontSize: '',
 };
 
+const fontSizes = ['0.875rem', '1rem', '1.125rem', '1.5rem'];
+
 const AdminPrivacyPolicyPage = () => {
   const { content, loading, saving, save, reload } = usePrivacyPolicy();
   const [lastSaved, setLastSaved] = useState<string | null>(null);
@@ -44,6 +46,9 @@ const AdminPrivacyPolicyPage = () => {
     resolver: zodResolver(schema),
     defaultValues,
   });
+
+  const currentFontSize = watch('fontSize') || '1rem';
+  const fontSizeIndex = fontSizes.indexOf(currentFontSize) >= 0 ? fontSizes.indexOf(currentFontSize) : 1;
 
   const { clearDraft: clearFormDraft, hasDraft: hasFormDraft, isHydrated } = useFormDraftPersistence<FormValues>({
     enabled: true,
@@ -169,31 +174,31 @@ const AdminPrivacyPolicyPage = () => {
 
             <div className="border-t border-white/10 pt-4">
               <h3 className="mb-3 text-sm font-medium text-slate-300">Размер шрифта</h3>
-              <Field
-                label="Масштаб шрифта"
-                hint=" например: 1rem, 1.25rem, 90%, 16px"
-                error={errors.fontSize?.message}
-              >
-                <Input
-                  {...register('fontSize')}
-                  placeholder="1rem"
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-slate-400">Мелкий</span>
+                  <span className="text-xs text-slate-400">Обычный</span>
+                  <span className="text-xs text-slate-400">Крупный</span>
+                  <span className="text-xs text-slate-400">Очень крупный</span>
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={3}
+                  step={1}
+                  value={fontSizeIndex}
+                  onChange={(e) => setValue('fontSize', fontSizes[Number(e.target.value)])}
+                  className="w-full accent-brand-500"
                 />
-              </Field>
-              <div className="mt-2 flex gap-2 flex-wrap">
-                {['0.875rem', '1rem', '1.125rem', '1.25rem', '1.5rem'].map((size) => (
-                  <button
-                    key={size}
-                    type="button"
-                    onClick={() => setValue('fontSize', size)}
-                    className={`rounded px-2 py-1 text-xs transition ${
-                      watch('fontSize') === size
-                        ? 'bg-brand-500 text-white'
-                        : 'border border-white/20 text-slate-400 hover:text-white'
-                    }`}
+                <div className="flex items-center justify-center gap-2">
+                  <span className="text-xs text-slate-500">Текущий:</span>
+                  <span
+                    className="rounded bg-slate-900 px-2 py-1 text-slate-200"
+                    style={{ fontSize: watch('fontSize') || '1rem' }}
                   >
-                    {size}
-                  </button>
-                ))}
+                    {watch('fontSize') || '1rem'} (по умолчанию)
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -216,7 +221,10 @@ const AdminPrivacyPolicyPage = () => {
           </div>
 
           {watch('content') ? (
-            <div className="prose prose-invert prose-sm max-w-none overflow-auto rounded-lg bg-slate-900/50 p-4" style={{maxHeight: '600px'}}>
+            <div
+              className="prose prose-invert prose-sm max-w-none overflow-auto rounded-lg bg-slate-900/50 p-4"
+              style={{ maxHeight: '600px', fontSize: watch('fontSize') || undefined }}
+            >
               <Markdown>{watch('content')}</Markdown>
             </div>
           ) : (
