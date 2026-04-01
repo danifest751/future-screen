@@ -6,6 +6,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { queryKeys } from './keys';
 import type { Database } from '../lib/database.types';
+import { packages as basePackages } from '../data/packages';
+import { mapPackageToDB } from '../lib/mappers';
 
 type PackageRow = Database['public']['Tables']['packages']['Row'];
 type PackageInsert = Database['public']['Tables']['packages']['Insert'];
@@ -80,6 +82,28 @@ export function useDeletePackageMutation() {
         .eq('id', id);
 
       if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.packages.all });
+    },
+  });
+}
+
+/**
+ * Сбросить пакеты к дефолтным значениям.
+ */
+export function useResetPackagesMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      await supabase.from('packages').delete().not('id', 'is', null);
+      const { data, error } = await supabase
+        .from('packages')
+        .insert(basePackages.map(mapPackageToDB))
+        .select();
+      if (error) throw error;
+      return data as PackageRow[];
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.packages.all });

@@ -1,12 +1,12 @@
 import { Helmet } from 'react-helmet-async';
 import Markdown from 'markdown-to-jsx';
-import { usePrivacyPolicy } from '../hooks/usePrivacyPolicy';
+import { usePrivacyPolicyQuery } from '../queries';
 import { sanitizeMarkdown } from '../lib/sanitize';
 
 const PrivacyPolicyPage = () => {
-  const { content, loading, error } = usePrivacyPolicy();
+  const { data: content, isLoading, error } = usePrivacyPolicyQuery();
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="container-page py-16">
         <div className="mx-auto max-w-3xl">
@@ -37,14 +37,14 @@ const PrivacyPolicyPage = () => {
   return (
     <>
       <Helmet>
-        <title>{content.metaTitle || content.title || 'Политика конфиденциальности'}</title>
-        {content.metaDescription && <meta name="description" content={content.metaDescription} />}
+        <title>{content.meta_title || content.title || 'Политика конфиденциальности'}</title>
+        {content.meta_description && <meta name="description" content={content.meta_description} />}
       </Helmet>
 
       <div className="container-page py-12 md:py-20">
         <article
           className="prose prose-invert prose-lg mx-auto max-w-3xl"
-          style={content.fontSize ? { fontSize: content.fontSize } : undefined}
+          style={content.font_size ? { fontSize: content.font_size } : undefined}
         >
           <h1 className="text-4xl font-bold text-white">{content.title}</h1>
           <Markdown>{sanitizeMarkdown(content.content)}</Markdown>

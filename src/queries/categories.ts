@@ -6,6 +6,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { queryKeys } from './keys';
 import type { Database } from '../lib/database.types';
+import { categories as baseCategories } from '../data/categories';
+import { mapCategoryToDB } from '../lib/mappers';
 
 type CategoryRow = Database['public']['Tables']['categories']['Row'];
 type CategoryInsert = Database['public']['Tables']['categories']['Insert'];
@@ -80,6 +82,28 @@ export function useDeleteCategoryMutation() {
         .eq('id', id);
 
       if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.categories.all });
+    },
+  });
+}
+
+/**
+ * Сбросить категории к дефолтным значениям.
+ */
+export function useResetCategoriesMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      await supabase.from('categories').delete().not('id', 'is', null);
+      const { data, error } = await supabase
+        .from('categories')
+        .insert(baseCategories.map(mapCategoryToDB))
+        .select();
+      if (error) throw error;
+      return data as CategoryRow[];
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.categories.all });

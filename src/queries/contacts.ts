@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { queryKeys } from './keys';
 import type { Database } from '../lib/database.types';
+import { contacts as baseContacts } from '../data/contacts';
 
 type ContactRow = Database['public']['Tables']['contacts']['Row'];
 type ContactUpdate = Database['public']['Tables']['contacts']['Update'];
@@ -46,6 +47,33 @@ export function useUpdateContactsMutation() {
 
       if (error) throw error;
       return data as ContactRow;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.contacts.all });
+    },
+  });
+}
+
+/**
+ * Сбросить контакты к дефолтным значениям.
+ */
+export function useResetContactsMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      await supabase.from('contacts').delete().neq('id', 0);
+      const { data, error } = await supabase
+        .from('contacts')
+        .insert({
+          phones: baseContacts.phones,
+          emails: baseContacts.emails,
+          address: baseContacts.address,
+          working_hours: baseContacts.workingHours,
+        })
+        .select();
+      if (error) throw error;
+      return data as ContactRow[];
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.contacts.all });

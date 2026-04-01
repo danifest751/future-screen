@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { queryKeys } from './keys';
 import type { Database } from '../lib/database.types';
+import { cases as baseCases } from '../data/cases';
 
 type CaseRow = Database['public']['Tables']['cases']['Row'];
 type CaseInsert = Database['public']['Tables']['cases']['Insert'];
@@ -111,6 +112,25 @@ export function useDeleteCaseMutation() {
         .eq('slug', slug);
 
       if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.cases.all });
+    },
+  });
+}
+
+/**
+ * Сбросить кейсы к дефолтным значениям.
+ */
+export function useResetCasesMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      await supabase.from('cases').delete().neq('slug', 'temp_impossible_slug');
+      const { data, error } = await supabase.from('cases').insert(baseCases).select();
+      if (error) throw error;
+      return data as CaseRow[];
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.cases.all });

@@ -1,19 +1,27 @@
-import { useEffect } from 'react';
+import { useLeadsQuery, useClearLeadsMutation } from '../queries';
+import { mapLeadFromDB } from '../lib/mappers';
 import type { LeadLog } from '../types/leads';
-import { useAdminData } from '../context/AdminDataContext';
 
 export const useLeads = () => {
-  const { leads, ensureLeads, clearLeads } = useAdminData();
+  const { data: leadsRaw, isLoading, error } = useLeadsQuery();
+  const clearMutation = useClearLeadsMutation();
 
-  useEffect(() => {
-    void ensureLeads();
-  }, [ensureLeads]);
+  const leads: LeadLog[] = leadsRaw?.map(mapLeadFromDB) ?? [];
+
+  const clearLeads = async () => {
+    try {
+      await clearMutation.mutateAsync();
+      return true;
+    } catch {
+      return false;
+    }
+  };
 
   return {
-    leads: leads.items,
-    loading: leads.loading,
-    error: leads.error,
-    loadLeads: ensureLeads,
+    leads,
+    loading: isLoading,
+    error: error?.message ?? null,
+    loadLeads: async () => {}, // React Query автоматически загружает
     clearLeads,
   };
 };

@@ -2,7 +2,7 @@
  * React Query hooks для работы с лидами.
  */
 
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { queryKeys } from './keys';
 import type { Database } from '../lib/database.types';
@@ -35,4 +35,25 @@ export function useInvalidateLeads() {
   return () => {
     queryClient.invalidateQueries({ queryKey: queryKeys.leads.all });
   };
+}
+
+/**
+ * Очистить все лиды.
+ */
+export function useClearLeadsMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('leads')
+        .delete()
+        .not('id', 'is', null);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.leads.all });
+    },
+  });
 }
