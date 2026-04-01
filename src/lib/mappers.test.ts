@@ -72,7 +72,7 @@ describe('mapCaseToDB', () => {
       city: 'Москва',
       date: '2024',
       format: 'Концерт',
-      services: ['led', 'sound'] as const,
+      services: ['led', 'sound'],
       summary: 'Описание',
       metrics: '1000 зрителей',
       images: ['img1.jpg'],

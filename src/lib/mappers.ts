@@ -35,7 +35,7 @@ export function mapCaseFromDB(row: CaseRow): CaseItem {
 /**
  * Преобразовать кейс из формата приложения в БД.
  */
-export function mapCaseToDB(caseItem: Partial<CaseItem> & { slug: string }): Record<string, unknown> {
+export function mapCaseToDB(caseItem: { slug: string; title?: string; city?: string; date?: string; format?: string; services?: string[]; summary?: string; metrics?: string; images?: string[]; videos?: string[] }): Record<string, unknown> {
   return {
     slug: caseItem.slug,
     title: caseItem.title,
