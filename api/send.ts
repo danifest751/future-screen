@@ -47,8 +47,7 @@ const isRateLimited = (ip: string) => {
 };
 
 // Транспорт для почты
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const transporter: any = nodemailer.createTransport({
+const transporter = nodemailer.createTransport({
   host: 'smtp.mail.ru',
   port: 465,
   secure: true,
