@@ -39,13 +39,13 @@ export function useUpsertCategoryMutation() {
 
   return useMutation({
     mutationFn: async (category: CategoryInsert & { id?: number | string }) => {
-      const { id, ...rest } = category;
+      const { id, created_at, ...rest } = category as Record<string, unknown> & { id?: unknown; created_at?: unknown };
       
       // Удаляем id из rest, чтобы он не попал в данные для обновления
-      const { id: _, ...dataWithoutId } = rest as Record<string, unknown> & { id?: unknown };
+      const { id: _, ...dataWithoutId } = rest;
       
       if (id) {
-        const numId = typeof id === 'string' ? parseInt(id, 10) : id;
+        const numId = typeof id === 'string' ? parseInt(id as string, 10) : id as number;
         if (isNaN(numId)) {
           throw new Error(`Invalid category id: ${id}`);
         }
