@@ -12,7 +12,7 @@ import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 import type { Package } from '../../data/packages';
 
 const schema = z.object({
-  id: z.string().min(1, 'ID обязателен'),
+  id: z.coerce.number().int().positive('ID должен быть числом'),
   name: z.string().min(2, 'Название обязательно'),
   forFormatsText: z.string().min(1, 'Укажите хотя бы 1 формат'),
   includesText: z.string().min(1, 'Укажите состав пакета'),
@@ -23,7 +23,7 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 const defaultValues: FormValues = {
-  id: '',
+  id: 0,
   name: '',
   forFormatsText: '',
   includesText: '',
@@ -66,7 +66,7 @@ const AdminPackagesPage = () => {
 
   const onSubmit = async (values: FormValues) => {
     const payload: Package = {
-      id: /^\d+$/.test(values.id) ? Number(values.id) : values.id,
+      id: values.id,
       name: values.name.trim(),
       forFormats: splitList(values.forFormatsText),
       includes: splitList(values.includesText),
@@ -89,7 +89,7 @@ const AdminPackagesPage = () => {
   const startEdit = (item: Package) => {
     setEditingId(item.id);
     reset({
-      id: String(item.id),
+      id: item.id,
       name: item.name,
       forFormatsText: item.forFormats.join('\n'),
       includesText: item.includes.join('\n'),

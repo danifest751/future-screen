@@ -12,7 +12,7 @@ import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 import type { Category } from '../../data/categories';
 
 const schema = z.object({
-  id: z.string().min(1, 'ID обязателен'),
+  id: z.coerce.number().int().positive('ID должен быть числом'),
   title: z.string().min(2, 'Название обязательно'),
   shortDescription: z.string().min(5, 'Добавьте краткое описание'),
   bulletsText: z.string().min(2, 'Добавьте преимущества'),
@@ -22,7 +22,7 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 const defaultValues: FormValues = {
-  id: '',
+  id: 0,
   title: '',
   shortDescription: '',
   bulletsText: '',
@@ -64,7 +64,7 @@ const AdminCategoriesPage = () => {
 
   const onSubmit = async (values: FormValues) => {
     const payload: Category = {
-      id: /^\d+$/.test(values.id) ? Number(values.id) : values.id,
+      id: values.id,
       title: values.title.trim(),
       shortDescription: values.shortDescription.trim(),
       bullets: splitList(values.bulletsText),
@@ -86,7 +86,7 @@ const AdminCategoriesPage = () => {
   const startEdit = (item: Category) => {
     setEditingId(item.id);
     reset({
-      id: String(item.id),
+      id: item.id,
       title: item.title,
       shortDescription: item.shortDescription,
       bulletsText: item.bullets.join('\n'),

@@ -12,7 +12,7 @@ import { Button, ConfirmModal, EmptyState, Field, Input, Textarea } from '../../
 import { Package, Tag, FolderOpen } from 'lucide-react';
 
 const emptyPackage: PackageData = {
-  id: 'light',
+  id: 1,
   name: '',
   forFormats: [],
   includes: [],
@@ -21,7 +21,7 @@ const emptyPackage: PackageData = {
 };
 
 const emptyCategory: Category = {
-  id: 'light',
+  id: 1,
   title: '',
   shortDescription: '',
   bullets: [],
@@ -324,9 +324,10 @@ const AdminContentPage = ({
               <Field label="ID" required>
                 <Input
                   value={pkgForm.id}
-                  onChange={(e) => setPkgForm((f) => ({ ...f, id: e.target.value as PackageData['id'] }))}
+                  onChange={(e) => setPkgForm((f) => ({ ...f, id: Number(e.target.value) || 0 }))}
                   required
                   disabled={!!pkgEditing}
+                  type="number"
                 />
               </Field>
               <Field label="Название" required>
@@ -436,9 +437,10 @@ const AdminContentPage = ({
               <Field label="ID" required>
                 <Input
                   value={catForm.id}
-                  onChange={(e) => setCatForm((f) => ({ ...f, id: e.target.value as Category['id'] }))}
+                  onChange={(e) => setCatForm((f) => ({ ...f, id: Number(e.target.value) || 0 }))}
                   required
                   disabled={!!catEditing}
+                  type="number"
                 />
               </Field>
               <Field label="Заголовок" required>

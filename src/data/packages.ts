@@ -1,5 +1,5 @@
 export type Package = {
-  id: number | string;
+  id: number;
   name: string;
   forFormats: string[];
   includes: string[];
@@ -9,7 +9,7 @@ export type Package = {
 
 export const packages: Package[] = [
   {
-    id: 'light',
+    id: 1,
     name: 'Лайт',
     forFormats: ['Пресс-подход', 'Презентация', 'Небольшая конференция'],
     includes: ['LED/проектор до 20 м² или ТВ', 'Базовый звук и 1–2 микрофона', 'Свет для сцены/спикеров', 'Инженер на площадке'],
@@ -17,7 +17,7 @@ export const packages: Package[] = [
     priceHint: 'Быстрый запуск, компактный комплект',
   },
   {
-    id: 'medium',
+    id: 2,
     name: 'Медиум',
     forFormats: ['Форум/конференция', 'Средний концерт', 'Выставочный стенд'],
     includes: [
@@ -30,7 +30,7 @@ export const packages: Package[] = [
     priceHint: 'Баланс по цене/охвату и рискам',
   },
   {
-    id: 'big',
+    id: 3,
     name: 'Биг',
     forFormats: ['Городское событие', 'Большой концерт', 'Федеральный форум'],
     includes: [

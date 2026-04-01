@@ -1,5 +1,5 @@
 export type Category = {
-  id: number | string;
+  id: number;
   title: string;
   shortDescription: string;
   bullets: string[];
@@ -8,7 +8,7 @@ export type Category = {
 
 export const categories: Category[] = [
   {
-    id: 'light',
+    id: 1,
     title: 'Световое оборудование',
     shortDescription: 'Сцена, выставка или банкет с настроенной световой схемой.',
     bullets: [
@@ -19,7 +19,7 @@ export const categories: Category[] = [
     pagePath: '/rent/light',
   },
   {
-    id: 'video',
+    id: 2,
     title: 'Видеооборудование',
     shortDescription: 'Экраны, проекторы, камеры и коммутация под трансляцию.',
     bullets: [
@@ -30,7 +30,7 @@ export const categories: Category[] = [
     pagePath: '/rent/video',
   },
   {
-    id: 'sound',
+    id: 3,
     title: 'Звуковое оборудование',
     shortDescription: 'Линейные массивы, мониторы, микшеры, радиосистемы.',
     bullets: [
@@ -41,7 +41,7 @@ export const categories: Category[] = [
     pagePath: '/rent/sound',
   },
   {
-    id: 'stage',
+    id: 4,
     title: 'Сцены и подиумы',
     shortDescription: 'Сцены, порталы, подиумы, пультовые башни и ограждения.',
     bullets: [
@@ -52,7 +52,7 @@ export const categories: Category[] = [
     pagePath: '/rent/stage',
   },
   {
-    id: 'instruments',
+    id: 5,
     title: 'Музыкальные инструменты',
     shortDescription: 'Барабаны, клавиши, гитары, бэклайн для выступлений.',
     bullets: [
