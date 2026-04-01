@@ -38,14 +38,21 @@ export function useUpsertPackageMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (pkg: PackageInsert & { id?: number }) => {
+    mutationFn: async (pkg: PackageInsert & { id?: number | string }) => {
       const { id, ...rest } = pkg;
       
+      // Удаляем id из rest, чтобы он не попал в данные для обновления
+      const { id: _, ...dataWithoutId } = rest as Record<string, unknown> & { id?: unknown };
+      
       if (id) {
+        const numId = typeof id === 'string' ? parseInt(id, 10) : id;
+        if (isNaN(numId)) {
+          throw new Error(`Invalid package id: ${id}`);
+        }
         const { data, error } = await supabase
           .from('packages')
-          .update(rest)
-          .eq('id', id)
+          .update(dataWithoutId)
+          .eq('id', numId)
           .select()
           .single();
 
@@ -54,7 +61,7 @@ export function useUpsertPackageMutation() {
       } else {
         const { data, error } = await supabase
           .from('packages')
-          .insert(rest)
+          .insert(dataWithoutId)
           .select()
           .single();
 

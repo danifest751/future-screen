@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { FieldValues, UseFormReset, UseFormWatch } from 'react-hook-form';
+import { asyncGetJson, asyncSetJson, asyncRemoveItem, isStorageAvailable } from '../lib/asyncStorage';
 
 type UseFormDraftPersistenceOptions<TValues extends FieldValues> = {
   enabled: boolean;
@@ -18,46 +19,59 @@ export const useFormDraftPersistence = <TValues extends FieldValues>({
   const [isHydrated, setIsHydrated] = useState(false);
   const hydratedRef = useRef(false);
   const suppressNextWriteRef = useRef(false);
+  const isWritingRef = useRef(false);
 
-  const clearDraft = useCallback(() => {
-    if (typeof window === 'undefined') return;
+  const clearDraft = useCallback(async () => {
+    if (typeof window === 'undefined' || !isStorageAvailable()) return;
 
-    window.localStorage.removeItem(storageKey);
+    await asyncRemoveItem(storageKey);
     suppressNextWriteRef.current = true;
     setHasDraft(false);
   }, [storageKey]);
 
   useEffect(() => {
-    if (!enabled || typeof window === 'undefined') {
+    if (!enabled || typeof window === 'undefined' || !isStorageAvailable()) {
       hydratedRef.current = true;
       setIsHydrated(true);
       return;
     }
 
-    const rawDraft = window.localStorage.getItem(storageKey);
-    if (!rawDraft) {
-      hydratedRef.current = true;
-      setHasDraft(false);
-      setIsHydrated(true);
-      return;
-    }
+    let cancelled = false;
 
-    try {
-      const draft = JSON.parse(rawDraft) as Partial<TValues>;
-      reset(draft as TValues);
-      setHasDraft(true);
-    } catch (error) {
-      console.error(`Failed to restore draft for ${storageKey}`, error);
-      window.localStorage.removeItem(storageKey);
-      setHasDraft(false);
-    } finally {
-      hydratedRef.current = true;
-      setIsHydrated(true);
-    }
+    const loadDraft = async () => {
+      try {
+        const draft = await asyncGetJson<Partial<TValues>>(storageKey);
+        if (cancelled) return;
+
+        if (draft) {
+          reset(draft as TValues);
+          setHasDraft(true);
+        } else {
+          setHasDraft(false);
+        }
+      } catch (error) {
+        console.error(`Failed to restore draft for ${storageKey}`, error);
+        if (!cancelled) {
+          await asyncRemoveItem(storageKey);
+          setHasDraft(false);
+        }
+      } finally {
+        if (!cancelled) {
+          hydratedRef.current = true;
+          setIsHydrated(true);
+        }
+      }
+    };
+
+    loadDraft();
+
+    return () => {
+      cancelled = true;
+    };
   }, [enabled, reset, storageKey]);
 
   useEffect(() => {
-    if (!enabled || typeof window === 'undefined' || !hydratedRef.current) return undefined;
+    if (!enabled || typeof window === 'undefined' || !hydratedRef.current || !isStorageAvailable()) return undefined;
 
     const subscription = watch((values) => {
       if (suppressNextWriteRef.current) {
@@ -65,12 +79,21 @@ export const useFormDraftPersistence = <TValues extends FieldValues>({
         return;
       }
 
-      try {
-        window.localStorage.setItem(storageKey, JSON.stringify(values));
-        setHasDraft(true);
-      } catch (error) {
-        console.error(`Failed to persist draft for ${storageKey}`, error);
-      }
+      if (isWritingRef.current) return;
+
+      isWritingRef.current = true;
+
+      // Используем requestAnimationFrame для избежания частых записей
+      requestAnimationFrame(async () => {
+        try {
+          await asyncSetJson(storageKey, values);
+          setHasDraft(true);
+        } catch (error) {
+          console.error(`Failed to persist draft for ${storageKey}`, error);
+        } finally {
+          isWritingRef.current = false;
+        }
+      });
     });
 
     return () => subscription.unsubscribe();

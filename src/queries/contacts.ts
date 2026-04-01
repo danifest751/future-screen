@@ -38,10 +38,19 @@ export function useUpdateContactsMutation() {
   return useMutation({
     mutationFn: async (updates: ContactUpdate & { id: number }) => {
       const { id, ...rest } = updates;
+      
+      // Удаляем id из rest, чтобы он не попал в данные для обновления
+      const { id: _, ...dataWithoutId } = rest as Record<string, unknown> & { id?: unknown };
+      
+      const numId = typeof id === 'string' ? parseInt(id, 10) : id;
+      if (isNaN(numId)) {
+        throw new Error(`Invalid contact id: ${id}`);
+      }
+      
       const { data, error } = await supabase
         .from('contacts')
-        .update(rest)
-        .eq('id', id)
+        .update(dataWithoutId)
+        .eq('id', numId)
         .select()
         .single();
 

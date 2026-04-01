@@ -38,14 +38,21 @@ export function useUpsertCategoryMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (category: CategoryInsert & { id?: number }) => {
+    mutationFn: async (category: CategoryInsert & { id?: number | string }) => {
       const { id, ...rest } = category;
       
+      // Удаляем id из rest, чтобы он не попал в данные для обновления
+      const { id: _, ...dataWithoutId } = rest as Record<string, unknown> & { id?: unknown };
+      
       if (id) {
+        const numId = typeof id === 'string' ? parseInt(id, 10) : id;
+        if (isNaN(numId)) {
+          throw new Error(`Invalid category id: ${id}`);
+        }
         const { data, error } = await supabase
           .from('categories')
-          .update(rest)
-          .eq('id', id)
+          .update(dataWithoutId)
+          .eq('id', numId)
           .select()
           .single();
 
@@ -54,7 +61,7 @@ export function useUpsertCategoryMutation() {
       } else {
         const { data, error } = await supabase
           .from('categories')
-          .insert(rest)
+          .insert(dataWithoutId)
           .select()
           .single();
 

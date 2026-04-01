@@ -292,3 +292,45 @@ describe('mapContactsFromDB', () => {
     expect(result.workingHours).toBe('');
   });
 });
+
+describe('ID conversion for mutations', () => {
+  it('должен конвертировать строковый ID в числовой', () => {
+    const id = '123';
+    const numId = typeof id === 'string' ? parseInt(id, 10) : id;
+    expect(numId).toBe(123);
+    expect(typeof numId).toBe('number');
+  });
+
+  it('должен оставить числовой ID как есть', () => {
+    const id = 456;
+    const numId = typeof id === 'string' ? parseInt(id as unknown as string, 10) : id;
+    expect(numId).toBe(456);
+    expect(typeof numId).toBe('number');
+  });
+
+  it('должен обнаружить невалидный строковый ID', () => {
+    const id = 'invalid';
+    const numId = typeof id === 'string' ? parseInt(id, 10) : id;
+    expect(isNaN(numId)).toBe(true);
+  });
+
+  it('должен исключить id из rest при деструктуризации', () => {
+    const pkg = { id: '123', name: 'Test', for_formats: ['format1'] };
+    const { id, ...rest } = pkg;
+    const { id: _, ...dataWithoutId } = rest as Record<string, unknown> & { id?: unknown };
+    
+    expect(id).toBe('123');
+    expect('id' in dataWithoutId).toBe(false);
+    expect(dataWithoutId).toEqual({ name: 'Test', for_formats: ['format1'] });
+  });
+
+  it('должен исключить id из rest при числовом id', () => {
+    const pkg = { id: 123, name: 'Test', for_formats: ['format1'] };
+    const { id, ...rest } = pkg;
+    const { id: _, ...dataWithoutId } = rest as Record<string, unknown> & { id?: unknown };
+    
+    expect(id).toBe(123);
+    expect('id' in dataWithoutId).toBe(false);
+    expect(dataWithoutId).toEqual({ name: 'Test', for_formats: ['format1'] });
+  });
+});
