@@ -29,7 +29,7 @@ export const useSiteSettings = () => {
       const { data, error: supabaseError } = await supabase
         .from('site_settings')
         .select('*')
-        .eq('id', 'global')
+        .eq('id', 'default')
         .single();
 
       if (supabaseError) {
@@ -75,7 +75,7 @@ export const useSiteSettings = () => {
       const { error: upsertError } = await supabase
         .from('site_settings')
         .upsert({
-          id: 'global',
+          id: 'default',
           background: updatedSettings.background,
           background_settings: updatedSettings.backgroundSettings,
           star_border_settings: updatedSettings.starBorder,
@@ -127,7 +127,7 @@ export const useSiteSettings = () => {
           event: '*',
           schema: 'public',
           table: 'site_settings',
-          filter: 'id=eq.global',
+          filter: 'id=eq.default',
         },
         (payload) => {
           console.log('[useSiteSettings] Получены изменения:', payload);
