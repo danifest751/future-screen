@@ -43,9 +43,7 @@ const PrivacyPolicyPage = () => {
       <div className="container-page py-12 md:py-20">
         <article className="prose prose-invert prose-lg mx-auto max-w-3xl">
           <h1 className="text-4xl font-bold text-white">{content.title}</h1>
-          <div className="mt-8 text-slate-300">
-            <Markdown>{content.content}</Markdown>
-          </div>
+          <Markdown>{content.content}</Markdown>
         </article>
       </div>
     </>
