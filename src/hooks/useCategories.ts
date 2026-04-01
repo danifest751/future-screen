@@ -1,5 +1,5 @@
 import { useCategoriesQuery, useUpsertCategoryMutation, useDeleteCategoryMutation, useResetCategoriesMutation } from '../queries';
-import { mapCategoryFromDB } from '../lib/mappers';
+import { mapCategoryFromDB, mapCategoryToDB } from '../lib/mappers';
 import type { Category } from '../data/categories';
 
 export const useCategories = () => {
@@ -12,7 +12,8 @@ export const useCategories = () => {
 
   const upsert = async (payload: Category) => {
     try {
-      await upsertMutation.mutateAsync(payload as Parameters<typeof upsertMutation.mutateAsync>[0]);
+      const dbPayload = mapCategoryToDB(payload);
+      await upsertMutation.mutateAsync({ ...dbPayload, id: payload.id } as Parameters<typeof upsertMutation.mutateAsync>[0]);
       return true;
     } catch {
       return false;

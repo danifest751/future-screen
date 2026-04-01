@@ -1,5 +1,5 @@
 import { usePackagesQuery, useUpsertPackageMutation, useDeletePackageMutation, useResetPackagesMutation } from '../queries';
-import { mapPackageFromDB } from '../lib/mappers';
+import { mapPackageFromDB, mapPackageToDB } from '../lib/mappers';
 import type { Package } from '../data/packages';
 
 export const usePackages = () => {
@@ -12,7 +12,8 @@ export const usePackages = () => {
 
   const upsert = async (payload: Package) => {
     try {
-      await upsertMutation.mutateAsync(payload as Parameters<typeof upsertMutation.mutateAsync>[0]);
+      const dbPayload = mapPackageToDB(payload);
+      await upsertMutation.mutateAsync({ ...dbPayload, id: payload.id } as Parameters<typeof upsertMutation.mutateAsync>[0]);
       return true;
     } catch {
       return false;
