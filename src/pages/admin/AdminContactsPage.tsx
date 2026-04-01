@@ -57,8 +57,13 @@ const AdminContactsPage = () => {
 
   useUnsavedChangesGuard(isDirty);
 
+  // Загружаем данные из контактов только если нет черновика и форма уже гидрирована
   useEffect(() => {
-    if (isInitialized || !isHydrated || loading || !contacts) return;
+    if (!isHydrated || loading || !contacts) return;
+    // Если есть черновик, не перезаписываем форму данными из контактов
+    if (hasContactsDraft) return;
+    // Если уже инициализировано, не перезаписываем
+    if (isInitialized) return;
 
     reset({
       phonesText: contacts.phones.join('\n'),
