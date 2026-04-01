@@ -141,3 +141,34 @@ export function mapContactsFromDB(rows: ContactRow[]): { phones: string[]; email
     workingHours: row.working_hours ?? '',
   };
 }
+
+/**
+ * Преобразовать контакты из формата приложения в БД.
+ */
+export function mapContactsToDB(contacts: { phones: string[]; emails: string[]; address: string; workingHours: string }): Record<string, unknown> {
+  return {
+    phones: contacts.phones,
+    emails: contacts.emails,
+    address: contacts.address,
+    working_hours: contacts.workingHours,
+  };
+}
+
+/**
+ * Преобразовать лид из формата приложения в БД.
+ */
+export function mapLeadToDB(lead: LeadLog): Record<string, unknown> {
+  return {
+    source: lead.source,
+    name: lead.name,
+    phone: lead.phone,
+    email: lead.email,
+    telegram: lead.telegram,
+    city: lead.city,
+    date: lead.date,
+    format: lead.format,
+    comment: lead.comment,
+    extra: lead.extra,
+    status: lead.status,
+  };
+}

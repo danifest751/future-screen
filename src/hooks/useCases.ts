@@ -1,5 +1,5 @@
 import { useCasesQuery, useCreateCaseMutation, useUpdateCaseMutation, useDeleteCaseMutation, useResetCasesMutation } from '../queries';
-import { mapCaseFromDB } from '../lib/mappers';
+import { mapCaseFromDB, mapCaseToDB } from '../lib/mappers';
 import type { CaseItem } from '../data/cases';
 
 export const useCases = () => {
@@ -13,7 +13,8 @@ export const useCases = () => {
 
   const addCase = async (payload: Omit<CaseItem, 'services'> & { services: string[] }) => {
     try {
-      await createMutation.mutateAsync(payload as Parameters<typeof createMutation.mutateAsync>[0]);
+      const dbPayload = mapCaseToDB(payload);
+      await createMutation.mutateAsync(dbPayload as Parameters<typeof createMutation.mutateAsync>[0]);
       return true;
     } catch {
       return false;
@@ -22,7 +23,8 @@ export const useCases = () => {
 
   const updateCase = async (slug: string, payload: Partial<Omit<CaseItem, 'services'>> & { services?: string[] }) => {
     try {
-      await updateMutation.mutateAsync({ slug, ...payload } as Parameters<typeof updateMutation.mutateAsync>[0]);
+      const dbPayload = mapCaseToDB({ ...payload, slug });
+      await updateMutation.mutateAsync({ slug, ...dbPayload } as Parameters<typeof updateMutation.mutateAsync>[0]);
       return true;
     } catch {
       return false;

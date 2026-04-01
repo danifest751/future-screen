@@ -1,5 +1,5 @@
 import { useContactsQuery, useUpdateContactsMutation, useResetContactsMutation } from '../queries';
-import { mapContactsFromDB } from '../lib/mappers';
+import { mapContactsFromDB, mapContactsToDB } from '../lib/mappers';
 
 export const useContacts = () => {
   const { data: contactsRaw, isLoading, error } = useContactsQuery();
@@ -11,12 +11,10 @@ export const useContacts = () => {
   const update = async (payload: { phones: string[]; emails: string[]; address: string; workingHours: string }) => {
     try {
       if (!contacts?.id) return false;
+      const dbPayload = mapContactsToDB(payload);
       await updateMutation.mutateAsync({
         id: contacts.id,
-        phones: payload.phones,
-        emails: payload.emails,
-        address: payload.address,
-        working_hours: payload.workingHours,
+        ...dbPayload,
       });
       return true;
     } catch {
