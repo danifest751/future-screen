@@ -78,6 +78,7 @@ const RentalCategoryPage = () => {
 
       {Array.isArray(useCases) && useCases.length > 0 && (
         <RentalUseCases
+          slug={slug}
           items={useCases.map((uc) => ({
             title: uc.title,
             description: uc.description,
