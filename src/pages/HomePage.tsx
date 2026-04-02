@@ -665,7 +665,7 @@ const HomePage = () => {
 
           {/* H1 */}
           <h1 className="font-display mb-6 text-balance text-5xl font-bold leading-tight text-white drop-shadow-lg md:text-7xl lg:text-8xl">
-            Аренда LED-экранов,{' '}
+            Аренда экранов,
             <span className="gradient-text">звука, света</span>
             <br />и сцены
           </h1>
