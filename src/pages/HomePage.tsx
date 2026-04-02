@@ -489,7 +489,7 @@ const HomePage = () => {
               <Link
                 key={item.title}
                 to={item.link}
-                className="group relative overflow-hidden rounded-2xl min-h-[300px] flex flex-col justify-end p-6 cursor-pointer"
+                className="group relative overflow-hidden rounded-2xl min-h-[300px] block cursor-pointer"
               >
                 {/* Photo background */}
                 <img
@@ -497,10 +497,10 @@ const HomePage = () => {
                   alt={item.title}
                   className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                 />
-                {/* Dark gradient overlay — stronger at bottom for readability */}
+                {/* Dark gradient overlay */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/20" />
-                {/* Content */}
-                <div className="relative z-10">
+                {/* Content — always anchored to bottom */}
+                <div className="absolute bottom-0 left-0 right-0 z-10 p-6">
                   <div
                     className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl text-white"
                     style={{ background: item.gradient }}
@@ -508,7 +508,7 @@ const HomePage = () => {
                     {item.icon}
                   </div>
                   <h3 className="font-display mb-1 text-lg font-semibold text-white group-hover:text-brand-300 transition-colors">{item.title}</h3>
-                  <p className="text-sm leading-relaxed text-gray-300 mb-3">{item.desc}</p>
+                  <p className="line-clamp-2 text-sm leading-relaxed text-gray-300 mb-3">{item.desc}</p>
                   <ul className="space-y-1">
                     {item.bullets.map((b) => (
                       <li key={b} className="flex items-center gap-2 text-xs text-gray-300">
