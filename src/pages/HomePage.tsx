@@ -258,10 +258,21 @@ const worksItems = [
   { src: '/images/work-sports.png', tag: 'Спорт', title: 'Финальный матч чемпионата' },
 ];
 
+// ─── Shuffle helper ───────────────────────────────────────────────────────────
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 // ─── Works Slider ─────────────────────────────────────────────────────────────
 function WorksSlider({ items }: { items: typeof worksItems }) {
-  const n = items.length;
-  const all = [...items, ...items, ...items];
+  const [shuffled] = useState(() => shuffle(items));
+  const n = shuffled.length;
+  const all = [...shuffled, ...shuffled, ...shuffled];
   const [visible, setVisible] = useState(3);
   const [idx, setIdxState] = useState(n);
   const idxRef = useRef(n);
@@ -365,8 +376,9 @@ function WorksSlider({ items }: { items: typeof worksItems }) {
 type EventItem = (typeof eventTypes)[number];
 
 function EventsSlider({ items }: { items: EventItem[] }) {
-  const n = items.length;
-  const all = [...items, ...items, ...items];
+  const [shuffled] = useState(() => shuffle(items));
+  const n = shuffled.length;
+  const all = [...shuffled, ...shuffled, ...shuffled];
   const [visible, setVisible] = useState(3);
   const [idx, setIdxState] = useState(n);
   const idxRef = useRef(n);
