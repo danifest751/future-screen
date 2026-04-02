@@ -35,6 +35,7 @@ const equipment = [
     bullets: ['Экраны от 3×2м до 10×6м', 'Модульная система сборки', 'Фермовые конструкции до 7м'],
     gradient: 'linear-gradient(135deg, #667eea, #764ba2)',
     link: '/rent/video',
+    photo: '/images/led-closeup.png',
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
         <rect width="20" height="15" x="2" y="3" rx="2"/><path d="m8 21 4-4 4 4"/><path d="M9 17h6"/>
@@ -47,6 +48,7 @@ const equipment = [
     bullets: ['Диагонали 32"—100"', '4K Ultra HD разрешение', 'Более 300 панелей в парке'],
     gradient: 'linear-gradient(135deg, #4facfe, #00f2fe)',
     link: '/rent/video',
+    photo: null,
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
         <rect width="20" height="15" x="2" y="3" rx="2"/><path d="m8 21 4-4 4 4"/><circle cx="12" cy="10" r="3"/>
@@ -59,6 +61,7 @@ const equipment = [
     bullets: ['Активные акустические системы', 'Радиомикрофоны Shure/Sennheiser', 'Микшерные пульты'],
     gradient: 'linear-gradient(135deg, #f093fb, #f5576c)',
     link: '/rent/sound',
+    photo: null,
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
         <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
@@ -71,6 +74,7 @@ const equipment = [
     bullets: ['LED PAR и прожекторы', 'Динамические световые приборы', 'Контроллеры DMX'],
     gradient: 'linear-gradient(135deg, #ffd89b, #19547b)',
     link: '/rent/light',
+    photo: null,
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
         <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/>
@@ -83,6 +87,7 @@ const equipment = [
     bullets: ['Модульные сценические площадки', 'Алюминиевые фермы', 'Подвес для света и экранов'],
     gradient: 'linear-gradient(135deg, #11998e, #38ef7d)',
     link: '/rent/stage',
+    photo: null,
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
         <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
@@ -124,7 +129,7 @@ const extraEquipment = [
   },
 ];
 
-// ─���─ Event types data ─────────────────────────────────────────────────────────
+// ─── Event types data ─────────────────────────────────────────────────────────
 const eventTypes = [
   {
     title: 'Корпоративы',
@@ -220,29 +225,22 @@ const CtaForm = () => {
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
-    
     if (!formData.name.trim() || formData.name.trim().length < 2) {
       newErrors.name = 'Введите имя (минимум 2 символа)';
     }
-    
     const phoneRegex = /^[+\d\s\-()]{10,20}$/;
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    
     const hasPhone = formData.phone.trim() && phoneRegex.test(formData.phone.trim());
     const hasEmail = formData.email.trim() && emailRegex.test(formData.email.trim());
-    
     if (!hasPhone && !hasEmail) {
       newErrors.contact = 'Укажите телефон или email';
     }
-    
     if (formData.phone.trim() && !phoneRegex.test(formData.phone.trim())) {
       newErrors.phone = 'Некорректный формат телефона';
     }
-    
     if (formData.email.trim() && !emailRegex.test(formData.email.trim())) {
       newErrors.email = 'Некорректный формат email';
     }
-    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -250,11 +248,8 @@ const CtaForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     trackEvent('submit_cta_form');
-    
     if (!validate()) return;
-    
     setIsSubmitting(true);
-    
     try {
       const result = await submitForm({
         source: 'cta-homepage',
@@ -263,7 +258,6 @@ const CtaForm = () => {
         email: formData.email.trim() || undefined,
         pagePath: window.location.pathname,
       });
-      
       if (result.tg || result.email) {
         setIsSuccess(true);
         setFormData({ name: '', phone: '', email: '' });
@@ -287,10 +281,7 @@ const CtaForm = () => {
         </div>
         <h3 className="mb-2 text-lg font-semibold text-white">Заявка отправлена!</h3>
         <p className="text-gray-400">Мы свяжемся с вами в ближайшее время</p>
-        <button
-          onClick={() => setIsSuccess(false)}
-          className="mt-4 text-sm text-brand-400 hover:text-brand-300"
-        >
+        <button onClick={() => setIsSuccess(false)} className="mt-4 text-sm text-brand-400 hover:text-brand-300">
           Отправить ещё
         </button>
       </div>
@@ -311,7 +302,6 @@ const CtaForm = () => {
             />
             {errors.name && <p className="mt-1 text-left text-xs text-red-400">{errors.name}</p>}
           </div>
-          
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <input
@@ -323,7 +313,6 @@ const CtaForm = () => {
               />
               {errors.phone && <p className="mt-1 text-left text-xs text-red-400">{errors.phone}</p>}
             </div>
-            
             <div>
               <input
                 type="email"
@@ -335,10 +324,8 @@ const CtaForm = () => {
               {errors.email && <p className="mt-1 text-left text-xs text-red-400">{errors.email}</p>}
             </div>
           </div>
-          
           {errors.contact && <p className="text-left text-xs text-red-400">{errors.contact}</p>}
         </div>
-        
         <button
           type="submit"
           disabled={isSubmitting || !consent}
@@ -357,11 +344,7 @@ const CtaForm = () => {
           )}
         </button>
       </div>
-      
-      {errors.submit && (
-        <p className="mt-4 text-center text-sm text-red-400">{errors.submit}</p>
-      )}
-      
+      {errors.submit && <p className="mt-4 text-center text-sm text-red-400">{errors.submit}</p>}
       <ConsentCheckbox checked={consent} onChange={setConsent} className="mt-4" />
     </form>
   );
@@ -377,147 +360,113 @@ const HomePage = () => {
         <meta name="keywords" content="аренда led экранов, техническое оснащение мероприятий, аренда звука, аренда света, сценические конструкции, светодиодные экраны, Екатеринбург" />
       </Helmet>
 
-      {/* ── 1. HERO ────────────────────────────────────────────────────────── */}
-      <section className="relative flex min-h-screen items-center overflow-hidden -mt-16 lg:-mt-20">
-        {/* Animated gradient blobs */}
-        <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div
-            className="animate-blob-pulse absolute -left-32 -top-32 h-[600px] w-[600px] rounded-full opacity-30"
-            style={{ background: 'radial-gradient(circle, rgba(102,126,234,0.4) 0%, transparent 70%)', filter: 'blur(80px)' }}
-          />
-          <div
-            className="animate-float-delayed absolute -right-32 top-20 h-[500px] w-[500px] rounded-full opacity-20"
-            style={{ background: 'radial-gradient(circle, rgba(118,75,162,0.5) 0%, transparent 70%)', filter: 'blur(80px)' }}
-          />
-          <div
-            className="animate-float absolute bottom-0 left-1/2 h-[400px] w-[400px] -translate-x-1/2 rounded-full opacity-20"
-            style={{ background: 'radial-gradient(circle, rgba(240,147,251,0.4) 0%, transparent 70%)', filter: 'blur(60px)' }}
-          />
-          {/* Grid pattern */}
-          <div
-            className="absolute inset-0 opacity-40"
-            style={{
-              backgroundImage: 'linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)',
-              backgroundSize: '40px 40px',
-            }}
-          />
-          {/* Top gradient overlay */}
-          <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-[rgba(102,126,234,0.05)] to-transparent" />
-        </div>
+      {/* ── 1. HERO — fullbleed photo ───────────────────────────────────────── */}
+      <section
+        className="relative flex min-h-screen items-center justify-center overflow-hidden -mt-16 lg:-mt-20"
+        style={{
+          backgroundImage: 'url(/images/hero-led-event.png)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
+      >
+        {/* Dark overlay + gradient fade to site bg */}
+        <div className="absolute inset-0 bg-black/55" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#0a0a0a]" />
 
-        <div className="container-page relative z-10 py-32 md:py-40">
-          <div className="mx-auto max-w-4xl text-center">
-            {/* Badge */}
-            <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-gray-300 backdrop-blur-sm">
-              <span className="animate-dot-pulse h-2 w-2 rounded-full bg-green-400" />
-              Работаем по всей России с 2007 года
-            </div>
+        <div className="container-page relative z-10 py-32 md:py-40 text-center">
+          {/* Badge */}
+          <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm text-gray-200 backdrop-blur-sm">
+            <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
+            Работаем по всей России с 2007 года
+          </div>
 
-            {/* H1 */}
-            <h1 className="font-display mb-6 text-balance text-5xl font-bold leading-tight text-white md:text-7xl lg:text-8xl">
-              Техническое{' '}
-              <span className="gradient-text">оснащение</span>
-              <br />
-              мероприятий
-            </h1>
+          {/* H1 */}
+          <h1 className="font-display mb-6 text-balance text-5xl font-bold leading-tight text-white drop-shadow-lg md:text-7xl lg:text-8xl">
+            Аренда LED-экранов,{' '}
+            <span className="gradient-text">звука, света</span>
+            <br />и сцены
+          </h1>
 
-            {/* Subtitle */}
-            <p className="mx-auto mb-10 max-w-2xl text-pretty text-lg leading-relaxed text-gray-400 md:text-xl">
-              LED-экраны, свет, звук, сцены и комплекты «под ключ» для выставок, концертов, конференций и корпоративов
-            </p>
+          {/* Subtitle */}
+          <p className="mx-auto mb-10 max-w-2xl text-pretty text-lg leading-relaxed text-gray-200 md:text-xl">
+            Техническое обеспечение корпоративов, концертов, конференций и выставок любого масштаба
+          </p>
 
-            {/* CTA */}
-            <div className="flex flex-wrap items-center justify-center gap-4">
-              <a
-                href="#contacts"
-                onClick={(e) => { e.preventDefault(); document.getElementById('contacts')?.scrollIntoView({ behavior: 'smooth' }); trackEvent('click_cta_hero'); }}
-                className="btn-primary text-base"
-              >
-                Рассчитать мероприятие
-              </a>
-              <Link to="/cases" className="btn-secondary text-base">
-                Смотреть кейсы
-              </Link>
-            </div>
+          {/* CTA */}
+          <div className="flex flex-wrap items-center justify-center gap-4">
+            <a
+              href="#contacts"
+              onClick={(e) => { e.preventDefault(); document.getElementById('contacts')?.scrollIntoView({ behavior: 'smooth' }); trackEvent('click_cta_hero'); }}
+              className="btn-primary text-base"
+            >
+              Рассчитать мероприятие
+            </a>
+            <Link to="/cases" className="btn-secondary text-base">
+              Смотреть кейсы
+            </Link>
+          </div>
 
-            {/* Stats */}
-            <div className="mt-16 grid grid-cols-2 gap-4 md:grid-cols-4">
-              {[
-                { value: '18+', label: 'лет опыта' },
-                { value: '500+', label: 'мероприятий/год' },
-                { value: '300+', label: 'единиц техники' },
-                { value: '24/7', label: 'поддержка' },
-              ].map((stat) => (
-                <div key={stat.label} className="glass rounded-2xl p-4 text-center">
-                  <div className="font-display gradient-text text-3xl font-bold md:text-4xl">{stat.value}</div>
-                  <div className="mt-1 text-sm text-gray-400">{stat.label}</div>
-                </div>
-              ))}
-            </div>
+          {/* Stats */}
+          <div className="mt-16 grid grid-cols-2 gap-4 md:grid-cols-4">
+            {[
+              { value: '18+', label: 'лет опыта' },
+              { value: '500+', label: 'мероприятий/год' },
+              { value: '300+', label: 'единиц техники' },
+              { value: '24/7', label: 'поддержка' },
+            ].map((stat) => (
+              <div key={stat.label} className="rounded-2xl border border-white/15 bg-black/30 p-4 text-center backdrop-blur-sm">
+                <div className="font-display gradient-text text-3xl font-bold md:text-4xl">{stat.value}</div>
+                <div className="mt-1 text-sm text-gray-300">{stat.label}</div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* ── 2. ABOUT ──────────────────────────────────────────────────────── */}
-      <section id="about" className="py-24 md:py-32">
+      {/* ── 2. OUR WORK — photo cards ─────────────────────────────────────── */}
+      <section className="py-24 md:py-32 bg-[#0a0a0a]">
         <div className="container-page">
           <RevealSection>
-            <div className="grid items-center gap-12 lg:grid-cols-2">
-              {/* Text */}
+            <div className="mb-12 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
               <div>
                 <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-sm text-gray-400">
-                  О компании
+                  Наши работы
                 </div>
-                <h2 className="font-display mb-6 text-balance text-4xl font-bold text-white md:text-5xl">
-                  Создаём{' '}
-                  <span className="gradient-text">визуальный</span>{' '}
-                  опыт
+                <h2 className="font-display text-balance text-4xl font-bold text-white md:text-5xl">
+                  Мероприятия,{' '}
+                  <span className="gradient-text">которые мы делали</span>
                 </h2>
-                <p className="mb-4 text-lg leading-relaxed text-gray-400">
-                  Фьючер Скрин — это команда профессионалов, превращающих технические задачи в безупречный визуальный результат. Мы не просто сдаём оборудование в аренду — мы проектируем технологические решения для вашего события.
-                </p>
-                <p className="mb-8 text-lg leading-relaxed text-gray-400">
-                  От небольших презентаций до масштабных концертных туров — обеспечиваем полный цикл: от консультации и подбора оборудования до монтажа, управления на площадке и демонтажа.
-                </p>
-                <ul className="space-y-3">
-                  {['Собственный парк техники', 'Выезд в любой регион РФ', 'Сертифицированные специалисты'].map((item) => (
-                    <li key={item} className="flex items-center gap-3 text-gray-300">
-                      <span
-                        className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full"
-                        style={{ background: 'var(--accent-gradient)' }}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="h-3 w-3">
-                          <path d="m20 6-11 11-5-5"/>
-                        </svg>
-                      </span>
-                      {item}
-                    </li>
-                  ))}
-                </ul>
               </div>
-
-              {/* Feature cards grid */}
-              <div className="grid grid-cols-2 gap-4">
-                {[
-                  { label: 'LED & видео', color: '#667eea', icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><rect width="20" height="15" x="2" y="3" rx="2"/><path d="m8 21 4-4 4 4"/></svg> },
-                  { label: 'Звук', color: '#f093fb', icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg> },
-                  { label: 'Спецэффекты', color: '#667eea', icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg> },
-                  { label: 'Съёмка', color: '#764ba2', icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2"/></svg> },
-                ].map((item) => (
-                  <div key={item.label} className="card flex flex-col items-start gap-3">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-xl" style={{ color: item.color, background: `${item.color}20` }}>
-                      {item.icon}
-                    </div>
-                    <span className="font-medium text-white">{item.label}</span>
-                  </div>
-                ))}
-              </div>
+              <Link to="/cases" className="text-brand-400 hover:text-brand-300 transition-colors text-sm font-medium whitespace-nowrap">
+                Все кейсы →
+              </Link>
             </div>
+          </RevealSection>
+
+          <RevealSection className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              { src: '/images/hero-concert.png', tag: 'Концертная сцена', title: 'Фестиваль живой музыки' },
+              { src: '/images/gala-event.png', tag: 'Корпоратив', title: 'Ежегодный Гала-ужин' },
+              { src: '/images/festival-crowd.png', tag: 'Open-air', title: 'Музыкальный фестиваль' },
+            ].map((item) => (
+              <div key={item.title} className="group relative rounded-2xl overflow-hidden cursor-pointer" style={{ aspectRatio: '4/5' }}>
+                <img
+                  src={item.src}
+                  alt={item.title}
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+                <div className="absolute bottom-0 left-0 p-6 transform translate-y-2 transition-transform duration-300 group-hover:translate-y-0">
+                  <p className="text-[#667eea] font-medium mb-1 uppercase tracking-wider text-xs">{item.tag}</p>
+                  <h3 className="text-xl font-bold text-white">{item.title}</h3>
+                </div>
+              </div>
+            ))}
           </RevealSection>
         </div>
       </section>
 
-      {/* ── 3. EQUIPMENT ──────────────────────────────────────────���───────── */}
+      {/* ── 3. EQUIPMENT ──────────────────────────────────────────────────── */}
       <section id="equipment" className="py-24 md:py-32">
         <div className="container-page">
           <RevealSection>
@@ -535,35 +484,39 @@ const HomePage = () => {
             </div>
           </RevealSection>
 
-          {/* Main equipment cards */}
-          <RevealSection className="flex flex-wrap justify-center gap-5">
+          <RevealSection className="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {equipment.map((item) => (
               <Link
                 key={item.title}
                 to={item.link}
-                className="card group h-full w-full cursor-pointer sm:w-[calc(50%-10px)] lg:w-[calc(33.333%-14px)]"
+                className="group relative overflow-hidden rounded-2xl border border-white/10 min-h-[220px] flex items-end p-6 cursor-pointer"
               >
-                <div
-                  className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl text-white"
-                  style={{ background: item.gradient }}
-                >
-                  {item.icon}
+                {item.photo ? (
+                  <>
+                    <img
+                      src={item.photo}
+                      alt={item.title}
+                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-black/55 group-hover:bg-black/45 transition-colors" />
+                  </>
+                ) : (
+                  <div className="absolute inset-0" style={{ background: item.gradient, opacity: 0.15 }} />
+                )}
+                <div className="relative z-10 w-full">
+                  <div
+                    className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl text-white"
+                    style={{ background: item.gradient }}
+                  >
+                    {item.icon}
+                  </div>
+                  <h3 className="font-display mb-1 text-lg font-semibold text-white group-hover:text-brand-300 transition-colors">{item.title}</h3>
+                  <p className="text-sm leading-relaxed text-gray-400">{item.desc}</p>
                 </div>
-                <h3 className="font-display mb-2 text-lg font-semibold text-white group-hover:text-brand-300 transition-colors">{item.title}</h3>
-                <p className="mb-4 text-sm leading-relaxed text-gray-400">{item.desc}</p>
-                <ul className="space-y-2">
-                  {item.bullets.map((b) => (
-                    <li key={b} className="flex items-center gap-2 text-sm text-gray-300">
-                      <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: 'var(--accent-gradient)' }} />
-                      {b}
-                    </li>
-                  ))}
-                </ul>
               </Link>
             ))}
           </RevealSection>
 
-          {/* Extra 3 */}
           <RevealSection className="mt-5 grid gap-5 sm:grid-cols-3">
             {extraEquipment.map((item) => (
               <Link key={item.title} to={item.link} className="card flex items-start gap-4 group">
@@ -602,14 +555,8 @@ const HomePage = () => {
                 className="group relative cursor-pointer overflow-hidden rounded-2xl border border-white/10"
                 style={{ aspectRatio: '4/3' }}
               >
-                {/* Gradient bg */}
-                <div
-                  className="absolute inset-0 transition-opacity duration-300"
-                  style={{ background: item.gradient }}
-                />
-                {/* Dark overlay */}
+                <div className="absolute inset-0 transition-opacity duration-300" style={{ background: item.gradient }} />
                 <div className="absolute inset-0 bg-black/40 transition-colors duration-300 group-hover:bg-black/20" />
-                {/* Content */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-white">
                   <div className="mb-3 opacity-90">{item.icon}</div>
                   <h3 className="font-display text-xl font-bold">{item.title}</h3>
@@ -639,12 +586,11 @@ const HomePage = () => {
           </RevealSection>
 
           <RevealSection className="relative grid gap-6 md:grid-cols-4">
-            {/* Connector line */}
             <div
               className="absolute left-0 right-0 top-10 hidden h-px md:block"
               style={{ background: 'linear-gradient(90deg, transparent, rgba(102,126,234,0.4), transparent)' }}
             />
-            {processSteps.map((step, idx) => (
+            {processSteps.map((step) => (
               <div key={step.num} className="card relative h-full text-center">
                 <div
                   className="font-display mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full text-2xl font-bold text-white"
@@ -665,18 +611,15 @@ const HomePage = () => {
         <div className="container-page">
           <RevealSection>
             <div className="relative overflow-hidden rounded-3xl p-10 text-center md:p-16">
-              {/* BG gradient */}
               <div
                 className="absolute inset-0"
                 style={{ background: 'linear-gradient(135deg, rgba(102,126,234,0.25) 0%, rgba(118,75,162,0.25) 100%)' }}
               />
-              <div className="absolute inset-0" style={{ backdropFilter: 'blur(0px)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 'inherit' }} />
-              {/* Center glow */}
+              <div className="absolute inset-0" style={{ border: '1px solid rgba(255,255,255,0.1)', borderRadius: 'inherit' }} />
               <div
                 className="animate-pulse-slow absolute left-1/2 top-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-30"
                 style={{ background: 'radial-gradient(circle, rgba(102,126,234,0.6) 0%, transparent 70%)', filter: 'blur(60px)' }}
               />
-              {/* Grid */}
               <div
                 className="absolute inset-0 opacity-30"
                 style={{
@@ -685,7 +628,6 @@ const HomePage = () => {
                   borderRadius: 'inherit',
                 }}
               />
-
               <div className="relative z-10">
                 <h2 className="font-display mb-4 text-balance text-4xl font-bold text-white md:text-5xl">
                   Готовы обсудить{' '}
