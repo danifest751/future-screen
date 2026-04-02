@@ -86,12 +86,12 @@ export const RentalDropdown = ({ isOpen, onClose }: RentalDropdownProps) => {
     >
       {/* Arrow */}
       <div className="relative flex justify-center">
-        <div className="h-3 w-3 rotate-45 border-l border-t border-white/10 bg-[#0a0a0a]" />
+        <div className="h-3 w-3 rotate-45 border-l border-t border-white/10 bg-[#0a0a0a]/60 backdrop-blur-md" />
       </div>
       
       {/* Dropdown content */}
       <div 
-        className="mt-1 min-w-[320px] overflow-hidden rounded-2xl border border-white/10 bg-[#0a0a0a]/95 backdrop-blur-xl shadow-2xl"
+        className="mt-1 min-w-[320px] overflow-hidden rounded-2xl border border-white/10 bg-[#0a0a0a]/70 backdrop-blur-xl shadow-2xl"
         style={{ 
           boxShadow: '0 20px 40px -12px rgba(0, 0, 0, 0.5), 0 0 40px rgba(102, 126, 234, 0.1)',
           animation: 'dropdownSlideIn 0.25s ease-out'
@@ -124,9 +124,9 @@ export const RentalDropdown = ({ isOpen, onClose }: RentalDropdownProps) => {
                   key={category.id}
                   to={`/rent/${category.slug}`}
                   onClick={onClose}
-                  className="group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-200 hover:bg-white/5"
+                  className="group flex items-center gap-2.5 rounded-lg px-2.5 py-2 transition-all duration-200 hover:bg-white/5"
                 >
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/5 text-gray-400 transition-colors group-hover:bg-brand-500/20 group-hover:text-brand-400">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/5 text-gray-400 transition-colors group-hover:bg-brand-500/20 group-hover:text-brand-400">
                     {categoryIcons[category.slug] || defaultIcon}
                   </div>
                   <div className="min-w-0 flex-1">
