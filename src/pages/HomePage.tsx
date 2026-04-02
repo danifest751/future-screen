@@ -486,34 +486,71 @@ const HomePage = () => {
 
           <RevealSection className="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {equipment.map((item) => (
-              <Link
-                key={item.title}
-                to={item.link}
-                className="group relative overflow-hidden rounded-2xl border border-white/10 min-h-[220px] flex items-end p-6 cursor-pointer"
-              >
-                {item.photo ? (
-                  <>
-                    <img
-                      src={item.photo}
-                      alt={item.title}
-                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                    />
-                    <div className="absolute inset-0 bg-black/55 group-hover:bg-black/45 transition-colors" />
-                  </>
-                ) : (
-                  <div className="absolute inset-0" style={{ background: item.gradient, opacity: 0.15 }} />
-                )}
-                <div className="relative z-10 w-full">
-                  <div
-                    className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl text-white"
-                    style={{ background: item.gradient }}
-                  >
-                    {item.icon}
+              item.photo ? (
+                /* LED screens — photo background card */
+                <Link
+                  key={item.title}
+                  to={item.link}
+                  className="group relative overflow-hidden rounded-2xl min-h-[300px] flex flex-col justify-end p-6 cursor-pointer"
+                >
+                  <img
+                    src={item.photo}
+                    alt={item.title}
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/10" />
+                  <div className="relative z-10">
+                    <div
+                      className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl text-white"
+                      style={{ background: item.gradient }}
+                    >
+                      {item.icon}
+                    </div>
+                    <h3 className="font-display mb-1 text-lg font-semibold text-white group-hover:text-brand-300 transition-colors">{item.title}</h3>
+                    <p className="text-sm leading-relaxed text-gray-400 mb-3">{item.desc}</p>
+                    <ul className="space-y-1">
+                      {item.bullets.map((b) => (
+                        <li key={b} className="flex items-center gap-2 text-xs text-gray-300">
+                          <span className="h-1 w-1 shrink-0 rounded-full bg-brand-400" />
+                          {b}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                  <h3 className="font-display mb-1 text-lg font-semibold text-white group-hover:text-brand-300 transition-colors">{item.title}</h3>
-                  <p className="text-sm leading-relaxed text-gray-400">{item.desc}</p>
-                </div>
-              </Link>
+                </Link>
+              ) : (
+                /* Other equipment — dark card with gradient accent */
+                <Link
+                  key={item.title}
+                  to={item.link}
+                  className="group relative overflow-hidden rounded-2xl border border-white/8 bg-[#111] min-h-[300px] flex flex-col p-6 cursor-pointer hover:border-white/15 transition-colors"
+                >
+                  {/* Subtle gradient blob top-right */}
+                  <div
+                    className="absolute -right-8 -top-8 h-32 w-32 rounded-full opacity-20 blur-2xl transition-opacity duration-300 group-hover:opacity-30"
+                    style={{ background: item.gradient }}
+                  />
+                  <div className="relative z-10 flex flex-col h-full">
+                    <div
+                      className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl text-white shrink-0"
+                      style={{ background: item.gradient }}
+                    >
+                      {item.icon}
+                    </div>
+                    <h3 className="font-display mb-2 text-lg font-semibold text-white group-hover:text-brand-300 transition-colors">{item.title}</h3>
+                    <p className="text-sm leading-relaxed text-gray-400 mb-4">{item.desc}</p>
+                    <ul className="mt-auto space-y-2">
+                      {item.bullets.map((b) => (
+                        <li key={b} className="flex items-center gap-2 text-sm text-gray-300">
+                          <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: item.gradient }} />
+                          {b}
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="mt-4 text-xs text-brand-400 group-hover:text-brand-300 transition-colors">Подробнее →</div>
+                  </div>
+                </Link>
+              )
             ))}
           </RevealSection>
 
