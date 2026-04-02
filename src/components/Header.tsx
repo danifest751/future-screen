@@ -91,20 +91,52 @@ const Header = () => {
     >
       <div className="container-page flex h-16 items-center justify-between gap-4 lg:h-20">
         {/* Logo */}
-        <Link to="/" className="flex shrink-0 items-center gap-3" onClick={closeMenu}>
-          <div
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold text-white lg:h-11 lg:w-11"
-            style={{ background: 'var(--accent-gradient)', boxShadow: 'var(--glow)' }}
-          >
-            FS
+        <Link to="/" className="flex shrink-0 flex-col gap-0.5" onClick={closeMenu}>
+          {/* First line: Фьючер [LED screen] Скрин */}
+          <div className="flex items-center gap-1.5">
+            <span className="font-display text-[15px] font-bold text-white tracking-tight lg:text-[16px]">
+              Фьючер
+            </span>
+
+            {/* LED screen icon */}
+            <svg
+              viewBox="0 0 28 24"
+              width="28"
+              height="24"
+              xmlns="http://www.w3.org/2000/svg"
+              className="shrink-0"
+            >
+              {/* Panel frame */}
+              <rect x="0.5" y="0.5" width="27" height="23" rx="2.5" fill="#0d0d0d" stroke="rgba(255,255,255,0.18)" strokeWidth="1"/>
+              {/* LED dots — 4 columns × 3 rows */}
+              {/* Row 1 */}
+              <circle cx="5.5"  cy="6"  r="2" fill="#ef4444" opacity="0.95"/>
+              <circle cx="11.5" cy="6"  r="2" fill="#3b82f6" opacity="0.95"/>
+              <circle cx="17.5" cy="6"  r="2" fill="#22c55e" opacity="0.95"/>
+              <circle cx="23"   cy="6"  r="2" fill="#f59e0b" opacity="0.95"/>
+              {/* Row 2 */}
+              <circle cx="5.5"  cy="12" r="2" fill="#8b5cf6" opacity="0.95"/>
+              <circle cx="11.5" cy="12" r="2" fill="#ef4444" opacity="0.95"/>
+              <circle cx="17.5" cy="12" r="2" fill="#3b82f6" opacity="0.95"/>
+              <circle cx="23"   cy="12" r="2" fill="#22c55e" opacity="0.95"/>
+              {/* Row 3 */}
+              <circle cx="5.5"  cy="18" r="2" fill="#f59e0b" opacity="0.95"/>
+              <circle cx="11.5" cy="18" r="2" fill="#8b5cf6" opacity="0.95"/>
+              <circle cx="17.5" cy="18" r="2" fill="#ec4899" opacity="0.95"/>
+              <circle cx="23"   cy="18" r="2" fill="#ef4444" opacity="0.95"/>
+            </svg>
+
+            <span className="font-display text-[15px] font-bold text-white tracking-tight lg:text-[16px]">
+              Скрин
+            </span>
           </div>
-          <div className="min-w-0 leading-tight">
-            <div className="font-display truncate text-[15px] font-semibold text-white lg:text-base">
-              Фьючер Скрин
-            </div>
-            <div className="hidden text-[10px] text-gray-400 lg:block">
-              Техсопровождение мероприятий
-            </div>
+
+          {/* Second line: subtitle spanning full width */}
+          <div
+            className="hidden text-[8.5px] font-medium uppercase text-gray-500 tracking-[0.18em] lg:block"
+            style={{ textAlign: 'justify', textAlignLast: 'justify' }}
+          >
+            Техсопровождение мероприятий
           </div>
         </Link>
 
