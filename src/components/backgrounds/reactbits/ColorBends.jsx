@@ -1,5 +1,4 @@
-import { useEffect, useRef } from 'react';
-import * as THREE from 'three';
+import { useEffect, useRef, useState } from 'react';
 import './ColorBends.css';
 
 const MAX_COLORS = 8;
@@ -118,116 +117,153 @@ export default function ColorBends({
   const resizeObserverRef = useRef(null);
   const rotationRef = useRef(rotation);
   const autoRotateRef = useRef(autoRotate);
-  const pointerTargetRef = useRef(new THREE.Vector2(0, 0));
-  const pointerCurrentRef = useRef(new THREE.Vector2(0, 0));
+  const pointerTargetRef = useRef(null);
+  const pointerCurrentRef = useRef(null);
   const pointerSmoothRef = useRef(8);
+  const threeRef = useRef(null);
+  const isMountedRef = useRef(true);
 
   useEffect(() => {
-    const container = containerRef.current;
-    const scene = new THREE.Scene();
-    const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    isMountedRef.current = true;
+    let cleanup = null;
 
-    const geometry = new THREE.PlaneGeometry(2, 2);
-    const uColorsArray = Array.from({ length: MAX_COLORS }, () => new THREE.Vector3(0, 0, 0));
-    const material = new THREE.ShaderMaterial({
-      vertexShader: vert,
-      fragmentShader: frag,
-      uniforms: {
-        uCanvas: { value: new THREE.Vector2(1, 1) },
-        uTime: { value: 0 },
-        uSpeed: { value: speed },
-        uRot: { value: new THREE.Vector2(1, 0) },
-        uColorCount: { value: 0 },
-        uColors: { value: uColorsArray },
-        uTransparent: { value: transparent ? 1 : 0 },
-        uScale: { value: scale },
-        uFrequency: { value: frequency },
-        uWarpStrength: { value: warpStrength },
-        uPointer: { value: new THREE.Vector2(0, 0) },
-        uMouseInfluence: { value: mouseInfluence },
-        uParallax: { value: parallax },
-        uNoise: { value: noise }
-      },
-      premultipliedAlpha: true,
-      transparent: true
-    });
-    materialRef.current = material;
+    const init = async () => {
+      try {
+        // Dynamic import of Three.js
+        const THREE = await import('three');
+        
+        if (!isMountedRef.current || !containerRef.current) return;
+        
+        threeRef.current = THREE;
+        pointerTargetRef.current = new THREE.Vector2(0, 0);
+        pointerCurrentRef.current = new THREE.Vector2(0, 0);
 
-    const mesh = new THREE.Mesh(geometry, material);
-    scene.add(mesh);
+        const container = containerRef.current;
+        const scene = new THREE.Scene();
+        const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 
-    const renderer = new THREE.WebGLRenderer({
-      antialias: false,
-      powerPreference: 'high-performance',
-      alpha: true
-    });
-    rendererRef.current = renderer;
-    renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-    renderer.setClearColor(0x000000, transparent ? 0 : 1);
-    renderer.domElement.style.width = '100%';
-    renderer.domElement.style.height = '100%';
-    renderer.domElement.style.display = 'block';
-    container.appendChild(renderer.domElement);
+        const toVec3 = (hex) => {
+          const h = hex.replace('#', '').trim();
+          const v = h.length === 3
+            ? [parseInt(h[0] + h[0], 16), parseInt(h[1] + h[1], 16), parseInt(h[2] + h[2], 16)]
+            : [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+          return new THREE.Vector3(v[0] / 255, v[1] / 255, v[2] / 255);
+        };
 
-    const clock = new THREE.Clock();
+        const geometry = new THREE.PlaneGeometry(2, 2);
+        const uColorsArray = Array.from({ length: MAX_COLORS }, () => new THREE.Vector3(0, 0, 0));
+        const material = new THREE.ShaderMaterial({
+          vertexShader: vert,
+          fragmentShader: frag,
+          uniforms: {
+            uCanvas: { value: new THREE.Vector2(1, 1) },
+            uTime: { value: 0 },
+            uSpeed: { value: speed },
+            uRot: { value: new THREE.Vector2(1, 0) },
+            uColorCount: { value: 0 },
+            uColors: { value: uColorsArray },
+            uTransparent: { value: transparent ? 1 : 0 },
+            uScale: { value: scale },
+            uFrequency: { value: frequency },
+            uWarpStrength: { value: warpStrength },
+            uPointer: { value: new THREE.Vector2(0, 0) },
+            uMouseInfluence: { value: mouseInfluence },
+            uParallax: { value: parallax },
+            uNoise: { value: noise }
+          },
+          premultipliedAlpha: true,
+          transparent: true
+        });
+        materialRef.current = material;
 
-    const handleResize = () => {
-      const w = container.clientWidth || 1;
-      const h = container.clientHeight || 1;
-      renderer.setSize(w, h, false);
-      material.uniforms.uCanvas.value.set(w, h);
+        const mesh = new THREE.Mesh(geometry, material);
+        scene.add(mesh);
+
+        const renderer = new THREE.WebGLRenderer({
+          antialias: false,
+          powerPreference: 'high-performance',
+          alpha: true
+        });
+        rendererRef.current = renderer;
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        renderer.setClearColor(0x000000, transparent ? 0 : 1);
+        renderer.domElement.style.width = '100%';
+        renderer.domElement.style.height = '100%';
+        renderer.domElement.style.display = 'block';
+        container.appendChild(renderer.domElement);
+
+        const clock = new THREE.Clock();
+
+        const handleResize = () => {
+          const w = container.clientWidth || 1;
+          const h = container.clientHeight || 1;
+          renderer.setSize(w, h, false);
+          material.uniforms.uCanvas.value.set(w, h);
+        };
+
+        handleResize();
+
+        if ('ResizeObserver' in window) {
+          const ro = new ResizeObserver(handleResize);
+          ro.observe(container);
+          resizeObserverRef.current = ro;
+        } else {
+          window.addEventListener('resize', handleResize);
+        }
+
+        const loop = () => {
+          if (!isMountedRef.current) return;
+          const dt = clock.getDelta();
+          const elapsed = clock.elapsedTime;
+          material.uniforms.uTime.value = elapsed;
+
+          const deg = (rotationRef.current % 360) + autoRotateRef.current * elapsed;
+          const rad = (deg * Math.PI) / 180;
+          const c = Math.cos(rad);
+          const s = Math.sin(rad);
+          material.uniforms.uRot.value.set(c, s);
+
+          const cur = pointerCurrentRef.current;
+          const tgt = pointerTargetRef.current;
+          const amt = Math.min(1, dt * pointerSmoothRef.current);
+          cur.lerp(tgt, amt);
+          material.uniforms.uPointer.value.copy(cur);
+          renderer.render(scene, camera);
+          rafRef.current = requestAnimationFrame(loop);
+        };
+        rafRef.current = requestAnimationFrame(loop);
+
+        // Store cleanup function
+        cleanup = () => {
+          if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+          if (resizeObserverRef.current) resizeObserverRef.current.disconnect();
+          else window.removeEventListener('resize', handleResize);
+          geometry.dispose();
+          material.dispose();
+          renderer.dispose();
+          renderer.forceContextLoss();
+          if (renderer.domElement && renderer.domElement.parentElement === container) {
+            container.removeChild(renderer.domElement);
+          }
+        };
+      } catch (error) {
+        console.error('Failed to load Three.js:', error);
+      }
     };
 
-    handleResize();
-
-    if ('ResizeObserver' in window) {
-      const ro = new ResizeObserver(handleResize);
-      ro.observe(container);
-      resizeObserverRef.current = ro;
-    } else {
-      window.addEventListener('resize', handleResize);
-    }
-
-    const loop = () => {
-      const dt = clock.getDelta();
-      const elapsed = clock.elapsedTime;
-      material.uniforms.uTime.value = elapsed;
-
-      const deg = (rotationRef.current % 360) + autoRotateRef.current * elapsed;
-      const rad = (deg * Math.PI) / 180;
-      const c = Math.cos(rad);
-      const s = Math.sin(rad);
-      material.uniforms.uRot.value.set(c, s);
-
-      const cur = pointerCurrentRef.current;
-      const tgt = pointerTargetRef.current;
-      const amt = Math.min(1, dt * pointerSmoothRef.current);
-      cur.lerp(tgt, amt);
-      material.uniforms.uPointer.value.copy(cur);
-      renderer.render(scene, camera);
-      rafRef.current = requestAnimationFrame(loop);
-    };
-    rafRef.current = requestAnimationFrame(loop);
+    init();
 
     return () => {
-      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
-      if (resizeObserverRef.current) resizeObserverRef.current.disconnect();
-      else window.removeEventListener('resize', handleResize);
-      geometry.dispose();
-      material.dispose();
-      renderer.dispose();
-      renderer.forceContextLoss();
-      if (renderer.domElement && renderer.domElement.parentElement === container) {
-        container.removeChild(renderer.domElement);
-      }
+      isMountedRef.current = false;
+      if (cleanup) cleanup();
     };
   }, [frequency, mouseInfluence, noise, parallax, scale, speed, transparent, warpStrength]);
 
   useEffect(() => {
     const material = materialRef.current;
     const renderer = rendererRef.current;
-    if (!material) return;
+    if (!material || !threeRef.current) return;
 
     rotationRef.current = rotation;
     autoRotateRef.current = autoRotate;
@@ -239,13 +275,12 @@ export default function ColorBends({
     material.uniforms.uParallax.value = parallax;
     material.uniforms.uNoise.value = noise;
 
-    const toVec3 = hex => {
+    const toVec3 = (hex) => {
       const h = hex.replace('#', '').trim();
-      const v =
-        h.length === 3
-          ? [parseInt(h[0] + h[0], 16), parseInt(h[1] + h[1], 16), parseInt(h[2] + h[2], 16)]
-          : [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
-      return new THREE.Vector3(v[0] / 255, v[1] / 255, v[2] / 255);
+      const v = h.length === 3
+        ? [parseInt(h[0] + h[0], 16), parseInt(h[1] + h[1], 16), parseInt(h[2] + h[2], 16)]
+        : [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+      return new threeRef.current.Vector3(v[0] / 255, v[1] / 255, v[2] / 255);
     };
 
     const arr = (colors || []).filter(Boolean).slice(0, MAX_COLORS).map(toVec3);

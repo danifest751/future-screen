@@ -1,5 +1,4 @@
 import { useEffect, useRef } from 'react';
-import * as THREE from 'three';
 import './Mesh.css';
 
 const vert = `
@@ -134,97 +133,125 @@ export default function Mesh({
   const rafRef = useRef(null);
   const materialRef = useRef(null);
   const resizeObserverRef = useRef(null);
-  const mouseRef = useRef(new THREE.Vector2(0.5, 0.5));
+  const mouseRef = useRef(null);
+  const threeRef = useRef(null);
+  const isMountedRef = useRef(true);
 
   useEffect(() => {
-    const container = containerRef.current;
-    const scene = new THREE.Scene();
-    const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    isMountedRef.current = true;
+    let cleanup = null;
 
-    const geometry = new THREE.PlaneGeometry(2, 2);
-    const material = new THREE.ShaderMaterial({
-      vertexShader: vert,
-      fragmentShader: frag,
-      uniforms: {
-        uResolution: { value: new THREE.Vector2(1, 1) },
-        uTime: { value: 0 },
-        uGridOpacity: { value: gridOpacity },
-        uGlow: { value: glow },
-        uSpeed: { value: speed },
-        uMouse: { value: new THREE.Vector2(0.5, 0.5) },
-      },
-      transparent: true,
-      premultipliedAlpha: true,
-    });
-    materialRef.current = material;
+    const init = async () => {
+      try {
+        // Dynamic import of Three.js
+        const THREE = await import('three');
+        
+        if (!isMountedRef.current || !containerRef.current) return;
+        
+        threeRef.current = THREE;
+        mouseRef.current = new THREE.Vector2(0.5, 0.5);
 
-    const mesh = new THREE.Mesh(geometry, material);
-    scene.add(mesh);
+        const container = containerRef.current;
+        const scene = new THREE.Scene();
+        const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 
-    const renderer = new THREE.WebGLRenderer({
-      antialias: true,
-      alpha: true,
-      powerPreference: 'high-performance',
-    });
-    rendererRef.current = renderer;
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-    renderer.setClearColor(0x000000, transparent ? 0 : 1);
-    renderer.domElement.style.width = '100%';
-    renderer.domElement.style.height = '100%';
-    renderer.domElement.style.display = 'block';
-    container.appendChild(renderer.domElement);
+        const geometry = new THREE.PlaneGeometry(2, 2);
+        const material = new THREE.ShaderMaterial({
+          vertexShader: vert,
+          fragmentShader: frag,
+          uniforms: {
+            uResolution: { value: new THREE.Vector2(1, 1) },
+            uTime: { value: 0 },
+            uGridOpacity: { value: gridOpacity },
+            uGlow: { value: glow },
+            uSpeed: { value: speed },
+            uMouse: { value: new THREE.Vector2(0.5, 0.5) },
+          },
+          transparent: true,
+          premultipliedAlpha: true,
+        });
+        materialRef.current = material;
 
-    const clock = new THREE.Clock();
+        const mesh = new THREE.Mesh(geometry, material);
+        scene.add(mesh);
 
-    const handleResize = () => {
-      const w = container.clientWidth || 1;
-      const h = container.clientHeight || 1;
-      renderer.setSize(w, h, false);
-      material.uniforms.uResolution.value.set(w, h);
+        const renderer = new THREE.WebGLRenderer({
+          antialias: true,
+          alpha: true,
+          powerPreference: 'high-performance',
+        });
+        rendererRef.current = renderer;
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        renderer.setClearColor(0x000000, transparent ? 0 : 1);
+        renderer.domElement.style.width = '100%';
+        renderer.domElement.style.height = '100%';
+        renderer.domElement.style.display = 'block';
+        container.appendChild(renderer.domElement);
+
+        const clock = new THREE.Clock();
+
+        const handleResize = () => {
+          const w = container.clientWidth || 1;
+          const h = container.clientHeight || 1;
+          renderer.setSize(w, h, false);
+          material.uniforms.uResolution.value.set(w, h);
+        };
+
+        handleResize();
+
+        if ('ResizeObserver' in window) {
+          const ro = new ResizeObserver(handleResize);
+          ro.observe(container);
+          resizeObserverRef.current = ro;
+        } else {
+          window.addEventListener('resize', handleResize);
+        }
+
+        const loop = () => {
+          if (!isMountedRef.current) return;
+          material.uniforms.uTime.value = clock.getElapsedTime();
+          material.uniforms.uMouse.value.lerp(mouseRef.current, 0.05);
+          renderer.render(scene, camera);
+          rafRef.current = requestAnimationFrame(loop);
+        };
+        rafRef.current = requestAnimationFrame(loop);
+
+        const handleMouseMove = (e) => {
+          const rect = container.getBoundingClientRect();
+          mouseRef.current.x = (e.clientX - rect.left) / rect.width;
+          mouseRef.current.y = 1.0 - (e.clientY - rect.top) / rect.height;
+        };
+
+        if (mouseInteraction) {
+          container.addEventListener('mousemove', handleMouseMove);
+        }
+
+        // Store cleanup function
+        cleanup = () => {
+          if (rafRef.current) cancelAnimationFrame(rafRef.current);
+          if (resizeObserverRef.current) resizeObserverRef.current.disconnect();
+          else window.removeEventListener('resize', handleResize);
+          if (mouseInteraction) {
+            container.removeEventListener('mousemove', handleMouseMove);
+          }
+          geometry.dispose();
+          material.dispose();
+          renderer.dispose();
+          renderer.forceContextLoss();
+          if (renderer.domElement?.parentElement === container) {
+            container.removeChild(renderer.domElement);
+          }
+        };
+      } catch (error) {
+        console.error('Failed to load Three.js:', error);
+      }
     };
 
-    handleResize();
-
-    if ('ResizeObserver' in window) {
-      const ro = new ResizeObserver(handleResize);
-      ro.observe(container);
-      resizeObserverRef.current = ro;
-    } else {
-      window.addEventListener('resize', handleResize);
-    }
-
-    const loop = () => {
-      material.uniforms.uTime.value = clock.getElapsedTime();
-      material.uniforms.uMouse.value.lerp(mouseRef.current, 0.05);
-      renderer.render(scene, camera);
-      rafRef.current = requestAnimationFrame(loop);
-    };
-    rafRef.current = requestAnimationFrame(loop);
-
-    const handleMouseMove = (e) => {
-      const rect = container.getBoundingClientRect();
-      mouseRef.current.x = (e.clientX - rect.left) / rect.width;
-      mouseRef.current.y = 1.0 - (e.clientY - rect.top) / rect.height;
-    };
-
-    if (mouseInteraction) {
-      container.addEventListener('mousemove', handleMouseMove);
-    }
+    init();
 
     return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      if (resizeObserverRef.current) resizeObserverRef.current.disconnect();
-      else window.removeEventListener('resize', handleResize);
-      if (mouseInteraction) {
-        container.removeEventListener('mousemove', handleMouseMove);
-      }
-      geometry.dispose();
-      material.dispose();
-      renderer.dispose();
-      renderer.forceContextLoss();
-      if (renderer.domElement?.parentElement === container) {
-        container.removeChild(renderer.domElement);
-      }
+      isMountedRef.current = false;
+      if (cleanup) cleanup();
     };
   }, [gridOpacity, glow, speed, mouseInteraction, transparent]);
 

@@ -1,5 +1,4 @@
-import { useEffect, useRef } from 'react';
-import * as THREE from 'three';
+import { useEffect, useRef, useState } from 'react';
 
 const vert = `
 varying vec2 vUv;
@@ -146,109 +145,140 @@ export default function Aurora({
   const rafRef = useRef(null);
   const materialRef = useRef(null);
   const resizeObserverRef = useRef(null);
-  const mouseRef = useRef(new THREE.Vector2(0.5, 0.5));
-
-  const toVec3 = (hex) => {
-    const h = hex.replace('#', '').trim();
-    const v = h.length === 3
-      ? [parseInt(h[0] + h[0], 16), parseInt(h[1] + h[1], 16), parseInt(h[2] + h[2], 16)]
-      : [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
-    return new THREE.Vector3(v[0] / 255, v[1] / 255, v[2] / 255);
-  };
+  const mouseRef = useRef(null);
+  const threeRef = useRef(null);
+  const isMountedRef = useRef(true);
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    const container = containerRef.current;
-    const scene = new THREE.Scene();
-    const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    isMountedRef.current = true;
+    let cleanup = null;
 
-    const geometry = new THREE.PlaneGeometry(2, 2);
-    const material = new THREE.ShaderMaterial({
-      vertexShader: vert,
-      fragmentShader: frag,
-      uniforms: {
-        uResolution: { value: new THREE.Vector2(1, 1) },
-        uTime: { value: 0 },
-        uColor1: { value: toVec3(color1) },
-        uColor2: { value: toVec3(color2) },
-        uColor3: { value: toVec3(color3) },
-        uSpeed: { value: speed },
-        uAmplitude: { value: amplitude },
-        uBlend: { value: blend },
-        uMouse: { value: new THREE.Vector2(0.5, 0.5) },
-        uMouseInfluence: { value: mouseInteraction ? 1.0 : 0.0 },
-      },
-      transparent: true,
-      premultipliedAlpha: true,
-    });
-    materialRef.current = material;
+    const init = async () => {
+      try {
+        // Dynamic import of Three.js
+        const THREE = await import('three');
+        
+        if (!isMountedRef.current || !containerRef.current) return;
+        
+        threeRef.current = THREE;
+        mouseRef.current = new THREE.Vector2(0.5, 0.5);
 
-    const mesh = new THREE.Mesh(geometry, material);
-    scene.add(mesh);
+        const container = containerRef.current;
+        const scene = new THREE.Scene();
+        const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 
-    const renderer = new THREE.WebGLRenderer({
-      antialias: true,
-      alpha: true,
-      powerPreference: 'high-performance',
-    });
-    rendererRef.current = renderer;
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-    renderer.setClearColor(0x000000, transparent ? 0 : 1);
-    renderer.domElement.style.width = '100%';
-    renderer.domElement.style.height = '100%';
-    renderer.domElement.style.display = 'block';
-    container.appendChild(renderer.domElement);
+        const toVec3 = (hex) => {
+          const h = hex.replace('#', '').trim();
+          const v = h.length === 3
+            ? [parseInt(h[0] + h[0], 16), parseInt(h[1] + h[1], 16), parseInt(h[2] + h[2], 16)]
+            : [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+          return new THREE.Vector3(v[0] / 255, v[1] / 255, v[2] / 255);
+        };
 
-    const clock = new THREE.Clock();
+        const geometry = new THREE.PlaneGeometry(2, 2);
+        const material = new THREE.ShaderMaterial({
+          vertexShader: vert,
+          fragmentShader: frag,
+          uniforms: {
+            uResolution: { value: new THREE.Vector2(1, 1) },
+            uTime: { value: 0 },
+            uColor1: { value: toVec3(color1) },
+            uColor2: { value: toVec3(color2) },
+            uColor3: { value: toVec3(color3) },
+            uSpeed: { value: speed },
+            uAmplitude: { value: amplitude },
+            uBlend: { value: blend },
+            uMouse: { value: new THREE.Vector2(0.5, 0.5) },
+            uMouseInfluence: { value: mouseInteraction ? 1.0 : 0.0 },
+          },
+          transparent: true,
+          premultipliedAlpha: true,
+        });
+        materialRef.current = material;
 
-    const handleResize = () => {
-      const w = container.clientWidth || 1;
-      const h = container.clientHeight || 1;
-      renderer.setSize(w, h, false);
-      material.uniforms.uResolution.value.set(w, h);
+        const mesh = new THREE.Mesh(geometry, material);
+        scene.add(mesh);
+
+        const renderer = new THREE.WebGLRenderer({
+          antialias: true,
+          alpha: true,
+          powerPreference: 'high-performance',
+        });
+        rendererRef.current = renderer;
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        renderer.setClearColor(0x000000, transparent ? 0 : 1);
+        renderer.domElement.style.width = '100%';
+        renderer.domElement.style.height = '100%';
+        renderer.domElement.style.display = 'block';
+        container.appendChild(renderer.domElement);
+
+        const clock = new THREE.Clock();
+
+        const handleResize = () => {
+          const w = container.clientWidth || 1;
+          const h = container.clientHeight || 1;
+          renderer.setSize(w, h, false);
+          material.uniforms.uResolution.value.set(w, h);
+        };
+
+        handleResize();
+
+        if ('ResizeObserver' in window) {
+          const ro = new ResizeObserver(handleResize);
+          ro.observe(container);
+          resizeObserverRef.current = ro;
+        } else {
+          window.addEventListener('resize', handleResize);
+        }
+
+        const loop = () => {
+          if (!isMountedRef.current) return;
+          material.uniforms.uTime.value = clock.getElapsedTime();
+          material.uniforms.uMouse.value.lerp(mouseRef.current, 0.05);
+          renderer.render(scene, camera);
+          rafRef.current = requestAnimationFrame(loop);
+        };
+        rafRef.current = requestAnimationFrame(loop);
+
+        const handleMouseMove = (e) => {
+          const rect = container.getBoundingClientRect();
+          mouseRef.current.x = (e.clientX - rect.left) / rect.width;
+          mouseRef.current.y = 1.0 - (e.clientY - rect.top) / rect.height;
+        };
+
+        if (mouseInteraction) {
+          container.addEventListener('mousemove', handleMouseMove);
+        }
+
+        setIsReady(true);
+
+        // Store cleanup function
+        cleanup = () => {
+          if (rafRef.current) cancelAnimationFrame(rafRef.current);
+          if (resizeObserverRef.current) resizeObserverRef.current.disconnect();
+          else window.removeEventListener('resize', handleResize);
+          if (mouseInteraction) {
+            container.removeEventListener('mousemove', handleMouseMove);
+          }
+          geometry.dispose();
+          material.dispose();
+          renderer.dispose();
+          renderer.forceContextLoss();
+          if (renderer.domElement?.parentElement === container) {
+            container.removeChild(renderer.domElement);
+          }
+        };
+      } catch (error) {
+        console.error('Failed to load Three.js:', error);
+      }
     };
 
-    handleResize();
-
-    if ('ResizeObserver' in window) {
-      const ro = new ResizeObserver(handleResize);
-      ro.observe(container);
-      resizeObserverRef.current = ro;
-    } else {
-      window.addEventListener('resize', handleResize);
-    }
-
-    const loop = () => {
-      material.uniforms.uTime.value = clock.getElapsedTime();
-      material.uniforms.uMouse.value.lerp(mouseRef.current, 0.05);
-      renderer.render(scene, camera);
-      rafRef.current = requestAnimationFrame(loop);
-    };
-    rafRef.current = requestAnimationFrame(loop);
-
-    const handleMouseMove = (e) => {
-      const rect = container.getBoundingClientRect();
-      mouseRef.current.x = (e.clientX - rect.left) / rect.width;
-      mouseRef.current.y = 1.0 - (e.clientY - rect.top) / rect.height;
-    };
-
-    if (mouseInteraction) {
-      container.addEventListener('mousemove', handleMouseMove);
-    }
+    init();
 
     return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      if (resizeObserverRef.current) resizeObserverRef.current.disconnect();
-      else window.removeEventListener('resize', handleResize);
-      if (mouseInteraction) {
-        container.removeEventListener('mousemove', handleMouseMove);
-      }
-      geometry.dispose();
-      material.dispose();
-      renderer.dispose();
-      renderer.forceContextLoss();
-      if (renderer.domElement?.parentElement === container) {
-        container.removeChild(renderer.domElement);
-      }
+      isMountedRef.current = false;
+      if (cleanup) cleanup();
     };
   }, [color1, color2, color3, speed, amplitude, blend, mouseInteraction, transparent]);
 
