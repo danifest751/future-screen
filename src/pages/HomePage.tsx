@@ -101,6 +101,7 @@ const extraEquipment = [
     title: 'Компьютеры и ноутбуки',
     desc: 'Core i7/i5, игровые и офисные конфигурации',
     link: '/rent/computers',
+    photo: '/images/equip-computers.png',
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
         <path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"/>
@@ -111,6 +112,7 @@ const extraEquipment = [
     title: 'Тачскрины',
     desc: 'Интерактивные столы 42"–55" с 10-точечным касанием',
     link: '/rent/touchscreens',
+    photo: '/images/equip-touch.png',
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
         <path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2"/><path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2"/><path d="M10 10.5a2 2 0 0 0-2-2a2 2 0 0 0-2 2V19a4 4 0 0 0 4 4h4a4 4 0 0 0 4-4v-5a2 2 0 0 0-2-2a2 2 0 0 0-2 2"/>
@@ -121,6 +123,7 @@ const extraEquipment = [
     title: 'Технический персонал',
     desc: 'Видеооператоры, звукорежиссёры, техники',
     link: '/rent/staff',
+    photo: '/images/equip-staff.png',
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
@@ -134,7 +137,7 @@ const eventTypes = [
   {
     title: 'Корпоративы',
     desc: 'Техническое оснащение корпоративных праздников и тимбилдингов',
-    gradient: 'linear-gradient(135deg, rgba(102,126,234,0.8), rgba(118,75,162,0.8))',
+    photo: '/images/gala-event.png',
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8">
         <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
@@ -144,7 +147,7 @@ const eventTypes = [
   {
     title: 'Концерты',
     desc: 'Полный технический райдер для концертных площадок и фестивалей',
-    gradient: 'linear-gradient(135deg, rgba(118,75,162,0.8), rgba(240,147,251,0.8))',
+    photo: '/images/hero-concert.png',
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8">
         <path d="m12 8-9.04 9.06a2.82 2.82 0 1 0 3.98 3.98L16 12"/><circle cx="17" cy="7" r="5"/>
@@ -154,7 +157,7 @@ const eventTypes = [
   {
     title: 'Конференции',
     desc: 'Системы синхронного перевода, проекторы, микрофоны',
-    gradient: 'linear-gradient(135deg, rgba(79,172,254,0.8), rgba(0,242,254,0.8))',
+    photo: '/images/event-conference.png',
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8">
         <rect width="20" height="14" x="2" y="3" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/>
@@ -164,7 +167,7 @@ const eventTypes = [
   {
     title: 'Свадьбы',
     desc: 'LED-экраны для банкетных залов, свет, звук',
-    gradient: 'linear-gradient(135deg, rgba(245,87,108,0.8), rgba(240,147,251,0.8))',
+    photo: '/images/event-wedding.png',
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8">
         <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
@@ -174,7 +177,7 @@ const eventTypes = [
   {
     title: 'Выставки',
     desc: 'Светодиодные экраны для стендов, интерактивные панели',
-    gradient: 'linear-gradient(135deg, rgba(17,153,142,0.8), rgba(56,239,125,0.8))',
+    photo: '/images/event-exhibition.png',
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8">
         <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v8h4"/><path d="M18 9h2a2 2 0 0 1 2 2v11h-4"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/>
@@ -184,7 +187,7 @@ const eventTypes = [
   {
     title: 'Презентации',
     desc: 'Премиум-решения для продуктовых презентаций',
-    gradient: 'linear-gradient(135deg, rgba(255,216,155,0.8), rgba(245,87,108,0.8))',
+    photo: '/images/event-presentation.png',
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8">
         <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/>
@@ -524,13 +527,21 @@ const HomePage = () => {
 
           <RevealSection className="mt-5 grid gap-5 sm:grid-cols-3">
             {extraEquipment.map((item) => (
-              <Link key={item.title} to={item.link} className="card flex items-start gap-4 group">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 text-gray-400 group-hover:border-brand-500/40 group-hover:text-brand-300 transition-colors">
-                  {item.icon}
-                </div>
-                <div>
-                  <div className="font-medium text-white group-hover:text-brand-300 transition-colors">{item.title}</div>
-                  <div className="mt-1 text-sm text-gray-400">{item.desc}</div>
+              <Link key={item.title} to={item.link} className="group relative overflow-hidden rounded-2xl min-h-[120px] flex items-end p-5 cursor-pointer">
+                <img
+                  src={item.photo}
+                  alt={item.title}
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-black/65 group-hover:bg-black/55 transition-colors" />
+                <div className="relative z-10 flex items-center gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white group-hover:bg-brand-500/30 transition-colors">
+                    {item.icon}
+                  </div>
+                  <div>
+                    <div className="font-medium text-white group-hover:text-brand-300 transition-colors">{item.title}</div>
+                    <div className="text-xs text-gray-400">{item.desc}</div>
+                  </div>
                 </div>
               </Link>
             ))}
@@ -557,15 +568,23 @@ const HomePage = () => {
             {eventTypes.map((item) => (
               <div
                 key={item.title}
-                className="group relative cursor-pointer overflow-hidden rounded-2xl border border-white/10"
+                className="group relative cursor-pointer overflow-hidden rounded-2xl"
                 style={{ aspectRatio: '4/3' }}
               >
-                <div className="absolute inset-0 transition-opacity duration-300" style={{ background: item.gradient }} />
-                <div className="absolute inset-0 bg-black/40 transition-colors duration-300 group-hover:bg-black/20" />
+                {/* Photo — muted with heavy overlay */}
+                <img
+                  src={item.photo}
+                  alt={item.title}
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  style={{ filter: 'saturate(0.5) brightness(0.6)' }}
+                />
+                {/* Dark overlay — lifts on hover to reveal photo */}
+                <div className="absolute inset-0 bg-black/50 transition-colors duration-300 group-hover:bg-black/25" />
+                {/* Content */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-white">
-                  <div className="mb-3 opacity-90">{item.icon}</div>
+                  <div className="mb-3 opacity-80 group-hover:opacity-100 transition-opacity">{item.icon}</div>
                   <h3 className="font-display text-xl font-bold">{item.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed opacity-0 transition-opacity duration-300 group-hover:opacity-90">
+                  <p className="mt-2 text-sm leading-relaxed text-gray-300 opacity-0 transition-opacity duration-300 group-hover:opacity-90">
                     {item.desc}
                   </p>
                 </div>

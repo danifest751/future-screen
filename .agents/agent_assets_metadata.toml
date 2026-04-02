@@ -78,3 +78,45 @@ id = "IV2GihpGQqWnXvAFUAXHM"
 uri = "file://public/images/equip-stage.png"
 type = "image"
 title = "generated_image"
+
+[[generated]]
+id = "-vcjKGP_PQivGvDA1sSlX"
+uri = "file://public/images/equip-computers.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "FqyT50P0CqlG7f6wDvLLE"
+uri = "file://public/images/equip-touch.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "pvTBQu8R9DubgSb1sGJcF"
+uri = "file://public/images/equip-staff.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "s6Jgfa39ObjANJV0xAYPG"
+uri = "file://public/images/event-conference.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "dTuBh2yUiRWhK5zOlDCMg"
+uri = "file://public/images/event-wedding.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "mKX4lH0_TGzBjNbwmBKPR"
+uri = "file://public/images/event-exhibition.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "500EnC7oqQyodd1obxCew"
+uri = "file://public/images/event-presentation.png"
+type = "image"
+title = "generated_image"
