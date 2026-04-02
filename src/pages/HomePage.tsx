@@ -48,7 +48,7 @@ const equipment = [
     bullets: ['Диагонали 32"—100"', '4K Ultra HD разрешение', 'Более 300 панелей в парке'],
     gradient: 'linear-gradient(135deg, #4facfe, #00f2fe)',
     link: '/rent/video',
-    photo: null,
+    photo: '/images/equip-plasma.png',
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
         <rect width="20" height="15" x="2" y="3" rx="2"/><path d="m8 21 4-4 4 4"/><circle cx="12" cy="10" r="3"/>
@@ -61,7 +61,7 @@ const equipment = [
     bullets: ['Активные акустические системы', 'Радиомикрофоны Shure/Sennheiser', 'Микшерные пульты'],
     gradient: 'linear-gradient(135deg, #f093fb, #f5576c)',
     link: '/rent/sound',
-    photo: null,
+    photo: '/images/equip-sound.png',
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
         <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
@@ -74,7 +74,7 @@ const equipment = [
     bullets: ['LED PAR и прожекторы', 'Динамические световые приборы', 'Контроллеры DMX'],
     gradient: 'linear-gradient(135deg, #ffd89b, #19547b)',
     link: '/rent/light',
-    photo: null,
+    photo: '/images/equip-light.png',
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
         <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/>
@@ -87,7 +87,7 @@ const equipment = [
     bullets: ['Модульные сценические площадки', 'Алюминиевые фермы', 'Подвес для света и экранов'],
     gradient: 'linear-gradient(135deg, #11998e, #38ef7d)',
     link: '/rent/stage',
-    photo: null,
+    photo: '/images/equip-stage.png',
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
         <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
@@ -486,71 +486,39 @@ const HomePage = () => {
 
           <RevealSection className="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {equipment.map((item) => (
-              item.photo ? (
-                /* LED screens — photo background card */
-                <Link
-                  key={item.title}
-                  to={item.link}
-                  className="group relative overflow-hidden rounded-2xl min-h-[300px] flex flex-col justify-end p-6 cursor-pointer"
-                >
-                  <img
-                    src={item.photo}
-                    alt={item.title}
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/10" />
-                  <div className="relative z-10">
-                    <div
-                      className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl text-white"
-                      style={{ background: item.gradient }}
-                    >
-                      {item.icon}
-                    </div>
-                    <h3 className="font-display mb-1 text-lg font-semibold text-white group-hover:text-brand-300 transition-colors">{item.title}</h3>
-                    <p className="text-sm leading-relaxed text-gray-400 mb-3">{item.desc}</p>
-                    <ul className="space-y-1">
-                      {item.bullets.map((b) => (
-                        <li key={b} className="flex items-center gap-2 text-xs text-gray-300">
-                          <span className="h-1 w-1 shrink-0 rounded-full bg-brand-400" />
-                          {b}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </Link>
-              ) : (
-                /* Other equipment — dark card with gradient accent */
-                <Link
-                  key={item.title}
-                  to={item.link}
-                  className="group relative overflow-hidden rounded-2xl border border-white/8 bg-[#111] min-h-[300px] flex flex-col p-6 cursor-pointer hover:border-white/15 transition-colors"
-                >
-                  {/* Subtle gradient blob top-right */}
+              <Link
+                key={item.title}
+                to={item.link}
+                className="group relative overflow-hidden rounded-2xl min-h-[300px] flex flex-col justify-end p-6 cursor-pointer"
+              >
+                {/* Photo background */}
+                <img
+                  src={item.photo!}
+                  alt={item.title}
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+                {/* Dark gradient overlay — stronger at bottom for readability */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/20" />
+                {/* Content */}
+                <div className="relative z-10">
                   <div
-                    className="absolute -right-8 -top-8 h-32 w-32 rounded-full opacity-20 blur-2xl transition-opacity duration-300 group-hover:opacity-30"
+                    className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl text-white"
                     style={{ background: item.gradient }}
-                  />
-                  <div className="relative z-10 flex flex-col h-full">
-                    <div
-                      className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl text-white shrink-0"
-                      style={{ background: item.gradient }}
-                    >
-                      {item.icon}
-                    </div>
-                    <h3 className="font-display mb-2 text-lg font-semibold text-white group-hover:text-brand-300 transition-colors">{item.title}</h3>
-                    <p className="text-sm leading-relaxed text-gray-400 mb-4">{item.desc}</p>
-                    <ul className="mt-auto space-y-2">
-                      {item.bullets.map((b) => (
-                        <li key={b} className="flex items-center gap-2 text-sm text-gray-300">
-                          <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: item.gradient }} />
-                          {b}
-                        </li>
-                      ))}
-                    </ul>
-                    <div className="mt-4 text-xs text-brand-400 group-hover:text-brand-300 transition-colors">Подробнее →</div>
+                  >
+                    {item.icon}
                   </div>
-                </Link>
-              )
+                  <h3 className="font-display mb-1 text-lg font-semibold text-white group-hover:text-brand-300 transition-colors">{item.title}</h3>
+                  <p className="text-sm leading-relaxed text-gray-300 mb-3">{item.desc}</p>
+                  <ul className="space-y-1">
+                    {item.bullets.map((b) => (
+                      <li key={b} className="flex items-center gap-2 text-xs text-gray-300">
+                        <span className="h-1 w-1 shrink-0 rounded-full" style={{ background: item.gradient }} />
+                        {b}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </Link>
             ))}
           </RevealSection>
 

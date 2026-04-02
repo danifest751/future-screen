@@ -54,3 +54,27 @@ id = "LviZUUbKhGHvAT4wnHINW"
 uri = "file://public/images/hero-led-wall-2.png"
 type = "image"
 title = "generated_image"
+
+[[generated]]
+id = "jBaROmjgrFJstubaKIJJY"
+uri = "file://public/images/equip-plasma.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "zo0V_1mMB7GQk2PCweVn-"
+uri = "file://public/images/equip-sound.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "sbsfQWIrj46RSSD9gA6rE"
+uri = "file://public/images/equip-light.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "IV2GihpGQqWnXvAFUAXHM"
+uri = "file://public/images/equip-stage.png"
+type = "image"
+title = "generated_image"
