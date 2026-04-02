@@ -42,3 +42,9 @@ id = "4_33ADRcCnzLjBpuQ9xax"
 uri = "file://artifacts/mockup-sandbox/public/images/gala-event.png"
 type = "image"
 title = "generated_image"
+
+[[generated]]
+id = "gtR94p5poXFAdRtfZDezb"
+uri = "file://public/images/hero-led-wall.png"
+type = "image"
+title = "generated_image"
