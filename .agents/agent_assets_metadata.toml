@@ -1,0 +1,44 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "93-Duffbs5UjXro-whKLv"
+uri = "file://artifacts/mockup-sandbox/public/images/hero-led-event.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "Ka5VCPRqZ9x02QV0yqg2V"
+uri = "file://artifacts/mockup-sandbox/public/images/hero-concert.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "Uw5aQytKYtwQ58kXbFTko"
+uri = "file://artifacts/mockup-sandbox/public/images/event-conference.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "8VJ2awQ56u4WiEmIDdpd0"
+uri = "file://artifacts/mockup-sandbox/public/images/stage-setup.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "9oL5_h-gG7D87Vw7_WJhc"
+uri = "file://artifacts/mockup-sandbox/public/images/led-closeup.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "NgFMwp0vI1ZTMVLoyCsmh"
+uri = "file://artifacts/mockup-sandbox/public/images/festival-crowd.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "4_33ADRcCnzLjBpuQ9xax"
+uri = "file://artifacts/mockup-sandbox/public/images/gala-event.png"
+type = "image"
+title = "generated_image"
