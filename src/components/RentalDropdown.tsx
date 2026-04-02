@@ -86,14 +86,14 @@ export const RentalDropdown = ({ isOpen, onClose }: RentalDropdownProps) => {
     >
       {/* Arrow */}
       <div className="relative flex justify-center">
-        <div className="h-3 w-3 rotate-45 border-l border-t border-white/10 bg-[#0a0a0a]/60 backdrop-blur-md" />
+        <div className="h-3 w-3 rotate-45 border-l border-t border-white/15 bg-white/5 backdrop-blur-2xl" />
       </div>
       
       {/* Dropdown content */}
       <div 
-        className="mt-1 min-w-[320px] overflow-hidden rounded-2xl border border-white/10 bg-[#0a0a0a]/70 backdrop-blur-xl shadow-2xl"
+        className="mt-1 min-w-[320px] overflow-hidden rounded-2xl border border-white/15 bg-white/5 backdrop-blur-2xl shadow-2xl"
         style={{ 
-          boxShadow: '0 20px 40px -12px rgba(0, 0, 0, 0.5), 0 0 40px rgba(102, 126, 234, 0.1)',
+          boxShadow: '0 20px 60px -12px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255,255,255,0.05) inset, 0 0 40px rgba(102, 126, 234, 0.08)',
           animation: 'dropdownSlideIn 0.25s ease-out'
         }}
       >
