@@ -1,8 +1,10 @@
+import { memo } from 'react';
+
 type Props = {
   message?: string;
 };
 
-const AdminFieldError = ({ message }: Props) => {
+const AdminFieldError = memo(function AdminFieldError({ message }: Props) {
   if (!message) return null;
 
   return (
@@ -10,6 +12,6 @@ const AdminFieldError = ({ message }: Props) => {
       {message}
     </div>
   );
-};
+});
 
 export default AdminFieldError;

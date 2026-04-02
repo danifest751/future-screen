@@ -1,3 +1,5 @@
+import { memo } from 'react';
+
 interface GalleryItem {
   image: string;
   alt: string;
@@ -9,10 +11,10 @@ interface RentalGalleryProps {
   title?: string;
 }
 
-export const RentalGallery = ({ 
+const RentalGallery = memo(function RentalGallery({ 
   items,
   title = 'Галерея'
-}: RentalGalleryProps) => {
+}: RentalGalleryProps) {
   if (!Array.isArray(items) || items.length === 0) {
     return null;
   }
@@ -57,4 +59,7 @@ export const RentalGallery = ({
       </div>
     </section>
   );
-};
+});
+
+export { RentalGallery };
+export default RentalGallery;

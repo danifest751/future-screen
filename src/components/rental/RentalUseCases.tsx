@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Lightbulb, Users, Music, Building2, PartyPopper, Tent } from 'lucide-react';
 
 interface UseCase {
@@ -22,10 +23,10 @@ const getIcon = (title: string) => {
   return Lightbulb;
 };
 
-export const RentalUseCases = ({ 
+const RentalUseCases = memo(function RentalUseCases({ 
   title = 'Сценарии использования',
   items 
-}: RentalUseCasesProps) => {
+}: RentalUseCasesProps) {
   if (!Array.isArray(items) || items.length === 0) {
     return null;
   }
@@ -61,4 +62,7 @@ export const RentalUseCases = ({
       </div>
     </section>
   );
-};
+});
+
+export { RentalUseCases };
+export default RentalUseCases;

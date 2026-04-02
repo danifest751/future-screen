@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Link } from 'react-router-dom';
 
 type Props = {
@@ -7,7 +8,7 @@ type Props = {
   className?: string;
 };
 
-export function ConsentCheckbox({ checked, onChange, error, className = '' }: Props) {
+export const ConsentCheckbox = memo(function ConsentCheckbox({ checked, onChange, error, className = '' }: Props) {
   return (
     <div className={className}>
       <label className="flex items-start gap-3 cursor-pointer">
@@ -27,4 +28,4 @@ export function ConsentCheckbox({ checked, onChange, error, className = '' }: Pr
       {error && <p className="mt-1 text-xs text-red-400">{error}</p>}
     </div>
   );
-}
+});

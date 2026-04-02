@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import './ColorBends.css';
 
 const MAX_COLORS = 8;
@@ -95,7 +95,7 @@ void main() {
 }
 `;
 
-export default function ColorBends({
+function ColorBends({
   className,
   style,
   rotation = 45,
@@ -327,3 +327,5 @@ export default function ColorBends({
 
   return <div ref={containerRef} className={`color-bends-container ${className}`} style={style} />;
 }
+
+export default memo(ColorBends);

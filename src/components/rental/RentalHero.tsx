@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Link } from 'react-router-dom';
 import { StarBorder } from '../effects/StarBorder';
 import { BlurText } from '../effects/BlurText';
@@ -13,7 +14,7 @@ interface RentalHeroProps {
   showBlurTitle?: boolean;
 }
 
-export const RentalHero = ({
+const RentalHero = memo(function RentalHero({
   title,
   subtitle,
   primaryCtaText,
@@ -22,7 +23,7 @@ export const RentalHero = ({
   secondaryCtaLink,
   highlights,
   showBlurTitle = false,
-}: RentalHeroProps) => {
+}: RentalHeroProps) {
   const hasHighlights = Array.isArray(highlights) && highlights.length > 0;
 
   return (
@@ -96,4 +97,7 @@ export const RentalHero = ({
       </div>
     </section>
   );
-};
+});
+
+export { RentalHero };
+export default RentalHero;

@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react';
+import { memo, type ReactNode } from 'react';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost';
 export type ButtonSize = 'sm' | 'md' | 'lg';
@@ -29,7 +29,7 @@ const spinner = (
   </svg>
 );
 
-export default function Button({
+const Button = memo(function Button({
   type = 'button',
   variant = 'primary',
   size = 'md',
@@ -79,5 +79,7 @@ export default function Button({
       {!loading ? rightIcon : null}
     </button>
   );
-}
+});
+
+export default Button;
 

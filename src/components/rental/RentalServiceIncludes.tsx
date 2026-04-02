@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Check } from 'lucide-react';
 
 interface RentalServiceIncludesProps {
@@ -5,10 +6,10 @@ interface RentalServiceIncludesProps {
   items: string[];
 }
 
-export const RentalServiceIncludes = ({ 
+const RentalServiceIncludes = memo(function RentalServiceIncludes({ 
   title = 'Что входит в услугу',
   items 
-}: RentalServiceIncludesProps) => {
+}: RentalServiceIncludesProps) {
   if (!Array.isArray(items) || items.length === 0) {
     return null;
   }
@@ -40,4 +41,7 @@ export const RentalServiceIncludes = ({
       </div>
     </section>
   );
-};
+});
+
+export { RentalServiceIncludes };
+export default RentalServiceIncludes;

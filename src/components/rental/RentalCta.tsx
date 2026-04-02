@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Link } from 'react-router-dom';
 import { StarBorder } from '../effects/StarBorder';
 
@@ -12,7 +13,7 @@ interface RentalCtaProps {
   };
 }
 
-export const RentalCta = ({ data }: RentalCtaProps) => {
+const RentalCta = memo(function RentalCta({ data }: RentalCtaProps) {
   const { title, text, primaryCta, primaryCtaLink, secondaryCta, secondaryCtaLink } = data;
 
   if (!title && !text) {
@@ -70,4 +71,7 @@ export const RentalCta = ({ data }: RentalCtaProps) => {
       </div>
     </section>
   );
-};
+});
+
+export { RentalCta };
+export default RentalCta;

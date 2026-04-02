@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, memo } from 'react';
 
 const vert = `
 varying vec2 vUv;
@@ -129,7 +129,7 @@ void main() {
 }
 `;
 
-export default function Aurora({
+function Aurora({
   color1 = '#3A29FF',
   color2 = '#FF94B4',
   color3 = '#FF3232',
@@ -284,3 +284,5 @@ export default function Aurora({
 
   return <div ref={containerRef} className="aurora-container" aria-hidden="true" {...rest} />;
 }
+
+export default memo(Aurora);

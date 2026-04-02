@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react';
+import { memo, type ReactNode } from 'react';
 import Button from './Button';
 
 export type EmptyStateProps = {
@@ -11,7 +11,7 @@ export type EmptyStateProps = {
   };
 };
 
-export default function EmptyState({ icon, title, description, action }: EmptyStateProps) {
+const EmptyState = memo(function EmptyState({ icon, title, description, action }: EmptyStateProps) {
   return (
     <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-white/10 bg-white/5 p-8 text-center">
       {icon ? <div className="text-3xl">{icon}</div> : null}
@@ -26,5 +26,7 @@ export default function EmptyState({ icon, title, description, action }: EmptySt
       ) : null}
     </div>
   );
-}
+});
+
+export default EmptyState;
 

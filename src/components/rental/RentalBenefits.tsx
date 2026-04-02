@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Zap, Shield, Clock, HeadphonesIcon, Award, Settings } from 'lucide-react';
 
 interface Benefit {
@@ -22,10 +23,10 @@ const getIcon = (title: string) => {
   return Zap;
 };
 
-export const RentalBenefits = ({ 
+const RentalBenefits = memo(function RentalBenefits({ 
   title = 'Преимущества',
   items 
-}: RentalBenefitsProps) => {
+}: RentalBenefitsProps) {
   if (!Array.isArray(items) || items.length === 0) {
     return null;
   }
@@ -61,4 +62,7 @@ export const RentalBenefits = ({
       </div>
     </section>
   );
-};
+});
+
+export { RentalBenefits };
+export default RentalBenefits;
