@@ -40,16 +40,35 @@ const Footer = () => {
 
           {/* Col 1: Logo + description */}
           <div className="lg:col-span-2">
-            <Link to="/" className="mb-5 flex items-center gap-3">
-              <div
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold text-white"
-                style={{ background: 'var(--accent-gradient)', boxShadow: 'var(--glow)' }}
-              >
-                FS
+            <Link to="/" className="mb-5 flex flex-col gap-0.5">
+              <div className="flex items-center gap-1.5">
+                <span className="font-display text-[15px] font-bold text-white tracking-tight">
+                  Фьючер
+                </span>
+                <svg viewBox="0 0 28 24" width="28" height="24" xmlns="http://www.w3.org/2000/svg" className="shrink-0">
+                  <rect x="0.5" y="0.5" width="27" height="23" rx="2.5" fill="#0d0d0d" stroke="rgba(255,255,255,0.18)" strokeWidth="1"/>
+                  <circle cx="5.5"  cy="6"  r="2" fill="#ef4444" opacity="0.95"/>
+                  <circle cx="11.5" cy="6"  r="2" fill="#3b82f6" opacity="0.95"/>
+                  <circle cx="17.5" cy="6"  r="2" fill="#22c55e" opacity="0.95"/>
+                  <circle cx="23"   cy="6"  r="2" fill="#f59e0b" opacity="0.95"/>
+                  <circle cx="5.5"  cy="12" r="2" fill="#8b5cf6" opacity="0.95"/>
+                  <circle cx="11.5" cy="12" r="2" fill="#ef4444" opacity="0.95"/>
+                  <circle cx="17.5" cy="12" r="2" fill="#3b82f6" opacity="0.95"/>
+                  <circle cx="23"   cy="12" r="2" fill="#22c55e" opacity="0.95"/>
+                  <circle cx="5.5"  cy="18" r="2" fill="#f59e0b" opacity="0.95"/>
+                  <circle cx="11.5" cy="18" r="2" fill="#8b5cf6" opacity="0.95"/>
+                  <circle cx="17.5" cy="18" r="2" fill="#ec4899" opacity="0.95"/>
+                  <circle cx="23"   cy="18" r="2" fill="#ef4444" opacity="0.95"/>
+                </svg>
+                <span className="font-display text-[15px] font-bold text-white tracking-tight">
+                  Скрин
+                </span>
               </div>
-              <div>
-                <div className="font-display text-base font-semibold text-white">Фьючер Скрин</div>
-                <div className="text-xs text-gray-500">Техсопровождение мероприятий</div>
+              <div
+                className="text-[8.5px] font-medium uppercase text-gray-300 tracking-[0.18em]"
+                style={{ textAlign: 'justify', textAlignLast: 'justify' }}
+              >
+                Техсопровождение мероприятий
               </div>
             </Link>
             <p className="max-w-xs text-sm leading-relaxed text-gray-400">
