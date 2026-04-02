@@ -91,7 +91,7 @@ const Header = () => {
     >
       <div className="container-page flex h-16 items-center justify-between gap-4 lg:h-20">
         {/* Logo */}
-        <Link to="/" target="_blank" rel="noopener noreferrer" className="flex shrink-0 flex-col gap-0.5" onClick={closeMenu}>
+        <Link to="/" className="flex shrink-0 flex-col gap-0.5" onClick={closeMenu}>
           {/* First line: Фьючер [LED screen] Скрин */}
           <div className="flex items-center gap-1.5">
             <span className="font-display text-[15px] font-bold text-white tracking-tight lg:text-[16px]">
