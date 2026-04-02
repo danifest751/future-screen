@@ -362,7 +362,7 @@ const HomePage = () => {
 
       {/* ── 1. HERO — fullbleed photo ───────────────────────────────────────── */}
       <section
-        className="relative flex min-h-screen items-center justify-center overflow-hidden -mt-16 lg:-mt-20"
+        className="relative flex h-screen items-center justify-center overflow-hidden -mt-16 lg:-mt-20"
         style={{
           backgroundImage: 'url(/images/hero-led-event.png)',
           backgroundSize: 'cover',
@@ -373,7 +373,7 @@ const HomePage = () => {
         <div className="absolute inset-0 bg-black/55" />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#0a0a0a]" />
 
-        <div className="container-page relative z-10 py-32 md:py-40 text-center">
+        <div className="container-page relative z-10 text-center pt-16 lg:pt-20">
           {/* Badge */}
           <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm text-gray-200 backdrop-blur-sm">
             <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
