@@ -263,9 +263,12 @@ function WorksSlider({ items }: { items: typeof worksItems }) {
   const n = items.length;
   const all = [...items, ...items, ...items];
   const [visible, setVisible] = useState(3);
-  const [idx, setIdx] = useState(n);
+  const [idx, setIdxState] = useState(n);
+  const idxRef = useRef(n);
   const [animated, setAnimated] = useState(true);
   const [hovered, setHovered] = useState(false);
+
+  const setIdx = (val: number) => { idxRef.current = val; setIdxState(val); };
 
   useEffect(() => {
     const update = () =>
@@ -275,17 +278,18 @@ function WorksSlider({ items }: { items: typeof worksItems }) {
     return () => window.removeEventListener('resize', update);
   }, []);
 
-  const go = (dir: 1 | -1) => setIdx((prev) => prev + dir);
+  const go = (dir: 1 | -1) => { const next = idxRef.current + dir; setIdx(next); };
 
   const handleTransitionEnd = () => {
-    if (idx >= n * 2) {
+    const cur = idxRef.current;
+    if (cur >= n * 2) {
       setAnimated(false);
-      setIdx(idx - n);
-      requestAnimationFrame(() => requestAnimationFrame(() => setAnimated(true)));
-    } else if (idx < n) {
+      setIdx(cur - n);
+      setTimeout(() => setAnimated(true), 20);
+    } else if (cur < n) {
       setAnimated(false);
-      setIdx(idx + n);
-      requestAnimationFrame(() => requestAnimationFrame(() => setAnimated(true)));
+      setIdx(cur + n);
+      setTimeout(() => setAnimated(true), 20);
     }
   };
 
@@ -364,9 +368,12 @@ function EventsSlider({ items }: { items: EventItem[] }) {
   const n = items.length;
   const all = [...items, ...items, ...items];
   const [visible, setVisible] = useState(3);
-  const [idx, setIdx] = useState(n);
+  const [idx, setIdxState] = useState(n);
+  const idxRef = useRef(n);
   const [animated, setAnimated] = useState(true);
   const [hovered, setHovered] = useState(false);
+
+  const setIdx = (val: number) => { idxRef.current = val; setIdxState(val); };
 
   useEffect(() => {
     const update = () =>
@@ -376,17 +383,18 @@ function EventsSlider({ items }: { items: EventItem[] }) {
     return () => window.removeEventListener('resize', update);
   }, []);
 
-  const go = (dir: 1 | -1) => setIdx((prev) => prev + dir);
+  const go = (dir: 1 | -1) => { const next = idxRef.current + dir; setIdx(next); };
 
   const handleTransitionEnd = () => {
-    if (idx >= n * 2) {
+    const cur = idxRef.current;
+    if (cur >= n * 2) {
       setAnimated(false);
-      setIdx(idx - n);
-      requestAnimationFrame(() => requestAnimationFrame(() => setAnimated(true)));
-    } else if (idx < n) {
+      setIdx(cur - n);
+      setTimeout(() => setAnimated(true), 20);
+    } else if (cur < n) {
       setAnimated(false);
-      setIdx(idx + n);
-      requestAnimationFrame(() => requestAnimationFrame(() => setAnimated(true)));
+      setIdx(cur + n);
+      setTimeout(() => setAnimated(true), 20);
     }
   };
 
