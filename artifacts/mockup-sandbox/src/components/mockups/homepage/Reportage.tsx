@@ -18,8 +18,7 @@ export function Reportage() {
         style={{
           backgroundImage: "url('/__mockup/images/hero-led-event.png')",
           backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundAttachment: "fixed"
+          backgroundPosition: "center"
         }}
       >
         <div className="absolute inset-0 bg-black/60 z-0"></div>
