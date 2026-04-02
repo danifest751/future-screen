@@ -120,3 +120,15 @@ id = "500EnC7oqQyodd1obxCew"
 uri = "file://public/images/event-presentation.png"
 type = "image"
 title = "generated_image"
+
+[[generated]]
+id = "9LjEmxSYN45C8_4KTMx3i"
+uri = "file://public/images/event-theater.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "cIBQZKD37LZc9VEi-zmrD"
+uri = "file://public/images/event-sports.png"
+type = "image"
+title = "generated_image"

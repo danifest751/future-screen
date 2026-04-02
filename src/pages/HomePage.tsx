@@ -194,6 +194,46 @@ const eventTypes = [
       </svg>
     ),
   },
+  {
+    title: 'Фестивали',
+    desc: 'Open-air площадки: сцена, звук, LED-экраны для тысяч зрителей',
+    photo: '/images/festival-crowd.png',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8">
+        <path d="M12 2v8"/><path d="m4.93 10.93 1.41 1.41"/><path d="M2 18h2"/><path d="M20 18h2"/><path d="m19.07 10.93-1.41 1.41"/><path d="M22 22H2"/><path d="m8 22 4-10 4 10"/><path d="M2 22V12a10 10 0 0 1 20 0v10"/>
+      </svg>
+    ),
+  },
+  {
+    title: 'Промо-акции',
+    desc: 'Рекламные стойки, LED-конструкции, брендированные экраны',
+    photo: '/images/hero-led-event.png',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8">
+        <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+      </svg>
+    ),
+  },
+  {
+    title: 'Театр и шоу',
+    desc: 'Сценический свет, звуковые системы, LED-задники для спектаклей',
+    photo: '/images/event-theater.png',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8">
+        <circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/>
+      </svg>
+    ),
+  },
+  {
+    title: 'Спортивные события',
+    desc: 'Видеотабло, трансляции, PA-системы для арен и стадионов',
+    photo: '/images/event-sports.png',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8">
+        <circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+      </svg>
+    ),
+  },
 ];
 
 // ─── Process steps ────────────────────────────────────────────────────────────
@@ -203,6 +243,104 @@ const processSteps = [
   { num: '03', title: 'Монтаж', desc: 'Доставка, установка и настройка всего оборудования заранее до мероприятия' },
   { num: '04', title: 'Поддержка', desc: 'Техническое сопровождение во время события и демонтаж после' },
 ];
+
+// ─── Events Slider ────────────────────────────────────────────────────────────
+type EventItem = (typeof eventTypes)[number];
+
+function EventsSlider({ items }: { items: EventItem[] }) {
+  const n = items.length;
+  const all = [...items, ...items, ...items];
+  const [visible, setVisible] = useState(3);
+  const [idx, setIdx] = useState(n);
+  const [animated, setAnimated] = useState(true);
+
+  useEffect(() => {
+    const update = () =>
+      setVisible(window.innerWidth >= 1024 ? 3 : window.innerWidth >= 640 ? 2 : 1);
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
+
+  const go = (dir: 1 | -1) => setIdx((prev) => prev + dir);
+
+  const handleTransitionEnd = () => {
+    if (idx >= n * 2) {
+      setAnimated(false);
+      setIdx(idx - n);
+      requestAnimationFrame(() => requestAnimationFrame(() => setAnimated(true)));
+    } else if (idx < n) {
+      setAnimated(false);
+      setIdx(idx + n);
+      requestAnimationFrame(() => requestAnimationFrame(() => setAnimated(true)));
+    }
+  };
+
+  const translatePct = -(idx / all.length) * 100;
+
+  return (
+    <div className="relative group/slider overflow-hidden rounded-2xl">
+      <div
+        className="flex"
+        style={{
+          width: `${(all.length / visible) * 100}%`,
+          transform: `translateX(${translatePct}%)`,
+          transition: animated ? 'transform 0.45s cubic-bezier(0.25, 0.1, 0.25, 1)' : 'none',
+        }}
+        onTransitionEnd={handleTransitionEnd}
+      >
+        {all.map((item, i) => (
+          <div
+            key={i}
+            className="group relative overflow-hidden cursor-pointer px-2"
+            style={{ width: `${100 / all.length}%` }}
+          >
+            <div className="relative overflow-hidden rounded-xl" style={{ aspectRatio: '4/3' }}>
+              <img
+                src={item.photo}
+                alt={item.title}
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                style={{ filter: 'saturate(0.5) brightness(0.6)' }}
+              />
+              <div className="absolute inset-0 bg-black/50 transition-colors duration-300 group-hover:bg-black/25" />
+              <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-white">
+                <div className="mb-3 opacity-80 group-hover:opacity-100 transition-opacity">{item.icon}</div>
+                <h3 className="font-display text-xl font-bold">{item.title}</h3>
+              </div>
+              <div className="absolute bottom-0 left-0 right-0 p-4 text-center">
+                <p className="text-xs leading-relaxed text-gray-200 opacity-0 transition-opacity duration-300 group-hover:opacity-90">
+                  {item.desc}
+                </p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Left arrow */}
+      <button
+        onClick={() => go(-1)}
+        aria-label="Назад"
+        className="absolute left-3 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center w-11 h-11 rounded-full bg-black/70 border border-white/20 text-white opacity-0 group-hover/slider:opacity-100 transition-all duration-200 hover:bg-brand-600 hover:border-brand-500 hover:scale-110"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+          <path d="m15 18-6-6 6-6"/>
+        </svg>
+      </button>
+
+      {/* Right arrow */}
+      <button
+        onClick={() => go(1)}
+        aria-label="Вперёд"
+        className="absolute right-3 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center w-11 h-11 rounded-full bg-black/70 border border-white/20 text-white opacity-0 group-hover/slider:opacity-100 transition-all duration-200 hover:bg-brand-600 hover:border-brand-500 hover:scale-110"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+          <path d="m9 18 6-6-6-6"/>
+        </svg>
+      </button>
+    </div>
+  );
+}
 
 // ─── Section wrapper with scroll reveal ──────────────────────────────────────
 const RevealSection = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => {
@@ -564,35 +702,8 @@ const HomePage = () => {
             </div>
           </RevealSection>
 
-          <RevealSection className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {eventTypes.map((item) => (
-              <div
-                key={item.title}
-                className="group relative cursor-pointer overflow-hidden rounded-2xl"
-                style={{ aspectRatio: '4/3' }}
-              >
-                {/* Photo — muted with heavy overlay */}
-                <img
-                  src={item.photo}
-                  alt={item.title}
-                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                  style={{ filter: 'saturate(0.5) brightness(0.6)' }}
-                />
-                {/* Dark overlay — lifts on hover to reveal photo */}
-                <div className="absolute inset-0 bg-black/50 transition-colors duration-300 group-hover:bg-black/25" />
-                {/* Icon + title — always perfectly centered */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-white">
-                  <div className="mb-3 opacity-80 group-hover:opacity-100 transition-opacity">{item.icon}</div>
-                  <h3 className="font-display text-xl font-bold">{item.title}</h3>
-                </div>
-                {/* Description — slides in at bottom on hover */}
-                <div className="absolute bottom-0 left-0 right-0 p-4 text-center">
-                  <p className="text-xs leading-relaxed text-gray-200 opacity-0 transition-opacity duration-300 group-hover:opacity-90">
-                    {item.desc}
-                  </p>
-                </div>
-              </div>
-            ))}
+          <RevealSection>
+            <EventsSlider items={eventTypes} />
           </RevealSection>
         </div>
       </section>
