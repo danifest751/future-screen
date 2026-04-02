@@ -5,9 +5,9 @@ export function Contrast() {
   return (
     <div className="min-h-screen bg-[#111111] text-zinc-300 font-sans selection:bg-amber-500/30">
       {/* Hero Split Screen */}
-      <section className="relative flex flex-col lg:flex-row min-h-[90vh] lg:min-h-screen">
+      <section className="relative flex flex-col lg:flex-row lg:h-screen" style={{minHeight: '90vh'}}>
         {/* Left: Photo (60%) */}
-        <div className="relative w-full lg:w-[60%] h-[50vh] lg:h-full shrink-0">
+        <div className="relative w-full lg:w-[60%] h-[50vh] lg:h-full min-h-0 shrink-0">
           <div className="absolute inset-0 bg-gradient-to-t from-[#111111] via-transparent to-transparent lg:bg-gradient-to-r z-10" />
           <img
             src="/__mockup/images/stage-setup.png"
