@@ -527,20 +527,20 @@ const HomePage = () => {
 
           <RevealSection className="mt-5 grid gap-5 sm:grid-cols-3">
             {extraEquipment.map((item) => (
-              <Link key={item.title} to={item.link} className="group relative overflow-hidden rounded-2xl min-h-[120px] flex items-end p-5 cursor-pointer">
+              <Link key={item.title} to={item.link} className="group relative overflow-hidden rounded-2xl min-h-[120px] block cursor-pointer">
                 <img
                   src={item.photo}
                   alt={item.title}
                   className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                 />
                 <div className="absolute inset-0 bg-black/65 group-hover:bg-black/55 transition-colors" />
-                <div className="relative z-10 flex items-center gap-3">
+                <div className="absolute bottom-0 left-0 right-0 z-10 flex items-center gap-3 p-5">
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white group-hover:bg-brand-500/30 transition-colors">
                     {item.icon}
                   </div>
                   <div>
-                    <div className="font-medium text-white group-hover:text-brand-300 transition-colors">{item.title}</div>
-                    <div className="text-xs text-gray-400">{item.desc}</div>
+                    <div className="font-medium text-white group-hover:text-brand-300 transition-colors leading-tight">{item.title}</div>
+                    <div className="text-xs text-gray-400 line-clamp-1">{item.desc}</div>
                   </div>
                 </div>
               </Link>
@@ -580,11 +580,14 @@ const HomePage = () => {
                 />
                 {/* Dark overlay — lifts on hover to reveal photo */}
                 <div className="absolute inset-0 bg-black/50 transition-colors duration-300 group-hover:bg-black/25" />
-                {/* Content */}
+                {/* Icon + title — always perfectly centered */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-white">
                   <div className="mb-3 opacity-80 group-hover:opacity-100 transition-opacity">{item.icon}</div>
                   <h3 className="font-display text-xl font-bold">{item.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-gray-300 opacity-0 transition-opacity duration-300 group-hover:opacity-90">
+                </div>
+                {/* Description — slides in at bottom on hover */}
+                <div className="absolute bottom-0 left-0 right-0 p-4 text-center">
+                  <p className="text-xs leading-relaxed text-gray-200 opacity-0 transition-opacity duration-300 group-hover:opacity-90">
                     {item.desc}
                   </p>
                 </div>
