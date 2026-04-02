@@ -244,15 +244,28 @@ const processSteps = [
   { num: '04', title: 'Поддержка', desc: 'Техническое сопровождение во время события и демонтаж после' },
 ];
 
-// ─── Events Slider ────────────────────────────────────────────────────────────
-type EventItem = (typeof eventTypes)[number];
+// ─── Works (portfolio) data ───────────────────────────────────────────────────
+const worksItems = [
+  { src: '/images/work-corporate-gala.png', tag: 'Корпоратив', title: 'Гала-ужин производственной компании' },
+  { src: '/images/work-festival.png', tag: 'Open-air фестиваль', title: 'Летний музыкальный фестиваль' },
+  { src: '/images/work-conference.png', tag: 'Конференция', title: 'Деловой форум 2000 участников' },
+  { src: '/images/work-concert.png', tag: 'Концерт', title: 'Rock-шоу с LED-стеной 200 м²' },
+  { src: '/images/work-wedding.png', tag: 'Свадьба', title: 'Торжественная церемония в банкетном зале' },
+  { src: '/images/work-product-launch.png', tag: 'Презентация', title: 'Запуск флагманского продукта' },
+  { src: '/images/work-exhibition.png', tag: 'Выставка', title: 'Стенд на международном форуме' },
+  { src: '/images/work-newyear.png', tag: 'Новый год', title: 'Корпоративный новогодний праздник' },
+  { src: '/images/work-awards.png', tag: 'Награждение', title: 'Церемония вручения премий' },
+  { src: '/images/work-sports.png', tag: 'Спорт', title: 'Финальный матч чемпионата' },
+];
 
-function EventsSlider({ items }: { items: EventItem[] }) {
+// ─── Works Slider ─────────────────────────────────────────────────────────────
+function WorksSlider({ items }: { items: typeof worksItems }) {
   const n = items.length;
   const all = [...items, ...items, ...items];
   const [visible, setVisible] = useState(3);
   const [idx, setIdx] = useState(n);
   const [animated, setAnimated] = useState(true);
+  const [hovered, setHovered] = useState(false);
 
   useEffect(() => {
     const update = () =>
@@ -279,49 +292,50 @@ function EventsSlider({ items }: { items: EventItem[] }) {
   const translatePct = -(idx / all.length) * 100;
 
   return (
-    <div className="relative group/slider overflow-hidden rounded-2xl">
-      <div
-        className="flex"
-        style={{
-          width: `${(all.length / visible) * 100}%`,
-          transform: `translateX(${translatePct}%)`,
-          transition: animated ? 'transform 0.45s cubic-bezier(0.25, 0.1, 0.25, 1)' : 'none',
-        }}
-        onTransitionEnd={handleTransitionEnd}
-      >
-        {all.map((item, i) => (
-          <div
-            key={i}
-            className="group relative overflow-hidden cursor-pointer px-2"
-            style={{ width: `${100 / all.length}%` }}
-          >
-            <div className="relative overflow-hidden rounded-xl" style={{ aspectRatio: '4/3' }}>
-              <img
-                src={item.photo}
-                alt={item.title}
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                style={{ filter: 'saturate(0.5) brightness(0.6)' }}
-              />
-              <div className="absolute inset-0 bg-black/50 transition-colors duration-300 group-hover:bg-black/25" />
-              <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-white">
-                <div className="mb-3 opacity-80 group-hover:opacity-100 transition-opacity">{item.icon}</div>
-                <h3 className="font-display text-xl font-bold">{item.title}</h3>
-              </div>
-              <div className="absolute bottom-0 left-0 right-0 p-4 text-center">
-                <p className="text-xs leading-relaxed text-gray-200 opacity-0 transition-opacity duration-300 group-hover:opacity-90">
-                  {item.desc}
-                </p>
+    <div
+      className="relative rounded-2xl"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <div className="overflow-hidden rounded-2xl">
+        <div
+          className="flex"
+          style={{
+            width: `${(all.length / visible) * 100}%`,
+            transform: `translateX(${translatePct}%)`,
+            transition: animated ? 'transform 0.45s cubic-bezier(0.25, 0.1, 0.25, 1)' : 'none',
+          }}
+          onTransitionEnd={handleTransitionEnd}
+        >
+          {all.map((item, i) => (
+            <div
+              key={i}
+              className="group relative overflow-hidden cursor-pointer px-2"
+              style={{ width: `${100 / all.length}%` }}
+            >
+              <div className="relative overflow-hidden rounded-xl" style={{ aspectRatio: '4/5' }}>
+                <img
+                  src={item.src}
+                  alt={item.title}
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+                <div className="absolute bottom-0 left-0 p-5 transform translate-y-2 transition-transform duration-300 group-hover:translate-y-0">
+                  <p className="text-brand-400 font-medium mb-1 uppercase tracking-wider text-xs">{item.tag}</p>
+                  <h3 className="text-lg font-bold text-white leading-tight">{item.title}</h3>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
       {/* Left arrow */}
       <button
         onClick={() => go(-1)}
         aria-label="Назад"
-        className="absolute left-3 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center w-11 h-11 rounded-full bg-black/70 border border-white/20 text-white opacity-0 group-hover/slider:opacity-100 transition-all duration-200 hover:bg-brand-600 hover:border-brand-500 hover:scale-110"
+        className="absolute left-3 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center w-11 h-11 rounded-full bg-black/70 border border-white/20 text-white transition-all duration-200 hover:bg-brand-600 hover:border-brand-500 hover:scale-110"
+        style={{ opacity: hovered ? 1 : 0, pointerEvents: hovered ? 'auto' : 'none' }}
       >
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
           <path d="m15 18-6-6 6-6"/>
@@ -332,7 +346,115 @@ function EventsSlider({ items }: { items: EventItem[] }) {
       <button
         onClick={() => go(1)}
         aria-label="Вперёд"
-        className="absolute right-3 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center w-11 h-11 rounded-full bg-black/70 border border-white/20 text-white opacity-0 group-hover/slider:opacity-100 transition-all duration-200 hover:bg-brand-600 hover:border-brand-500 hover:scale-110"
+        className="absolute right-3 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center w-11 h-11 rounded-full bg-black/70 border border-white/20 text-white transition-all duration-200 hover:bg-brand-600 hover:border-brand-500 hover:scale-110"
+        style={{ opacity: hovered ? 1 : 0, pointerEvents: hovered ? 'auto' : 'none' }}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+          <path d="m9 18 6-6-6-6"/>
+        </svg>
+      </button>
+    </div>
+  );
+}
+
+// ─── Events Slider ────────────────────────────────────────────────────────────
+type EventItem = (typeof eventTypes)[number];
+
+function EventsSlider({ items }: { items: EventItem[] }) {
+  const n = items.length;
+  const all = [...items, ...items, ...items];
+  const [visible, setVisible] = useState(3);
+  const [idx, setIdx] = useState(n);
+  const [animated, setAnimated] = useState(true);
+  const [hovered, setHovered] = useState(false);
+
+  useEffect(() => {
+    const update = () =>
+      setVisible(window.innerWidth >= 1024 ? 3 : window.innerWidth >= 640 ? 2 : 1);
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
+
+  const go = (dir: 1 | -1) => setIdx((prev) => prev + dir);
+
+  const handleTransitionEnd = () => {
+    if (idx >= n * 2) {
+      setAnimated(false);
+      setIdx(idx - n);
+      requestAnimationFrame(() => requestAnimationFrame(() => setAnimated(true)));
+    } else if (idx < n) {
+      setAnimated(false);
+      setIdx(idx + n);
+      requestAnimationFrame(() => requestAnimationFrame(() => setAnimated(true)));
+    }
+  };
+
+  const translatePct = -(idx / all.length) * 100;
+
+  const arrowBtn = 'absolute top-1/2 -translate-y-1/2 z-20 flex items-center justify-center w-11 h-11 rounded-full bg-black/70 border border-white/20 text-white transition-all duration-200 hover:bg-brand-600 hover:border-brand-500 hover:scale-110';
+
+  return (
+    <div
+      className="relative"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <div className="overflow-hidden rounded-2xl">
+        <div
+          className="flex"
+          style={{
+            width: `${(all.length / visible) * 100}%`,
+            transform: `translateX(${translatePct}%)`,
+            transition: animated ? 'transform 0.45s cubic-bezier(0.25, 0.1, 0.25, 1)' : 'none',
+          }}
+          onTransitionEnd={handleTransitionEnd}
+        >
+          {all.map((item, i) => (
+            <div
+              key={i}
+              className="group relative overflow-hidden cursor-pointer px-2"
+              style={{ width: `${100 / all.length}%` }}
+            >
+              <div className="relative overflow-hidden rounded-xl" style={{ aspectRatio: '4/3' }}>
+                <img
+                  src={item.photo}
+                  alt={item.title}
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  style={{ filter: 'saturate(0.5) brightness(0.6)' }}
+                />
+                <div className="absolute inset-0 bg-black/50 transition-colors duration-300 group-hover:bg-black/25" />
+                <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-white">
+                  <div className="mb-3 opacity-80 group-hover:opacity-100 transition-opacity">{item.icon}</div>
+                  <h3 className="font-display text-xl font-bold">{item.title}</h3>
+                </div>
+                <div className="absolute bottom-0 left-0 right-0 p-4 text-center">
+                  <p className="text-xs leading-relaxed text-gray-200 opacity-0 transition-opacity duration-300 group-hover:opacity-90">
+                    {item.desc}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <button
+        onClick={() => go(-1)}
+        aria-label="Назад"
+        className={`${arrowBtn} left-3`}
+        style={{ opacity: hovered ? 1 : 0, pointerEvents: hovered ? 'auto' : 'none' }}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+          <path d="m15 18-6-6 6-6"/>
+        </svg>
+      </button>
+
+      <button
+        onClick={() => go(1)}
+        aria-label="Вперёд"
+        className={`${arrowBtn} right-3`}
+        style={{ opacity: hovered ? 1 : 0, pointerEvents: hovered ? 'auto' : 'none' }}
       >
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
           <path d="m9 18 6-6-6-6"/>
@@ -584,25 +706,8 @@ const HomePage = () => {
             </div>
           </RevealSection>
 
-          <RevealSection className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              { src: '/images/hero-concert.png', tag: 'Концертная сцена', title: 'Фестиваль живой музыки' },
-              { src: '/images/gala-event.png', tag: 'Корпоратив', title: 'Ежегодный Гала-ужин' },
-              { src: '/images/festival-crowd.png', tag: 'Open-air', title: 'Музыкальный фестиваль' },
-            ].map((item) => (
-              <div key={item.title} className="group relative rounded-2xl overflow-hidden cursor-pointer" style={{ aspectRatio: '4/5' }}>
-                <img
-                  src={item.src}
-                  alt={item.title}
-                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
-                <div className="absolute bottom-0 left-0 p-6 transform translate-y-2 transition-transform duration-300 group-hover:translate-y-0">
-                  <p className="text-[#667eea] font-medium mb-1 uppercase tracking-wider text-xs">{item.tag}</p>
-                  <h3 className="text-xl font-bold text-white">{item.title}</h3>
-                </div>
-              </div>
-            ))}
+          <RevealSection>
+            <WorksSlider items={worksItems} />
           </RevealSection>
         </div>
       </section>

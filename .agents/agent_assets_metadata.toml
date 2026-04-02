@@ -132,3 +132,63 @@ id = "cIBQZKD37LZc9VEi-zmrD"
 uri = "file://public/images/event-sports.png"
 type = "image"
 title = "generated_image"
+
+[[generated]]
+id = "Ef3YEKGEaz0RxKJsGJTrQ"
+uri = "file://public/images/work-corporate-gala.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "hkqRR9zXbDtyotBX7VG1D"
+uri = "file://public/images/work-festival.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "xDVoPhDZG83ESHqHEiERU"
+uri = "file://public/images/work-conference.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "k8a2995xLh8XWQr_9FjbU"
+uri = "file://public/images/work-concert.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "Ye9HEJjl8OrdVxSeAPTwU"
+uri = "file://public/images/work-wedding.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "GMhOQ_guEiGkmBoT0sBJr"
+uri = "file://public/images/work-product-launch.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "gR9aCDjA1PrTzpEHMRQyI"
+uri = "file://public/images/work-exhibition.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "jLN57aS7ng5TnQWldZ4nZ"
+uri = "file://public/images/work-newyear.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "LrwadrZJ_nnl8CkFBCdrj"
+uri = "file://public/images/work-awards.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "tGcvkb5kY5VF73uhibOJR"
+uri = "file://public/images/work-sports.png"
+type = "image"
+title = "generated_image"
