@@ -113,6 +113,8 @@ const RentalCategoryPage = () => {
       {bottomCta && (bottomCta.title as string || bottomCta.text as string) && (
         <RentalCta
           data={bottomCta as { title: string; text: string; primaryCta?: string; primaryCtaLink?: string; secondaryCta?: string; secondaryCtaLink?: string }}
+          showForm={true}
+          formCtaText="Запросить помощь"
         />
       )}
     </div>

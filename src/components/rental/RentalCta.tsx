@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import { Link } from 'react-router-dom';
 import { StarBorder } from '../effects/StarBorder';
+import { RequestForm } from '../RequestForm';
 
 interface RentalCtaProps {
   data: {
@@ -11,12 +12,16 @@ interface RentalCtaProps {
     secondaryCta?: string;
     secondaryCtaLink?: string;
   };
+  /** Показывать форму запроса вместо ссылок */
+  showForm?: boolean;
+  /** Текст кнопки отправки формы (по умолчанию 'Отправить') */
+  formCtaText?: string;
 }
 
-const RentalCta = memo(function RentalCta({ data }: RentalCtaProps) {
+const RentalCta = memo(function RentalCta({ data, showForm = false, formCtaText = 'Отправить' }: RentalCtaProps) {
   const { title, text, primaryCta, primaryCtaLink, secondaryCta, secondaryCtaLink } = data;
 
-  if (!title && !text) {
+  if (!title && !text && !showForm) {
     return null;
   }
 
@@ -32,39 +37,49 @@ const RentalCta = memo(function RentalCta({ data }: RentalCtaProps) {
           <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-brand-600/10 blur-3xl" />
           
           <div className="relative max-w-2xl mx-auto text-center">
-            {title && (
-              <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
-                {title}
-              </h2>
-            )}
-            
-            {text && (
-              <p className="text-slate-300 mb-8 leading-relaxed">
-                {text}
-              </p>
-            )}
+            {showForm ? (
+              <RequestForm 
+                title={title || 'Нужна помощь?'} 
+                subtitle={text}
+                ctaText={formCtaText}
+              />
+            ) : (
+              <>
+                {title && (
+                  <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
+                    {title}
+                  </h2>
+                )}
+                
+                {text && (
+                  <p className="text-slate-300 mb-8 leading-relaxed">
+                    {text}
+                  </p>
+                )}
 
-            {(hasPrimary || hasSecondary) && (
-              <div className="flex flex-wrap justify-center gap-4">
-                {hasPrimary && (
-                  <StarBorder variant="button">
-                    <Link
-                      to={primaryCtaLink}
-                      className="btn-primary"
-                    >
-                      {primaryCta}
-                    </Link>
-                  </StarBorder>
+                {(hasPrimary || hasSecondary) && (
+                  <div className="flex flex-wrap justify-center gap-4">
+                    {hasPrimary && (
+                      <StarBorder variant="button">
+                        <Link
+                          to={primaryCtaLink}
+                          className="btn-primary"
+                        >
+                          {primaryCta}
+                        </Link>
+                      </StarBorder>
+                    )}
+                    {hasSecondary && (
+                      <Link
+                        to={secondaryCtaLink}
+                        className="btn-secondary"
+                      >
+                        {secondaryCta}
+                      </Link>
+                    )}
+                  </div>
                 )}
-                {hasSecondary && (
-                  <Link
-                    to={secondaryCtaLink}
-                    className="btn-secondary"
-                  >
-                    {secondaryCta}
-                  </Link>
-                )}
-              </div>
+              </>
             )}
           </div>
         </div>
