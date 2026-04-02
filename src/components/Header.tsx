@@ -152,11 +152,8 @@ const Header = () => {
             </span>
           </div>
 
-          {/* Second line: subtitle spanning full width */}
-          <div
-            className="hidden text-[8.5px] font-medium uppercase text-gray-300 tracking-[0.18em] lg:block"
-            style={{ textAlign: 'justify', textAlignLast: 'justify' }}
-          >
+          {/* Second line: subtitle */}
+          <div className="hidden text-[8.5px] font-medium uppercase text-gray-300 tracking-[0.12em] lg:block">
             Техсопровождение мероприятий
           </div>
         </Link>

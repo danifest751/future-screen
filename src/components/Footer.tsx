@@ -64,10 +64,7 @@ const Footer = () => {
                   Скрин
                 </span>
               </div>
-              <div
-                className="text-[8.5px] font-medium uppercase text-gray-300 tracking-[0.18em]"
-                style={{ textAlign: 'justify', textAlignLast: 'justify' }}
-              >
+              <div className="text-[8.5px] font-medium uppercase text-gray-300 tracking-[0.12em]">
                 Техсопровождение мероприятий
               </div>
             </Link>
