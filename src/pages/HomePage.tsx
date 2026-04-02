@@ -364,7 +364,7 @@ const HomePage = () => {
       <section
         className="relative flex h-screen items-center justify-center overflow-hidden -mt-16 lg:-mt-20"
         style={{
-          backgroundImage: 'url(/images/hero-led-wall.png)',
+          backgroundImage: 'url(/images/hero-led-wall-2.png)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         }}
