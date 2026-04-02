@@ -5,12 +5,8 @@ import { Textarea } from "@/components/ui/textarea";
 
 export function Reportage() {
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white font-sans selection:bg-[#764ba2] selection:text-white">
-      <style dangerouslySetInnerHTML={{__html: `
-        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;500;600&display=swap');
-        h1, h2, h3, h4, h5, h6 { font-family: 'Space Grotesk', sans-serif; }
-        body { font-family: 'Inter', sans-serif; }
-      `}} />
+    <div className="min-h-screen bg-[#0a0a0a] text-white font-sans selection:bg-[#764ba2] selection:text-white"
+         style={{ fontFamily: "'Inter', sans-serif" }}>
 
       {/* Hero Section */}
       <section 
