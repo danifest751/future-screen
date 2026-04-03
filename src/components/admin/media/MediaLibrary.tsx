@@ -116,11 +116,11 @@ export const MediaLibrary = ({
       />
 
       {/* Edit Modal */}
-      {editingMedia && (
-        <ConfirmModal
-          open={!!editingMedia}
-          title="Редактировать медиафайл"
-          description={
+      <ConfirmModal
+        open={!!editingMedia}
+        title="Редактировать медиафайл"
+        description={
+          editingMedia ? (
             <div className="space-y-4">
               <div>
                 <label className="mb-1 block text-sm text-slate-400">Название</label>
@@ -148,13 +148,13 @@ export const MediaLibrary = ({
                 />
               </div>
             </div>
-          }
-          confirmText="Сохранить"
-          cancelText="Отмена"
-          onCancel={() => setEditingMedia(null)}
-          onConfirm={handleEditSave}
-        />
-      )}
+          ) : ''
+        }
+        confirmText="Сохранить"
+        cancelText="Отмена"
+        onCancel={() => setEditingMedia(null)}
+        onConfirm={handleEditSave}
+      />
 
       {/* Delete Confirmation */}
       <ConfirmModal

@@ -11,12 +11,12 @@ interface MediaUploadModalProps {
   defaultTags?: string[];
 }
 
-export const MediaUploadModal = ({
-  isOpen,
+// Внутренний компонент с логикой - вызывает хуки без условий
+const MediaUploadModalContent = ({
   onClose,
   onUploadComplete,
   defaultTags = [],
-}: MediaUploadModalProps) => {
+}: Omit<MediaUploadModalProps, 'isOpen'>) => {
   const [tags, setTags] = useState<string[]>(defaultTags);
   const [tagInput, setTagInput] = useState('');
   const [isDragging, setIsDragging] = useState(false);
@@ -32,8 +32,6 @@ export const MediaUploadModal = ({
     errorCount,
     totalCount,
   } = useMediaUpload();
-
-  if (!isOpen) return null;
 
   const handleClose = () => {
     if (!isUploading) {
@@ -333,6 +331,15 @@ export const MediaUploadModal = ({
       </div>
     </div>
   );
+};
+
+// Внешний компонент-обертка - проверяет isOpen ДО вызова хуков
+export const MediaUploadModal = (props: MediaUploadModalProps) => {
+  if (!props.isOpen) {
+    return null;
+  }
+
+  return <MediaUploadModalContent {...props} />;
 };
 
 export default MediaUploadModal;

@@ -14,12 +14,8 @@ export type ConfirmModalProps = {
   onConfirm: () => Promise<void> | void;
 };
 
-/**
- * Модальное окно подтверждения с поддержкой доступности.
- * Реализует ловушку фокуса, ARIA-атрибуты и управление с клавиатуры.
- */
-export default function ConfirmModal({
-  open,
+// Внутренний компонент с логикой
+function ConfirmModalContent({
   title,
   description,
   confirmText = 'Подтвердить',
@@ -28,18 +24,16 @@ export default function ConfirmModal({
   confirmDisabled = false,
   onCancel,
   onConfirm,
-}: ConfirmModalProps) {
+}: Omit<ConfirmModalProps, 'open'>) {
   const [submitting, setSubmitting] = useState(false);
 
   // Ловушка фокуса
   const { containerRef } = useFocusTrap({
-    active: open,
+    active: true,
     onEscape: onCancel,
   });
 
   const confirmVariant = useMemo(() => (danger ? 'danger' : 'primary'), [danger]);
-
-  if (!open) return null;
 
   const handleConfirm = async () => {
     if (submitting || confirmDisabled) return;
@@ -108,4 +102,16 @@ export default function ConfirmModal({
       </div>
     </div>
   );
+}
+
+/**
+ * Модальное окно подтверждения с поддержкой доступности.
+ * Реализует ловушку фокуса, ARIA-атрибуты и управление с клавиатуры.
+ */
+export default function ConfirmModal(props: ConfirmModalProps) {
+  if (!props.open) {
+    return null;
+  }
+
+  return <ConfirmModalContent {...props} />;
 }
