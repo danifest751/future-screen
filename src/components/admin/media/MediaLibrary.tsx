@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Search, Upload, Image, Film, Grid, List, X, Film as FilmIcon } from 'lucide-react';
+import { Search, Upload, Image, Film, Grid, List, X, Play } from 'lucide-react';
 import { useMediaLibrary } from '../../../hooks/useMediaLibrary';
 import type { MediaFilter, MediaItem } from '../../../types/media';
 import MediaCard from './MediaCard';
@@ -31,6 +31,7 @@ export const MediaLibrary = ({
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [editingMedia, setEditingMedia] = useState<MediaItem | null>(null);
   const [deletingMedia, setDeletingMedia] = useState<MediaItem | null>(null);
+  const [viewingMedia, setViewingMedia] = useState<MediaItem | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   const {
@@ -167,6 +168,29 @@ export const MediaLibrary = ({
         onCancel={() => setDeletingMedia(null)}
         onConfirm={handleDeleteSingle}
       />
+
+      {/* Video Preview Modal */}
+      {viewingMedia?.type === 'video' && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          onClick={() => setViewingMedia(null)}
+        >
+          <div className="relative max-h-full max-w-4xl rounded-lg bg-black">
+            <button
+              onClick={() => setViewingMedia(null)}
+              className="absolute right-2 top-2 z-10 rounded bg-black/50 p-1 text-white hover:bg-black/70"
+            >
+              <X size={20} />
+            </button>
+            <video
+              src={viewingMedia.public_url}
+              controls
+              className="max-h-[80vh] max-w-full rounded-lg"
+              autoPlay
+            />
+          </div>
+        </div>
+      )}
 
       <div className="space-y-4">
         {/* Toolbar */}
@@ -365,9 +389,18 @@ export const MediaLibrary = ({
                     className="h-12 w-12 rounded object-cover"
                   />
                 ) : (
-                  <div className="flex h-12 w-12 items-center justify-center rounded bg-slate-700">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setViewingMedia(media);
+                    }}
+                    className="group relative flex h-12 w-12 items-center justify-center rounded bg-slate-700 transition-colors hover:bg-slate-600"
+                  >
                     <Film size={20} className="text-slate-400" />
-                  </div>
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100">
+                      <Play size={14} className="text-white" fill="white" />
+                    </div>
+                  </button>
                 )}
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-white">{media.name}</p>
