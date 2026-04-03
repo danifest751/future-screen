@@ -21,7 +21,7 @@ const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 const AdminContentPage = lazy(() => import('./pages/admin/AdminContentIndexPage'));
 const AdminLeadsPage = lazy(() => import('./pages/admin/AdminLeadsPage'));
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
-const AdminCasesPage = lazy(() => import('./pages/admin/AdminCasesManagerPage'));
+const AdminCasesPage = lazy(() => import('./pages/admin/AdminCasesRedesignedPage'));
 const AdminPackagesPage = lazy(() => import('./pages/admin/AdminPackagesPage'));
 const AdminCategoriesPage = lazy(() => import('./pages/admin/AdminCategoriesPage'));
 const AdminContactsPage = lazy(() => import('./pages/admin/AdminContactsPage'));

@@ -1,0 +1,592 @@
+import { useState, useMemo } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import toast from 'react-hot-toast';
+import AdminLayout from '../../components/admin/AdminLayout';
+import AdminFieldError from '../../components/admin/AdminFieldError';
+import { ConfirmModal, EmptyState } from '../../components/admin/ui';
+import { CaseMediaSelector } from '../../components/admin/cases';
+import { MediaLibrary } from '../../components/admin/media';
+import { FolderOpen, Image, Film, Search, Plus, Edit2, Trash2, HelpCircle, ChevronLeft, LayoutGrid, Library } from 'lucide-react';
+import { useCases } from '../../hooks/useCases';
+import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
+import type { CaseItem } from '../../data/cases';
+import type { MediaItem } from '../../types/media';
+
+const caseSchema = z.object({
+  slug: z
+    .string()
+    .min(2, 'Slug обязателен')
+    .regex(/^[a-z0-9-]+$/, 'Slug: только латиница, цифры и дефис'),
+  title: z.string().min(2, 'Название обязательно'),
+  city: z.string().default(''),
+  date: z.string().default(''),
+  format: z.string().default(''),
+  summary: z.string().min(3, 'Описание обязательно'),
+  metrics: z.string().default(''),
+  servicesText: z.string().default(''),
+});
+
+type CaseFormValues = z.infer<typeof caseSchema>;
+
+const defaultValues: CaseFormValues = {
+  slug: '',
+  title: '',
+  city: '',
+  date: '',
+  format: '',
+  summary: '',
+  metrics: '',
+  servicesText: '',
+};
+
+const FORMAT_OPTIONS = [
+  'Корпоратив',
+  'Концерт',
+  'Конференция',
+  'Выставка',
+  'Свадьба',
+  'Презентация',
+  'Фестиваль',
+  'Тимбилдинг',
+  'Другое',
+];
+
+const normalizeSlug = (value: string) =>
+  value
+    .toLowerCase()
+    .replace(/[^a-z0-9-]/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+
+const transliterate = (text: string): string => {
+  const map: Record<string, string> = {
+    'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'е': 'e', 'ё': 'yo',
+    'ж': 'zh', 'з': 'z', 'и': 'i', 'й': 'y', 'к': 'k', 'л': 'l', 'м': 'm',
+    'н': 'n', 'о': 'o', 'п': 'p', 'р': 'r', 'с': 's', 'т': 't', 'у': 'u',
+    'ф': 'f', 'х': 'kh', 'ц': 'ts', 'ч': 'ch', 'ш': 'sh', 'щ': 'shch',
+    'ъ': '', 'ы': 'y', 'ь': '', 'э': 'e', 'ю': 'yu', 'я': 'ya',
+    ' ': '-', '_': '-',
+  };
+  return text
+    .toLowerCase()
+    .split('')
+    .map((char) => map[char] || char)
+    .join('')
+    .replace(/[^a-z0-9-]/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+};
+
+const FieldHint = ({ children }: { children: React.ReactNode }) => (
+  <div className="mt-1 flex items-start gap-1 text-xs text-slate-500">
+    <HelpCircle size={12} className="mt-0.5 shrink-0" />
+    <span>{children}</span>
+  </div>
+);
+
+const AdminCasesRedesignedPage = () => {
+  const { cases, addCase, updateCase, deleteCase, resetToDefault } = useCases();
+  const [activeTab, setActiveTab] = useState<'cases' | 'media'>('cases');
+  const [caseEditing, setCaseEditing] = useState<string | null>(null);
+  const [selectedMedia, setSelectedMedia] = useState<MediaItem[]>([]);
+  const [deleteTarget, setDeleteTarget] = useState<Pick<CaseItem, 'slug' | 'title'> | null>(null);
+  const [resetModalOpen, setResetModalOpen] = useState(false);
+  const [autoSlug, setAutoSlug] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setValue,
+    watch,
+    formState: { errors, isSubmitting, isDirty },
+  } = useForm<CaseFormValues>({
+    resolver: zodResolver(caseSchema),
+    defaultValues,
+  });
+
+  useUnsavedChangesGuard(isDirty);
+
+  const titleValue = watch('title');
+  const slugValue = watch('slug');
+
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newTitle = e.target.value;
+    setValue('title', newTitle);
+    if (autoSlug && !caseEditing) {
+      const generatedSlug = transliterate(newTitle);
+      setValue('slug', generatedSlug, { shouldValidate: true });
+    }
+  };
+
+  const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newSlug = normalizeSlug(e.target.value);
+    setValue('slug', newSlug, { shouldValidate: true });
+    setAutoSlug(false);
+  };
+
+  const onSubmit = async (values: CaseFormValues) => {
+    const services = values.servicesText
+      .split(',')
+      .map((s) => s.trim().toLowerCase())
+      .filter(Boolean);
+
+    const images = selectedMedia
+      .filter((m) => m.type === 'image')
+      .map((m) => m.public_url);
+
+    const videos = selectedMedia
+      .filter((m) => m.type === 'video')
+      .map((m) => m.public_url);
+
+    const payload: Omit<CaseItem, 'services'> & { services: string[]; videos?: string[] } = {
+      slug: values.slug,
+      title: values.title,
+      city: values.city,
+      date: values.date,
+      format: values.format,
+      summary: values.summary,
+      metrics: values.metrics || undefined,
+      services,
+      images: images.length ? images : undefined,
+      videos: videos.length ? videos : undefined,
+    };
+
+    let ok = false;
+    if (caseEditing) {
+      const updates = {
+        title: payload.title,
+        city: payload.city,
+        date: payload.date,
+        format: payload.format,
+        summary: payload.summary,
+        metrics: payload.metrics,
+        services: payload.services,
+        images: payload.images,
+        videos: payload.videos,
+      };
+      ok = await updateCase(caseEditing, updates);
+    } else {
+      ok = await addCase(payload);
+    }
+
+    if (!ok) {
+      toast.error('Ошибка сохранения кейса');
+      return;
+    }
+
+    toast.success(caseEditing ? 'Кейс обновлен' : 'Кейс добавлен');
+    setCaseEditing(null);
+    setSelectedMedia([]);
+    setAutoSlug(true);
+    reset(defaultValues);
+  };
+
+  const startEdit = (item: CaseItem) => {
+    setCaseEditing(item.slug);
+    setAutoSlug(false);
+    reset({
+      slug: item.slug,
+      title: item.title,
+      city: item.city,
+      date: item.date,
+      format: item.format,
+      summary: item.summary,
+      metrics: item.metrics ?? '',
+      servicesText: item.services.join(', '),
+    });
+
+    // Convert URLs back to MediaItem references (simplified)
+    // In production, you'd fetch the actual media items from the database
+    const mediaItems: MediaItem[] = [];
+    if (item.images) {
+      item.images.forEach((url, index) => {
+        mediaItems.push({
+          id: `img-${index}`,
+          name: url.split('/').pop() || 'image',
+          storage_path: '',
+          public_url: url,
+          type: 'image',
+          mime_type: 'image/jpeg',
+          size_bytes: 0,
+          tags: [],
+          uploaded_by: 'admin',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+      });
+    }
+    if ((item as CaseItem & { videos?: string[] }).videos) {
+      (item as CaseItem & { videos?: string[] }).videos?.forEach((url, index) => {
+        mediaItems.push({
+          id: `vid-${index}`,
+          name: url.split('/').pop() || 'video',
+          storage_path: '',
+          public_url: url,
+          type: 'video',
+          mime_type: 'video/mp4',
+          size_bytes: 0,
+          tags: [],
+          uploaded_by: 'admin',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+      });
+    }
+    setSelectedMedia(mediaItems);
+    setActiveTab('cases');
+  };
+
+  const cancelEdit = () => {
+    setCaseEditing(null);
+    setSelectedMedia([]);
+    setAutoSlug(true);
+    reset(defaultValues);
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    const ok = await deleteCase(deleteTarget.slug);
+    if (ok) toast.success('Кейс удален');
+    else toast.error('Не удалось удалить кейс');
+    setDeleteTarget(null);
+  };
+
+  const handleResetDefaults = async () => {
+    await resetToDefault();
+    toast.success('Кейсы сброшены к демо-значениям');
+  };
+
+  const filteredCases = useMemo(() => {
+    let sorted = [...cases].sort((a, b) => b.date.localeCompare(a.date));
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      sorted = sorted.filter((c) =>
+        c.title.toLowerCase().includes(q) ||
+        c.city.toLowerCase().includes(q) ||
+        c.format.toLowerCase().includes(q) ||
+        c.services.some((s) => s.toLowerCase().includes(q))
+      );
+    }
+    return sorted;
+  }, [cases, searchQuery]);
+
+  return (
+    <AdminLayout
+      title="Кейсы"
+      subtitle="Управление проектами и медиа-библиотека"
+    >
+      {/* Tab Switcher */}
+      <div className="mb-6 flex justify-end">
+        <button
+          onClick={() => setActiveTab(activeTab === 'cases' ? 'media' : 'cases')}
+          className="flex items-center gap-2 rounded-lg border border-white/10 bg-slate-800 px-4 py-2 text-sm text-slate-300 transition-colors hover:bg-slate-700 hover:text-white"
+        >
+          {activeTab === 'cases' ? (
+            <>
+              <Library size={16} />
+              Медиа-библиотека
+            </>
+          ) : (
+            <>
+              <LayoutGrid size={16} />
+              К списку кейсов
+            </>
+          )}
+        </button>
+      </div>
+      <ConfirmModal
+        open={Boolean(deleteTarget)}
+        danger
+        title="Удалить кейс?"
+        description={deleteTarget ? `Кейс "${deleteTarget.title}" будет удален без возможности восстановления.` : ''}
+        confirmText="Удалить"
+        cancelText="Отмена"
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+      />
+      <ConfirmModal
+        open={resetModalOpen}
+        danger
+        title="Сбросить все кейсы к дефолту?"
+        description="Текущие кейсы будут перезаписаны демо-значениями."
+        confirmText="Сбросить"
+        cancelText="Отмена"
+        onCancel={() => setResetModalOpen(false)}
+        onConfirm={handleResetDefaults}
+      />
+
+      {activeTab === 'media' ? (
+        <div className="rounded-xl border border-white/10 bg-slate-800 p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-semibold text-white">Медиа-библиотека</h2>
+              <p className="text-sm text-slate-400">
+                Централизованное хранилище фото и видео с тегами
+              </p>
+            </div>
+            <button
+              onClick={() => setActiveTab('cases')}
+              className="flex items-center gap-2 rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-sm text-slate-300 transition-colors hover:bg-slate-700"
+            >
+              <ChevronLeft size={16} />
+              Назад к кейсам
+            </button>
+          </div>
+          <MediaLibrary />
+        </div>
+      ) : (
+        <div className="grid gap-6 lg:grid-cols-2">
+          {/* Case Form */}
+          <div className="rounded-xl border border-white/10 bg-slate-800 p-6">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-white">
+                {caseEditing ? 'Редактирование кейса' : 'Новый кейс'}
+              </h2>
+              {isDirty && (
+                <span className="rounded-full border border-amber-400/40 bg-amber-500/10 px-2 py-0.5 text-xs text-amber-200">
+                  Есть несохраненные изменения
+                </span>
+              )}
+              {caseEditing && (
+                <button type="button" onClick={cancelEdit} className="text-sm text-slate-300 hover:text-white">
+                  Отмена
+                </button>
+              )}
+            </div>
+
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="text-sm text-slate-200">
+                  <span className="flex items-center gap-1">
+                    Slug*
+                    {!caseEditing && autoSlug && (
+                      <span className="text-[10px] text-brand-400">(авто)</span>
+                    )}
+                  </span>
+                  <input
+                    className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                    disabled={Boolean(caseEditing)}
+                    value={slugValue}
+                    onChange={handleSlugChange}
+                    placeholder="nazvanie-kejsa"
+                  />
+                  {errors.slug && <AdminFieldError message={errors.slug.message} />}
+                  <FieldHint>Уникальный идентификатор для URL</FieldHint>
+                </label>
+
+                <label className="text-sm text-slate-200">
+                  Название*
+                  <input
+                    className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                    value={titleValue}
+                    onChange={handleTitleChange}
+                    placeholder="Например: Корпоратив Газпром"
+                  />
+                  {errors.title && <AdminFieldError message={errors.title.message} />}
+                </label>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="text-sm text-slate-200">
+                  Город
+                  <input
+                    className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                    {...register('city')}
+                    placeholder="Екатеринбург"
+                  />
+                </label>
+                <label className="text-sm text-slate-200">
+                  Дата
+                  <input
+                    type="date"
+                    className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-slate-200"
+                    {...register('date')}
+                  />
+                </label>
+              </div>
+
+              <label className="text-sm text-slate-200">
+                Формат
+                <select
+                  className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-slate-200"
+                  {...register('format')}
+                >
+                  <option value="">Выберите формат</option>
+                  {FORMAT_OPTIONS.map((format) => (
+                    <option key={format} value={format}>{format}</option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="text-sm text-slate-200">
+                Краткое описание*
+                <textarea
+                  className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                  rows={3}
+                  {...register('summary')}
+                  placeholder="Описание задачи и что было сделано..."
+                />
+                <AdminFieldError message={errors.summary?.message} />
+              </label>
+
+              <label className="text-sm text-slate-200">
+                Метрики
+                <input
+                  className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                  {...register('metrics')}
+                  placeholder="500+ гостей, 50 м² экран"
+                />
+              </label>
+
+              <label className="text-sm text-slate-200">
+                Услуги (через запятую)
+                <input
+                  className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                  {...register('servicesText')}
+                  placeholder="LED-экран, звук, свет"
+                />
+              </label>
+
+              {/* Media Selector */}
+              <div>
+                <label className="mb-2 block text-sm text-slate-200">
+                  Медиафайлы
+                </label>
+                <CaseMediaSelector
+                  selectedMedia={selectedMedia}
+                  onChange={setSelectedMedia}
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full rounded-lg bg-brand-500 px-4 py-2 font-semibold text-white hover:bg-brand-400 disabled:opacity-60"
+              >
+                {isSubmitting ? 'Сохраняем...' : caseEditing ? 'Сохранить изменения' : 'Добавить кейс'}
+              </button>
+            </form>
+          </div>
+
+          {/* Cases List */}
+          <div className="rounded-xl border border-white/10 bg-slate-800 p-6">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-white">Список кейсов</h2>
+              <button
+                type="button"
+                onClick={() => setResetModalOpen(true)}
+                className="text-sm text-slate-300 hover:text-white"
+              >
+                Сброс к дефолту
+              </button>
+            </div>
+
+            {/* Search */}
+            <div className="relative mb-4">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Поиск по названию, городу, формату..."
+                className="w-full rounded-lg border border-white/10 bg-slate-900 py-2 pl-10 pr-9 text-sm text-white placeholder:text-slate-500 focus:border-brand-500 focus:outline-none"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-slate-500 hover:bg-slate-800 hover:text-white"
+                >
+                  <Plus size={14} className="rotate-45" />
+                </button>
+              )}
+            </div>
+
+            <div className="space-y-3">
+              {filteredCases.map((c) => {
+                const imageCount = c.images?.length || 0;
+                const videoCount = (c as CaseItem & { videos?: string[] }).videos?.length || 0;
+
+                return (
+                  <div key={c.slug} className="rounded-lg border border-white/10 bg-slate-900/50 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className="truncate font-semibold text-white">{c.title}</h3>
+                          <span className="text-xs text-slate-500">({c.slug})</span>
+                        </div>
+                        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400">
+                          <span>{c.city}</span>
+                          <span>•</span>
+                          <span>{c.date}</span>
+                          <span>•</span>
+                          <span>{c.format}</span>
+                        </div>
+                        <p className="mt-1 line-clamp-2 text-xs text-slate-300">{c.summary}</p>
+
+                        {/* Media Count */}
+                        <div className="mt-2 flex items-center gap-3">
+                          {imageCount > 0 && (
+                            <span className="flex items-center gap-1 text-xs text-slate-400">
+                              <Image size={12} />
+                              {imageCount} фото
+                            </span>
+                          )}
+                          {videoCount > 0 && (
+                            <span className="flex items-center gap-1 text-xs text-slate-400">
+                              <Film size={12} />
+                              {videoCount} видео
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Tags */}
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          {c.services.map((s) => (
+                            <span key={s} className="rounded bg-slate-700 px-2 py-0.5 text-[10px] uppercase text-slate-300">
+                              {s}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <button
+                          type="button"
+                          onClick={() => startEdit(c)}
+                          className="flex items-center justify-center gap-1 rounded border border-white/20 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:border-white/40"
+                        >
+                          <Edit2 size={12} />
+                          Ред.
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDeleteTarget({ slug: c.slug, title: c.title })}
+                          className="flex items-center justify-center gap-1 rounded border border-red-400/40 px-3 py-1.5 text-xs font-semibold text-red-200 transition-colors hover:border-red-400"
+                        >
+                          <Trash2 size={12} />
+                          Удалить
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+              {filteredCases.length === 0 && (
+                <EmptyState
+                  icon={<FolderOpen size={32} className="text-brand-400" />}
+                  title="Кейсов пока нет"
+                  description={searchQuery ? 'По вашему запросу ничего не найдено' : 'Добавьте первый кейс через форму слева'}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </AdminLayout>
+  );
+};
+
+export default AdminCasesRedesignedPage;

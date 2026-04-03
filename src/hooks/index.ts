@@ -21,3 +21,8 @@ export type { SiteSettings } from './useSiteSettings';
 
 // Хук для глобального применения Star Border
 export { useStarBorderGlobal } from './useStarBorderGlobal';
+
+// Media Library hooks
+export { useMediaLibrary, useMediaSelection } from './useMediaLibrary';
+export { useMediaUpload, getAcceptedFileTypes, isValidFileType, formatUploadStatus } from './useMediaUpload';
+export type { UploadOptions, UploadResult } from './useMediaUpload';

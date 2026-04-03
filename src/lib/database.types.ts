@@ -1,5 +1,5 @@
 // Auto-generated Supabase types. Do not edit manually.
-// Generated at: 2026-04-01T20:20:59.083Z
+// Generated at: 2026-04-03T19:40:00.000Z
 // Command: npx supabase gen types typescript --project-id pyframwlnqrzeynqcvle --schema public
 
 export type Json =
@@ -44,6 +44,45 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      case_media_links: {
+        Row: {
+          case_id: number
+          created_at: string
+          id: string
+          media_id: string
+          sort_order: number
+        }
+        Insert: {
+          case_id: number
+          created_at?: string
+          id?: string
+          media_id: string
+          sort_order?: number
+        }
+        Update: {
+          case_id?: number
+          created_at?: string
+          id?: string
+          media_id?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_media_links_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_media_links_media_id_fkey"
+            columns: ["media_id"]
+            isOneToOne: false
+            referencedRelation: "media_items"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       cases: {
         Row: {
@@ -224,6 +263,63 @@ export type Database = {
           source?: string
           status?: string | null
           telegram?: string | null
+        }
+        Relationships: []
+      }
+      media_items: {
+        Row: {
+          created_at: string
+          duration: number | null
+          height: number | null
+          id: string
+          mime_type: string
+          name: string
+          public_url: string
+          size_bytes: number
+          storage_path: string
+          tags: string[] | null
+          telegram_message_id: number | null
+          thumbnail_url: string | null
+          type: string
+          updated_at: string
+          uploaded_by: string
+          width: number | null
+        }
+        Insert: {
+          created_at?: string
+          duration?: number | null
+          height?: number | null
+          id?: string
+          mime_type: string
+          name: string
+          public_url: string
+          size_bytes?: number
+          storage_path: string
+          tags?: string[] | null
+          telegram_message_id?: number | null
+          thumbnail_url?: string | null
+          type: string
+          updated_at?: string
+          uploaded_by?: string
+          width?: number | null
+        }
+        Update: {
+          created_at?: string
+          duration?: number | null
+          height?: number | null
+          id?: string
+          mime_type?: string
+          name?: string
+          public_url?: string
+          size_bytes?: number
+          storage_path?: string
+          tags?: string[] | null
+          telegram_message_id?: number | null
+          thumbnail_url?: string | null
+          type?: string
+          updated_at?: string
+          uploaded_by?: string
+          width?: number | null
         }
         Relationships: []
       }

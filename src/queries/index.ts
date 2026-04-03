@@ -63,3 +63,20 @@ export {
   useUpsertRentalCategoryMutation,
   useDeleteRentalCategoryMutation,
 } from './rentalCategories';
+
+// Media Library
+export {
+  mediaQueryKeys,
+  useMediaLibraryQuery,
+  useMediaItemQuery,
+  useMediaTagsQuery,
+  useCaseMediaQuery,
+  useCreateMediaItemMutation,
+  useUpdateMediaItemMutation,
+  useDeleteMediaItemsMutation,
+  useAddTagsMutation,
+  useRemoveTagsMutation,
+  useLinkMediaToCaseMutation,
+  useUnlinkMediaFromCaseMutation,
+  useReorderCaseMediaMutation,
+} from './mediaLibrary';
