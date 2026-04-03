@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -11,6 +11,8 @@ import { MediaLibrary } from '../../components/admin/media';
 import { FolderOpen, Image, Film, Search, Plus, Edit2, Trash2, HelpCircle, ChevronLeft, LayoutGrid, Library } from 'lucide-react';
 import { useCases } from '../../hooks/useCases';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
+import { useCaseMediaQuery, useLinkMediaToCaseMutation, useUnlinkMediaFromCaseMutation } from '../../queries/mediaLibrary';
+import { supabase } from '../../lib/supabase';
 import type { CaseItem } from '../../data/cases';
 import type { MediaItem } from '../../types/media';
 
@@ -86,15 +88,34 @@ const FieldHint = ({ children }: { children: React.ReactNode }) => (
   </div>
 );
 
+// Helper to get case ID from slug
+const getCaseIdBySlug = async (slug: string): Promise<number | null> => {
+  const { data, error } = await supabase
+    .from('cases')
+    .select('id')
+    .eq('slug', slug)
+    .single();
+  
+  if (error || !data) return null;
+  return data.id;
+};
+
 const AdminCasesRedesignedPage = () => {
   const { cases, addCase, updateCase, deleteCase, resetToDefault } = useCases();
   const [activeTab, setActiveTab] = useState<'cases' | 'media'>('cases');
   const [caseEditing, setCaseEditing] = useState<string | null>(null);
+  const [editingCaseId, setEditingCaseId] = useState<number | null>(null);
   const [selectedMedia, setSelectedMedia] = useState<MediaItem[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<Pick<CaseItem, 'slug' | 'title'> | null>(null);
   const [resetModalOpen, setResetModalOpen] = useState(false);
   const [autoSlug, setAutoSlug] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+
+  const linkMediaMutation = useLinkMediaToCaseMutation();
+  const unlinkMediaMutation = useUnlinkMediaFromCaseMutation();
+
+  // Fetch media for editing case
+  const { data: caseMediaLinks, refetch: refetchCaseMedia } = useCaseMediaQuery(editingCaseId ?? undefined);
 
   const {
     register,
@@ -109,6 +130,16 @@ const AdminCasesRedesignedPage = () => {
   });
 
   useUnsavedChangesGuard(isDirty);
+
+  // Load media when editing
+  useEffect(() => {
+    if (caseMediaLinks && caseMediaLinks.length > 0) {
+      const media = caseMediaLinks.map(link => link.media).filter(Boolean) as MediaItem[];
+      setSelectedMedia(media);
+    } else if (!editingCaseId) {
+      setSelectedMedia([]);
+    }
+  }, [caseMediaLinks, editingCaseId]);
 
   const titleValue = watch('title');
   const slugValue = watch('slug');
@@ -126,6 +157,32 @@ const AdminCasesRedesignedPage = () => {
     const newSlug = normalizeSlug(e.target.value);
     setValue('slug', newSlug, { shouldValidate: true });
     setAutoSlug(false);
+  };
+
+  const syncCaseMedia = async (caseId: number, mediaItems: MediaItem[]) => {
+    try {
+      // Get current media IDs
+      const currentMediaIds = caseMediaLinks?.map(link => link.media_id) || [];
+      const newMediaIds = mediaItems.map(m => m.id);
+
+      // Find media to unlink (removed)
+      const toUnlink = currentMediaIds.filter(id => !newMediaIds.includes(id));
+      
+      // Find media to link (added)
+      const toLink = newMediaIds.filter(id => !currentMediaIds.includes(id));
+
+      // Unlink removed media
+      if (toUnlink.length > 0) {
+        await unlinkMediaMutation.mutateAsync({ caseId, mediaIds: toUnlink });
+      }
+
+      // Link new media
+      if (toLink.length > 0) {
+        await linkMediaMutation.mutateAsync({ caseId, mediaIds: toLink });
+      }
+    } catch (error) {
+      console.error('Error syncing case media:', error);
+    }
   };
 
   const onSubmit = async (values: CaseFormValues) => {
@@ -156,6 +213,8 @@ const AdminCasesRedesignedPage = () => {
     };
 
     let ok = false;
+    let caseId: number | null = null;
+
     if (caseEditing) {
       const updates = {
         title: payload.title,
@@ -169,8 +228,15 @@ const AdminCasesRedesignedPage = () => {
         videos: payload.videos,
       };
       ok = await updateCase(caseEditing, updates);
+      if (ok) {
+        caseId = editingCaseId;
+      }
     } else {
       ok = await addCase(payload);
+      if (ok) {
+        // Get the newly created case ID
+        caseId = await getCaseIdBySlug(values.slug);
+      }
     }
 
     if (!ok) {
@@ -178,14 +244,20 @@ const AdminCasesRedesignedPage = () => {
       return;
     }
 
+    // Sync media links
+    if (caseId && selectedMedia.length > 0) {
+      await syncCaseMedia(caseId, selectedMedia);
+    }
+
     toast.success(caseEditing ? 'Кейс обновлен' : 'Кейс добавлен');
     setCaseEditing(null);
+    setEditingCaseId(null);
     setSelectedMedia([]);
     setAutoSlug(true);
     reset(defaultValues);
   };
 
-  const startEdit = (item: CaseItem) => {
+  const startEdit = async (item: CaseItem) => {
     setCaseEditing(item.slug);
     setAutoSlug(false);
     reset({
@@ -199,49 +271,56 @@ const AdminCasesRedesignedPage = () => {
       servicesText: item.services.join(', '),
     });
 
-    // Convert URLs back to MediaItem references (simplified)
-    // In production, you'd fetch the actual media items from the database
-    const mediaItems: MediaItem[] = [];
-    if (item.images) {
-      item.images.forEach((url, index) => {
-        mediaItems.push({
-          id: `img-${index}`,
-          name: url.split('/').pop() || 'image',
-          storage_path: '',
-          public_url: url,
-          type: 'image',
-          mime_type: 'image/jpeg',
-          size_bytes: 0,
-          tags: [],
-          uploaded_by: 'admin',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+    // Get case ID and load media from new system
+    const caseId = await getCaseIdBySlug(item.slug);
+    if (caseId) {
+      setEditingCaseId(caseId);
+      // Media will be loaded by useEffect when caseMediaLinks updates
+    } else {
+      // Fallback: convert old format URLs to MediaItem
+      const mediaItems: MediaItem[] = [];
+      if (item.images) {
+        item.images.forEach((url, index) => {
+          mediaItems.push({
+            id: `img-${index}`,
+            name: url.split('/').pop() || 'image',
+            storage_path: '',
+            public_url: url,
+            type: 'image',
+            mime_type: 'image/jpeg',
+            size_bytes: 0,
+            tags: [],
+            uploaded_by: 'admin',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          });
         });
-      });
-    }
-    if ((item as CaseItem & { videos?: string[] }).videos) {
-      (item as CaseItem & { videos?: string[] }).videos?.forEach((url, index) => {
-        mediaItems.push({
-          id: `vid-${index}`,
-          name: url.split('/').pop() || 'video',
-          storage_path: '',
-          public_url: url,
-          type: 'video',
-          mime_type: 'video/mp4',
-          size_bytes: 0,
-          tags: [],
-          uploaded_by: 'admin',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+      }
+      if ((item as CaseItem & { videos?: string[] }).videos) {
+        (item as CaseItem & { videos?: string[] }).videos?.forEach((url, index) => {
+          mediaItems.push({
+            id: `vid-${index}`,
+            name: url.split('/').pop() || 'video',
+            storage_path: '',
+            public_url: url,
+            type: 'video',
+            mime_type: 'video/mp4',
+            size_bytes: 0,
+            tags: [],
+            uploaded_by: 'admin',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          });
         });
-      });
+      }
+      setSelectedMedia(mediaItems);
     }
-    setSelectedMedia(mediaItems);
     setActiveTab('cases');
   };
 
   const cancelEdit = () => {
     setCaseEditing(null);
+    setEditingCaseId(null);
     setSelectedMedia([]);
     setAutoSlug(true);
     reset(defaultValues);
@@ -273,6 +352,14 @@ const AdminCasesRedesignedPage = () => {
     }
     return sorted;
   }, [cases, searchQuery]);
+
+  // Get media count from case_media_links for display
+  const getCaseMediaCount = (caseItem: CaseItem) => {
+    // For now use the old fields, in future we can query case_media_links
+    const imageCount = caseItem.images?.length || 0;
+    const videoCount = (caseItem as CaseItem & { videos?: string[] }).videos?.length || 0;
+    return { imageCount, videoCount };
+  };
 
   return (
     <AdminLayout
@@ -507,8 +594,7 @@ const AdminCasesRedesignedPage = () => {
 
             <div className="space-y-3">
               {filteredCases.map((c) => {
-                const imageCount = c.images?.length || 0;
-                const videoCount = (c as CaseItem & { videos?: string[] }).videos?.length || 0;
+                const { imageCount, videoCount } = getCaseMediaCount(c);
 
                 return (
                   <div key={c.slug} className="rounded-lg border border-white/10 bg-slate-900/50 p-4">
