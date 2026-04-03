@@ -1,5 +1,5 @@
 import { memo, useState } from 'react';
-import { Play, Check, X, ImageIcon, Film, Edit2, Trash2 } from 'lucide-react';
+import { Play, Check, X, ImageIcon, Film, Edit2, Trash2, X as CloseIcon } from 'lucide-react';
 import type { MediaItem } from '../../../types/media';
 import { formatFileSize } from '../../../lib/imageCompression';
 
@@ -23,10 +23,18 @@ export const MediaCard = memo(function MediaCard({
   showActions = true,
 }: MediaCardProps) {
   const [imageError, setImageError] = useState(false);
+  const [videoModalOpen, setVideoModalOpen] = useState(false);
   const isVideo = media.type === 'video';
 
   const handleImageError = () => {
     setImageError(true);
+  };
+
+  const handleVideoClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isVideo) {
+      setVideoModalOpen(true);
+    }
   };
 
   return (
@@ -105,11 +113,15 @@ export const MediaCard = memo(function MediaCard({
               loading="lazy"
             />
             {isVideo && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm">
+              <button
+                onClick={handleVideoClick}
+                className="absolute inset-0 flex items-center justify-center cursor-pointer"
+                title="Нажмите для просмотра видео"
+              >
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm transition-transform hover:scale-110">
                   <Play size={20} fill="currentColor" />
                 </div>
-              </div>
+              </button>
             )}
           </>
         ) : (
@@ -179,6 +191,47 @@ export const MediaCard = memo(function MediaCard({
           </p>
         )}
       </div>
+
+      {/* Video Modal */}
+      {videoModalOpen && isVideo && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          onClick={() => setVideoModalOpen(false)}
+        >
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
+          
+          {/* Video Container */}
+          <div className="relative z-10 w-full max-w-4xl">
+            {/* Close button */}
+            <button
+              onClick={() => setVideoModalOpen(false)}
+              className="absolute -top-10 right-0 flex items-center gap-1 rounded bg-slate-800 px-3 py-1.5 text-sm text-white transition-colors hover:bg-slate-700"
+            >
+              <CloseIcon size={16} />
+              Закрыть
+            </button>
+            
+            {/* Video Player */}
+            <div className="overflow-hidden rounded-lg bg-black shadow-2xl">
+              <video
+                src={media.public_url}
+                controls
+                autoPlay
+                className="max-h-[80vh] w-full"
+                onClick={(e) => e.stopPropagation()}
+              >
+                Ваш браузер не поддерживает воспроизведение видео.
+              </video>
+            </div>
+            
+            {/* Video Name */}
+            <p className="mt-3 text-center text-sm text-white">
+              {media.name}
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 });

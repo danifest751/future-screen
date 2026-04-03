@@ -8,7 +8,7 @@ import AdminFieldError from '../../components/admin/AdminFieldError';
 import { ConfirmModal, EmptyState } from '../../components/admin/ui';
 import { CaseMediaSelector } from '../../components/admin/cases';
 import { MediaLibrary } from '../../components/admin/media';
-import { FolderOpen, Image, Film, Search, Plus, Edit2, Trash2, HelpCircle, ChevronLeft, LayoutGrid, Library } from 'lucide-react';
+import { FolderOpen, Image, Film, Search, Plus, Edit2, Trash2, HelpCircle, LayoutGrid, Library } from 'lucide-react';
 import { useCases } from '../../hooks/useCases';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 import { useCaseMediaQuery, useLinkMediaToCaseMutation, useUnlinkMediaFromCaseMutation } from '../../queries/mediaLibrary';
@@ -367,22 +367,28 @@ const AdminCasesRedesignedPage = () => {
       subtitle="Управление проектами и медиа-библиотека"
     >
       {/* Tab Switcher */}
-      <div className="mb-6 flex justify-end">
+      <div className="mb-6 flex justify-end gap-2">
         <button
-          onClick={() => setActiveTab(activeTab === 'cases' ? 'media' : 'cases')}
-          className="flex items-center gap-2 rounded-lg border border-white/10 bg-slate-800 px-4 py-2 text-sm text-slate-300 transition-colors hover:bg-slate-700 hover:text-white"
+          onClick={() => setActiveTab('cases')}
+          className={`flex items-center gap-2 rounded-lg border px-4 py-2 text-sm transition-colors ${
+            activeTab === 'cases'
+              ? 'border-brand-500 bg-brand-500/20 text-brand-300'
+              : 'border-white/10 bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white'
+          }`}
         >
-          {activeTab === 'cases' ? (
-            <>
-              <Library size={16} />
-              Медиа-библиотека
-            </>
-          ) : (
-            <>
-              <LayoutGrid size={16} />
-              К списку кейсов
-            </>
-          )}
+          <LayoutGrid size={16} />
+          Кейсы
+        </button>
+        <button
+          onClick={() => setActiveTab('media')}
+          className={`flex items-center gap-2 rounded-lg border px-4 py-2 text-sm transition-colors ${
+            activeTab === 'media'
+              ? 'border-brand-500 bg-brand-500/20 text-brand-300'
+              : 'border-white/10 bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white'
+          }`}
+        >
+          <Library size={16} />
+          Медиа-библиотека
         </button>
       </div>
       <ConfirmModal
@@ -408,20 +414,11 @@ const AdminCasesRedesignedPage = () => {
 
       {activeTab === 'media' ? (
         <div className="rounded-xl border border-white/10 bg-slate-800 p-6">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-semibold text-white">Медиа-библиотека</h2>
-              <p className="text-sm text-slate-400">
-                Централизованное хранилище фото и видео с тегами
-              </p>
-            </div>
-            <button
-              onClick={() => setActiveTab('cases')}
-              className="flex items-center gap-2 rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-sm text-slate-300 transition-colors hover:bg-slate-700"
-            >
-              <ChevronLeft size={16} />
-              Назад к кейсам
-            </button>
+          <div className="mb-4">
+            <h2 className="text-xl font-semibold text-white">Медиа-библиотека</h2>
+            <p className="text-sm text-slate-400">
+              Централизованное хранилище фото и видео с тегами
+            </p>
           </div>
           <MediaLibrary />
         </div>
