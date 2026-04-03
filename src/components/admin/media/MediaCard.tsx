@@ -99,10 +99,7 @@ export const MediaCard = memo(function MediaCard({
       )}
 
       {/* Media Preview */}
-      <div 
-        className="relative aspect-square cursor-pointer overflow-hidden bg-slate-900"
-        onClick={onToggleSelect}
-      >
+      <div className="relative aspect-square overflow-hidden bg-slate-900">
         {!imageError ? (
           <>
             <img
@@ -112,10 +109,16 @@ export const MediaCard = memo(function MediaCard({
               onError={handleImageError}
               loading="lazy"
             />
+            {/* Selection overlay */}
+            <div
+              className="absolute inset-0 cursor-pointer"
+              onClick={onToggleSelect}
+            />
+            {/* Video Play Button - higher z-index */}
             {isVideo && (
               <button
                 onClick={handleVideoClick}
-                className="absolute inset-0 flex items-center justify-center cursor-pointer"
+                className="absolute inset-0 z-20 flex items-center justify-center cursor-pointer"
                 title="Нажмите для просмотра видео"
               >
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm transition-transform hover:scale-110">
@@ -125,7 +128,10 @@ export const MediaCard = memo(function MediaCard({
             )}
           </>
         ) : (
-          <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-slate-500">
+          <div
+            className="flex h-full w-full flex-col items-center justify-center gap-2 text-slate-500 cursor-pointer"
+            onClick={onToggleSelect}
+          >
             {isVideo ? <Film size={32} /> : <ImageIcon size={32} />}
             <span className="text-xs">{isVideo ? 'Видео' : 'Изображение'}</span>
           </div>

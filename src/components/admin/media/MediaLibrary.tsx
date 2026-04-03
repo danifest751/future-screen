@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Search, Upload, Image, Film, Grid, List, X } from 'lucide-react';
+import { Search, Upload, Image, Film, Grid, List, X, Film as FilmIcon } from 'lucide-react';
 import { useMediaLibrary } from '../../../hooks/useMediaLibrary';
 import type { MediaFilter, MediaItem } from '../../../types/media';
 import MediaCard from './MediaCard';
@@ -357,11 +357,18 @@ export const MediaLibrary = ({
                   }
                 `}
               >
-                <img
-                  src={media.public_url}
-                  alt={media.name}
-                  className="h-12 w-12 rounded object-cover"
-                />
+                {/* Thumbnail for image / Icon for video */}
+                {media.type === 'image' ? (
+                  <img
+                    src={media.public_url}
+                    alt={media.name}
+                    className="h-12 w-12 rounded object-cover"
+                  />
+                ) : (
+                  <div className="flex h-12 w-12 items-center justify-center rounded bg-slate-700">
+                    <Film size={20} className="text-slate-400" />
+                  </div>
+                )}
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-white">{media.name}</p>
                   <div className="flex items-center gap-2 text-xs text-slate-500">
