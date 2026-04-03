@@ -100,41 +100,70 @@ export const MediaCard = memo(function MediaCard({
 
       {/* Media Preview */}
       <div className="relative aspect-square overflow-hidden bg-slate-900">
-        {!imageError ? (
+        {isVideo ? (
+          // Video preview - show thumbnail if available, otherwise show placeholder
           <>
-            <img
-              src={isVideo && media.thumbnail_url ? media.thumbnail_url : media.public_url}
-              alt={media.name}
-              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-              onError={handleImageError}
-              loading="lazy"
-            />
-            {/* Selection overlay */}
-            <div
-              className="absolute inset-0 cursor-pointer"
-              onClick={onToggleSelect}
-            />
-            {/* Video Play Button - higher z-index */}
-            {isVideo && (
-              <button
-                onClick={handleVideoClick}
-                className="absolute inset-0 z-20 flex items-center justify-center cursor-pointer"
-                title="Нажмите для просмотра видео"
+            {media.thumbnail_url && !imageError ? (
+              <>
+                <img
+                  src={media.thumbnail_url}
+                  alt={media.name}
+                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  onError={handleImageError}
+                  loading="lazy"
+                />
+                {/* Selection overlay */}
+                <div
+                  className="absolute inset-0 cursor-pointer"
+                  onClick={onToggleSelect}
+                />
+              </>
+            ) : (
+              <div
+                className="flex h-full w-full flex-col items-center justify-center gap-2 bg-slate-800 cursor-pointer"
+                onClick={onToggleSelect}
               >
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm transition-transform hover:scale-110">
-                  <Play size={20} fill="currentColor" />
-                </div>
-              </button>
+                <Film size={48} className="text-slate-500" />
+                <span className="text-xs text-slate-500">Видео</span>
+              </div>
             )}
+            {/* Video Play Button - always visible for videos */}
+            <button
+              onClick={handleVideoClick}
+              className="absolute inset-0 z-20 flex items-center justify-center cursor-pointer"
+              title="Нажмите для просмотра видео"
+            >
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm transition-transform hover:scale-110">
+                <Play size={20} fill="currentColor" />
+              </div>
+            </button>
           </>
         ) : (
-          <div
-            className="flex h-full w-full flex-col items-center justify-center gap-2 text-slate-500 cursor-pointer"
-            onClick={onToggleSelect}
-          >
-            {isVideo ? <Film size={32} /> : <ImageIcon size={32} />}
-            <span className="text-xs">{isVideo ? 'Видео' : 'Изображение'}</span>
-          </div>
+          // Image preview
+          !imageError ? (
+            <>
+              <img
+                src={media.public_url}
+                alt={media.name}
+                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                onError={handleImageError}
+                loading="lazy"
+              />
+              {/* Selection overlay */}
+              <div
+                className="absolute inset-0 cursor-pointer"
+                onClick={onToggleSelect}
+              />
+            </>
+          ) : (
+            <div
+              className="flex h-full w-full flex-col items-center justify-center gap-2 text-slate-500 cursor-pointer"
+              onClick={onToggleSelect}
+            >
+              <ImageIcon size={32} />
+              <span className="text-xs">Изображение</span>
+            </div>
+          )
         )}
 
         {/* Type Badge */}
