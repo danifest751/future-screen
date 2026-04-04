@@ -90,6 +90,10 @@ const AdminLayout = ({ title, subtitle, children }: Props) => {
   ];
 
   useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
+
+  useEffect(() => {
     let mounted = true;
 
     const loadLeadCount = async () => {
