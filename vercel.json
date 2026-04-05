@@ -16,6 +16,10 @@
       "destination": "/api/send.ts"
     },
     {
+      "source": "/api/telegram-webhook",
+      "destination": "/api/telegram-webhook.ts"
+    },
+    {
       "source": "/((?!api|assets).*)",
       "destination": "/index.html"
     }

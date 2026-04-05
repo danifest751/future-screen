@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import 'dotenv/config';
 
 /**
@@ -7,11 +7,41 @@ import 'dotenv/config';
  * Handles file uploads from Telegram bot to media library
  */
 
-// Supabase client with service role
-const supabase = createClient(
-  process.env.VITE_SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-);
+// Database types for media_items table
+interface MediaItem {
+  id?: number;
+  name: string;
+  storage_path: string;
+  public_url: string;
+  type: 'image' | 'video';
+  mime_type: string;
+  size_bytes?: number;
+  tags: string[];
+  width?: number;
+  height?: number;
+  duration?: number;
+  uploaded_by?: string;
+  telegram_message_id?: number;
+  created_at?: string;
+}
+
+// Lazy Supabase client initialization
+// Note: VITE_ prefix is for client-side only, API routes use regular env vars
+let supabase: SupabaseClient | null = null;
+
+const getSupabaseClient = (): SupabaseClient => {
+  if (!supabase) {
+    const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not configured');
+    }
+    
+    supabase = createClient(supabaseUrl, supabaseKey);
+  }
+  return supabase;
+};
 
 interface TelegramUpdate {
   message?: {
@@ -56,14 +86,16 @@ interface TelegramUpdate {
 }
 
 // In-memory user state store (in production, use Redis or database)
+// Note: In Vercel serverless, this is reset on each cold start
+// States will persist within a single function instance but may be lost on scale
 const userStates = new Map<number, {
   state: 'idle' | 'awaiting_tags' | 'awaiting_files';
   selectedTags: string[];
   lastActivity: number;
 }>();
 
-// Cleanup old states every hour
-setInterval(() => {
+// Cleanup old states on each request (serverless-compatible)
+const cleanupOldStates = () => {
   const now = Date.now();
   const oneHour = 60 * 60 * 1000;
   for (const [chatId, state] of userStates.entries()) {
@@ -71,9 +103,10 @@ setInterval(() => {
       userStates.delete(chatId);
     }
   }
-}, 60 * 60 * 1000);
+};
 
 const getUserState = (chatId: number) => {
+  cleanupOldStates(); // Clean before read
   const state = userStates.get(chatId);
   if (state) {
     state.lastActivity = Date.now();
@@ -148,9 +181,9 @@ const getTelegramFile = async (fileId: string): Promise<{ url: string; data: Arr
 // Get all unique tags from database
 const getAllTags = async (): Promise<string[]> => {
   try {
-    const { data } = await supabase
+    const { data } = await getSupabaseClient()
       .from('media_items')
-      .select('tags');
+      .select('tags') as { data: MediaItem[] | null };
 
     const allTags = new Set<string>();
     data?.forEach((item) => {
@@ -361,7 +394,7 @@ const handleFileUpload = async (update: TelegramUpdate) => {
 
   // Upload to Supabase Storage
   const bucket = 'media';
-  const { error: uploadError } = await supabase.storage
+  const { error: uploadError } = await getSupabaseClient().storage
     .from(bucket)
     .upload(storagePath, fileData.data, {
       contentType: fileInfo.mimeType,
@@ -375,12 +408,12 @@ const handleFileUpload = async (update: TelegramUpdate) => {
   }
 
   // Get public URL
-  const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(storagePath);
+  const { data: urlData } = getSupabaseClient().storage.from(bucket).getPublicUrl(storagePath);
   const publicUrl = urlData.publicUrl;
 
   // Create media item record
   const mediaType = isVideo ? 'video' : 'image';
-  const { error: dbError } = await supabase.from('media_items').insert({
+  const { error: dbError } = await getSupabaseClient().from('media_items').insert([{
     name: fileInfo.fileName,
     storage_path: storagePath,
     public_url: publicUrl,
@@ -393,7 +426,7 @@ const handleFileUpload = async (update: TelegramUpdate) => {
     duration: fileInfo.duration,
     uploaded_by: 'telegram',
     telegram_message_id: message.message_id,
-  });
+  }] as unknown as MediaItem[]);
 
   if (dbError) {
     console.error('[DB] Insert error:', dbError);
@@ -424,13 +457,63 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  // Debug: Log incoming request info
+  const token = process.env.TG_BOT_TOKEN;
+  console.log('[Telegram Webhook] Request received');
+  console.log('[Telegram Webhook] Token configured:', !!token);
+  console.log('[Telegram Webhook] Has body:', !!req.body);
+  console.log('[Telegram Webhook] Body keys:', req.body ? Object.keys(req.body) : []);
+
+  // Special endpoint to set webhook - call with ?action=setWebhook&url=https://your-domain.com/api/telegram-webhook
+  if (req.query?.action === 'setWebhook' && req.query?.url) {
+    if (!token) {
+      return res.status(500).json({ error: 'TG_BOT_TOKEN not configured' });
+    }
+    try {
+      const webhookUrl = req.query.url as string;
+      const response = await fetch(`https://api.telegram.org/bot${token}/setWebhook`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: webhookUrl, allowed_updates: ['message', 'callback_query'] }),
+      });
+      const result = await response.json() as { ok: boolean; result?: unknown; description?: string };
+      console.log('[Telegram Webhook] Set webhook result:', result);
+      return res.status(200).json(result);
+    } catch (err) {
+      console.error('[Telegram Webhook] Set webhook error:', err);
+      return res.status(500).json({ error: 'Failed to set webhook' });
+    }
+  }
+
+  // Special endpoint to check webhook status
+  if (req.query?.action === 'getWebhookInfo') {
+    if (!token) {
+      return res.status(500).json({ error: 'TG_BOT_TOKEN not configured' });
+    }
+    try {
+      const response = await fetch(`https://api.telegram.org/bot${token}/getWebhookInfo`);
+      const result = await response.json();
+      return res.status(200).json(result);
+    } catch (err) {
+      console.error('[Telegram Webhook] Get webhook info error:', err);
+      return res.status(500).json({ error: 'Failed to get webhook info' });
+    }
+  }
+
   // Verify webhook secret if configured
   const webhookSecret = process.env.TELEGRAM_WEBHOOK_SECRET;
   if (webhookSecret) {
     const secret = req.headers['x-telegram-bot-api-secret-token'];
     if (secret !== webhookSecret) {
+      console.log('[Telegram Webhook] Unauthorized - secret mismatch');
       return res.status(401).json({ error: 'Unauthorized' });
     }
+  }
+
+  // Check if token is configured
+  if (!token) {
+    console.error('[Telegram Webhook] TG_BOT_TOKEN not configured!');
+    return res.status(500).json({ error: 'Bot token not configured' });
   }
 
   try {
