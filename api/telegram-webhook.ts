@@ -302,6 +302,7 @@ const buildTagKeyboard = (allTags: string[], selectedTags: string[]) => {
   }
 
   rows.push([{ text: '🏷️ Ввести новый тег', callback_data: 'newtag' }]);
+  rows.push([{ text: '⏭️ Пропустить (без тега)', callback_data: 'skip' }]);
   rows.push([{ text: '✅ Готово, загрузить файлы', callback_data: 'done' }]);
   rows.push([{ text: '❌ Отмена', callback_data: 'cancel' }]);
 
@@ -316,8 +317,8 @@ const handleStart = async (chatId: number) => {
 
   const keyboard = buildTagKeyboard(tags, []);
   const message = tags.length > 0
-    ? '📁 <b>Загрузка файлов в медиа-библиотеку</b>\n\nВыберите теги для файлов (можно несколько):'
-    : '📁 <b>Загрузка файлов в медиа-библиотеку</b>\n\nТегов пока нет. Введите новый тег или нажмите "Готово".';
+    ? '📁 <b>Загрузка файлов в медиа-библиотеку</b>\n\nВыберите теги для файлов (можно несколько).\nИли нажмите <b>⏭️ Пропустить</b> — файлы получат тег <code>untitled</code>.'
+    : '📁 <b>Загрузка файлов в медиа-библиотеку</b>\n\nТегов пока нет. Введите новый тег, или нажмите <b>⏭️ Пропустить</b> — файлы получат тег <code>untitled</code>.';
 
   await sendTelegramMessage(chatId, message, { replyMarkup: keyboard });
 };
@@ -358,19 +359,31 @@ const handleCallbackQuery = async (update: TelegramUpdate) => {
     return;
   }
 
+  if (data === 'skip') {
+    if (!session) {
+      await sendTelegramMessage(chatId, '⚠️ Сессия истекла. Начните сначала с /upload');
+      return;
+    }
+    await setSession(chatId, { ...session, state: 'awaiting_files', selectedTags: [] });
+    await sendTelegramMessage(
+      chatId,
+      `⏭️ Тег пропущен — файлы получат тег <code>untitled</code>.\n\n📤 Отправьте фото или видео для загрузки:\n(можно несколько файлов подряд)`
+    );
+    return;
+  }
+
   if (data === 'done') {
     if (!session) {
       await sendTelegramMessage(chatId, '⚠️ Сессия истекла. Начните сначала с /upload');
       return;
     }
-    if (session.selectedTags.length === 0) {
-      await sendTelegramMessage(chatId, '⚠️ Выберите хотя бы один тег или введите новый');
-      return;
-    }
     await setSession(chatId, { ...session, state: 'awaiting_files' });
+    const tagsDisplay = session.selectedTags.length > 0
+      ? session.selectedTags.join(', ')
+      : '<code>untitled</code> (будет присвоен автоматически)';
     await sendTelegramMessage(
       chatId,
-      `🏷️ <b>Теги:</b> ${session.selectedTags.join(', ')}\n\n📤 Отправьте фото или видео для загрузки:\n(можно несколько файлов подряд)`
+      `🏷️ <b>Теги:</b> ${tagsDisplay}\n\n📤 Отправьте фото или видео для загрузки:\n(можно несколько файлов подряд)`
     );
     return;
   }
@@ -511,7 +524,7 @@ const handleFileUpload = async (update: TelegramUpdate) => {
     type: mediaType,
     mime_type: fileInfo.mimeType,
     size_bytes: fileInfo.fileSize || fileData.data.byteLength,
-    tags: session.selectedTags,
+    tags: session.selectedTags.length > 0 ? session.selectedTags : ['untitled'],
     width: fileInfo.width,
     height: fileInfo.height,
     duration: fileInfo.duration,
@@ -529,7 +542,7 @@ const handleFileUpload = async (update: TelegramUpdate) => {
     chatId,
     `✅ <b>Файл загружен!</b>\n\n` +
     `📂 Путь: <code>${storagePath}</code>\n` +
-    `🏷️ <b>Теги:</b> ${session.selectedTags.join(', ') || 'нет'}\n\n` +
+    `🏷️ <b>Теги:</b> ${session.selectedTags.length > 0 ? session.selectedTags.join(', ') : 'untitled'}\n\n` +
     `Отправьте ещё файлы или используйте /upload для новой сессии.`
   );
 };
