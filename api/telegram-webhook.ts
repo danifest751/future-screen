@@ -35,14 +35,20 @@ let supabase: SupabaseClient | null = null;
 const getSupabaseClient = (): SupabaseClient => {
   if (!supabase) {
     const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    // Prefer service role key (bypasses RLS), fall back to anon key
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
 
     if (!supabaseUrl || !supabaseKey) {
       console.error('[Webhook] Missing env vars:', {
         hasSupabaseUrl: !!supabaseUrl,
-        hasSupabaseKey: !!supabaseKey,
+        hasServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+        hasAnonKey: !!process.env.VITE_SUPABASE_ANON_KEY,
       });
-      throw new Error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be configured');
+      throw new Error('SUPABASE_URL must be configured along with SUPABASE_SERVICE_ROLE_KEY');
+    }
+
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.warn('[Webhook] SUPABASE_SERVICE_ROLE_KEY not set! Session storage and dedup will fail. Add it to Vercel env vars.');
     }
 
     supabase = createClient(supabaseUrl, supabaseKey);
@@ -93,7 +99,7 @@ interface TelegramUpdate {
   };
 }
 
-// ── Session management via Supabase (survives cold starts) ──────────────────
+// ── Session management (Supabase persistent + in-memory fallback) ──────────
 
 type SessionState = 'awaiting_tags' | 'awaiting_files' | 'awaiting_new_tag';
 
@@ -102,47 +108,76 @@ interface Session {
   selectedTags: string[];
 }
 
-const getSession = async (chatId: number): Promise<Session | null> => {
-  try {
-    const { data, error } = await getSupabaseClient()
-      .from('telegram_sessions')
-      .select('state, selected_tags')
-      .eq('chat_id', chatId)
-      .single();
+// In-memory fallback (used when Supabase service_role unavailable)
+const sessionCache = new Map<number, Session & { lastActivity: number }>();
 
-    if (error || !data) return null;
-    return {
-      state: data.state as SessionState,
-      selectedTags: data.selected_tags || [],
-    };
-  } catch {
-    return null;
+const hasServiceRole = () => !!process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+const getSession = async (chatId: number): Promise<Session | null> => {
+  // Try Supabase first if service role is configured
+  if (hasServiceRole()) {
+    try {
+      const { data, error } = await getSupabaseClient()
+        .from('telegram_sessions')
+        .select('state, selected_tags')
+        .eq('chat_id', chatId)
+        .single();
+
+      if (!error && data) {
+        return {
+          state: data.state as SessionState,
+          selectedTags: data.selected_tags || [],
+        };
+      }
+    } catch (err) {
+      console.error('[Session] Supabase read failed, using cache:', err);
+    }
   }
+
+  // Fallback to in-memory cache
+  const cached = sessionCache.get(chatId);
+  if (cached) {
+    cached.lastActivity = Date.now();
+    return { state: cached.state, selectedTags: cached.selectedTags };
+  }
+  return null;
 };
 
 const setSession = async (chatId: number, session: Session): Promise<void> => {
-  try {
-    await getSupabaseClient()
-      .from('telegram_sessions')
-      .upsert({
-        chat_id: chatId,
-        state: session.state,
-        selected_tags: session.selectedTags,
-        last_activity: Date.now(),
-      });
-  } catch (err) {
-    console.error('[Session] Failed to save session:', err);
+  // Always update in-memory cache (instant, no network call)
+  sessionCache.set(chatId, { ...session, lastActivity: Date.now() });
+
+  // Also persist to Supabase if service role key is configured (survives cold starts)
+  if (hasServiceRole()) {
+    try {
+      await getSupabaseClient()
+        .from('telegram_sessions')
+        .upsert({
+          chat_id: chatId,
+          state: session.state,
+          selected_tags: session.selectedTags,
+          last_activity: Date.now(),
+        });
+    } catch (err) {
+      console.error('[Session] Supabase write failed, session only in memory:', err);
+    }
   }
 };
 
 const clearSession = async (chatId: number): Promise<void> => {
-  try {
-    await getSupabaseClient()
-      .from('telegram_sessions')
-      .delete()
-      .eq('chat_id', chatId);
-  } catch (err) {
-    console.error('[Session] Failed to clear session:', err);
+  // Always clear in-memory cache
+  sessionCache.delete(chatId);
+
+  // Also clear from Supabase if service role key is configured
+  if (hasServiceRole()) {
+    try {
+      await getSupabaseClient()
+        .from('telegram_sessions')
+        .delete()
+        .eq('chat_id', chatId);
+    } catch (err) {
+      console.error('[Session] Supabase delete failed:', err);
+    }
   }
 };
 
