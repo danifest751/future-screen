@@ -35,7 +35,11 @@ const getSupabaseClient = (): SupabaseClient => {
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     
     if (!supabaseUrl || !supabaseKey) {
-      throw new Error('SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not configured');
+      console.error('[Telegram Webhook] Missing env vars:', {
+        hasSupabaseUrl: !!supabaseUrl,
+        hasSupabaseKey: !!supabaseKey
+      });
+      throw new Error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be configured');
     }
     
     supabase = createClient(supabaseUrl, supabaseKey);
