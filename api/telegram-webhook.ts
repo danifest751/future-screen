@@ -93,7 +93,7 @@ interface TelegramUpdate {
 // Note: In Vercel serverless, this is reset on each cold start
 // States will persist within a single function instance but may be lost on scale
 const userStates = new Map<number, {
-  state: 'idle' | 'awaiting_tags' | 'awaiting_files';
+  state: 'idle' | 'awaiting_tags' | 'awaiting_files' | 'awaiting_new_tag';
   selectedTags: string[];
   lastActivity: number;
 }>();
@@ -118,7 +118,7 @@ const getUserState = (chatId: number) => {
   return state;
 };
 
-const setUserState = (chatId: number, state: { state: 'idle' | 'awaiting_tags' | 'awaiting_files'; selectedTags: string[] }) => {
+const setUserState = (chatId: number, state: { state: 'idle' | 'awaiting_tags' | 'awaiting_files' | 'awaiting_new_tag'; selectedTags: string[] }) => {
   userStates.set(chatId, { ...state, lastActivity: Date.now() });
 };
 
@@ -207,21 +207,31 @@ const handleStart = async (chatId: number) => {
   const tags = await getAllTags();
   setUserState(chatId, { state: 'awaiting_tags', selectedTags: [] });
 
-  const keyboard = {
-    inline_keyboard: [
-      tags.slice(0, 4).map((tag) => ({ text: tag, callback_data: `tag:${tag}` })),
-      tags.slice(4, 8).map((tag) => ({ text: tag, callback_data: `tag:${tag}` })),
-      [{ text: '✅ Готово, загрузить файлы', callback_data: 'done' }],
-      [{ text: '❌ Отмена', callback_data: 'cancel' }],
-    ].filter((row) => row.length > 0),
-  };
+  // Build keyboard with existing tags and option to add new
+  const keyboardRows: Array<Array<{ text: string; callback_data: string }>> = [];
 
-  await sendTelegramMessage(
-    chatId,
-    '📁 <b>Загрузка файлов в медиа-библиотеку</b>\n\n' +
-    'Выберите теги для файлов (можно несколько):',
-    { replyMarkup: keyboard }
-  );
+  // Add existing tags (up to 8)
+  if (tags.length > 0) {
+    keyboardRows.push(tags.slice(0, 4).map((tag) => ({ text: tag, callback_data: `tag:${tag}` })));
+    if (tags.length > 4) {
+      keyboardRows.push(tags.slice(4, 8).map((tag) => ({ text: tag, callback_data: `tag:${tag}` })));
+    }
+  }
+
+  // Add row for new tag input
+  keyboardRows.push([{ text: '🏷️ Ввести новый тег', callback_data: 'newtag' }]);
+
+  // Done and cancel buttons
+  keyboardRows.push([{ text: '✅ Готово, загрузить файлы', callback_data: 'done' }]);
+  keyboardRows.push([{ text: '❌ Отмена', callback_data: 'cancel' }]);
+
+  const message = tags.length > 0
+    ? '📁 <b>Загрузка файлов в медиа-библиотеку</b>\n\n' +
+      'Выберите теги для файлов (можно несколько):'
+    : '📁 <b>Загрузка файлов в медиа-библиотеку</b>\n\n' +
+      'Тегов пока нет. Введите название нового тега или нажмите "Готово" чтобы продолжить без тегов.';
+
+  await sendTelegramMessage(chatId, message, { replyMarkup: { inline_keyboard: keyboardRows } });
 };
 
 // Handle callback queries (tag selection)
@@ -241,6 +251,19 @@ const handleCallbackQuery = async (update: TelegramUpdate) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ callback_query_id: callback.id }),
     });
+  }
+
+  if (data === 'newtag') {
+    if (!state) {
+      await sendTelegramMessage(chatId, '⚠️ Сессия истекла. Начните сначала с /upload');
+      return;
+    }
+    setUserState(chatId, { ...state, state: 'awaiting_new_tag' });
+    await sendTelegramMessage(
+      chatId,
+      '🏷️ Введите название нового тега (например: "концерт", "студия", "event"):'
+    );
+    return;
   }
 
   if (data === 'cancel') {
@@ -277,22 +300,28 @@ const handleCallbackQuery = async (update: TelegramUpdate) => {
 
     setUserState(chatId, { ...state, selectedTags: newTags });
 
-    // Update keyboard
+    // Update keyboard with existing tags and new tag option
     const allTags = await getAllTags();
-    const keyboard = {
-      inline_keyboard: [
-        allTags.slice(0, 4).map((t) => ({
+    const keyboardRows: Array<Array<{ text: string; callback_data: string }>> = [];
+
+    // Add existing tags
+    if (allTags.length > 0) {
+      keyboardRows.push(allTags.slice(0, 4).map((t) => ({
+        text: `${newTags.includes(t) ? '✅ ' : ''}${t}`,
+        callback_data: `tag:${t}`,
+      })));
+      if (allTags.length > 4) {
+        keyboardRows.push(allTags.slice(4, 8).map((t) => ({
           text: `${newTags.includes(t) ? '✅ ' : ''}${t}`,
           callback_data: `tag:${t}`,
-        })),
-        allTags.slice(4, 8).map((t) => ({
-          text: `${newTags.includes(t) ? '✅ ' : ''}${t}`,
-          callback_data: `tag:${t}`,
-        })),
-        [{ text: '✅ Готово, загрузить файлы', callback_data: 'done' }],
-        [{ text: '❌ Отмена', callback_data: 'cancel' }],
-      ].filter((row) => row.length > 0),
-    };
+        })));
+      }
+    }
+
+    // Add new tag button
+    keyboardRows.push([{ text: '🏷️ Ввести новый тег', callback_data: 'newtag' }]);
+    keyboardRows.push([{ text: '✅ Готово, загрузить файлы', callback_data: 'done' }]);
+    keyboardRows.push([{ text: '❌ Отмена', callback_data: 'cancel' }]);
 
     const token = process.env.TG_BOT_TOKEN;
     if (token && callback.message.message_id) {
@@ -302,7 +331,7 @@ const handleCallbackQuery = async (update: TelegramUpdate) => {
         body: JSON.stringify({
           chat_id: chatId,
           message_id: callback.message.message_id,
-          reply_markup: keyboard,
+          reply_markup: { inline_keyboard: keyboardRows },
         }),
       });
     }
@@ -533,6 +562,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (update.message) {
       const chatId = update.message.chat.id;
       const text = update.message.text || '';
+      const state = getUserState(chatId);
+
+      // Handle new tag input
+      if (state?.state === 'awaiting_new_tag' && text) {
+        const newTag = text.trim().toLowerCase();
+        if (newTag.length > 0 && newTag.length <= 30) {
+          const newTags = state.selectedTags.includes(newTag)
+            ? state.selectedTags
+            : [...state.selectedTags, newTag];
+          setUserState(chatId, { ...state, state: 'awaiting_tags', selectedTags: newTags });
+          await sendTelegramMessage(
+            chatId,
+            `✅ Тег "${newTag}" добавлен.\n\n` +
+            `<b>Выбранные теги:</b> ${newTags.join(', ')}\n\n` +
+            `Нажмите "Готово" когда закончите выбор тегов.`
+          );
+        } else {
+          await sendTelegramMessage(
+            chatId,
+            '⚠️ Тег должен быть от 1 до 30 символов. Попробуйте ещё раз или нажмите "Готово" для продолжения.'
+          );
+        }
+        return res.status(200).json({ ok: true });
+      }
 
       // Handle commands
       if (text === '/start' || text === '/upload') {
