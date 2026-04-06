@@ -6,6 +6,7 @@ import { useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { compressImages, isImageFile, formatFileSize } from '../lib/imageCompression';
 import { useCreateMediaItemMutation } from '../queries/mediaLibrary';
+import { mediaUploadContent } from '../content/hooks/mediaUpload';
 import type { MediaItem, MediaUploadProgress, MediaType } from '../types/media';
 
 export interface UploadOptions {
@@ -22,7 +23,6 @@ export interface UploadResult {
 const getMediaType = (file: File): MediaType => {
   if (file.type.startsWith('image/')) return 'image';
   if (file.type.startsWith('video/')) return 'video';
-  // Default to image for unknown types
   return 'image';
 };
 
@@ -58,7 +58,6 @@ export const useMediaUpload = () => {
     try {
       updateUploadProgress(file, { status: 'uploading', progress: 0 });
 
-      // Compress images if needed
       let fileToUpload = file;
       if (isImageFile(file)) {
         updateUploadProgress(file, { status: 'processing', progress: 10 });
@@ -72,17 +71,14 @@ export const useMediaUpload = () => {
 
       updateUploadProgress(file, { status: 'uploading', progress: 30 });
 
-      // Generate storage path
       const filePath = generateFilePath(file);
       const bucket = 'media';
 
-      // Check if bucket exists, fallback to 'images' if not
       let targetBucket = bucket;
       try {
         const { data: buckets } = await supabase.storage.listBuckets();
         const bucketExists = buckets?.some((b) => b.name === bucket);
         if (!bucketExists) {
-          // Fallback to existing 'images' bucket
           targetBucket = 'images';
         }
       } catch {
@@ -91,7 +87,6 @@ export const useMediaUpload = () => {
 
       updateUploadProgress(file, { status: 'uploading', progress: 50 });
 
-      // Upload to Supabase Storage
       const { error: uploadError } = await supabase.storage
         .from(targetBucket)
         .upload(filePath, fileToUpload, {
@@ -105,7 +100,6 @@ export const useMediaUpload = () => {
 
       updateUploadProgress(file, { status: 'uploading', progress: 80 });
 
-      // Get public URL
       const { data: urlData } = supabase.storage
         .from(targetBucket)
         .getPublicUrl(filePath);
@@ -114,7 +108,6 @@ export const useMediaUpload = () => {
 
       updateUploadProgress(file, { status: 'uploading', progress: 90 });
 
-      // Create media item record
       const mediaType = getMediaType(file);
       const newItem: Omit<MediaItem, 'id' | 'created_at' | 'updated_at'> = {
         name: file.name,
@@ -127,7 +120,6 @@ export const useMediaUpload = () => {
         uploaded_by: 'admin',
       };
 
-      // For images, try to get dimensions
       if (mediaType === 'image') {
         try {
           const dimensions = await getImageDimensions(fileToUpload);
@@ -164,14 +156,12 @@ export const useMediaUpload = () => {
     const fileArray = Array.from(files);
     if (fileArray.length === 0) return [];
 
-    // Initialize uploads
     setUploads(fileArray.map((file) => ({
       file,
       progress: 0,
       status: 'pending' as const,
     })));
 
-    // Upload files sequentially to avoid overwhelming the server
     const results: UploadResult[] = [];
     for (const file of fileArray) {
       const result = await uploadSingleFile(file, options);
@@ -203,22 +193,21 @@ export const useMediaUpload = () => {
   };
 };
 
-// Helper to get image dimensions
 const getImageDimensions = (file: File): Promise<{ width: number; height: number }> => {
   return new Promise((resolve, reject) => {
     const img = new Image();
     const url = URL.createObjectURL(file);
-    
+
     img.onload = () => {
       URL.revokeObjectURL(url);
       resolve({ width: img.naturalWidth, height: img.naturalHeight });
     };
-    
+
     img.onerror = () => {
       URL.revokeObjectURL(url);
       reject(new Error('Failed to load image'));
     };
-    
+
     img.src = url;
   });
 };
@@ -243,16 +232,16 @@ export const isValidFileType = (file: File): boolean => {
 export const formatUploadStatus = (status: MediaUploadProgress['status']): string => {
   switch (status) {
     case 'pending':
-      return 'Ожидает';
+      return mediaUploadContent.statuses.pending;
     case 'uploading':
-      return 'Загрузка';
+      return mediaUploadContent.statuses.uploading;
     case 'processing':
-      return 'Обработка';
+      return mediaUploadContent.statuses.processing;
     case 'completed':
-      return 'Готово';
+      return mediaUploadContent.statuses.completed;
     case 'error':
-      return 'Ошибка';
+      return mediaUploadContent.statuses.error;
     default:
-      return 'Неизвестно';
+      return mediaUploadContent.statuses.unknown;
   }
 };

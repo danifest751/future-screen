@@ -62,6 +62,7 @@ Centralized into `src/content/pages/*`:
 - leads
 - rental categories (list)
 - rental category edit
+- cases redesigned
 
 ### Admin shared UI already converted
 
@@ -86,8 +87,7 @@ Centralized into `src/content/components/*`:
 ### High-priority admin pages
 
 Still contain substantial user-facing hardcode:
-- `src/pages/admin/AdminCasesManagerPage.tsx`
-- `src/pages/admin/AdminCasesRedesignedPage.tsx`
+- none in active admin routes after the latest cleanup pass
 
 ### Likely remaining shared/admin copy
 
@@ -117,8 +117,8 @@ Not part of current cleanup scope yet:
    - sweep leftovers in `src/components/admin/media/*` and `src/components/admin/ui/*`
 
 2. Finish heavy admin forms:
-   - `AdminCasesManagerPage`
    - `AdminRentalCategoryEditPage`
+   - re-check any future admin pages added after cleanup
 
 3. Sweep remaining admin pages and toast/error strings.
 
