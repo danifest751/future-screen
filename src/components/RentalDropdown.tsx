@@ -1,7 +1,9 @@
 import { useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useRentalCategories } from '../services/rentalCategories';
-import { rentalDropdownContent } from '../content/components/rentalDropdown';
+import { getRentalDropdownContent } from '../content/components/rentalDropdown';
+import { useI18n } from '../context/I18nContext';
+import { getRentalCategoryDisplay } from '../content/data/rentalCategoryLabels';
 
 const categoryIcons: Record<string, JSX.Element> = {
   video: (
@@ -58,6 +60,8 @@ interface RentalDropdownProps {
 }
 
 export const RentalDropdown = ({ isOpen, onClose }: RentalDropdownProps) => {
+  const { siteLocale } = useI18n();
+  const rentalDropdownContent = getRentalDropdownContent(siteLocale);
   const { items, loading } = useRentalCategories();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -122,19 +126,32 @@ export const RentalDropdown = ({ isOpen, onClose }: RentalDropdownProps) => {
                   onClick={onClose}
                   className="group flex items-center gap-2.5 rounded-lg px-2.5 py-2 transition-all duration-200 hover:bg-white/5"
                 >
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/5 text-gray-400 transition-colors group-hover:bg-brand-500/20 group-hover:text-brand-400">
-                    {categoryIcons[category.slug] || defaultIcon}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-medium text-white group-hover:text-brand-300 transition-colors">
-                      {category.name}
-                    </div>
-                    {category.shortName && (
-                      <div className="truncate text-xs text-gray-500">
-                        {category.shortName}
-                      </div>
-                    )}
-                  </div>
+                  {(() => {
+                    const display = getRentalCategoryDisplay(
+                      category.slug,
+                      category.name,
+                      category.shortName,
+                      siteLocale
+                    );
+
+                    return (
+                      <>
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/5 text-gray-400 transition-colors group-hover:bg-brand-500/20 group-hover:text-brand-400">
+                          {categoryIcons[category.slug] || defaultIcon}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-sm font-medium text-white group-hover:text-brand-300 transition-colors">
+                            {display.name}
+                          </div>
+                          {display.shortName && (
+                            <div className="truncate text-xs text-gray-500">
+                              {display.shortName}
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    );
+                  })()}
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 24 24"

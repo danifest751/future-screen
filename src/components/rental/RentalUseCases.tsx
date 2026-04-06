@@ -1,5 +1,6 @@
 import { memo } from 'react';
-import { rentalComponentContent } from '../../content/components/rental';
+import { getRentalComponentContent } from '../../content/components/rental';
+import { useI18n } from '../../context/I18nContext';
 
 interface UseCase {
   title: string;
@@ -12,11 +13,10 @@ interface RentalUseCasesProps {
   slug?: string;
 }
 
-const RentalUseCases = memo(function RentalUseCases({
-  title = rentalComponentContent.useCasesTitle,
-  items,
-  slug,
-}: RentalUseCasesProps) {
+const RentalUseCases = memo(function RentalUseCases({ title, items, slug }: RentalUseCasesProps) {
+  const { siteLocale } = useI18n();
+  const rentalComponentContent = getRentalComponentContent(siteLocale);
+
   if (!Array.isArray(items) || items.length === 0) {
     return null;
   }
@@ -25,7 +25,7 @@ const RentalUseCases = memo(function RentalUseCases({
     <section className="py-12 md:py-16">
       <div className="container-page">
         <h2 className="text-2xl md:text-3xl font-bold text-white mb-8 text-center">
-          {title}
+          {title ?? rentalComponentContent.useCasesTitle}
         </h2>
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

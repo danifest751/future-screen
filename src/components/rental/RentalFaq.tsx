@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ChevronDown, HelpCircle } from 'lucide-react';
-import { rentalComponentContent } from '../../content/components/rental';
+import { getRentalComponentContent } from '../../content/components/rental';
+import { useI18n } from '../../context/I18nContext';
 
 interface FaqItem {
   question: string;
@@ -12,10 +13,9 @@ interface RentalFaqProps {
   items: FaqItem[];
 }
 
-export const RentalFaq = ({
-  title = rentalComponentContent.faqTitle,
-  items,
-}: RentalFaqProps) => {
+export const RentalFaq = ({ title, items }: RentalFaqProps) => {
+  const { siteLocale } = useI18n();
+  const rentalComponentContent = getRentalComponentContent(siteLocale);
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   if (!Array.isArray(items) || items.length === 0) {
@@ -33,7 +33,7 @@ export const RentalFaq = ({
           <div className="flex items-center gap-3 mb-8 justify-center">
             <HelpCircle className="h-7 w-7 text-brand-400" />
             <h2 className="text-2xl md:text-3xl font-bold text-white">
-              {title}
+              {title ?? rentalComponentContent.faqTitle}
             </h2>
           </div>
 

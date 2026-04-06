@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import { Link } from 'react-router-dom';
-import { rentalComponentContent } from '../../content/components/rental';
+import { getRentalComponentContent } from '../../content/components/rental';
+import { useI18n } from '../../context/I18nContext';
 import { StarBorder } from '../effects/StarBorder';
 import { RequestForm } from '../RequestForm';
 
@@ -13,17 +14,14 @@ interface RentalCtaProps {
     secondaryCta?: string;
     secondaryCtaLink?: string;
   };
-  /** Show the request form instead of CTA links. */
   showForm?: boolean;
-  /** Request form submit button text. */
   formCtaText?: string;
 }
 
-const RentalCta = memo(function RentalCta({
-  data,
-  showForm = false,
-  formCtaText = rentalComponentContent.ctaFormButton,
-}: RentalCtaProps) {
+const RentalCta = memo(function RentalCta({ data, showForm = false, formCtaText }: RentalCtaProps) {
+  const { siteLocale } = useI18n();
+  const rentalComponentContent = getRentalComponentContent(siteLocale);
+  const formButtonText = formCtaText ?? rentalComponentContent.ctaFormButton;
   const { title, text, primaryCta, primaryCtaLink, secondaryCta, secondaryCtaLink } = data;
 
   if (!title && !text && !showForm) {
@@ -45,7 +43,7 @@ const RentalCta = memo(function RentalCta({
               <RequestForm
                 title={title || rentalComponentContent.ctaFallbackTitle}
                 subtitle={text}
-                ctaText={formCtaText}
+                ctaText={formButtonText}
               />
             ) : (
               <>
@@ -65,19 +63,13 @@ const RentalCta = memo(function RentalCta({
                   <div className="flex flex-wrap justify-center gap-4">
                     {hasPrimary && (
                       <StarBorder variant="button">
-                        <Link
-                          to={primaryCtaLink}
-                          className="btn-primary"
-                        >
+                        <Link to={primaryCtaLink} className="btn-primary">
                           {primaryCta}
                         </Link>
                       </StarBorder>
                     )}
                     {hasSecondary && (
-                      <Link
-                        to={secondaryCtaLink}
-                        className="btn-secondary"
-                      >
+                      <Link to={secondaryCtaLink} className="btn-secondary">
                         {secondaryCta}
                       </Link>
                     )}

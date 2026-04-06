@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import { Zap, Shield, Clock, HeadphonesIcon, Award, Settings } from 'lucide-react';
-import { rentalComponentContent } from '../../content/components/rental';
+import { getRentalComponentContent } from '../../content/components/rental';
+import { useI18n } from '../../context/I18nContext';
 
 interface Benefit {
   title: string;
@@ -12,9 +13,9 @@ interface RentalBenefitsProps {
   items: Benefit[];
 }
 
-const getIcon = (title: string) => {
+const getIcon = (title: string, locale: 'ru' | 'en') => {
   const lower = title.toLowerCase();
-  const { benefitKeywordGroups } = rentalComponentContent;
+  const { benefitKeywordGroups } = getRentalComponentContent(locale);
 
   if (benefitKeywordGroups.speed.some((keyword) => lower.includes(keyword))) return Zap;
   if (benefitKeywordGroups.reliability.some((keyword) => lower.includes(keyword))) return Shield;
@@ -26,10 +27,10 @@ const getIcon = (title: string) => {
   return Zap;
 };
 
-const RentalBenefits = memo(function RentalBenefits({
-  title = rentalComponentContent.benefitsTitle,
-  items,
-}: RentalBenefitsProps) {
+const RentalBenefits = memo(function RentalBenefits({ title, items }: RentalBenefitsProps) {
+  const { siteLocale } = useI18n();
+  const rentalComponentContent = getRentalComponentContent(siteLocale);
+
   if (!Array.isArray(items) || items.length === 0) {
     return null;
   }
@@ -38,12 +39,12 @@ const RentalBenefits = memo(function RentalBenefits({
     <section className="py-12 md:py-16">
       <div className="container-page">
         <h2 className="text-2xl md:text-3xl font-bold text-white mb-8 text-center">
-          {title}
+          {title ?? rentalComponentContent.benefitsTitle}
         </h2>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {items.map((item, index) => {
-            const Icon = getIcon(item.title);
+            const Icon = getIcon(item.title, siteLocale);
             return (
               <div
                 key={index}

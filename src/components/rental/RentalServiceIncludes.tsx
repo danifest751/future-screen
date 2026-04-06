@@ -1,16 +1,17 @@
 import { memo } from 'react';
 import { Check } from 'lucide-react';
-import { rentalComponentContent } from '../../content/components/rental';
+import { getRentalComponentContent } from '../../content/components/rental';
+import { useI18n } from '../../context/I18nContext';
 
 interface RentalServiceIncludesProps {
   title?: string;
   items: string[];
 }
 
-const RentalServiceIncludes = memo(function RentalServiceIncludes({
-  title = rentalComponentContent.serviceIncludesTitle,
-  items,
-}: RentalServiceIncludesProps) {
+const RentalServiceIncludes = memo(function RentalServiceIncludes({ title, items }: RentalServiceIncludesProps) {
+  const { siteLocale } = useI18n();
+  const rentalComponentContent = getRentalComponentContent(siteLocale);
+
   if (!Array.isArray(items) || items.length === 0) {
     return null;
   }
@@ -20,7 +21,7 @@ const RentalServiceIncludes = memo(function RentalServiceIncludes({
       <div className="container-page">
         <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.04] to-white/[0.02] p-6 md:p-10">
           <h2 className="text-2xl md:text-3xl font-bold text-white mb-8">
-            {title}
+            {title ?? rentalComponentContent.serviceIncludesTitle}
           </h2>
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

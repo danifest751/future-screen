@@ -1,5 +1,6 @@
 import { memo } from 'react';
-import { rentalComponentContent } from '../../content/components/rental';
+import { getRentalComponentContent } from '../../content/components/rental';
+import { useI18n } from '../../context/I18nContext';
 
 interface GalleryItem {
   image: string;
@@ -12,10 +13,10 @@ interface RentalGalleryProps {
   title?: string;
 }
 
-const RentalGallery = memo(function RentalGallery({
-  items,
-  title = rentalComponentContent.galleryTitle,
-}: RentalGalleryProps) {
+const RentalGallery = memo(function RentalGallery({ items, title }: RentalGalleryProps) {
+  const { siteLocale } = useI18n();
+  const rentalComponentContent = getRentalComponentContent(siteLocale);
+
   if (!Array.isArray(items) || items.length === 0) {
     return null;
   }
@@ -24,7 +25,7 @@ const RentalGallery = memo(function RentalGallery({
     <section className="py-12 md:py-16">
       <div className="container-page">
         <h2 className="text-2xl md:text-3xl font-bold text-white mb-8 text-center">
-          {title}
+          {title ?? rentalComponentContent.galleryTitle}
         </h2>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
