@@ -1,6 +1,7 @@
-import { type ReactNode, useMemo, useState } from 'react';
-import Button from './Button';
+﻿import { type ReactNode, useMemo, useState } from 'react';
+import { confirmModalContent } from '../../../content/components/confirmModal';
 import { useFocusTrap } from '../../../hooks/useFocusTrap';
+import Button from './Button';
 
 export type ConfirmModalProps = {
   open: boolean;
@@ -14,12 +15,11 @@ export type ConfirmModalProps = {
   onConfirm: () => Promise<void> | void;
 };
 
-// Внутренний компонент с логикой
 function ConfirmModalContent({
   title,
   description,
-  confirmText = 'Подтвердить',
-  cancelText = 'Отмена',
+  confirmText = confirmModalContent.confirm,
+  cancelText = confirmModalContent.cancel,
   danger = false,
   confirmDisabled = false,
   onCancel,
@@ -27,7 +27,6 @@ function ConfirmModalContent({
 }: Omit<ConfirmModalProps, 'open'>) {
   const [submitting, setSubmitting] = useState(false);
 
-  // Ловушка фокуса
   const { containerRef } = useFocusTrap({
     active: true,
     onEscape: onCancel,
@@ -50,15 +49,8 @@ function ConfirmModalContent({
   const descId = description ? 'confirm-modal-desc' : undefined;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
-      role="presentation"
-    >
-      <div
-        className="absolute inset-0 bg-black/60"
-        onClick={onCancel}
-        aria-hidden="true"
-      />
+    <div className="fixed inset-0 z-50 flex items-center justify-center" role="presentation">
+      <div className="absolute inset-0 bg-black/60" onClick={onCancel} aria-hidden="true" />
       <div
         ref={containerRef as React.RefObject<HTMLDivElement>}
         className="relative w-full max-w-md rounded-2xl border border-white/10 bg-slate-900 p-6 shadow-2xl"
@@ -79,13 +71,7 @@ function ConfirmModalContent({
         </div>
 
         <div className="mt-5 flex items-center justify-end gap-3">
-          <Button
-            variant="secondary"
-            size="md"
-            onClick={onCancel}
-            disabled={submitting}
-            aria-label={cancelText}
-          >
+          <Button variant="secondary" size="md" onClick={onCancel} disabled={submitting} aria-label={cancelText}>
             {cancelText}
           </Button>
           <Button
@@ -104,10 +90,6 @@ function ConfirmModalContent({
   );
 }
 
-/**
- * Модальное окно подтверждения с поддержкой доступности.
- * Реализует ловушку фокуса, ARIA-атрибуты и управление с клавиатуры.
- */
 export default function ConfirmModal(props: ConfirmModalProps) {
   if (!props.open) {
     return null;

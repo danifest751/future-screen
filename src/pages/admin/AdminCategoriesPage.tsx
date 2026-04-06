@@ -1,22 +1,26 @@
-import { useMemo, useState } from 'react';
+﻿import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Tag } from 'lucide-react';
 import toast from 'react-hot-toast';
 import AdminLayout from '../../components/admin/AdminLayout';
 import { Button, ConfirmModal, EmptyState, Field, Input, Textarea } from '../../components/admin/ui';
-import { Tag } from 'lucide-react';
+import { adminCategoriesPageContent } from '../../content/pages/adminCategories';
+import type { Category } from '../../data/categories';
 import { useCategories } from '../../hooks/useCategories';
 import { useFormDraftPersistence } from '../../hooks/useFormDraftPersistence';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
-import type { Category } from '../../data/categories';
 
 const schema = z.object({
-  id: z.coerce.number().int().positive('ID должен быть числом'),
-  title: z.string().min(2, 'Название обязательно'),
-  shortDescription: z.string().min(5, 'Добавьте краткое описание'),
-  bulletsText: z.string().min(2, 'Добавьте преимущества'),
-  pagePath: z.string().min(2, 'Путь обязателен').regex(/^\//, 'Путь должен начинаться с /'),
+  id: z.coerce.number().int().positive(adminCategoriesPageContent.validation.idPositive),
+  title: z.string().min(2, adminCategoriesPageContent.validation.titleRequired),
+  shortDescription: z.string().min(5, adminCategoriesPageContent.validation.shortDescriptionRequired),
+  bulletsText: z.string().min(2, adminCategoriesPageContent.validation.bulletsRequired),
+  pagePath: z
+    .string()
+    .min(2, adminCategoriesPageContent.validation.pagePathRequired)
+    .regex(/^\//, adminCategoriesPageContent.validation.pagePathPrefix),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -32,7 +36,7 @@ const defaultValues: FormValues = {
 const splitList = (value: string) =>
   value
     .split(/[\n,]/)
-    .map((s) => s.trim())
+    .map((item) => item.trim())
     .filter(Boolean);
 
 const AdminCategoriesPage = () => {
@@ -53,12 +57,13 @@ const AdminCategoriesPage = () => {
     defaultValues,
   });
 
-  const { clearDraft: clearCategoryDraft, hasDraft: hasCategoryDraft, isHydrated } = useFormDraftPersistence<FormValues>({
-    enabled: true,
-    storageKey: 'admin-category-draft',
-    reset,
-    watch,
-  });
+  const { clearDraft: clearCategoryDraft, hasDraft: hasCategoryDraft, isHydrated } =
+    useFormDraftPersistence<FormValues>({
+      enabled: true,
+      storageKey: 'admin-category-draft',
+      reset,
+      watch,
+    });
 
   useUnsavedChangesGuard(isDirty);
 
@@ -73,11 +78,11 @@ const AdminCategoriesPage = () => {
 
     const ok = await upsert(payload);
     if (!ok) {
-      toast.error('Ошибка сохранения категории');
+      toast.error(adminCategoriesPageContent.toast.saveError);
       return;
     }
 
-    toast.success(editingId ? 'Категория обновлена' : 'Категория добавлена');
+    toast.success(editingId ? adminCategoriesPageContent.toast.updated : adminCategoriesPageContent.toast.created);
     setEditingId(null);
     reset(defaultValues);
     clearCategoryDraft();
@@ -103,13 +108,16 @@ const AdminCategoriesPage = () => {
   const handleDelete = async () => {
     if (!deleteTarget) return;
     const ok = await remove(deleteTarget.id);
-    if (ok) toast.success('Категория удалена');
-    else toast.error('Ошибка удаления категории');
+    if (ok) {
+      toast.success(adminCategoriesPageContent.toast.deleted);
+    } else {
+      toast.error(adminCategoriesPageContent.toast.deleteError);
+    }
   };
 
   const handleResetDefaults = async () => {
     await resetToDefault();
-    toast.success('Категории сброшены к дефолту');
+    toast.success(adminCategoriesPageContent.toast.resetSuccess);
     clearCategoryDraft();
   };
 
@@ -117,8 +125,8 @@ const AdminCategoriesPage = () => {
     const q = search.trim().toLowerCase();
     if (!q) return [...categories];
 
-    return categories.filter((c) => {
-      const haystack = [c.id, c.title, c.shortDescription, ...(c.bullets ?? []), c.pagePath]
+    return categories.filter((item) => {
+      const haystack = [item.id, item.title, item.shortDescription, ...(item.bullets ?? []), item.pagePath]
         .join(' ')
         .toLowerCase();
 
@@ -127,14 +135,17 @@ const AdminCategoriesPage = () => {
   }, [categories, search]);
 
   return (
-    <AdminLayout title="Категории" subtitle="Управление категориями аренды">
+    <AdminLayout
+      title={adminCategoriesPageContent.layout.title}
+      subtitle={adminCategoriesPageContent.layout.subtitle}
+    >
       <ConfirmModal
         open={Boolean(deleteTarget)}
         danger
-        title="Удалить категорию?"
-        description={deleteTarget ? `Категория "${deleteTarget.title}" будет удалена без возможности восстановления.` : ''}
-        confirmText="Удалить"
-        cancelText="Отмена"
+        title={adminCategoriesPageContent.deleteModal.title}
+        description={deleteTarget ? adminCategoriesPageContent.deleteModal.description(deleteTarget.title) : ''}
+        confirmText={adminCategoriesPageContent.deleteModal.confirmText}
+        cancelText={adminCategoriesPageContent.deleteModal.cancelText}
         confirmDisabled={isSubmitting}
         onCancel={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
@@ -142,10 +153,10 @@ const AdminCategoriesPage = () => {
       <ConfirmModal
         open={resetModalOpen}
         danger
-        title="Сбросить категории к дефолту?"
-        description="Текущий список категорий будет перезаписан демо-данными."
-        confirmText="Сбросить"
-        cancelText="Отмена"
+        title={adminCategoriesPageContent.resetModal.title}
+        description={adminCategoriesPageContent.resetModal.description}
+        confirmText={adminCategoriesPageContent.resetModal.confirmText}
+        cancelText={adminCategoriesPageContent.resetModal.cancelText}
         confirmDisabled={isSubmitting}
         onCancel={() => setResetModalOpen(false)}
         onConfirm={handleResetDefaults}
@@ -155,25 +166,27 @@ const AdminCategoriesPage = () => {
         <div className="rounded-xl border border-white/10 bg-slate-800 p-6">
           <div className="mb-4 flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-semibold text-white">{editingId ? 'Редактирование категории' : 'Новая категория'}</h2>
+              <h2 className="text-xl font-semibold text-white">
+                {editingId ? adminCategoriesPageContent.form.editTitle : adminCategoriesPageContent.form.createTitle}
+              </h2>
               <p className="mt-1 text-sm text-slate-400">
                 {editingId
-                  ? `Вы редактируете категорию ${String(editingId)}. Сохраните изменения или нажмите «Отмена».`
-                  : 'Создайте новую категорию или выберите существующую справа для редактирования.'}
+                  ? adminCategoriesPageContent.form.editDescription(editingId)
+                  : adminCategoriesPageContent.form.createDescription}
               </p>
               {isHydrated && hasCategoryDraft && !editingId && (
-                <p className="mt-2 text-xs text-amber-200">Восстановлен черновик формы — можно продолжить с того же места.</p>
+                <p className="mt-2 text-xs text-amber-200">{adminCategoriesPageContent.form.restoredDraft}</p>
               )}
             </div>
             <div className="flex flex-col items-end gap-2">
               {editingId && (
                 <span className="rounded-full border border-brand-500/40 bg-brand-500/10 px-2 py-0.5 text-xs text-brand-100">
-                  Режим редактирования
+                  {adminCategoriesPageContent.form.editMode}
                 </span>
               )}
               {isDirty && (
                 <span className="rounded-full border border-amber-400/40 bg-amber-500/10 px-2 py-0.5 text-xs text-amber-200">
-                  Есть несохраненные изменения
+                  {adminCategoriesPageContent.form.unsavedChanges}
                 </span>
               )}
               {editingId && (
@@ -183,40 +196,44 @@ const AdminCategoriesPage = () => {
                   disabled={isSubmitting}
                   className="text-sm text-slate-300 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  Отмена
+                  {adminCategoriesPageContent.form.cancel}
                 </button>
               )}
             </div>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
-            <Field label="ID" required error={errors.id?.message}>
+            <Field label={adminCategoriesPageContent.form.idLabel} required error={errors.id?.message}>
               <Input disabled={Boolean(editingId)} {...register('id')} />
             </Field>
 
-            <Field label="Название" required error={errors.title?.message}>
+            <Field label={adminCategoriesPageContent.form.titleLabel} required error={errors.title?.message}>
               <Input {...register('title')} />
             </Field>
 
-            <Field label="Краткое описание" required error={errors.shortDescription?.message}>
+            <Field
+              label={adminCategoriesPageContent.form.shortDescriptionLabel}
+              required
+              error={errors.shortDescription?.message}
+            >
               <Textarea rows={2} {...register('shortDescription')} />
             </Field>
 
             <Field
-              label="Буллеты"
+              label={adminCategoriesPageContent.form.bulletsLabel}
               required
-              hint="Каждый пункт с новой строки"
+              hint={adminCategoriesPageContent.form.bulletsHint}
               error={errors.bulletsText?.message}
             >
               <Textarea rows={3} {...register('bulletsText')} />
             </Field>
 
-            <Field label="Путь страницы" required error={errors.pagePath?.message}>
+            <Field label={adminCategoriesPageContent.form.pagePathLabel} required error={errors.pagePath?.message}>
               <Input {...register('pagePath')} />
             </Field>
 
             <Button type="submit" loading={isSubmitting} className="w-full">
-              {editingId ? 'Сохранить' : 'Добавить'}
+              {editingId ? adminCategoriesPageContent.form.save : adminCategoriesPageContent.form.add}
             </Button>
           </form>
         </div>
@@ -224,9 +241,9 @@ const AdminCategoriesPage = () => {
         <div className="rounded-xl border border-white/10 bg-slate-800 p-6">
           <div className="mb-4 flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-semibold text-white">Список категорий</h2>
+              <h2 className="text-xl font-semibold text-white">{adminCategoriesPageContent.list.title}</h2>
               <p className="mt-1 text-sm text-slate-400">
-                Показано {filteredCategories.length} из {categories.length}
+                {adminCategoriesPageContent.list.shown(filteredCategories.length, categories.length)}
               </p>
             </div>
             <button
@@ -235,49 +252,51 @@ const AdminCategoriesPage = () => {
               disabled={isSubmitting}
               className="text-sm text-slate-300 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Сброс к дефолту
+              {adminCategoriesPageContent.list.resetToDefault}
             </button>
           </div>
 
           <div className="mb-4 flex items-center gap-2">
             <Input
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Поиск по названию, пути, описанию..."
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder={adminCategoriesPageContent.list.searchPlaceholder}
             />
             {search && (
               <Button type="button" variant="ghost" size="md" onClick={() => setSearch('')}>
-                Очистить
+                {adminCategoriesPageContent.list.clear}
               </Button>
             )}
           </div>
 
           <div className="space-y-3">
-            {filteredCategories.map((c) => (
-              <div key={c.id} className="rounded-lg border border-white/10 bg-white/5 p-4">
+            {filteredCategories.map((item) => (
+              <div key={item.id} className="rounded-lg border border-white/10 bg-white/5 p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <div className="font-semibold text-white">{c.title}</div>
-                    <div className="text-xs text-slate-400">ID: {c.id}</div>
-                    <div className="mt-1 text-xs text-slate-300">{c.shortDescription}</div>
-                    <div className="mt-1 text-xs text-slate-400">Путь: {c.pagePath}</div>
+                    <div className="font-semibold text-white">{item.title}</div>
+                    <div className="text-xs text-slate-400">ID: {item.id}</div>
+                    <div className="mt-1 text-xs text-slate-300">{item.shortDescription}</div>
+                    <div className="mt-1 text-xs text-slate-400">
+                      {adminCategoriesPageContent.list.pagePathPrefix} {item.pagePath}
+                    </div>
                   </div>
                   <div className="flex flex-col gap-2">
                     <button
                       type="button"
-                      onClick={() => startEdit(c)}
+                      onClick={() => startEdit(item)}
                       disabled={isSubmitting}
                       className="rounded border border-white/20 px-3 py-1 text-xs font-semibold text-white hover:border-white/40 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      Редактировать
+                      {adminCategoriesPageContent.list.edit}
                     </button>
                     <button
                       type="button"
-                      onClick={() => setDeleteTarget(c)}
+                      onClick={() => setDeleteTarget(item)}
                       disabled={isSubmitting}
                       className="rounded border border-red-400/40 px-3 py-1 text-xs font-semibold text-red-200 hover:border-red-400 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      Удалить
+                      {adminCategoriesPageContent.list.remove}
                     </button>
                   </div>
                 </div>
@@ -286,11 +305,15 @@ const AdminCategoriesPage = () => {
             {filteredCategories.length === 0 && (
               <EmptyState
                 icon={<Tag size={32} className="text-brand-400" />}
-                title={categories.length === 0 ? 'Категорий пока нет' : 'Ничего не найдено'}
+                title={
+                  categories.length === 0
+                    ? adminCategoriesPageContent.list.emptyTitle
+                    : adminCategoriesPageContent.list.notFoundTitle
+                }
                 description={
                   categories.length === 0
-                    ? 'Создайте первую категорию аренды через форму слева.'
-                    : 'Попробуйте изменить поисковый запрос или очистить фильтр.'
+                    ? adminCategoriesPageContent.list.emptyDescription
+                    : adminCategoriesPageContent.list.notFoundDescription
                 }
               />
             )}

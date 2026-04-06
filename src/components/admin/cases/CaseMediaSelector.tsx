@@ -1,39 +1,37 @@
-import { useState } from 'react';
-import { X, Image, Film, GripVertical, Trash2, Plus } from 'lucide-react';
-import { MediaLibrary } from '../media';
+﻿import { useState } from 'react';
+import { Film, GripVertical, Image, Plus, Trash2, X } from 'lucide-react';
+import { caseMediaSelectorContent } from '../../../content/components/caseMediaSelector';
 import type { MediaItem } from '../../../types/media';
+import { MediaLibrary } from '../media';
 
 interface CaseMediaSelectorProps {
   selectedMedia: MediaItem[];
   onChange: (media: MediaItem[]) => void;
 }
 
-export const CaseMediaSelector = ({
-  selectedMedia,
-  onChange,
-}: CaseMediaSelectorProps) => {
+export const CaseMediaSelector = ({ selectedMedia, onChange }: CaseMediaSelectorProps) => {
   const [isSelectorOpen, setIsSelectorOpen] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
   const handleSelect = (media: MediaItem) => {
-    const exists = selectedMedia.find((m) => m.id === media.id);
+    const exists = selectedMedia.find((item) => item.id === media.id);
     if (exists) {
-      onChange(selectedMedia.filter((m) => m.id !== media.id));
+      onChange(selectedMedia.filter((item) => item.id !== media.id));
     } else {
       onChange([...selectedMedia, media]);
     }
   };
 
   const handleRemove = (mediaId: string) => {
-    onChange(selectedMedia.filter((m) => m.id !== mediaId));
+    onChange(selectedMedia.filter((item) => item.id !== mediaId));
   };
 
   const handleDragStart = (index: number) => {
     setDraggedIndex(index);
   };
 
-  const handleDragOver = (e: React.DragEvent, index: number) => {
-    e.preventDefault();
+  const handleDragOver = (event: React.DragEvent, index: number) => {
+    event.preventDefault();
     if (draggedIndex === null || draggedIndex === index) return;
 
     const newMedia = [...selectedMedia];
@@ -48,24 +46,20 @@ export const CaseMediaSelector = ({
     setDraggedIndex(null);
   };
 
-  const imageCount = selectedMedia.filter((m) => m.type === 'image').length;
-  const videoCount = selectedMedia.filter((m) => m.type === 'video').length;
+  const imageCount = selectedMedia.filter((item) => item.type === 'image').length;
+  const videoCount = selectedMedia.filter((item) => item.type === 'video').length;
 
   return (
     <>
-      {/* Media Selector Modal */}
       {isSelectorOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            onClick={() => setIsSelectorOpen(false)}
-          />
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsSelectorOpen(false)} />
           <div className="relative max-h-[90vh] w-full max-w-5xl overflow-hidden rounded-xl border border-white/10 bg-slate-900 shadow-2xl">
             <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
               <div>
-                <h2 className="text-xl font-semibold text-white">Выберите медиафайлы</h2>
+                <h2 className="text-xl font-semibold text-white">{caseMediaSelectorContent.modal.title}</h2>
                 <p className="text-sm text-slate-400">
-                  Выбрано: {selectedMedia.length} ({imageCount} фото, {videoCount} видео)
+                  {caseMediaSelectorContent.modal.selectedSummary(selectedMedia.length, imageCount, videoCount)}
                 </p>
               </div>
               <button
@@ -78,9 +72,9 @@ export const CaseMediaSelector = ({
             <div className="p-6">
               <MediaLibrary
                 selectable
-                selectedIds={selectedMedia.map((m) => m.id)}
+                selectedIds={selectedMedia.map((item) => item.id)}
                 onSelect={handleSelect}
-                showUploadButton={true}
+                showUploadButton
               />
             </div>
             <div className="flex items-center justify-end gap-3 border-t border-white/10 px-6 py-4">
@@ -88,29 +82,22 @@ export const CaseMediaSelector = ({
                 onClick={() => setIsSelectorOpen(false)}
                 className="rounded-lg bg-brand-500 px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-400"
               >
-                Готово ({selectedMedia.length})
+                {caseMediaSelectorContent.modal.done(selectedMedia.length)}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Selected Media Preview */}
       <div className="space-y-3">
         {selectedMedia.length > 0 ? (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-sm text-slate-400">
-                Выбрано: {selectedMedia.length} файлов
-                {imageCount > 0 && ` • ${imageCount} фото`}
-                {videoCount > 0 && ` • ${videoCount} видео`}
+                {caseMediaSelectorContent.preview.selectedFiles(selectedMedia.length, imageCount, videoCount)}
               </span>
-              <button
-                type="button"
-                onClick={() => setIsSelectorOpen(true)}
-                className="text-sm text-brand-400 hover:text-brand-300"
-              >
-                Изменить
+              <button type="button" onClick={() => setIsSelectorOpen(true)} className="text-sm text-brand-400 hover:text-brand-300">
+                {caseMediaSelectorContent.preview.edit}
               </button>
             </div>
 
@@ -120,19 +107,14 @@ export const CaseMediaSelector = ({
                   key={media.id}
                   draggable
                   onDragStart={() => handleDragStart(index)}
-                  onDragOver={(e) => handleDragOver(e, index)}
+                  onDragOver={(event) => handleDragOver(event, index)}
                   onDragEnd={handleDragEnd}
-                  className={`
-                    group relative overflow-hidden rounded-lg border border-white/10 bg-slate-800
-                    ${draggedIndex === index ? 'opacity-50' : ''}
-                  `}
+                  className={`group relative overflow-hidden rounded-lg border border-white/10 bg-slate-800 ${draggedIndex === index ? 'opacity-50' : ''}`}
                 >
-                  {/* Drag Handle */}
                   <div className="absolute left-1 top-1 z-10 cursor-grab rounded bg-black/50 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100 active:cursor-grabbing">
                     <GripVertical size={12} />
                   </div>
 
-                  {/* Remove Button */}
                   <button
                     type="button"
                     onClick={() => handleRemove(media.id)}
@@ -141,31 +123,20 @@ export const CaseMediaSelector = ({
                     <Trash2 size={12} />
                   </button>
 
-                  {/* Preview */}
                   <div className="aspect-square">
-                    <img
-                      src={media.public_url}
-                      alt={media.name}
-                      className="h-full w-full object-cover"
-                    />
+                    <img src={media.public_url} alt={media.name} className="h-full w-full object-cover" />
                   </div>
 
-                  {/* Type Badge */}
                   <div className="absolute bottom-1 left-1">
                     <span
-                      className={`
-                        rounded px-1.5 py-0.5 text-[10px] font-medium uppercase
-                        ${media.type === 'video'
-                          ? 'bg-purple-500/80 text-white'
-                          : 'bg-slate-700/80 text-slate-300'
-                        }
-                      `}
+                      className={`rounded px-1.5 py-0.5 text-[10px] font-medium uppercase ${
+                        media.type === 'video' ? 'bg-purple-500/80 text-white' : 'bg-slate-700/80 text-slate-300'
+                      }`}
                     >
-                      {media.type === 'video' ? 'Видео' : 'Фото'}
+                      {media.type === 'video' ? caseMediaSelectorContent.preview.video : caseMediaSelectorContent.preview.photo}
                     </span>
                   </div>
 
-                  {/* Order Number */}
                   <div className="absolute bottom-1 right-1">
                     <span className="flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-[10px] font-bold text-white">
                       {index + 1}
@@ -174,20 +145,17 @@ export const CaseMediaSelector = ({
                 </div>
               ))}
 
-              {/* Add More Button */}
               <button
                 type="button"
                 onClick={() => setIsSelectorOpen(true)}
                 className="flex aspect-square flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-white/20 bg-slate-800/50 text-slate-500 transition-colors hover:border-white/40 hover:text-slate-300"
               >
                 <Plus size={24} />
-                <span className="text-xs">Добавить</span>
+                <span className="text-xs">{caseMediaSelectorContent.preview.add}</span>
               </button>
             </div>
 
-            <p className="text-xs text-slate-500">
-              Перетащите файлы для изменения порядка отображения
-            </p>
+            <p className="text-xs text-slate-500">{caseMediaSelectorContent.preview.reorderHint}</p>
           </div>
         ) : (
           <button
@@ -199,8 +167,8 @@ export const CaseMediaSelector = ({
               <Image size={24} />
               <Film size={24} />
             </div>
-            <span className="text-sm">Выберите медиафайлы из библиотеки</span>
-            <span className="text-xs text-slate-600">Нажмите для выбора</span>
+            <span className="text-sm">{caseMediaSelectorContent.preview.emptyTitle}</span>
+            <span className="text-xs text-slate-600">{caseMediaSelectorContent.preview.emptyHint}</span>
           </button>
         )}
       </div>
