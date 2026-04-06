@@ -6,16 +6,17 @@ import { Phone } from 'lucide-react';
 import toast from 'react-hot-toast';
 import AdminLayout from '../../components/admin/AdminLayout';
 import { Button, ConfirmModal, EmptyState, Field, Input, Textarea } from '../../components/admin/ui';
-import { adminContactsPageContent } from '../../content/pages/adminContacts';
+import { useI18n } from '../../context/I18nContext';
+import { adminContactsPageContent as adminContactsPageContentStatic, getAdminContactsPageContent } from '../../content/pages/adminContacts';
 import { useContacts } from '../../hooks/useContacts';
 import { useFormDraftPersistence } from '../../hooks/useFormDraftPersistence';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 
 const schema = z.object({
-  phonesText: z.string().min(3, adminContactsPageContent.validation.phonesRequired),
-  emailsText: z.string().min(3, adminContactsPageContent.validation.emailsRequired),
-  address: z.string().min(5, adminContactsPageContent.validation.addressRequired),
-  workingHours: z.string().min(2, adminContactsPageContent.validation.workingHoursRequired),
+  phonesText: z.string().min(3, adminContactsPageContentStatic.validation.phonesRequired),
+  emailsText: z.string().min(3, adminContactsPageContentStatic.validation.emailsRequired),
+  address: z.string().min(5, adminContactsPageContentStatic.validation.addressRequired),
+  workingHours: z.string().min(2, adminContactsPageContentStatic.validation.workingHoursRequired),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -34,6 +35,8 @@ const splitLines = (value: string) =>
     .filter(Boolean);
 
 const AdminContactsPage = () => {
+  const { adminLocale } = useI18n();
+  const adminContactsPageContent = getAdminContactsPageContent(adminLocale);
   const { contacts, loading, update, resetToDefault } = useContacts();
   const [resetModalOpen, setResetModalOpen] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);

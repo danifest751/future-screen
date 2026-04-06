@@ -1,4 +1,6 @@
-export const adminRentalCategoryEditContent = {
+import type { Locale } from '../../i18n/types';
+
+const ru = {
   validation: {
     nameRequired: 'Название обязательно',
     shortNameRequired: 'Краткое название обязательно',
@@ -143,3 +145,11 @@ export const adminRentalCategoryEditContent = {
     save: 'Сохранить изменения',
   },
 } as const;
+
+const en: typeof ru = ru;
+
+const adminRentalCategoryEditContentByLocale: Record<Locale, typeof ru> = { ru, en };
+
+export const getAdminRentalCategoryEditContent = (locale: Locale) => adminRentalCategoryEditContentByLocale[locale];
+
+export const adminRentalCategoryEditContent = ru;

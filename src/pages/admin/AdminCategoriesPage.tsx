@@ -6,21 +6,22 @@ import { Tag } from 'lucide-react';
 import toast from 'react-hot-toast';
 import AdminLayout from '../../components/admin/AdminLayout';
 import { Button, ConfirmModal, EmptyState, Field, Input, Textarea } from '../../components/admin/ui';
-import { adminCategoriesPageContent } from '../../content/pages/adminCategories';
+import { useI18n } from '../../context/I18nContext';
+import { adminCategoriesPageContent as adminCategoriesPageContentStatic, getAdminCategoriesPageContent } from '../../content/pages/adminCategories';
 import type { Category } from '../../data/categories';
 import { useCategories } from '../../hooks/useCategories';
 import { useFormDraftPersistence } from '../../hooks/useFormDraftPersistence';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 
 const schema = z.object({
-  id: z.coerce.number().int().positive(adminCategoriesPageContent.validation.idPositive),
-  title: z.string().min(2, adminCategoriesPageContent.validation.titleRequired),
-  shortDescription: z.string().min(5, adminCategoriesPageContent.validation.shortDescriptionRequired),
-  bulletsText: z.string().min(2, adminCategoriesPageContent.validation.bulletsRequired),
+  id: z.coerce.number().int().positive(adminCategoriesPageContentStatic.validation.idPositive),
+  title: z.string().min(2, adminCategoriesPageContentStatic.validation.titleRequired),
+  shortDescription: z.string().min(5, adminCategoriesPageContentStatic.validation.shortDescriptionRequired),
+  bulletsText: z.string().min(2, adminCategoriesPageContentStatic.validation.bulletsRequired),
   pagePath: z
     .string()
-    .min(2, adminCategoriesPageContent.validation.pagePathRequired)
-    .regex(/^\//, adminCategoriesPageContent.validation.pagePathPrefix),
+    .min(2, adminCategoriesPageContentStatic.validation.pagePathRequired)
+    .regex(/^\//, adminCategoriesPageContentStatic.validation.pagePathPrefix),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -40,6 +41,8 @@ const splitList = (value: string) =>
     .filter(Boolean);
 
 const AdminCategoriesPage = () => {
+  const { adminLocale } = useI18n();
+  const adminCategoriesPageContent = getAdminCategoriesPageContent(adminLocale);
   const { categories, upsert, remove, resetToDefault } = useCategories();
   const [editingId, setEditingId] = useState<Category['id'] | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);

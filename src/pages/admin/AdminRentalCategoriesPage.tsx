@@ -4,9 +4,12 @@ import { useRentalCategories, toggleRentalCategoryBlurTitle } from '../../servic
 import { Link } from 'react-router-dom';
 import { Plus, Edit2, Eye, EyeOff, Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { adminRentalCategoriesContent } from '../../content/pages/adminRentalCategories';
+import { useI18n } from '../../context/I18nContext';
+import { getAdminRentalCategoriesContent } from '../../content/pages/adminRentalCategories';
 
 const AdminRentalCategoriesPage = () => {
+  const { adminLocale } = useI18n();
+  const adminRentalCategoriesContent = getAdminRentalCategoriesContent(adminLocale);
   const { items, loading, error, reload } = useRentalCategories();
   const [togglingId, setTogglingId] = useState<number | null>(null);
 

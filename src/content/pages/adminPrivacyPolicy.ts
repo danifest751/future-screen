@@ -1,4 +1,6 @@
-export const adminPrivacyPolicyContent = {
+import type { Locale } from '../../i18n/types';
+
+const ru = {
   layout: {
     title: 'Политика конфиденциальности',
     loadingSubtitle: 'Загрузка...',
@@ -40,3 +42,11 @@ export const adminPrivacyPolicyContent = {
     emptyDescription: 'Заполните форму слева и сохраните.',
   },
 } as const;
+
+const en: typeof ru = ru;
+
+const adminPrivacyPolicyContentByLocale: Record<Locale, typeof ru> = { ru, en };
+
+export const getAdminPrivacyPolicyContent = (locale: Locale) => adminPrivacyPolicyContentByLocale[locale];
+
+export const adminPrivacyPolicyContent = ru;

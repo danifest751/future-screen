@@ -1,4 +1,6 @@
-export const adminLeadsContent = {
+import type { Locale } from '../../i18n/types';
+
+const ru = {
   layout: {
     title: 'Лента заявок',
     subtitle: 'Все заявки с сайта и подробный журнал их доставки',
@@ -118,3 +120,11 @@ export const adminLeadsContent = {
     'Комментарий',
   ],
 } as const;
+
+const en: typeof ru = ru;
+
+const adminLeadsContentByLocale: Record<Locale, typeof ru> = { ru, en };
+
+export const getAdminLeadsContent = (locale: Locale) => adminLeadsContentByLocale[locale];
+
+export const adminLeadsContent = ru;

@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import AdminLayout from '../../components/admin/AdminLayout';
 import { useSiteSettingsContext } from '../../context/SiteSettingsContext';
-import { adminBackgroundsPageContent } from '../../content/pages/adminBackgrounds';
+import { useI18n } from '../../context/I18nContext';
+import { getAdminBackgroundsPageContent } from '../../content/pages/adminBackgrounds';
 import {
   backgroundOptions,
   backgroundSettingsControls,
@@ -21,6 +22,8 @@ const formatValue = (value: number, step: number) => {
 };
 
 const AdminBackgroundsPage = () => {
+  const { adminLocale } = useI18n();
+  const adminBackgroundsPageContent = getAdminBackgroundsPageContent(adminLocale);
   const { settings, loading, updateBackground, updateBackgroundSettings, updateStarBorder } = useSiteSettingsContext();
 
   const [selectedBg, setSelectedBg] = useState<BackgroundId>('theme');
@@ -203,7 +206,7 @@ const AdminBackgroundsPage = () => {
             <span className={`text-xs ${starBorder.enabled ? 'text-brand-400' : 'text-slate-500'}`}>
               {starBorder.enabled ? adminBackgroundsPageContent.starBorderOn : adminBackgroundsPageContent.starBorderOff}
             </span>
-            <span className="text-slate-400">{starBorderOpen ? '^' : '�'}</span>
+            <span className="text-slate-400">{starBorderOpen ? '^' : 'Ў'}</span>
           </div>
         </button>
 
@@ -279,3 +282,4 @@ const AdminBackgroundsPage = () => {
 };
 
 export default AdminBackgroundsPage;
+

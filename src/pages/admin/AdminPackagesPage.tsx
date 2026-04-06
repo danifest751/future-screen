@@ -6,17 +6,18 @@ import toast from 'react-hot-toast';
 import { Package as PackageIcon } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout';
 import { Button, ConfirmModal, EmptyState, Field, Input, Textarea } from '../../components/admin/ui';
-import { adminPackagesPageContent } from '../../content/pages/adminPackages';
+import { useI18n } from '../../context/I18nContext';
+import { adminPackagesPageContent as adminPackagesPageContentStatic, getAdminPackagesPageContent } from '../../content/pages/adminPackages';
 import type { Package } from '../../data/packages';
 import { useFormDraftPersistence } from '../../hooks/useFormDraftPersistence';
 import { usePackages } from '../../hooks/usePackages';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 
 const schema = z.object({
-  id: z.coerce.number().int().positive(adminPackagesPageContent.validation.idPositive),
-  name: z.string().min(2, adminPackagesPageContent.validation.nameRequired),
-  forFormatsText: z.string().min(1, adminPackagesPageContent.validation.forFormatsRequired),
-  includesText: z.string().min(1, adminPackagesPageContent.validation.includesRequired),
+  id: z.coerce.number().int().positive(adminPackagesPageContentStatic.validation.idPositive),
+  name: z.string().min(2, adminPackagesPageContentStatic.validation.nameRequired),
+  forFormatsText: z.string().min(1, adminPackagesPageContentStatic.validation.forFormatsRequired),
+  includesText: z.string().min(1, adminPackagesPageContentStatic.validation.includesRequired),
   optionsText: z.string().optional(),
   priceHint: z.string().optional(),
 });
@@ -39,6 +40,8 @@ const splitList = (value: string) =>
     .filter(Boolean);
 
 const AdminPackagesPage = () => {
+  const { adminLocale } = useI18n();
+  const adminPackagesPageContent = getAdminPackagesPageContent(adminLocale);
   const { packages, upsert, remove, resetToDefault } = usePackages();
   const [editingId, setEditingId] = useState<Package['id'] | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Package | null>(null);

@@ -1,4 +1,6 @@
-export const adminPackagesPageContent = {
+import type { Locale } from '../../i18n/types';
+
+const ru = {
   validation: {
     idPositive: 'ID должен быть числом',
     nameRequired: 'Название обязательно',
@@ -67,3 +69,11 @@ export const adminPackagesPageContent = {
     notFoundDescription: 'Попробуйте изменить поисковый запрос или очистить фильтр.',
   },
 } as const;
+
+const en: typeof ru = ru;
+
+const adminPackagesPageContentByLocale: Record<Locale, typeof ru> = { ru, en };
+
+export const getAdminPackagesPageContent = (locale: Locale) => adminPackagesPageContentByLocale[locale];
+
+export const adminPackagesPageContent = ru;

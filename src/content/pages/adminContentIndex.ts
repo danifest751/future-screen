@@ -1,4 +1,6 @@
-export const adminContentIndexContent = {
+import type { Locale } from '../../i18n/types';
+
+const ru = {
   layout: {
     title: 'Все настройки',
     subtitle: 'Центр управления',
@@ -48,3 +50,11 @@ export const adminContentIndexContent = {
     },
   ],
 } as const;
+
+const en: typeof ru = ru;
+
+const adminContentIndexContentByLocale: Record<Locale, typeof ru> = { ru, en };
+
+export const getAdminContentIndexContent = (locale: Locale) => adminContentIndexContentByLocale[locale];
+
+export const adminContentIndexContent = ru;

@@ -1,4 +1,6 @@
-export const adminContactsPageContent = {
+import type { Locale } from '../../i18n/types';
+
+const ru = {
   validation: {
     phonesRequired: 'Введите хотя бы один телефон',
     emailsRequired: 'Введите хотя бы один email',
@@ -49,3 +51,11 @@ export const adminContactsPageContent = {
     workingHoursLabel: 'Время работы',
   },
 } as const;
+
+const en: typeof ru = ru;
+
+const adminContactsPageContentByLocale: Record<Locale, typeof ru> = { ru, en };
+
+export const getAdminContactsPageContent = (locale: Locale) => adminContactsPageContentByLocale[locale];
+
+export const adminContactsPageContent = ru;

@@ -1,4 +1,6 @@
-export const adminRentalCategoriesContent = {
+import type { Locale } from '../../i18n/types';
+
+const ru = {
   layout: {
     title: 'Категории аренды',
     subtitle: 'Управление разделами оборудования в аренду',
@@ -31,3 +33,11 @@ export const adminRentalCategoriesContent = {
     edit: 'Редактировать',
   },
 } as const;
+
+const en: typeof ru = ru;
+
+const adminRentalCategoriesContentByLocale: Record<Locale, typeof ru> = { ru, en };
+
+export const getAdminRentalCategoriesContent = (locale: Locale) => adminRentalCategoriesContentByLocale[locale];
+
+export const adminRentalCategoriesContent = ru;

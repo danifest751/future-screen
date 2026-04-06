@@ -1,4 +1,6 @@
-export const adminBackgroundsPageContent = {
+import type { Locale } from '../../i18n/types';
+
+const ru = {
   title: 'Фоны',
   subtitle: 'Глобальный фон сайта',
   loadingSubtitle: 'Управление глобальным фоном сайта',
@@ -23,3 +25,11 @@ export const adminBackgroundsPageContent = {
   starBorderThickness: 'Толщина',
   starBorderGlow: 'Свечение',
 } as const;
+
+const en: typeof ru = ru;
+
+const adminBackgroundsPageContentByLocale: Record<Locale, typeof ru> = { ru, en };
+
+export const getAdminBackgroundsPageContent = (locale: Locale) => adminBackgroundsPageContentByLocale[locale];
+
+export const adminBackgroundsPageContent = ru;

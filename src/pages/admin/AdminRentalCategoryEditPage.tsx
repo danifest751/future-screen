@@ -8,15 +8,16 @@ import AdminLayout from '../../components/admin/AdminLayout';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 import { upsertRentalCategory, loadRentalCategories, type RentalCategory } from '../../services/rentalCategories';
 import { ChevronDown, ChevronUp, ArrowLeft } from 'lucide-react';
-import { adminRentalCategoryEditContent } from '../../content/pages/adminRentalCategoryEdit';
+import { useI18n } from '../../context/I18nContext';
+import { adminRentalCategoryEditContent as adminRentalCategoryEditContentStatic, getAdminRentalCategoryEditContent } from '../../content/pages/adminRentalCategoryEdit';
 
 const schema = z.object({
-  name: z.string().min(2, adminRentalCategoryEditContent.validation.nameRequired),
-  shortName: z.string().min(2, adminRentalCategoryEditContent.validation.shortNameRequired),
+  name: z.string().min(2, adminRentalCategoryEditContentStatic.validation.nameRequired),
+  shortName: z.string().min(2, adminRentalCategoryEditContentStatic.validation.shortNameRequired),
   slug: z
     .string()
-    .min(2, adminRentalCategoryEditContent.validation.slugRequired)
-    .regex(/^[a-z0-9-]+$/, adminRentalCategoryEditContent.validation.slugFormat),
+    .min(2, adminRentalCategoryEditContentStatic.validation.slugRequired)
+    .regex(/^[a-z0-9-]+$/, adminRentalCategoryEditContentStatic.validation.slugFormat),
   isPublished: z.boolean().default(false),
   sortOrder: z.coerce.number().default(0),
   seoTitle: z.string().default(''),
@@ -132,6 +133,8 @@ const inputClass =
 const textareaClass = `${inputClass} resize-y`;
 
 const AdminRentalCategoryEditPage = () => {
+  const { adminLocale } = useI18n();
+  const adminRentalCategoryEditContent = getAdminRentalCategoryEditContent(adminLocale);
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const isNew = id === 'new' || id === undefined;

@@ -1,4 +1,6 @@
-export const adminDashboardContent = {
+import type { Locale } from '../../i18n/types';
+
+const ru = {
   layout: {
     title: 'Дашборд',
     subtitle: 'Обзор активности и статистика',
@@ -30,3 +32,11 @@ export const adminDashboardContent = {
     separator: '·',
   },
 } as const;
+
+const en: typeof ru = ru;
+
+const adminDashboardContentByLocale: Record<Locale, typeof ru> = { ru, en };
+
+export const getAdminDashboardContent = (locale: Locale) => adminDashboardContentByLocale[locale];
+
+export const adminDashboardContent = ru;

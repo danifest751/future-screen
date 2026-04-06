@@ -11,11 +11,12 @@ import { useFormDraftPersistence } from '../../hooks/useFormDraftPersistence';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 import Markdown from 'markdown-to-jsx';
 import { sanitizeMarkdown } from '../../lib/sanitize';
-import { adminPrivacyPolicyContent } from '../../content/pages/adminPrivacyPolicy';
+import { useI18n } from '../../context/I18nContext';
+import { adminPrivacyPolicyContent as adminPrivacyPolicyContentStatic, getAdminPrivacyPolicyContent } from '../../content/pages/adminPrivacyPolicy';
 
 const schema = z.object({
-  title: z.string().min(1, adminPrivacyPolicyContent.validation.titleRequired),
-  content: z.string().min(1, adminPrivacyPolicyContent.validation.contentRequired),
+  title: z.string().min(1, adminPrivacyPolicyContentStatic.validation.titleRequired),
+  content: z.string().min(1, adminPrivacyPolicyContentStatic.validation.contentRequired),
   metaTitle: z.string().optional(),
   metaDescription: z.string().optional(),
   fontSize: z.string().optional(),
@@ -34,6 +35,9 @@ const defaultValues: FormValues = {
 const fontSizes = ['0.875rem', '1rem', '1.125rem', '1.5rem'];
 
 const AdminPrivacyPolicyPage = () => {
+  const { adminLocale } = useI18n();
+  const adminPrivacyPolicyContent = getAdminPrivacyPolicyContent(adminLocale);
+  const localeTag = adminLocale === 'ru' ? 'ru-RU' : 'en-US';
   const { content, loading, saving, save } = usePrivacyPolicy();
   const [lastSaved, setLastSaved] = useState<string | null>(null);
 
@@ -73,7 +77,7 @@ const AdminPrivacyPolicyPage = () => {
     });
 
     if (content.updatedAt) {
-      setLastSaved(new Date(content.updatedAt).toLocaleString('ru-RU'));
+      setLastSaved(new Date(content.updatedAt).toLocaleString(localeTag));
     }
   }, [content, hasFormDraft, isHydrated, reset]);
 
@@ -89,7 +93,7 @@ const AdminPrivacyPolicyPage = () => {
     if (ok) {
       toast.success(adminPrivacyPolicyContent.toasts.saveSuccess);
       clearFormDraft();
-      setLastSaved(new Date().toLocaleString('ru-RU'));
+      setLastSaved(new Date().toLocaleString(localeTag));
     } else {
       toast.error(adminPrivacyPolicyContent.toasts.saveError);
     }

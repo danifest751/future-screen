@@ -1,4 +1,6 @@
-export const adminCategoriesPageContent = {
+import type { Locale } from '../../i18n/types';
+
+const ru = {
   validation: {
     idPositive: 'ID должен быть числом',
     titleRequired: 'Название обязательно',
@@ -65,3 +67,11 @@ export const adminCategoriesPageContent = {
     notFoundDescription: 'Попробуйте изменить поисковый запрос или очистить фильтр.',
   },
 } as const;
+
+const en: typeof ru = ru;
+
+const adminCategoriesPageContentByLocale: Record<Locale, typeof ru> = { ru, en };
+
+export const getAdminCategoriesPageContent = (locale: Locale) => adminCategoriesPageContentByLocale[locale];
+
+export const adminCategoriesPageContent = ru;

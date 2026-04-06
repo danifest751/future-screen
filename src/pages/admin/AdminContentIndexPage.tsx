@@ -2,7 +2,8 @@ import { Link } from 'react-router-dom';
 import AdminLayout from '../../components/admin/AdminLayout';
 import { Package, Tag, Phone, FolderOpen, Inbox, Palette, FileText } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { adminContentIndexContent } from '../../content/pages/adminContentIndex';
+import { useI18n } from '../../context/I18nContext';
+import { getAdminContentIndexContent } from '../../content/pages/adminContentIndex';
 
 const iconMap: Record<string, LucideIcon> = {
   package: Package,
@@ -15,6 +16,9 @@ const iconMap: Record<string, LucideIcon> = {
 };
 
 const AdminContentIndexPage = () => {
+  const { adminLocale } = useI18n();
+  const adminContentIndexContent = getAdminContentIndexContent(adminLocale);
+
   return (
     <AdminLayout
       title={adminContentIndexContent.layout.title}

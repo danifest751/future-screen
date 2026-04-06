@@ -2,10 +2,14 @@
 import { BarChart3, CalendarDays, Inbox, PhoneCall } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout';
-import { adminDashboardContent } from '../../content/pages/adminDashboard';
+import { useI18n } from '../../context/I18nContext';
+import { getAdminDashboardContent } from '../../content/pages/adminDashboard';
 import { useLeads } from '../../hooks/useLeads';
 
 const AdminDashboard = () => {
+  const { adminLocale } = useI18n();
+  const adminDashboardContent = getAdminDashboardContent(adminLocale);
+  const localeTag = adminLocale === 'ru' ? 'ru-RU' : 'en-US';
   const { leads: logs, loading, error } = useLeads();
 
   const stats = useMemo(() => {
@@ -173,13 +177,13 @@ const AdminDashboard = () => {
                 </div>
                 <div className="text-right">
                   <div className="text-sm text-slate-400">
-                    {new Date(log.timestamp).toLocaleDateString('ru-RU', {
+                    {new Date(log.timestamp).toLocaleDateString(localeTag, {
                       day: 'numeric',
                       month: 'short',
                     })}
                   </div>
                   <div className="text-xs text-slate-500">
-                    {new Date(log.timestamp).toLocaleTimeString('ru-RU', {
+                    {new Date(log.timestamp).toLocaleTimeString(localeTag, {
                       hour: '2-digit',
                       minute: '2-digit',
                     })}

@@ -24,20 +24,21 @@ import { useCases } from '../../hooks/useCases';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 import { useCaseMediaQuery, useLinkMediaToCaseMutation, useUnlinkMediaFromCaseMutation } from '../../queries/mediaLibrary';
 import { supabase } from '../../lib/supabase';
-import { adminCasesRedesignedContent } from '../../content/pages/adminCasesRedesigned';
+import { useI18n } from '../../context/I18nContext';
+import { adminCasesRedesignedContent as adminCasesRedesignedContentStatic, getAdminCasesRedesignedContent } from '../../content/pages/adminCasesRedesigned';
 import type { CaseItem } from '../../data/cases';
 import type { MediaItem } from '../../types/media';
 
 const caseSchema = z.object({
   slug: z
     .string()
-    .min(2, adminCasesRedesignedContent.validation.slugRequired)
-    .regex(/^[a-z0-9-]+$/, adminCasesRedesignedContent.validation.slugPattern),
-  title: z.string().min(2, adminCasesRedesignedContent.validation.titleRequired),
+    .min(2, adminCasesRedesignedContentStatic.validation.slugRequired)
+    .regex(/^[a-z0-9-]+$/, adminCasesRedesignedContentStatic.validation.slugPattern),
+  title: z.string().min(2, adminCasesRedesignedContentStatic.validation.titleRequired),
   city: z.string().default(''),
   date: z.string().default(''),
   format: z.string().default(''),
-  summary: z.string().min(3, adminCasesRedesignedContent.validation.summaryRequired),
+  summary: z.string().min(3, adminCasesRedesignedContentStatic.validation.summaryRequired),
   metrics: z.string().default(''),
   servicesText: z.string().default(''),
 });
@@ -55,7 +56,7 @@ const defaultValues: CaseFormValues = {
   servicesText: '',
 };
 
-const FORMAT_OPTIONS = adminCasesRedesignedContent.formatOptions;
+const FORMAT_OPTIONS = adminCasesRedesignedContentStatic.formatOptions;
 
 const normalizeSlug = (value: string) =>
   value
@@ -102,6 +103,8 @@ const getCaseIdBySlug = async (slug: string): Promise<number | null> => {
 };
 
 const AdminCasesRedesignedPage = () => {
+  const { adminLocale } = useI18n();
+  const adminCasesRedesignedContent = getAdminCasesRedesignedContent(adminLocale);
   const { cases, addCase, updateCase, deleteCase, resetToDefault } = useCases();
   const [activeTab, setActiveTab] = useState<'cases' | 'media'>('cases');
   const [caseEditing, setCaseEditing] = useState<string | null>(null);

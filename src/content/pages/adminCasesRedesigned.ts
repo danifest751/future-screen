@@ -1,4 +1,6 @@
-export const adminCasesRedesignedContent = {
+import type { Locale } from '../../i18n/types';
+
+const ru = {
   validation: {
     slugRequired: 'Slug обязателен',
     slugPattern: 'Slug: только латиница, цифры и дефис',
@@ -86,3 +88,11 @@ export const adminCasesRedesignedContent = {
     emptyDefaultDescription: 'Добавьте первый кейс через форму слева',
   },
 } as const;
+
+const en: typeof ru = ru;
+
+const adminCasesRedesignedContentByLocale: Record<Locale, typeof ru> = { ru, en };
+
+export const getAdminCasesRedesignedContent = (locale: Locale) => adminCasesRedesignedContentByLocale[locale];
+
+export const adminCasesRedesignedContent = ru;

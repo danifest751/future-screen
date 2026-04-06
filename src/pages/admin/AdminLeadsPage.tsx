@@ -4,7 +4,11 @@ import AdminLayout from '../../components/admin/AdminLayout';
 import { useLeads } from '../../hooks/useLeads';
 import type { LeadDeliveryLogEntry, LeadLog } from '../../types/leads';
 import { Button, ConfirmModal, EmptyState, Input, LoadingState } from '../../components/admin/ui';
-import { adminLeadsContent } from '../../content/pages/adminLeads';
+import { useI18n } from '../../context/I18nContext';
+import { adminLeadsContent as adminLeadsContentStatic, getAdminLeadsContent } from '../../content/pages/adminLeads';
+
+let adminLeadsContent = adminLeadsContentStatic;
+let localeTag = 'ru-RU';
 
 const formatStatusLabel = (status?: string) => {
   switch (status) {
@@ -52,14 +56,14 @@ const channelLabels: Record<LeadDeliveryLogEntry['channel'], string> = {
 };
 
 const formatDate = (value: string) =>
-  new Date(value).toLocaleDateString('ru-RU', {
+  new Date(value).toLocaleDateString(localeTag, {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
   });
 
 const formatDateTime = (value: string) =>
-  new Date(value).toLocaleString('ru-RU', {
+  new Date(value).toLocaleString(localeTag, {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
@@ -282,6 +286,9 @@ const LeadCard = ({
 };
 
 const AdminLeadsPage = () => {
+  const { adminLocale } = useI18n();
+  adminLeadsContent = getAdminLeadsContent(adminLocale);
+  localeTag = adminLocale === 'ru' ? 'ru-RU' : 'en-US';
   const { leads, loading, error: leadsError, clearLeads } = useLeads();
   const [filter, setFilter] = useState('');
   const [debouncedFilter, setDebouncedFilter] = useState(filter);
@@ -336,8 +343,8 @@ const AdminLeadsPage = () => {
       const rows = leads.map((lead) => [
         lead.id,
         lead.requestId ?? '',
-        new Date(lead.timestamp).toLocaleDateString('ru-RU'),
-        new Date(lead.timestamp).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+        new Date(lead.timestamp).toLocaleDateString(localeTag),
+        new Date(lead.timestamp).toLocaleTimeString(localeTag, { hour: '2-digit', minute: '2-digit' }),
         lead.source,
         lead.status ?? '',
         lead.name,
