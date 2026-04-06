@@ -1,0 +1,51 @@
+export const adminContactsPageContent = {
+  validation: {
+    phonesRequired: 'Введите хотя бы один телефон',
+    emailsRequired: 'Введите хотя бы один email',
+    addressRequired: 'Адрес обязателен',
+    workingHoursRequired: 'Укажите рабочее время',
+  },
+  toast: {
+    saveSuccess: 'Контакты сохранены',
+    saveError: 'Ошибка сохранения контактов',
+    resetSuccess: 'Контакты сброшены к дефолту',
+  },
+  layout: {
+    title: 'Контакты',
+    loadingSubtitle: 'Загрузка...',
+    loadErrorSubtitle: 'Не удалось загрузить',
+    subtitle: 'Телефоны, email, адрес и рабочие часы',
+  },
+  states: {
+    notLoadedTitle: 'Контакты не загружены',
+    notLoadedDescription: 'Попробуйте обновить страницу или обратитесь к администратору',
+  },
+  resetModal: {
+    title: 'Сбросить контакты к дефолту?',
+    description: 'Текущие контакты будут перезаписаны демо-значениями.',
+    confirmText: 'Сбросить',
+    cancelText: 'Отмена',
+  },
+  form: {
+    title: 'Редактирование контактов',
+    restoredDraft: 'Восстановлен черновик',
+    unsavedChanges: 'Есть несохраненные изменения',
+    resetToDefault: 'Сброс к дефолту',
+    phonesLabel: 'Телефоны',
+    phonesHint: 'Каждый телефон с новой строки',
+    emailsLabel: 'Email',
+    emailsHint: 'Каждый email с новой строки',
+    addressLabel: 'Адрес',
+    workingHoursLabel: 'Время работы',
+    submit: 'Сохранить контакты',
+  },
+  current: {
+    title: 'Текущие данные',
+    emptyTitle: 'Контакты пока не заполнены',
+    emptyDescription: 'Заполните форму слева и сохраните изменения.',
+    phonesLabel: 'Телефоны',
+    emailsLabel: 'Email',
+    addressLabel: 'Адрес',
+    workingHoursLabel: 'Время работы',
+  },
+} as const;

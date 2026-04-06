@@ -1,39 +1,36 @@
-import { useMemo } from 'react';
-import AdminLayout from '../../components/admin/AdminLayout';
-import { useLeads } from '../../hooks/useLeads';
-import { Inbox, CalendarDays, BarChart3, PhoneCall } from 'lucide-react';
+﻿import { useMemo } from 'react';
+import { BarChart3, CalendarDays, Inbox, PhoneCall } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import AdminLayout from '../../components/admin/AdminLayout';
+import { adminDashboardContent } from '../../content/pages/adminDashboard';
+import { useLeads } from '../../hooks/useLeads';
 
 const AdminDashboard = () => {
   const { leads: logs, loading, error } = useLeads();
 
-  // Статистика
   const stats = useMemo(() => {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
     const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-    const todayLogs = logs.filter((l) => new Date(l.timestamp) >= today);
-    const weekLogs = logs.filter((l) => new Date(l.timestamp) >= weekAgo);
-    const monthLogs = logs.filter((l) => new Date(l.timestamp) >= monthAgo);
+    const todayLogs = logs.filter((item) => new Date(item.timestamp) >= today);
+    const weekLogs = logs.filter((item) => new Date(item.timestamp) >= weekAgo);
+    const monthLogs = logs.filter((item) => new Date(item.timestamp) >= monthAgo);
 
-    // Статистика по источникам
     const bySource = logs.reduce((acc, log) => {
       acc[log.source] = (acc[log.source] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
 
-    // Статистика по городам
     const byCity = logs
-      .filter((l) => l.city)
+      .filter((item) => item.city)
       .reduce((acc, log) => {
         acc[log.city!] = (acc[log.city!] || 0) + 1;
         return acc;
       }, {} as Record<string, number>);
 
-    // С контактами (email или telegram)
-    const withContacts = logs.filter((l) => l.email || l.telegram).length;
+    const withContacts = logs.filter((item) => item.email || item.telegram).length;
 
     return {
       total: logs.length,
@@ -52,53 +49,61 @@ const AdminDashboard = () => {
 
   const sourceEntries = Object.entries(stats.bySource) as Array<[string, number]>;
 
-  // Последние заявки
   const recentLogs = useMemo(() => {
     return [...logs].sort((a, b) => b.timestamp.localeCompare(a.timestamp)).slice(0, 10);
   }, [logs]);
 
   return (
-    <AdminLayout title="Дашборд" subtitle="Обзор активности и статистика">
+    <AdminLayout
+      title={adminDashboardContent.layout.title}
+      subtitle={adminDashboardContent.layout.subtitle}
+    >
       <div className="space-y-6">
-        {loading && <div className="text-sm text-slate-400">Загрузка аналитики...</div>}
-        {error && <div className="text-sm text-red-400">Ошибка загрузки заявок: {error}</div>}
+        {loading && <div className="text-sm text-slate-400">{adminDashboardContent.state.loading}</div>}
+        {error && (
+          <div className="text-sm text-red-400">
+            {adminDashboardContent.state.errorPrefix} {error}
+          </div>
+        )}
 
-        {/* Карточки статистики */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
-            title="Всего заявок"
+            title={adminDashboardContent.stats.total}
             value={stats.total}
             Icon={Inbox}
-            trend={stats.today > 0 ? `+${stats.today} сегодня` : 'Нет новых'}
+            trend={
+              stats.today > 0
+                ? `+${stats.today} ${adminDashboardContent.stats.todaySuffix}`
+                : adminDashboardContent.stats.noNew
+            }
             trendColor={stats.today > 0 ? 'text-emerald-400' : 'text-slate-400'}
           />
           <StatCard
-            title="За неделю"
+            title={adminDashboardContent.stats.week}
             value={stats.week}
             Icon={CalendarDays}
-            trend={`${stats.today} за сегодня`}
+            trend={`${stats.today} ${adminDashboardContent.stats.todaySuffix}`}
             trendColor="text-blue-400"
           />
           <StatCard
-            title="За месяц"
+            title={adminDashboardContent.stats.month}
             value={stats.month}
             Icon={BarChart3}
-            trend={`${stats.withContacts} с контактами`}
+            trend={`${stats.withContacts} ${adminDashboardContent.stats.withContactsSuffix}`}
             trendColor="text-purple-400"
           />
           <StatCard
-            title="Конверсия"
+            title={adminDashboardContent.stats.conversion}
             value={`${stats.contactRate}%`}
             Icon={PhoneCall}
-            trend={`${stats.withContacts} из ${stats.total}`}
+            trend={adminDashboardContent.stats.fromTotal(stats.withContacts, stats.total)}
             trendColor={stats.contactRate >= 50 ? 'text-emerald-400' : 'text-amber-400'}
           />
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
-          {/* Источники */}
           <div className="rounded-xl border border-white/10 bg-slate-800 p-6">
-            <h3 className="mb-4 text-lg font-semibold text-white">Источники заявок</h3>
+            <h3 className="mb-4 text-lg font-semibold text-white">{adminDashboardContent.sections.sources}</h3>
             <div className="space-y-3">
               {sourceEntries
                 .sort((a, b) => b[1] - a[1])
@@ -112,21 +117,18 @@ const AdminDashboard = () => {
                           style={{ width: `${stats.total > 0 ? (count / stats.total) * 100 : 0}%` }}
                         />
                       </div>
-                      <span className="w-12 text-right text-sm font-medium text-white">
-                        {count}
-                      </span>
+                      <span className="w-12 text-right text-sm font-medium text-white">{count}</span>
                     </div>
                   </div>
                 ))}
               {Object.keys(stats.bySource).length === 0 && (
-                <div className="text-center text-slate-400">Пока нет данных</div>
+                <div className="text-center text-slate-400">{adminDashboardContent.sections.noData}</div>
               )}
             </div>
           </div>
 
-          {/* Города */}
           <div className="rounded-xl border border-white/10 bg-slate-800 p-6">
-            <h3 className="mb-4 text-lg font-semibold text-white">Города</h3>
+            <h3 className="mb-4 text-lg font-semibold text-white">{adminDashboardContent.sections.cities}</h3>
             <div className="space-y-3">
               {stats.topCities.map(([city, count], index) => (
                 <div key={city} className="flex items-center justify-between">
@@ -140,21 +142,17 @@ const AdminDashboard = () => {
                 </div>
               ))}
               {stats.topCities.length === 0 && (
-                <div className="text-center text-slate-400">Пока нет данных</div>
+                <div className="text-center text-slate-400">{adminDashboardContent.sections.noData}</div>
               )}
             </div>
           </div>
         </div>
 
-        {/* Последние заявки */}
         <div className="rounded-xl border border-white/10 bg-slate-800">
           <div className="flex items-center justify-between border-b border-white/10 p-6">
-            <h3 className="text-lg font-semibold text-white">Последние заявки</h3>
-            <a
-              href="/admin/leads"
-              className="text-sm font-medium text-brand-400 hover:text-brand-300"
-            >
-              Все заявки →
+            <h3 className="text-lg font-semibold text-white">{adminDashboardContent.sections.recentLeads}</h3>
+            <a href="/admin/leads" className="text-sm font-medium text-brand-400 hover:text-brand-300">
+              {adminDashboardContent.sections.allLeads}
             </a>
           </div>
           <div className="divide-y divide-white/10">
@@ -169,8 +167,8 @@ const AdminDashboard = () => {
                   </div>
                   <div className="mt-1 text-sm text-slate-400">
                     {log.phone}
-                    {log.email && <span className="ml-2">· {log.email}</span>}
-                    {log.city && <span className="ml-2">· {log.city}</span>}
+                    {log.email && <span className="ml-2">{adminDashboardContent.lead.separator} {log.email}</span>}
+                    {log.city && <span className="ml-2">{adminDashboardContent.lead.separator} {log.city}</span>}
                   </div>
                 </div>
                 <div className="text-right">
@@ -190,9 +188,7 @@ const AdminDashboard = () => {
               </div>
             ))}
             {recentLogs.length === 0 && (
-              <div className="p-8 text-center text-slate-400">
-                Заявок пока нет. Заполните форму на сайте, чтобы увидеть первую запись.
-              </div>
+              <div className="p-8 text-center text-slate-400">{adminDashboardContent.sections.emptyRecent}</div>
             )}
           </div>
         </div>
@@ -222,7 +218,10 @@ const StatCard = ({
       </div>
       <div
         className="flex h-12 w-12 items-center justify-center rounded-xl"
-        style={{ background: 'linear-gradient(135deg, rgba(102,126,234,0.2) 0%, rgba(118,75,162,0.15) 100%)', border: '1px solid rgba(102,126,234,0.2)' }}
+        style={{
+          background: 'linear-gradient(135deg, rgba(102,126,234,0.2) 0%, rgba(118,75,162,0.15) 100%)',
+          border: '1px solid rgba(102,126,234,0.2)',
+        }}
       >
         <Icon size={22} className="text-brand-400" />
       </div>

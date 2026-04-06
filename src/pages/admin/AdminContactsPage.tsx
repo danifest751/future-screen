@@ -1,20 +1,21 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Phone } from 'lucide-react';
 import toast from 'react-hot-toast';
 import AdminLayout from '../../components/admin/AdminLayout';
 import { Button, ConfirmModal, EmptyState, Field, Input, Textarea } from '../../components/admin/ui';
-import { Phone } from 'lucide-react';
+import { adminContactsPageContent } from '../../content/pages/adminContacts';
 import { useContacts } from '../../hooks/useContacts';
 import { useFormDraftPersistence } from '../../hooks/useFormDraftPersistence';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 
 const schema = z.object({
-  phonesText: z.string().min(3, 'Введите хотя бы один телефон'),
-  emailsText: z.string().min(3, 'Введите хотя бы один email'),
-  address: z.string().min(5, 'Адрес обязателен'),
-  workingHours: z.string().min(2, 'Укажите рабочее время'),
+  phonesText: z.string().min(3, adminContactsPageContent.validation.phonesRequired),
+  emailsText: z.string().min(3, adminContactsPageContent.validation.emailsRequired),
+  address: z.string().min(5, adminContactsPageContent.validation.addressRequired),
+  workingHours: z.string().min(2, adminContactsPageContent.validation.workingHoursRequired),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -29,7 +30,7 @@ const defaultValues: FormValues = {
 const splitLines = (value: string) =>
   value
     .split(/\n/)
-    .map((s) => s.trim())
+    .map((item) => item.trim())
     .filter(Boolean);
 
 const AdminContactsPage = () => {
@@ -48,21 +49,19 @@ const AdminContactsPage = () => {
     defaultValues,
   });
 
-  const { clearDraft: clearContactsDraft, hasDraft: hasContactsDraft, isHydrated } = useFormDraftPersistence<FormValues>({
-    enabled: true,
-    storageKey: 'admin-contacts-draft',
-    reset,
-    watch,
-  });
+  const { clearDraft: clearContactsDraft, hasDraft: hasContactsDraft, isHydrated } =
+    useFormDraftPersistence<FormValues>({
+      enabled: true,
+      storageKey: 'admin-contacts-draft',
+      reset,
+      watch,
+    });
 
   useUnsavedChangesGuard(isDirty);
 
-  // Загружаем данные из контактов только если нет черновика и форма уже гидрирована
   useEffect(() => {
     if (!isHydrated || loading || !contacts) return;
-    // Если есть черновик, не перезаписываем форму данными из контактов
     if (hasContactsDraft) return;
-    // Если уже инициализировано, не перезаписываем
     if (isInitialized) return;
 
     reset({
@@ -82,21 +81,26 @@ const AdminContactsPage = () => {
       workingHours: values.workingHours.trim(),
     });
 
-    if (ok) toast.success('Контакты сохранены');
-    else toast.error('Ошибка сохранения контактов');
-
-    if (ok) clearContactsDraft();
+    if (ok) {
+      toast.success(adminContactsPageContent.toast.saveSuccess);
+      clearContactsDraft();
+    } else {
+      toast.error(adminContactsPageContent.toast.saveError);
+    }
   };
 
   const handleResetDefaults = async () => {
     await resetToDefault();
-    toast.success('Контакты сброшены к дефолту');
+    toast.success(adminContactsPageContent.toast.resetSuccess);
     clearContactsDraft();
   };
 
   if (loading) {
     return (
-      <AdminLayout title="Контакты" subtitle="Загрузка...">
+      <AdminLayout
+        title={adminContactsPageContent.layout.title}
+        subtitle={adminContactsPageContent.layout.loadingSubtitle}
+      >
         <div className="flex h-64 items-center justify-center">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />
         </div>
@@ -106,24 +110,30 @@ const AdminContactsPage = () => {
 
   if (!contacts) {
     return (
-      <AdminLayout title="Контакты" subtitle="Не удалось загрузить">
+      <AdminLayout
+        title={adminContactsPageContent.layout.title}
+        subtitle={adminContactsPageContent.layout.loadErrorSubtitle}
+      >
         <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-6 text-center text-red-300">
-          <p className="text-lg font-medium">Контакты не загружены</p>
-          <p className="mt-2 text-sm">Попробуйте обновить страницу или обратитесь к администратору</p>
+          <p className="text-lg font-medium">{adminContactsPageContent.states.notLoadedTitle}</p>
+          <p className="mt-2 text-sm">{adminContactsPageContent.states.notLoadedDescription}</p>
         </div>
       </AdminLayout>
     );
   }
 
   return (
-    <AdminLayout title="Контакты" subtitle="Телефоны, email, адрес и рабочие часы">
+    <AdminLayout
+      title={adminContactsPageContent.layout.title}
+      subtitle={adminContactsPageContent.layout.subtitle}
+    >
       <ConfirmModal
         open={resetModalOpen}
         danger
-        title="Сбросить контакты к дефолту?"
-        description="Текущие контакты будут перезаписаны демо-значениями."
-        confirmText="Сбросить"
-        cancelText="Отмена"
+        title={adminContactsPageContent.resetModal.title}
+        description={adminContactsPageContent.resetModal.description}
+        confirmText={adminContactsPageContent.resetModal.confirmText}
+        cancelText={adminContactsPageContent.resetModal.cancelText}
         confirmDisabled={isSubmitting}
         onCancel={() => setResetModalOpen(false)}
         onConfirm={handleResetDefaults}
@@ -132,15 +142,15 @@ const AdminContactsPage = () => {
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="rounded-xl border border-white/10 bg-slate-800 p-6">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-white">Редактирование контактов</h2>
+            <h2 className="text-xl font-semibold text-white">{adminContactsPageContent.form.title}</h2>
             {isHydrated && hasContactsDraft && (
               <span className="rounded-full border border-brand-500/40 bg-brand-500/10 px-2 py-0.5 text-xs text-brand-100">
-                Восстановлен черновик
+                {adminContactsPageContent.form.restoredDraft}
               </span>
             )}
             {isDirty && (
               <span className="rounded-full border border-amber-400/40 bg-amber-500/10 px-2 py-0.5 text-xs text-amber-200">
-                Есть несохраненные изменения
+                {adminContactsPageContent.form.unsavedChanges}
               </span>
             )}
             <button
@@ -149,67 +159,71 @@ const AdminContactsPage = () => {
               disabled={isSubmitting}
               className="text-sm text-slate-300 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Сброс к дефолту
+              {adminContactsPageContent.form.resetToDefault}
             </button>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
             <Field
-              label="Телефоны"
+              label={adminContactsPageContent.form.phonesLabel}
               required
-              hint="Каждый телефон с новой строки"
+              hint={adminContactsPageContent.form.phonesHint}
               error={errors.phonesText?.message}
             >
               <Textarea rows={4} {...register('phonesText')} />
             </Field>
 
             <Field
-              label="Email"
+              label={adminContactsPageContent.form.emailsLabel}
               required
-              hint="Каждый email с новой строки"
+              hint={adminContactsPageContent.form.emailsHint}
               error={errors.emailsText?.message}
             >
               <Textarea rows={3} {...register('emailsText')} />
             </Field>
 
-            <Field label="Адрес" required error={errors.address?.message}>
+            <Field label={adminContactsPageContent.form.addressLabel} required error={errors.address?.message}>
               <Input {...register('address')} />
             </Field>
 
-            <Field label="Время работы" required error={errors.workingHours?.message}>
+            <Field
+              label={adminContactsPageContent.form.workingHoursLabel}
+              required
+              error={errors.workingHours?.message}
+            >
               <Input {...register('workingHours')} />
             </Field>
 
             <Button type="submit" loading={isSubmitting} className="w-full">
-              Сохранить контакты
+              {adminContactsPageContent.form.submit}
             </Button>
           </form>
         </div>
 
         <div className="rounded-xl border border-white/10 bg-slate-800 p-6 text-sm text-slate-200">
-          <h2 className="mb-4 text-xl font-semibold text-white">Текущие данные</h2>
+          <h2 className="mb-4 text-xl font-semibold text-white">{adminContactsPageContent.current.title}</h2>
           {!contacts.phones.length && !contacts.emails.length ? (
             <EmptyState
-                icon={<Phone size={32} className="text-brand-400" />}
-              title="Контакты пока не заполнены"
-              description="Заполните форму слева и сохраните изменения."
+              icon={<Phone size={32} className="text-brand-400" />}
+              title={adminContactsPageContent.current.emptyTitle}
+              description={adminContactsPageContent.current.emptyDescription}
             />
           ) : (
             <div className="space-y-3">
               <div>
-                <div className="text-xs text-slate-400">Телефоны</div>
+                <div className="text-xs text-slate-400">{adminContactsPageContent.current.phonesLabel}</div>
                 <div>{contacts.phones.join(', ')}</div>
               </div>
               <div>
-                <div className="text-xs text-slate-400">Email</div>
+                <div className="text-xs text-slate-400">{adminContactsPageContent.current.emailsLabel}</div>
                 <div>{contacts.emails.join(', ')}</div>
               </div>
               <div>
-                <div className="text-xs text-slate-400">Адрес</div>
+                <div className="text-xs text-slate-400">{adminContactsPageContent.current.addressLabel}</div>
                 <div>{contacts.address}</div>
               </div>
               <div>
-                <div className="text-xs text-slate-400">Время работы</div>
+                <div className="text-xs text-slate-400">{adminContactsPageContent.current.workingHoursLabel}</div>
                 <div>{contacts.workingHours}</div>
               </div>
             </div>

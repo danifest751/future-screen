@@ -1,21 +1,22 @@
-import { useMemo, useState } from 'react';
+﻿import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import toast from 'react-hot-toast';
+import { Package as PackageIcon } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout';
 import { Button, ConfirmModal, EmptyState, Field, Input, Textarea } from '../../components/admin/ui';
-import { Package as PackageIcon } from 'lucide-react';
-import { usePackages } from '../../hooks/usePackages';
-import { useFormDraftPersistence } from '../../hooks/useFormDraftPersistence';
-import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
+import { adminPackagesPageContent } from '../../content/pages/adminPackages';
 import type { Package } from '../../data/packages';
+import { useFormDraftPersistence } from '../../hooks/useFormDraftPersistence';
+import { usePackages } from '../../hooks/usePackages';
+import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 
 const schema = z.object({
-  id: z.coerce.number().int().positive('ID должен быть числом'),
-  name: z.string().min(2, 'Название обязательно'),
-  forFormatsText: z.string().min(1, 'Укажите хотя бы 1 формат'),
-  includesText: z.string().min(1, 'Укажите состав пакета'),
+  id: z.coerce.number().int().positive(adminPackagesPageContent.validation.idPositive),
+  name: z.string().min(2, adminPackagesPageContent.validation.nameRequired),
+  forFormatsText: z.string().min(1, adminPackagesPageContent.validation.forFormatsRequired),
+  includesText: z.string().min(1, adminPackagesPageContent.validation.includesRequired),
   optionsText: z.string().optional(),
   priceHint: z.string().optional(),
 });
@@ -34,7 +35,7 @@ const defaultValues: FormValues = {
 const splitList = (value: string) =>
   value
     .split(/[\n,]/)
-    .map((s) => s.trim())
+    .map((item) => item.trim())
     .filter(Boolean);
 
 const AdminPackagesPage = () => {
@@ -55,12 +56,13 @@ const AdminPackagesPage = () => {
     defaultValues,
   });
 
-  const { clearDraft: clearPackageDraft, hasDraft: hasPackageDraft, isHydrated } = useFormDraftPersistence<FormValues>({
-    enabled: true,
-    storageKey: 'admin-package-draft',
-    reset,
-    watch,
-  });
+  const { clearDraft: clearPackageDraft, hasDraft: hasPackageDraft, isHydrated } =
+    useFormDraftPersistence<FormValues>({
+      enabled: true,
+      storageKey: 'admin-package-draft',
+      reset,
+      watch,
+    });
 
   useUnsavedChangesGuard(isDirty);
 
@@ -76,11 +78,11 @@ const AdminPackagesPage = () => {
 
     const ok = await upsert(payload);
     if (!ok) {
-      toast.error('Ошибка сохранения пакета');
+      toast.error(adminPackagesPageContent.toast.saveError);
       return;
     }
 
-    toast.success(editingId ? 'Пакет обновлён' : 'Пакет добавлен');
+    toast.success(editingId ? adminPackagesPageContent.toast.updated : adminPackagesPageContent.toast.created);
     setEditingId(null);
     reset(defaultValues);
     clearPackageDraft();
@@ -106,14 +108,18 @@ const AdminPackagesPage = () => {
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
+
     const ok = await remove(deleteTarget.id);
-    if (ok) toast.success('Пакет удалён');
-    else toast.error('Ошибка удаления пакета');
+    if (ok) {
+      toast.success(adminPackagesPageContent.toast.deleted);
+    } else {
+      toast.error(adminPackagesPageContent.toast.deleteError);
+    }
   };
 
   const handleResetDefaults = async () => {
     await resetToDefault();
-    toast.success('Пакеты сброшены к дефолту');
+    toast.success(adminPackagesPageContent.toast.resetSuccess);
     clearPackageDraft();
   };
 
@@ -121,14 +127,14 @@ const AdminPackagesPage = () => {
     const q = search.trim().toLowerCase();
     if (!q) return [...packages];
 
-    return packages.filter((p) => {
+    return packages.filter((item) => {
       const haystack = [
-        String(p.id),
-        p.name,
-        ...(p.forFormats ?? []),
-        ...(p.includes ?? []),
-        ...(p.options ?? []),
-        p.priceHint ?? '',
+        String(item.id),
+        item.name,
+        ...(item.forFormats ?? []),
+        ...(item.includes ?? []),
+        ...(item.options ?? []),
+        item.priceHint ?? '',
       ]
         .join(' ')
         .toLowerCase();
@@ -138,14 +144,17 @@ const AdminPackagesPage = () => {
   }, [packages, search]);
 
   return (
-    <AdminLayout title="Пакеты" subtitle="Управление пакетами и ценовыми предложениями">
+    <AdminLayout
+      title={adminPackagesPageContent.layout.title}
+      subtitle={adminPackagesPageContent.layout.subtitle}
+    >
       <ConfirmModal
         open={Boolean(deleteTarget)}
         danger
-        title="Удалить пакет?"
-        description={deleteTarget ? `Пакет "${deleteTarget.name}" будет удален без возможности восстановления.` : ''}
-        confirmText="Удалить"
-        cancelText="Отмена"
+        title={adminPackagesPageContent.deleteModal.title}
+        description={deleteTarget ? adminPackagesPageContent.deleteModal.description(deleteTarget.name) : ''}
+        confirmText={adminPackagesPageContent.deleteModal.confirmText}
+        cancelText={adminPackagesPageContent.deleteModal.cancelText}
         confirmDisabled={isSubmitting}
         onCancel={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
@@ -153,10 +162,10 @@ const AdminPackagesPage = () => {
       <ConfirmModal
         open={resetModalOpen}
         danger
-        title="Сбросить все пакеты к дефолту?"
-        description="Текущие изменения будут перезаписаны демо-данными."
-        confirmText="Сбросить"
-        cancelText="Отмена"
+        title={adminPackagesPageContent.resetModal.title}
+        description={adminPackagesPageContent.resetModal.description}
+        confirmText={adminPackagesPageContent.resetModal.confirmText}
+        cancelText={adminPackagesPageContent.resetModal.cancelText}
         confirmDisabled={isSubmitting}
         onCancel={() => setResetModalOpen(false)}
         onConfirm={handleResetDefaults}
@@ -166,25 +175,27 @@ const AdminPackagesPage = () => {
         <div className="rounded-xl border border-white/10 bg-slate-800 p-6">
           <div className="mb-4 flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-semibold text-white">{editingId ? 'Редактирование пакета' : 'Новый пакет'}</h2>
+              <h2 className="text-xl font-semibold text-white">
+                {editingId ? adminPackagesPageContent.form.editTitle : adminPackagesPageContent.form.createTitle}
+              </h2>
               <p className="mt-1 text-sm text-slate-400">
                 {editingId
-                  ? `Вы редактируете пакет ${String(editingId)}. Сохраните изменения или нажмите «Отмена».`
-                  : 'Создайте новый пакет или выберите существующий справа для редактирования.'}
+                  ? adminPackagesPageContent.form.editDescription(editingId)
+                  : adminPackagesPageContent.form.createDescription}
               </p>
               {isHydrated && hasPackageDraft && !editingId && (
-                <p className="mt-2 text-xs text-amber-200">Восстановлен черновик формы — можно продолжить с того же места.</p>
+                <p className="mt-2 text-xs text-amber-200">{adminPackagesPageContent.form.restoredDraft}</p>
               )}
             </div>
             <div className="flex flex-col items-end gap-2">
               {editingId && (
                 <span className="rounded-full border border-brand-500/40 bg-brand-500/10 px-2 py-0.5 text-xs text-brand-100">
-                  Режим редактирования
+                  {adminPackagesPageContent.form.editMode}
                 </span>
               )}
               {isDirty && (
                 <span className="rounded-full border border-amber-400/40 bg-amber-500/10 px-2 py-0.5 text-xs text-amber-200">
-                  Есть несохраненные изменения
+                  {adminPackagesPageContent.form.unsavedChanges}
                 </span>
               )}
               {editingId && (
@@ -194,49 +205,49 @@ const AdminPackagesPage = () => {
                   disabled={isSubmitting}
                   className="text-sm text-slate-300 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  Отмена
+                  {adminPackagesPageContent.form.cancel}
                 </button>
               )}
             </div>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
-            <Field label="ID" required error={errors.id?.message}>
+            <Field label={adminPackagesPageContent.form.idLabel} required error={errors.id?.message}>
               <Input disabled={Boolean(editingId)} {...register('id')} />
             </Field>
 
-            <Field label="Название" required error={errors.name?.message}>
+            <Field label={adminPackagesPageContent.form.nameLabel} required error={errors.name?.message}>
               <Input {...register('name')} />
             </Field>
 
             <Field
-              label="Для форматов"
+              label={adminPackagesPageContent.form.forFormatsLabel}
               required
-              hint="Через запятую или новую строку"
+              hint={adminPackagesPageContent.form.forFormatsHint}
               error={errors.forFormatsText?.message}
             >
               <Textarea rows={2} {...register('forFormatsText')} />
             </Field>
 
             <Field
-              label="Состав"
+              label={adminPackagesPageContent.form.includesLabel}
               required
-              hint="Каждый пункт с новой строки"
+              hint={adminPackagesPageContent.form.includesHint}
               error={errors.includesText?.message}
             >
               <Textarea rows={3} {...register('includesText')} />
             </Field>
 
-            <Field label="Опции" hint="Необязательно">
+            <Field label={adminPackagesPageContent.form.optionsLabel} hint={adminPackagesPageContent.form.optionsHint}>
               <Textarea rows={2} {...register('optionsText')} />
             </Field>
 
-            <Field label="Подсказка цены">
+            <Field label={adminPackagesPageContent.form.priceHintLabel}>
               <Input {...register('priceHint')} />
             </Field>
 
             <Button type="submit" loading={isSubmitting} className="w-full">
-              {editingId ? 'Сохранить' : 'Добавить'}
+              {editingId ? adminPackagesPageContent.form.save : adminPackagesPageContent.form.add}
             </Button>
           </form>
         </div>
@@ -244,9 +255,9 @@ const AdminPackagesPage = () => {
         <div className="rounded-xl border border-white/10 bg-slate-800 p-6">
           <div className="mb-4 flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-semibold text-white">Список пакетов</h2>
+              <h2 className="text-xl font-semibold text-white">{adminPackagesPageContent.list.title}</h2>
               <p className="mt-1 text-sm text-slate-400">
-                Показано {filteredPackages.length} из {packages.length}
+                {adminPackagesPageContent.list.shown(filteredPackages.length, packages.length)}
               </p>
             </div>
             <button
@@ -255,50 +266,54 @@ const AdminPackagesPage = () => {
               disabled={isSubmitting}
               className="text-sm text-slate-300 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Сброс к дефолту
+              {adminPackagesPageContent.list.resetToDefault}
             </button>
           </div>
 
           <div className="mb-4 flex items-center gap-2">
             <Input
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Поиск по названию, ID, составу, опциям..."
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder={adminPackagesPageContent.list.searchPlaceholder}
             />
             {search && (
               <Button type="button" variant="ghost" size="md" onClick={() => setSearch('')}>
-                Очистить
+                {adminPackagesPageContent.list.clear}
               </Button>
             )}
           </div>
 
           <div className="space-y-3">
-            {filteredPackages.map((p) => (
-              <div key={p.id} className="rounded-lg border border-white/10 bg-white/5 p-4">
+            {filteredPackages.map((item) => (
+              <div key={item.id} className="rounded-lg border border-white/10 bg-white/5 p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <div className="font-semibold text-white">{p.name}</div>
-                    <div className="text-xs text-slate-400">ID: {p.id}</div>
-                    <div className="mt-1 text-xs text-slate-300">Для: {p.forFormats.join(', ')}</div>
-                    <div className="mt-1 text-xs text-slate-300">Состав: {p.includes.join(' · ')}</div>
-                    {p.priceHint && <div className="mt-1 text-xs text-brand-100">{p.priceHint}</div>}
+                    <div className="font-semibold text-white">{item.name}</div>
+                    <div className="text-xs text-slate-400">ID: {item.id}</div>
+                    <div className="mt-1 text-xs text-slate-300">
+                      {adminPackagesPageContent.list.forFormatsPrefix} {item.forFormats.join(', ')}
+                    </div>
+                    <div className="mt-1 text-xs text-slate-300">
+                      {adminPackagesPageContent.list.includesPrefix} {item.includes.join(' · ')}
+                    </div>
+                    {item.priceHint && <div className="mt-1 text-xs text-brand-100">{item.priceHint}</div>}
                   </div>
                   <div className="flex flex-col gap-2">
                     <button
                       type="button"
-                      onClick={() => startEdit(p)}
+                      onClick={() => startEdit(item)}
                       disabled={isSubmitting}
                       className="rounded border border-white/20 px-3 py-1 text-xs font-semibold text-white hover:border-white/40 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      Редактировать
+                      {adminPackagesPageContent.list.edit}
                     </button>
                     <button
                       type="button"
-                      onClick={() => setDeleteTarget(p)}
+                      onClick={() => setDeleteTarget(item)}
                       disabled={isSubmitting}
                       className="rounded border border-red-400/40 px-3 py-1 text-xs font-semibold text-red-200 hover:border-red-400 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      Удалить
+                      {adminPackagesPageContent.list.remove}
                     </button>
                   </div>
                 </div>
@@ -307,11 +322,15 @@ const AdminPackagesPage = () => {
             {filteredPackages.length === 0 && (
               <EmptyState
                 icon={<PackageIcon size={32} className="text-brand-400" />}
-                title={packages.length === 0 ? 'Пакетов пока нет' : 'Ничего не найдено'}
+                title={
+                  packages.length === 0
+                    ? adminPackagesPageContent.list.emptyTitle
+                    : adminPackagesPageContent.list.notFoundTitle
+                }
                 description={
                   packages.length === 0
-                    ? 'Добавьте первый пакет через форму слева.'
-                    : 'Попробуйте изменить поисковый запрос или очистить фильтр.'
+                    ? adminPackagesPageContent.list.emptyDescription
+                    : adminPackagesPageContent.list.notFoundDescription
                 }
               />
             )}
