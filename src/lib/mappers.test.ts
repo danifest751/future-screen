@@ -210,8 +210,9 @@ describe('mapPackageToDB', () => {
 describe('mapLeadFromDB', () => {
   it('должен преобразовать лид из БД в формат приложения', () => {
     const row = {
-      id: 1,
+      id: '1',
       created_at: '2024-01-01T00:00:00Z',
+      request_id: 'req-1',
       source: 'form',
       name: 'Иван',
       phone: '+79991234567',
@@ -222,24 +223,31 @@ describe('mapLeadFromDB', () => {
       format: 'Концерт',
       comment: 'Комментарий',
       extra: { key: 'value' },
+      page_path: '/rent',
+      referrer: 'https://example.com',
       status: 'new',
+      delivery_log: [],
     };
 
     const result = mapLeadFromDB(row);
 
     expect(result.id).toBe('1');
+    expect(result.requestId).toBe('req-1');
     expect(result.timestamp).toBe('2024-01-01T00:00:00Z');
     expect(result.source).toBe('form');
     expect(result.name).toBe('Иван');
     expect(result.phone).toBe('+79991234567');
     expect(result.email).toBe('test@example.com');
+    expect(result.pagePath).toBe('/rent');
+    expect(result.referrer).toBe('https://example.com');
     expect(result.city).toBe('Москва');
   });
 
   it('должен обработать null значения', () => {
     const row = {
-      id: 1,
+      id: '1',
       created_at: null,
+      request_id: null,
       source: 'form',
       name: 'Иван',
       phone: '+79991234567',
@@ -250,7 +258,10 @@ describe('mapLeadFromDB', () => {
       format: null,
       comment: null,
       extra: null,
+      page_path: null,
+      referrer: null,
       status: null,
+      delivery_log: null,
     };
 
     const result = mapLeadFromDB(row);
