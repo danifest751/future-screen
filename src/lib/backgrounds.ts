@@ -1,3 +1,5 @@
+import { backgroundContent } from '../content/system/backgrounds';
+
 export type BackgroundId =
   | 'theme'
   | 'aurora'
@@ -148,11 +150,10 @@ export type BackgroundSettingsById = {
 
 export type AnyBackgroundSettings = BackgroundSettingsById[CustomBackgroundId];
 
-// Star Border Settings
 export type StarBorderSettings = {
   enabled: boolean;
   color: string;
-  speed: number; // in seconds
+  speed: number;
   thickness: number;
   intensity: number;
   cornerOffset: number;
@@ -168,11 +169,11 @@ export const defaultStarBorderSettings: StarBorderSettings = {
 };
 
 export const starBorderSettingsControls = [
-  { key: 'intensity', label: 'Интенсивность', control: 'range', min: 0.5, max: 2, step: 0.1 },
-  { key: 'color', label: 'Цвет рамки', control: 'color' },
-  { key: 'speed', label: 'Скорость анимации (сек)', control: 'range', min: 2, max: 15, step: 0.5 },
-  { key: 'thickness', label: 'Толщина рамки', control: 'range', min: 1, max: 5, step: 0.5 },
-  { key: 'cornerOffset', label: 'Отступ старта от угла (px)', control: 'range', min: 0, max: 80, step: 1 },
+  { key: 'intensity', label: backgroundContent.starBorderLabels.intensity, control: 'range', min: 0.5, max: 2, step: 0.1 },
+  { key: 'color', label: backgroundContent.starBorderLabels.color, control: 'color' },
+  { key: 'speed', label: backgroundContent.starBorderLabels.speed, control: 'range', min: 2, max: 15, step: 0.5 },
+  { key: 'thickness', label: backgroundContent.starBorderLabels.thickness, control: 'range', min: 1, max: 5, step: 0.5 },
+  { key: 'cornerOffset', label: backgroundContent.starBorderLabels.cornerOffset, control: 'range', min: 0, max: 80, step: 1 },
 ] as const;
 
 export const BACKGROUND_STORAGE_KEY = 'fs-background';
@@ -308,26 +309,28 @@ export type BackgroundSettingControl = {
   step?: number;
 };
 
+const common = backgroundContent.commonLabels;
+
 export const backgroundSettingsControls: Record<CustomBackgroundId, BackgroundSettingControl[]> = {
   aurora: [
-    { key: 'intensity', label: 'Интенсивность', control: 'range', min: 0.6, max: 1.8, step: 0.1 },
-    { key: 'contrast', label: 'Контраст', control: 'range', min: 0.7, max: 1.6, step: 0.1 },
-    { key: 'color1', label: 'Цвет 1', control: 'color' },
-    { key: 'color2', label: 'Цвет 2', control: 'color' },
-    { key: 'color3', label: 'Цвет 3', control: 'color' },
+    { key: 'intensity', label: common.intensity, control: 'range', min: 0.6, max: 1.8, step: 0.1 },
+    { key: 'contrast', label: common.contrast, control: 'range', min: 0.7, max: 1.6, step: 0.1 },
+    { key: 'color1', label: common.color1, control: 'color' },
+    { key: 'color2', label: common.color2, control: 'color' },
+    { key: 'color3', label: common.color3, control: 'color' },
     { key: 'speed', label: 'Speed', control: 'range', min: 0.2, max: 3, step: 0.1 },
     { key: 'blend', label: 'Blend', control: 'range', min: 0, max: 1, step: 0.05 },
     { key: 'amplitude', label: 'Amplitude', control: 'range', min: 0.2, max: 2.5, step: 0.1 },
   ],
   mesh: [
-    { key: 'intensity', label: 'Интенсивность', control: 'range', min: 0.6, max: 1.8, step: 0.1 },
-    { key: 'contrast', label: 'Контраст', control: 'range', min: 0.7, max: 1.6, step: 0.1 },
-    { key: 'gridOpacity', label: 'Видимость сетки', control: 'range', min: 0.03, max: 0.2, step: 0.01 },
+    { key: 'intensity', label: common.intensity, control: 'range', min: 0.6, max: 1.8, step: 0.1 },
+    { key: 'contrast', label: common.contrast, control: 'range', min: 0.7, max: 1.6, step: 0.1 },
+    { key: 'gridOpacity', label: common.gridOpacity, control: 'range', min: 0.03, max: 0.2, step: 0.01 },
     { key: 'glow', label: 'Glow', control: 'range', min: 0.1, max: 0.8, step: 0.05 },
   ],
   dots: [
-    { key: 'intensity', label: 'Интенсивность', control: 'range', min: 0.6, max: 1.8, step: 0.1 },
-    { key: 'contrast', label: 'Контраст', control: 'range', min: 0.7, max: 1.6, step: 0.1 },
+    { key: 'intensity', label: common.intensity, control: 'range', min: 0.6, max: 1.8, step: 0.1 },
+    { key: 'contrast', label: common.contrast, control: 'range', min: 0.7, max: 1.6, step: 0.1 },
     { key: 'dotSize', label: 'Dot Size', control: 'range', min: 4, max: 40, step: 1 },
     { key: 'gap', label: 'Gap', control: 'range', min: 8, max: 80, step: 1 },
     { key: 'baseColor', label: 'Base Color', control: 'color' },
@@ -341,8 +344,8 @@ export const backgroundSettingsControls: Record<CustomBackgroundId, BackgroundSe
     { key: 'returnDuration', label: 'Return Duration', control: 'range', min: 0.1, max: 4, step: 0.1 },
   ],
   waves: [
-    { key: 'intensity', label: 'Интенсивность', control: 'range', min: 0.6, max: 1.8, step: 0.1 },
-    { key: 'contrast', label: 'Контраст', control: 'range', min: 0.7, max: 1.6, step: 0.1 },
+    { key: 'intensity', label: common.intensity, control: 'range', min: 0.6, max: 1.8, step: 0.1 },
+    { key: 'contrast', label: common.contrast, control: 'range', min: 0.7, max: 1.6, step: 0.1 },
     { key: 'lineColor', label: 'Waves Color', control: 'color' },
     { key: 'backgroundColor', label: 'Background Color', control: 'color' },
     { key: 'waveSpeedX', label: 'Wave Speed X', control: 'range', min: 0.001, max: 0.06, step: 0.001 },
@@ -356,20 +359,20 @@ export const backgroundSettingsControls: Record<CustomBackgroundId, BackgroundSe
     { key: 'maxCursorMove', label: 'Max Cursor Move', control: 'range', min: 20, max: 220, step: 2 },
   ],
   rings: [
-    { key: 'intensity', label: 'Интенсивность', control: 'range', min: 0.6, max: 1.8, step: 0.1 },
-    { key: 'contrast', label: 'Контраст', control: 'range', min: 0.7, max: 1.6, step: 0.1 },
-    { key: 'rings', label: 'Количество колец', control: 'range', min: 2, max: 10, step: 1 },
-    { key: 'spread', label: 'Разброс', control: 'range', min: 0.6, max: 1.8, step: 0.1 },
+    { key: 'intensity', label: common.intensity, control: 'range', min: 0.6, max: 1.8, step: 0.1 },
+    { key: 'contrast', label: common.contrast, control: 'range', min: 0.7, max: 1.6, step: 0.1 },
+    { key: 'rings', label: common.rings, control: 'range', min: 2, max: 10, step: 1 },
+    { key: 'spread', label: common.spread, control: 'range', min: 0.6, max: 1.8, step: 0.1 },
   ],
   nebula: [
-    { key: 'intensity', label: 'Интенсивность', control: 'range', min: 0.6, max: 1.8, step: 0.1 },
-    { key: 'contrast', label: 'Контраст', control: 'range', min: 0.7, max: 1.6, step: 0.1 },
-    { key: 'grain', label: 'Шум', control: 'range', min: 0.05, max: 0.35, step: 0.01 },
-    { key: 'hueShift', label: 'Сдвиг оттенка', control: 'range', min: -60, max: 60, step: 1 },
+    { key: 'intensity', label: common.intensity, control: 'range', min: 0.6, max: 1.8, step: 0.1 },
+    { key: 'contrast', label: common.contrast, control: 'range', min: 0.7, max: 1.6, step: 0.1 },
+    { key: 'grain', label: common.grain, control: 'range', min: 0.05, max: 0.35, step: 0.01 },
+    { key: 'hueShift', label: common.hueShift, control: 'range', min: -60, max: 60, step: 1 },
   ],
   'color-bends': [
-    { key: 'intensity', label: 'Интенсивность', control: 'range', min: 0.6, max: 1.8, step: 0.1 },
-    { key: 'contrast', label: 'Контраст', control: 'range', min: 0.7, max: 1.6, step: 0.1 },
+    { key: 'intensity', label: common.intensity, control: 'range', min: 0.6, max: 1.8, step: 0.1 },
+    { key: 'contrast', label: common.contrast, control: 'range', min: 0.7, max: 1.6, step: 0.1 },
     { key: 'color1', label: 'Color 1', control: 'color' },
     { key: 'color2', label: 'Color 2', control: 'color' },
     { key: 'color3', label: 'Color 3', control: 'color' },
@@ -384,8 +387,8 @@ export const backgroundSettingsControls: Record<CustomBackgroundId, BackgroundSe
     { key: 'noise', label: 'Noise', control: 'range', min: 0, max: 0.6, step: 0.01 },
   ],
   'pixel-blast': [
-    { key: 'intensity', label: 'Интенсивность', control: 'range', min: 0.6, max: 1.8, step: 0.1 },
-    { key: 'contrast', label: 'Контраст', control: 'range', min: 0.7, max: 1.6, step: 0.1 },
+    { key: 'intensity', label: common.intensity, control: 'range', min: 0.6, max: 1.8, step: 0.1 },
+    { key: 'contrast', label: common.contrast, control: 'range', min: 0.7, max: 1.6, step: 0.1 },
     { key: 'color', label: 'Color', control: 'color' },
     { key: 'pixelSize', label: 'Pixel Size', control: 'range', min: 1, max: 10, step: 1 },
     { key: 'patternScale', label: 'Pattern Scale', control: 'range', min: 0.5, max: 6, step: 0.1 },
@@ -400,8 +403,8 @@ export const backgroundSettingsControls: Record<CustomBackgroundId, BackgroundSe
     { key: 'wobbleSpeed', label: 'Wobble Speed', control: 'range', min: 0.5, max: 10, step: 0.1 },
   ],
   'line-waves': [
-    { key: 'intensity', label: 'Интенсивность', control: 'range', min: 0.6, max: 1.8, step: 0.1 },
-    { key: 'contrast', label: 'Контраст', control: 'range', min: 0.7, max: 1.6, step: 0.1 },
+    { key: 'intensity', label: common.intensity, control: 'range', min: 0.6, max: 1.8, step: 0.1 },
+    { key: 'contrast', label: common.contrast, control: 'range', min: 0.7, max: 1.6, step: 0.1 },
     { key: 'color1', label: 'Color 1', control: 'color' },
     { key: 'color2', label: 'Color 2', control: 'color' },
     { key: 'color3', label: 'Color 3', control: 'color' },
@@ -416,8 +419,8 @@ export const backgroundSettingsControls: Record<CustomBackgroundId, BackgroundSe
     { key: 'mouseInfluence', label: 'Mouse Influence', control: 'range', min: 0, max: 5, step: 0.1 },
   ],
   galaxy: [
-    { key: 'intensity', label: 'Интенсивность', control: 'range', min: 0.6, max: 1.8, step: 0.1 },
-    { key: 'contrast', label: 'Контраст', control: 'range', min: 0.7, max: 1.6, step: 0.1 },
+    { key: 'intensity', label: common.intensity, control: 'range', min: 0.6, max: 1.8, step: 0.1 },
+    { key: 'contrast', label: common.contrast, control: 'range', min: 0.7, max: 1.6, step: 0.1 },
     { key: 'focalX', label: 'Focal X', control: 'range', min: 0, max: 1, step: 0.01 },
     { key: 'focalY', label: 'Focal Y', control: 'range', min: 0, max: 1, step: 0.01 },
     { key: 'rotationX', label: 'Rotation X', control: 'range', min: -1, max: 1, step: 0.01 },
@@ -442,17 +445,17 @@ export type BackgroundOption = {
 };
 
 export const backgroundOptions: BackgroundOption[] = [
-  { id: 'theme', name: 'По теме', description: 'Автовыбор по текущей теме сайта' },
-  { id: 'aurora', name: 'Aurora', description: 'Мягкие переливы и сияние' },
-  { id: 'mesh', name: 'Mesh Grid', description: 'Градиентная сетка в стиле React Bits' },
-  { id: 'dots', name: 'Dot Matrix', description: 'Паттерн из точек с подсветкой' },
-  { id: 'waves', name: 'Waves', description: 'Линейные волны и glow-слои' },
-  { id: 'rings', name: 'Rings', description: 'Концентрические кольца и мягкий glow' },
-  { id: 'nebula', name: 'Nebula', description: 'Туманность, зерно и цветовые сдвиги' },
-  { id: 'color-bends', name: 'Color Bends', description: 'Плавные жидкие переливы цвета' },
-  { id: 'pixel-blast', name: 'Pixel Blast', description: 'Пиксельный шум, рябь и glitch-настроение' },
-  { id: 'line-waves', name: 'Line Waves', description: 'Динамические волны из тонких линий' },
-  { id: 'galaxy', name: 'Galaxy', description: 'Звёздное поле с глубиной и свечением' },
+  { id: 'theme', ...backgroundContent.options.theme },
+  { id: 'aurora', ...backgroundContent.options.aurora },
+  { id: 'mesh', ...backgroundContent.options.mesh },
+  { id: 'dots', ...backgroundContent.options.dots },
+  { id: 'waves', ...backgroundContent.options.waves },
+  { id: 'rings', ...backgroundContent.options.rings },
+  { id: 'nebula', ...backgroundContent.options.nebula },
+  { id: 'color-bends', ...backgroundContent.options['color-bends'] },
+  { id: 'pixel-blast', ...backgroundContent.options['pixel-blast'] },
+  { id: 'line-waves', ...backgroundContent.options['line-waves'] },
+  { id: 'galaxy', ...backgroundContent.options.galaxy },
 ];
 
 export const isBackgroundId = (value: string | null): value is BackgroundId =>
@@ -482,11 +485,11 @@ const commonSettings = (raw: Record<string, unknown>, fallback: CommonSettings):
 const normalizeById = <T extends CustomBackgroundId>(id: T, value: unknown): BackgroundSettingsById[T] => {
   const fallback = defaultBackgroundSettingsById[id] as Record<string, unknown>;
   const raw = value && typeof value === 'object' ? (value as Record<string, unknown>) : {};
-  const common = commonSettings(raw, fallback as CommonSettings);
+  const commonSettingsValue = commonSettings(raw, fallback as CommonSettings);
 
   if (id === 'aurora') {
     return {
-      ...common,
+      ...commonSettingsValue,
       color1: normalizeColor(raw.color1, String(fallback.color1)),
       color2: normalizeColor(raw.color2, String(fallback.color2)),
       color3: normalizeColor(raw.color3, String(fallback.color3)),
@@ -498,7 +501,7 @@ const normalizeById = <T extends CustomBackgroundId>(id: T, value: unknown): Bac
 
   if (id === 'mesh') {
     return {
-      ...common,
+      ...commonSettingsValue,
       gridOpacity: clamp(Number(raw.gridOpacity ?? fallback.gridOpacity), 0.03, 0.2),
       glow: clamp(Number(raw.glow ?? fallback.glow), 0.1, 0.8),
     } as BackgroundSettingsById[T];
@@ -506,7 +509,7 @@ const normalizeById = <T extends CustomBackgroundId>(id: T, value: unknown): Bac
 
   if (id === 'dots') {
     return {
-      ...common,
+      ...commonSettingsValue,
       dotSize: clamp(Number(raw.dotSize ?? fallback.dotSize), 4, 40),
       gap: clamp(Number(raw.gap ?? fallback.gap), 8, 80),
       baseColor: normalizeColor(raw.baseColor, String(fallback.baseColor)),
@@ -523,7 +526,7 @@ const normalizeById = <T extends CustomBackgroundId>(id: T, value: unknown): Bac
 
   if (id === 'waves') {
     return {
-      ...common,
+      ...commonSettingsValue,
       lineColor: normalizeColor(raw.lineColor, String(fallback.lineColor)),
       backgroundColor: normalizeColor(raw.backgroundColor, String(fallback.backgroundColor)),
       waveSpeedX: clamp(Number(raw.waveSpeedX ?? fallback.waveSpeedX), 0.001, 0.06),
@@ -540,7 +543,7 @@ const normalizeById = <T extends CustomBackgroundId>(id: T, value: unknown): Bac
 
   if (id === 'rings') {
     return {
-      ...common,
+      ...commonSettingsValue,
       rings: Math.round(clamp(Number(raw.rings ?? fallback.rings), 2, 10)),
       spread: clamp(Number(raw.spread ?? fallback.spread), 0.6, 1.8),
     } as BackgroundSettingsById[T];
@@ -548,7 +551,7 @@ const normalizeById = <T extends CustomBackgroundId>(id: T, value: unknown): Bac
 
   if (id === 'color-bends') {
     return {
-      ...common,
+      ...commonSettingsValue,
       color1: normalizeColor(raw.color1, String(fallback.color1)),
       color2: normalizeColor(raw.color2, String(fallback.color2)),
       color3: normalizeColor(raw.color3, String(fallback.color3)),
@@ -566,7 +569,7 @@ const normalizeById = <T extends CustomBackgroundId>(id: T, value: unknown): Bac
 
   if (id === 'pixel-blast') {
     return {
-      ...common,
+      ...commonSettingsValue,
       color: normalizeColor(raw.color, String(fallback.color)),
       pixelSize: Math.round(clamp(Number(raw.pixelSize ?? fallback.pixelSize), 1, 10)),
       patternScale: clamp(Number(raw.patternScale ?? fallback.patternScale), 0.5, 6),
@@ -584,7 +587,7 @@ const normalizeById = <T extends CustomBackgroundId>(id: T, value: unknown): Bac
 
   if (id === 'line-waves') {
     return {
-      ...common,
+      ...commonSettingsValue,
       color1: normalizeColor(raw.color1, String(fallback.color1)),
       color2: normalizeColor(raw.color2, String(fallback.color2)),
       color3: normalizeColor(raw.color3, String(fallback.color3)),
@@ -602,7 +605,7 @@ const normalizeById = <T extends CustomBackgroundId>(id: T, value: unknown): Bac
 
   if (id === 'galaxy') {
     return {
-      ...common,
+      ...commonSettingsValue,
       focalX: clamp(Number(raw.focalX ?? fallback.focalX), 0, 1),
       focalY: clamp(Number(raw.focalY ?? fallback.focalY), 0, 1),
       rotationX: clamp(Number(raw.rotationX ?? fallback.rotationX), -1, 1),
@@ -621,7 +624,7 @@ const normalizeById = <T extends CustomBackgroundId>(id: T, value: unknown): Bac
   }
 
   return {
-    ...common,
+    ...commonSettingsValue,
     grain: clamp(Number(raw.grain ?? fallback.grain), 0.05, 0.35),
     hueShift: clamp(Number(raw.hueShift ?? fallback.hueShift), -60, 60),
   } as BackgroundSettingsById[T];
@@ -654,7 +657,7 @@ export const getStoredBackgroundSettingsMap = (): BackgroundSettingsById => {
   try {
     const parsed = JSON.parse(raw) as unknown;
 
-    if (parsed && typeof parsed === 'object' && ('motion' in (parsed as Record<string, unknown>))) {
+    if (parsed && typeof parsed === 'object' && 'motion' in (parsed as Record<string, unknown>)) {
       const legacy = parsed as Record<string, unknown>;
       return {
         aurora: normalizeById('aurora', legacy),
