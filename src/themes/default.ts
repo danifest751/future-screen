@@ -1,8 +1,9 @@
 import type { Theme } from './index';
+import { themeContent } from '../content/system/themes';
 
 export const defaultTheme: Theme = {
   id: 'default',
-  name: 'Тёмная',
+  name: themeContent.defaultName,
   emoji: '🌙',
   vars: {
     '--bg-primary': '#0b1020',

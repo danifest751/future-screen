@@ -1,8 +1,9 @@
 import type { Theme } from './index';
+import { themeContent } from '../content/system/themes';
 
 export const neonTheme: Theme = {
   id: 'neon',
-  name: 'Неон',
+  name: themeContent.neonName,
   emoji: '⚡',
   vars: {
     '--bg-primary': '#0a0a0a',

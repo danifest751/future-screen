@@ -1,4 +1,5 @@
-// Types
+import { screenMathContent } from '../content/system/screenMath';
+
 export type Purpose = 'video' | 'presentation' | 'branding';
 export type EventType = 'conference' | 'concert' | 'corporate' | 'exhibition' | 'festival';
 export type Location = 'indoor' | 'outdoor';
@@ -37,13 +38,12 @@ export type CalcResult = {
   explanations: string[];
 };
 
-// Constants
 export const pitchOptions: PitchOption[] = [
-  { label: 'P2.6', value: 2.6, minDistance: 2, maxDistance: 5, description: 'Премиум, ультра-близкая дистанция' },
-  { label: 'P3.9', value: 3.9, minDistance: 3, maxDistance: 8, description: 'Универсальный indoor / близкая дистанция' },
-  { label: 'P4.8', value: 4.8, minDistance: 4, maxDistance: 12, description: 'Средняя дистанция' },
-  { label: 'P6.9', value: 6.9, minDistance: 6, maxDistance: 18, description: 'Большие залы / дальняя дистанция' },
-  { label: 'P8.9', value: 8.9, minDistance: 8, maxDistance: 25, description: 'Очень дальняя дистанция' },
+  { label: 'P2.6', value: 2.6, minDistance: 2, maxDistance: 5, description: screenMathContent.pitchDescriptions.p26 },
+  { label: 'P3.9', value: 3.9, minDistance: 3, maxDistance: 8, description: screenMathContent.pitchDescriptions.p39 },
+  { label: 'P4.8', value: 4.8, minDistance: 4, maxDistance: 12, description: screenMathContent.pitchDescriptions.p48 },
+  { label: 'P6.9', value: 6.9, minDistance: 6, maxDistance: 18, description: screenMathContent.pitchDescriptions.p69 },
+  { label: 'P8.9', value: 8.9, minDistance: 8, maxDistance: 25, description: screenMathContent.pitchDescriptions.p89 },
 ];
 
 export const heightDivisors: Record<Purpose, number> = {
@@ -73,7 +73,7 @@ export function estimateDistance(audience: number): number {
 export function recommendHeight(distance: number, purpose: Purpose): number {
   const divisor = heightDivisors[purpose];
   const raw = distance / divisor;
-  return Math.round(raw * 2) / 2; // округление до 0.5 м
+  return Math.round(raw * 2) / 2;
 }
 
 export function recommendWidth(height: number, eventType: EventType, stageWidth: number | null): number {
@@ -82,17 +82,14 @@ export function recommendWidth(height: number, eventType: EventType, stageWidth:
   if (stageWidth && raw > stageWidth) {
     raw = stageWidth;
   }
-  return Math.round(raw * 2) / 2; // округление до 0.5 м
+  return Math.round(raw * 2) / 2;
 }
 
 export function selectPitch(distance: number, purpose: Purpose, location: Location, options: PitchOption[] = pitchOptions) {
-  // Только pitch с наличием на складе (stockArea > 0 или не задан)
-  const inStock = options.filter((p) => p.stockArea == null || p.stockArea > 0);
-  const pool = inStock.length > 0 ? inStock : options; // fallback на все, если склад пуст
+  const inStock = options.filter((pitch) => pitch.stockArea == null || pitch.stockArea > 0);
+  const pool = inStock.length > 0 ? inStock : options;
 
-  let candidates = pool.filter(
-    (p) => distance >= p.minDistance && distance < p.maxDistance
-  );
+  let candidates = pool.filter((pitch) => distance >= pitch.minDistance && distance < pitch.maxDistance);
 
   if (candidates.length === 0) {
     candidates = [pool[pool.length - 1]];
@@ -100,21 +97,18 @@ export function selectPitch(distance: number, purpose: Purpose, location: Locati
 
   let selected = candidates[0];
 
-  // Для презентаций — на 1 уровень мельче (если возможно)
   if (purpose === 'presentation') {
-    const idx = pool.indexOf(selected);
-    if (idx > 0) selected = pool[idx - 1];
+    const index = pool.indexOf(selected);
+    if (index > 0) selected = pool[index - 1];
   }
 
-  // Для брендинга — на 1 уровень крупнее (если возможно)
   if (purpose === 'branding') {
-    const idx = pool.indexOf(selected);
-    if (idx < pool.length - 1) selected = pool[idx + 1];
+    const index = pool.indexOf(selected);
+    if (index < pool.length - 1) selected = pool[index + 1];
   }
 
-  // Улица — минимум P3.9
   if (location === 'outdoor' && selected.value < 3.9) {
-    selected = pool.find((p) => p.value >= 3.9) ?? selected;
+    selected = pool.find((pitch) => pitch.value >= 3.9) ?? selected;
   }
 
   return selected;
@@ -122,20 +116,21 @@ export function selectPitch(distance: number, purpose: Purpose, location: Locati
 
 export function recommendInstall(location: Location, installType: CalcInputs['installType']): string {
   if (location === 'outdoor') {
-    return 'Уличная конструкция / ферма + балласт';
+    return screenMathContent.install.outdoor;
   }
-  if (installType === 'hanging') return 'Подвес';
-  if (installType === 'floor') return 'Напольная / на стойках / рама';
-  return 'Напольная / на стойках (уточним по площадке)';
+  if (installType === 'hanging') return screenMathContent.install.hanging;
+  if (installType === 'floor') return screenMathContent.install.floor;
+  return screenMathContent.install.fallback;
 }
 
 export function estimatePower(area: number) {
   const avgMin = (area * powerPerM2.avgMin).toFixed(1);
   const avgMax = (area * powerPerM2.avgMax).toFixed(1);
   const peakMax = (area * powerPerM2.peakMax).toFixed(1);
+
   return {
-    avg: `${avgMin}–${avgMax} кВт`,
-    peak: `до ${peakMax} кВт`,
+    avg: `${avgMin}-${avgMax} ${screenMathContent.power.avgUnit}`,
+    peak: `${screenMathContent.power.peakPrefix} ${peakMax} ${screenMathContent.power.avgUnit}`,
   };
 }
 
@@ -143,65 +138,57 @@ export function calculate(inputs: CalcInputs, customPitchOptions?: PitchOption[]
   const warnings: string[] = [];
   const explanations: string[] = [];
 
-  // 1. Дистанция
   let distance = inputs.distance;
   if (!inputs.distanceKnown || !distance) {
     distance = estimateDistance(inputs.audience);
-    explanations.push(`Дистанция оценена по количеству зрителей (~${Math.round(distance)} м)`);
+    explanations.push(screenMathContent.explanations.estimatedDistance(distance));
   }
   distance = Math.max(distance, 2);
 
-  // 2. Высота
   let height = recommendHeight(distance, inputs.purpose);
   if (inputs.maxHeight && height > inputs.maxHeight) {
     height = Math.round(inputs.maxHeight * 2) / 2;
-    warnings.push(`Высота ограничена потолком (${inputs.maxHeight} м), рекомендуемая была больше`);
+    warnings.push(screenMathContent.warnings.maxHeight(inputs.maxHeight));
   }
   height = Math.max(height, 1);
-  explanations.push(`Высоту подобрали по расстоянию до последнего ряда (${Math.round(distance)} м ÷ ${heightDivisors[inputs.purpose]})`);
+  explanations.push(screenMathContent.explanations.selectedHeight(distance, heightDivisors[inputs.purpose]));
 
-  // 3. Ширина
   let width = recommendWidth(height, inputs.eventType, inputs.stageWidth);
   if (inputs.stageWidth && width < recommendWidth(height, inputs.eventType, null)) {
-    warnings.push(`Экран уже расчётного — ограничен шириной сцены (${inputs.stageWidth} м)`);
+    warnings.push(screenMathContent.warnings.stageWidth(inputs.stageWidth));
   }
   width = Math.max(width, 1);
 
-  // 4. Площадь
   let area = Math.round(width * height * 10) / 10;
-
-  // 5. Pitch
   const pitch = selectPitch(distance, inputs.purpose, inputs.location, customPitchOptions ?? pitchOptions);
 
-  // 5a. Ограничение по складу
   const stock = pitch.stockArea;
   if (stock != null && stock > 0 && area > stock) {
     const ratio = width / height;
     const newArea = stock;
-    const newHeight = Math.floor(Math.sqrt(newArea / ratio) * 2) / 2; // округление вниз до 0.5 м
-    const newWidth = Math.floor((newHeight * ratio) * 2) / 2;
-    warnings.push(`На складе ${stock} м² экрана ${pitch.label} — размер уменьшен с ${width}×${height} до ${newWidth}×${newHeight} м`);
+    const newHeight = Math.floor(Math.sqrt(newArea / ratio) * 2) / 2;
+    const newWidth = Math.floor(newHeight * ratio * 2) / 2;
+
+    warnings.push(screenMathContent.warnings.stockReduced(stock, pitch.label, width, height, newWidth, newHeight));
     width = Math.max(newWidth, 1);
     height = Math.max(newHeight, 1);
     area = Math.round(width * height * 10) / 10;
   }
 
   if (distance < pitch.value * 1.2) {
-    warnings.push(`При дистанции ${Math.round(distance)} м и шаге ${pitch.label} могут быть видны пиксели`);
+    warnings.push(screenMathContent.warnings.visiblePixels(distance, pitch.label));
   }
+
   if (inputs.location === 'outdoor' && distance < 4) {
-    warnings.push('Улица + близкая дистанция — нужно уточнить шаг и яркость');
+    warnings.push(screenMathContent.warnings.outdoorClose);
   }
 
-  explanations.push(`Шаг пикселя ${pitch.label} выбран для комфортного просмотра с ${Math.round(distance)} м`);
+  explanations.push(screenMathContent.explanations.selectedPitch(pitch.label, distance));
   if (stock != null && stock > 0) {
-    explanations.push(`На складе ${stock} м² экрана ${pitch.label}`);
+    explanations.push(screenMathContent.explanations.stockPitch(stock, pitch.label));
   }
 
-  // 6. Установка
   const installRecommendation = recommendInstall(inputs.location, inputs.installType);
-
-  // 7. Мощность
   const power = estimatePower(area);
 
   return {

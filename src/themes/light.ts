@@ -1,8 +1,9 @@
 import type { Theme } from './index';
+import { themeContent } from '../content/system/themes';
 
 export const lightTheme: Theme = {
   id: 'light',
-  name: 'Светлая',
+  name: themeContent.lightName,
   emoji: '☀️',
   vars: {
     '--bg-primary': '#f8fafc',
