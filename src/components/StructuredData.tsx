@@ -1,44 +1,37 @@
 import { memo } from 'react';
 import { Helmet } from 'react-helmet-async';
+import { structuredDataContent } from '../content/structuredData';
 
 export const StructuredData = memo(function StructuredData() {
+  const { organization } = structuredDataContent;
+
   return (
     <Helmet>
       <script type="application/ld+json">
         {JSON.stringify({
           '@context': 'https://schema.org',
           '@type': 'Organization',
-          'name': 'Фьючер Скрин',
-          'url': 'https://future-screen.vercel.app',
-          'telephone': '+79122466566',
-          'alternateName': 'Фьюче Скрин',
-          'description': 'Техсопровождение мероприятий: LED-экраны, звук, свет, сцены. КП за 15 минут. Работаем по РФ с 2007 года.',
-          'foundingDate': '2007',
-          'address': {
+          name: organization.name,
+          url: organization.url,
+          telephone: organization.telephone,
+          alternateName: organization.alternateName,
+          description: organization.description,
+          foundingDate: organization.foundingDate,
+          address: {
             '@type': 'PostalAddress',
-            'streetAddress': 'Большой Конный полуостров, 5а',
-            'addressLocality': 'Екатеринбург',
-            'addressRegion': 'Свердловская область',
-            'addressCountry': 'RU',
+            streetAddress: organization.address.streetAddress,
+            addressLocality: organization.address.addressLocality,
+            addressRegion: organization.address.addressRegion,
+            addressCountry: organization.address.addressCountry,
           },
-          'contactPoint': [
-            {
-              '@type': 'ContactPoint',
-              'telephone': '+79122466566',
-              'contactType': 'sales',
-              'availableLanguage': ['Russian'],
-            },
-            {
-              '@type': 'ContactPoint',
-              'telephone': '+79530458558',
-              'contactType': 'sales',
-              'availableLanguage': ['Russian'],
-            },
-          ],
-          'email': ['gr@future-screen.ru', 'an@future-screen.ru'],
-          'areaServed': {
+          contactPoint: organization.contactPoints.map((contactPoint) => ({
+            '@type': 'ContactPoint',
+            ...contactPoint,
+          })),
+          email: organization.email,
+          areaServed: {
             '@type': 'Country',
-            'name': 'Россия',
+            name: organization.areaServed.name,
           },
         })}
       </script>

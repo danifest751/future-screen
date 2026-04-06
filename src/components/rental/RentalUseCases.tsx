@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import { rentalComponentContent } from '../../content/components/rental';
 
 interface UseCase {
   title: string;
@@ -12,7 +13,7 @@ interface RentalUseCasesProps {
 }
 
 const RentalUseCases = memo(function RentalUseCases({
-  title = 'Сценарии использования',
+  title = rentalComponentContent.useCasesTitle,
   items,
   slug,
 }: RentalUseCasesProps) {
@@ -38,7 +39,6 @@ const RentalUseCases = memo(function RentalUseCases({
                 key={index}
                 className="group relative overflow-hidden rounded-2xl border border-white/10 bg-slate-900"
               >
-                {/* Photo */}
                 {imgSrc && (
                   <div className="relative h-44 w-full overflow-hidden">
                     <img
@@ -51,7 +51,6 @@ const RentalUseCases = memo(function RentalUseCases({
                   </div>
                 )}
 
-                {/* Content */}
                 <div className="p-5">
                   <h3 className="text-base font-semibold text-white mb-2">
                     {item.title}

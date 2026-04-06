@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ChevronDown, HelpCircle } from 'lucide-react';
+import { rentalComponentContent } from '../../content/components/rental';
 
 interface FaqItem {
   question: string;
@@ -11,9 +12,9 @@ interface RentalFaqProps {
   items: FaqItem[];
 }
 
-export const RentalFaq = ({ 
-  title = 'Частые вопросы',
-  items 
+export const RentalFaq = ({
+  title = rentalComponentContent.faqTitle,
+  items,
 }: RentalFaqProps) => {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
@@ -43,8 +44,8 @@ export const RentalFaq = ({
                 <div
                   key={index}
                   className={`rounded-xl border transition-all duration-200 ${
-                    isOpen 
-                      ? 'border-brand-500/30 bg-brand-500/[0.03]' 
+                    isOpen
+                      ? 'border-brand-500/30 bg-brand-500/[0.03]'
                       : 'border-white/10 bg-white/[0.03] hover:border-white/20'
                   }`}
                 >
@@ -56,14 +57,14 @@ export const RentalFaq = ({
                     <span className="font-medium text-white">
                       {item.question}
                     </span>
-                    <ChevronDown 
+                    <ChevronDown
                       className={`h-5 w-5 shrink-0 text-slate-400 transition-transform duration-200 ${
                         isOpen ? 'rotate-180' : ''
                       }`}
                     />
                   </button>
-                  
-                  <div 
+
+                  <div
                     className={`overflow-hidden transition-all duration-200 ${
                       isOpen ? 'max-h-96' : 'max-h-0'
                     }`}

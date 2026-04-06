@@ -1,14 +1,15 @@
 import { memo } from 'react';
 import { Check } from 'lucide-react';
+import { rentalComponentContent } from '../../content/components/rental';
 
 interface RentalServiceIncludesProps {
   title?: string;
   items: string[];
 }
 
-const RentalServiceIncludes = memo(function RentalServiceIncludes({ 
-  title = 'Что входит в услугу',
-  items 
+const RentalServiceIncludes = memo(function RentalServiceIncludes({
+  title = rentalComponentContent.serviceIncludesTitle,
+  items,
 }: RentalServiceIncludesProps) {
   if (!Array.isArray(items) || items.length === 0) {
     return null;

@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import { Link } from 'react-router-dom';
+import { rentalComponentContent } from '../../content/components/rental';
 import { StarBorder } from '../effects/StarBorder';
 import { RequestForm } from '../RequestForm';
 
@@ -12,13 +13,17 @@ interface RentalCtaProps {
     secondaryCta?: string;
     secondaryCtaLink?: string;
   };
-  /** Показывать форму запроса вместо ссылок */
+  /** Show the request form instead of CTA links. */
   showForm?: boolean;
-  /** Текст кнопки отправки формы (по умолчанию 'Отправить') */
+  /** Request form submit button text. */
   formCtaText?: string;
 }
 
-const RentalCta = memo(function RentalCta({ data, showForm = false, formCtaText = 'Отправить' }: RentalCtaProps) {
+const RentalCta = memo(function RentalCta({
+  data,
+  showForm = false,
+  formCtaText = rentalComponentContent.ctaFormButton,
+}: RentalCtaProps) {
   const { title, text, primaryCta, primaryCtaLink, secondaryCta, secondaryCtaLink } = data;
 
   if (!title && !text && !showForm) {
@@ -32,14 +37,13 @@ const RentalCta = memo(function RentalCta({ data, showForm = false, formCtaText 
     <section className="py-12 md:py-16">
       <div className="container-page">
         <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-brand-500/10 via-brand-500/5 to-transparent p-8 md:p-12">
-          {/* Decorative elements */}
           <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-brand-500/10 blur-3xl" />
           <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-brand-600/10 blur-3xl" />
-          
+
           <div className="relative max-w-2xl mx-auto text-center">
             {showForm ? (
-              <RequestForm 
-                title={title || 'Нужна помощь?'} 
+              <RequestForm
+                title={title || rentalComponentContent.ctaFallbackTitle}
                 subtitle={text}
                 ctaText={formCtaText}
               />
@@ -50,7 +54,7 @@ const RentalCta = memo(function RentalCta({ data, showForm = false, formCtaText 
                     {title}
                   </h2>
                 )}
-                
+
                 {text && (
                   <p className="text-slate-300 mb-8 leading-relaxed">
                     {text}

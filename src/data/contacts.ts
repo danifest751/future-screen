@@ -1,6 +1,13 @@
-export const contacts = {
-  phones: ['+7 (912) 246-65-66', '+7 (953) 045-85-58'],
-  emails: ['gr@future-screen.ru', 'an@future-screen.ru'],
-  address: 'Большой Конный полуостров, 5а, г. Екатеринбург',
-  workingHours: 'Ежедневно 10:00–20:00',
+import { contactsContent } from '../content/data/contacts';
+
+export const contacts: {
+  phones: string[];
+  emails: string[];
+  address: string;
+  workingHours: string;
+} = {
+  phones: [...contactsContent.phones],
+  emails: [...contactsContent.emails],
+  address: contactsContent.address,
+  workingHours: contactsContent.workingHours,
 };

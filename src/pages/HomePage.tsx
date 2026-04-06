@@ -1,12 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
+﻿import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { trackEvent } from '../lib/analytics';
 import { submitForm } from '../lib/submitForm';
 import { ConsentCheckbox } from '../components/ConsentCheckbox';
-import { homePageContent } from '../content/pages/home';
+import { homePageContent, type HomeIconKey } from '../content/pages/home';
 
-// ─── Scroll reveal hook ───────────────────────────────────────────────────────
+// Scroll reveal hook
 function useScrollReveal(threshold = 0.15) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -28,239 +28,146 @@ function useScrollReveal(threshold = 0.15) {
   return ref;
 }
 
-// ─── Equipment data ───────────────────────────────────────────────────────────
-const equipment = [
-  {
-    title: 'LED-экраны',
-    desc: 'Интерьерные и уличные светодиодные экраны различного размера и разрешения от 2.6мм шаг пикселя',
-    bullets: ['Экраны от 3×2м до 10×6м', 'Модульная система сборки', 'Фермовые конструкции до 7м'],
-    gradient: 'linear-gradient(135deg, #667eea, #764ba2)',
-    link: '/rent/video',
-    photo: '/images/led-closeup.png',
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
-        <rect width="20" height="15" x="2" y="3" rx="2"/><path d="m8 21 4-4 4 4"/><path d="M9 17h6"/>
-      </svg>
-    ),
-  },
-  {
-    title: 'Плазменные панели',
-    desc: 'LED и OLED панели диагональю от 32" до 100" для презентаций и выставок',
-    bullets: ['Диагонали 32"—100"', '4K Ultra HD разрешение', 'Более 300 панелей в парке'],
-    gradient: 'linear-gradient(135deg, #4facfe, #00f2fe)',
-    link: '/rent/video',
-    photo: '/images/equip-plasma.png',
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
-        <rect width="20" height="15" x="2" y="3" rx="2"/><path d="m8 21 4-4 4 4"/><circle cx="12" cy="10" r="3"/>
-      </svg>
-    ),
-  },
-  {
-    title: 'Звуковое оборудование',
-    desc: 'Профессиональные звуковые комплекты, микрофоны, микшеры для концертов и конференций',
-    bullets: ['Активные акустические системы', 'Радиомикрофоны Shure/Sennheiser', 'Микшерные пульты'],
-    gradient: 'linear-gradient(135deg, #f093fb, #f5576c)',
-    link: '/rent/sound',
-    photo: '/images/equip-sound.png',
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
-        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
-      </svg>
-    ),
-  },
-  {
-    title: 'Световое оборудование',
-    desc: 'Прожекторы, PAR-ы, LED-панели, динамические головы для сценического освещения',
-    bullets: ['LED PAR и прожекторы', 'Динамические световые приборы', 'Контроллеры DMX'],
-    gradient: 'linear-gradient(135deg, #ffd89b, #19547b)',
-    link: '/rent/light',
-    photo: '/images/equip-light.png',
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
-        <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/>
-      </svg>
-    ),
-  },
-  {
-    title: 'Сценические конструкции',
-    desc: 'Модульные сцены, фермы, подиумы и трасты для создания площадок любой сложности',
-    bullets: ['Модульные сценические площадки', 'Алюминиевые фермы', 'Подвес для света и экранов'],
-    gradient: 'linear-gradient(135deg, #11998e, #38ef7d)',
-    link: '/rent/stage',
-    photo: '/images/equip-stage.png',
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
-        <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
-      </svg>
-    ),
-  },
-];
+const homeIcons: Record<HomeIconKey, JSX.Element> = {
+  led: (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
+      <rect width="20" height="15" x="2" y="3" rx="2" />
+      <path d="m8 21 4-4 4 4" />
+      <path d="M9 17h6" />
+    </svg>
+  ),
+  panel: (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
+      <rect width="20" height="15" x="2" y="3" rx="2" />
+      <path d="m8 21 4-4 4 4" />
+      <circle cx="12" cy="10" r="3" />
+    </svg>
+  ),
+  sound: (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
+      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+      <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+      <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+    </svg>
+  ),
+  light: (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
+      <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" />
+      <path d="M9 18h6" />
+      <path d="M10 22h4" />
+    </svg>
+  ),
+  stage: (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
+      <path d="M12 2L2 7l10 5 10-5-10-5z" />
+      <path d="M2 17l10 5 10-5" />
+      <path d="M2 12l10 5 10-5" />
+    </svg>
+  ),
+  computer: (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+      <path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16" />
+    </svg>
+  ),
+  touch: (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+      <path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2" />
+      <path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2" />
+      <path d="M10 10.5a2 2 0 0 0-2-2a2 2 0 0 0-2 2V19a4 4 0 0 0 4 4h4a4 4 0 0 0 4-4v-5a2 2 0 0 0-2-2a2 2 0 0 0-2 2" />
+    </svg>
+  ),
+  staff: (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+  ),
+  corporate: (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8">
+      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+    </svg>
+  ),
+  concert: (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8">
+      <path d="m12 8-9.04 9.06a2.82 2.82 0 1 0 3.98 3.98L16 12" />
+      <circle cx="17" cy="7" r="5" />
+    </svg>
+  ),
+  conference: (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8">
+      <rect width="20" height="14" x="2" y="3" rx="2" />
+      <path d="M8 21h8" />
+      <path d="M12 17v4" />
+    </svg>
+  ),
+  wedding: (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8">
+      <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+    </svg>
+  ),
+  exhibition: (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8">
+      <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z" />
+      <path d="M6 12H4a2 2 0 0 0-2 2v8h4" />
+      <path d="M18 9h2a2 2 0 0 1 2 2v11h-4" />
+      <path d="M10 6h4" />
+      <path d="M10 10h4" />
+      <path d="M10 14h4" />
+      <path d="M10 18h4" />
+    </svg>
+  ),
+  presentation: (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8">
+      <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" />
+      <path d="M9 18h6" />
+      <path d="M10 22h4" />
+    </svg>
+  ),
+  festival: (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8">
+      <path d="M12 2v8" />
+      <path d="m4.93 10.93 1.41 1.41" />
+      <path d="M2 18h2" />
+      <path d="M20 18h2" />
+      <path d="m19.07 10.93-1.41 1.41" />
+      <path d="M22 22H2" />
+      <path d="m8 22 4-10 4 10" />
+      <path d="M2 22V12a10 10 0 0 1 20 0v10" />
+    </svg>
+  ),
+  promo: (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8">
+      <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+    </svg>
+  ),
+  theater: (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8">
+      <circle cx="12" cy="12" r="10" />
+      <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+      <line x1="9" y1="9" x2="9.01" y2="9" />
+      <line x1="15" y1="9" x2="15.01" y2="9" />
+    </svg>
+  ),
+  sports: (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8">
+      <circle cx="12" cy="12" r="10" />
+      <path d="m4.9 4.9 14.2 14.2" />
+      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+    </svg>
+  ),
+};
 
-const extraEquipment = [
-  {
-    title: 'Компьютеры и ноутбуки',
-    desc: 'Core i7/i5, игровые и офисные конфигурации',
-    link: '/rent/computers',
-    photo: '/images/equip-computers.png',
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
-        <path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"/>
-      </svg>
-    ),
-  },
-  {
-    title: 'Тачскрины',
-    desc: 'Интерактивные столы 42"–55" с 10-точечным касанием',
-    link: '/rent/touchscreens',
-    photo: '/images/equip-touch.png',
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
-        <path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2"/><path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2"/><path d="M10 10.5a2 2 0 0 0-2-2a2 2 0 0 0-2 2V19a4 4 0 0 0 4 4h4a4 4 0 0 0 4-4v-5a2 2 0 0 0-2-2a2 2 0 0 0-2 2"/>
-      </svg>
-    ),
-  },
-  {
-    title: 'Технический персонал',
-    desc: 'Видеооператоры, звукорежиссёры, техники',
-    link: '/rent/staff',
-    photo: '/images/equip-staff.png',
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
-        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-      </svg>
-    ),
-  },
-];
+// Home page content aliases
+const equipment = homePageContent.equipmentSection.items;
+const extraEquipment = homePageContent.equipmentSection.extraItems;
+const eventTypes = homePageContent.eventTypesSection.items;
+const processSteps = homePageContent.processSection.steps;
+const worksItems = homePageContent.works.items;
 
-// ─── Event types data ─────────────────────────────────────────────────────────
-const eventTypes = [
-  {
-    title: 'Корпоративы',
-    desc: 'Техническое оснащение корпоративных праздников и тимбилдингов',
-    photo: '/images/gala-event.png',
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8">
-        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
-      </svg>
-    ),
-  },
-  {
-    title: 'Концерты',
-    desc: 'Полный технический райдер для концертных площадок и фестивалей',
-    photo: '/images/hero-concert.png',
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8">
-        <path d="m12 8-9.04 9.06a2.82 2.82 0 1 0 3.98 3.98L16 12"/><circle cx="17" cy="7" r="5"/>
-      </svg>
-    ),
-  },
-  {
-    title: 'Конференции',
-    desc: 'Системы синхронного перевода, проекторы, микрофоны',
-    photo: '/images/event-conference.png',
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8">
-        <rect width="20" height="14" x="2" y="3" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/>
-      </svg>
-    ),
-  },
-  {
-    title: 'Свадьбы',
-    desc: 'LED-экраны для банкетных залов, свет, звук',
-    photo: '/images/event-wedding.png',
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8">
-        <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
-      </svg>
-    ),
-  },
-  {
-    title: 'Выставки',
-    desc: 'Светодиодные экраны для стендов, интерактивные панели',
-    photo: '/images/event-exhibition.png',
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8">
-        <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v8h4"/><path d="M18 9h2a2 2 0 0 1 2 2v11h-4"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/>
-      </svg>
-    ),
-  },
-  {
-    title: 'Презентации',
-    desc: 'Премиум-решения для продуктовых презентаций',
-    photo: '/images/event-presentation.png',
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8">
-        <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/>
-      </svg>
-    ),
-  },
-  {
-    title: 'Фестивали',
-    desc: 'Open-air площадки: сцена, звук, LED-экраны для тысяч зрителей',
-    photo: '/images/festival-crowd.png',
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8">
-        <path d="M12 2v8"/><path d="m4.93 10.93 1.41 1.41"/><path d="M2 18h2"/><path d="M20 18h2"/><path d="m19.07 10.93-1.41 1.41"/><path d="M22 22H2"/><path d="m8 22 4-10 4 10"/><path d="M2 22V12a10 10 0 0 1 20 0v10"/>
-      </svg>
-    ),
-  },
-  {
-    title: 'Промо-акции',
-    desc: 'Рекламные стойки, LED-конструкции, брендированные экраны',
-    photo: '/images/hero-led-event.png',
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8">
-        <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
-      </svg>
-    ),
-  },
-  {
-    title: 'Театр и шоу',
-    desc: 'Сценический свет, звуковые системы, LED-задники для спектаклей',
-    photo: '/images/event-theater.png',
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8">
-        <circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/>
-      </svg>
-    ),
-  },
-  {
-    title: 'Спортивные события',
-    desc: 'Видеотабло, трансляции, PA-системы для арен и стадионов',
-    photo: '/images/event-sports.png',
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8">
-        <circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-      </svg>
-    ),
-  },
-];
-
-// ─── Process steps ────────────────────────────────────────────────────────────
-const processSteps = [
-  { num: '01', title: 'Заявка', desc: 'Опишите ваше мероприятие — дату, количество гостей, площадку и задачи' },
-  { num: '02', title: 'Расчёт', desc: 'Подбираем оптимальное оборудование и составляем коммерческое предложение' },
-  { num: '03', title: 'Монтаж', desc: 'Доставка, установка и настройка всего оборудования заранее до мероприятия' },
-  { num: '04', title: 'Поддержка', desc: 'Техническое сопровождение во время события и демонтаж после' },
-];
-
-// ─── Works (portfolio) data ───────────────────────────────────────────────────
-const worksItems = [
-  { src: '/images/work-corporate-gala.png', tag: 'Корпоратив', title: 'Гала-ужин производственной компании' },
-  { src: '/images/work-festival.png', tag: 'Open-air фестиваль', title: 'Летний музыкальный фестиваль' },
-  { src: '/images/work-conference.png', tag: 'Конференция', title: 'Деловой форум 2000 участников' },
-  { src: '/images/work-concert.png', tag: 'Концерт', title: 'Rock-шоу с LED-стеной 200 м²' },
-  { src: '/images/work-wedding.png', tag: 'Свадьба', title: 'Торжественная церемония в банкетном зале' },
-  { src: '/images/work-product-launch.png', tag: 'Презентация', title: 'Запуск флагманского продукта' },
-  { src: '/images/work-exhibition.png', tag: 'Выставка', title: 'Стенд на международном форуме' },
-  { src: '/images/work-newyear.png', tag: 'Новый год', title: 'Корпоративный новогодний праздник' },
-  { src: '/images/work-awards.png', tag: 'Награждение', title: 'Церемония вручения премий' },
-  { src: '/images/work-sports.png', tag: 'Спорт', title: 'Финальный матч чемпионата' },
-];
-
-// ─── Shuffle helper ───────────────────────────────────────────────────────────
-function shuffle<T>(arr: T[]): T[] {
+function shuffle<T>(arr: readonly T[]): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -269,8 +176,8 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
-// ─── Works Slider ─────────────────────────────────────────────────────────────
-function WorksSlider({ items }: { items: typeof worksItems }) {
+// Works slider
+function WorksSlider({ items }: { items: readonly (typeof worksItems)[number][] }) {
   const [shuffled] = useState(() => shuffle(items));
   const n = shuffled.length;
   const all = [...shuffled, ...shuffled, ...shuffled];
@@ -373,10 +280,10 @@ function WorksSlider({ items }: { items: typeof worksItems }) {
   );
 }
 
-// ─── Events Slider ────────────────────────────────────────────────────────────
+// Event types slider
 type EventItem = (typeof eventTypes)[number];
 
-function EventsSlider({ items }: { items: EventItem[] }) {
+function EventsSlider({ items }: { items: readonly EventItem[] }) {
   const [shuffled] = useState(() => shuffle(items));
   const n = shuffled.length;
   const all = [...shuffled, ...shuffled, ...shuffled];
@@ -446,7 +353,7 @@ function EventsSlider({ items }: { items: EventItem[] }) {
                 />
                 <div className="absolute inset-0 bg-black/50 transition-colors duration-300 group-hover:bg-black/25" />
                 <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-white">
-                  <div className="mb-3 opacity-80 group-hover:opacity-100 transition-opacity">{item.icon}</div>
+                  <div className="mb-3 opacity-80 group-hover:opacity-100 transition-opacity">{homeIcons[item.iconKey]}</div>
                   <h3 className="font-display text-xl font-bold">{item.title}</h3>
                 </div>
                 <div className="absolute bottom-0 left-0 right-0 p-4 text-center">
@@ -485,7 +392,7 @@ function EventsSlider({ items }: { items: EventItem[] }) {
   );
 }
 
-// ─── Section wrapper with scroll reveal ──────────────────────────────────────
+// Section wrapper with scroll reveal
 const RevealSection = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => {
   const ref = useScrollReveal(0.1);
   return (
@@ -499,7 +406,7 @@ const RevealSection = ({ children, className = '' }: { children: React.ReactNode
   );
 };
 
-// ─── CTA Form Component ───────────────────────────────────────────────────────
+// CTA form
 const CtaForm = () => {
   const [formData, setFormData] = useState({ name: '', phone: '', email: '' });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -635,7 +542,7 @@ const CtaForm = () => {
   );
 };
 
-// ─── HomePage ─────────────────────────────────────────────────────────────────
+// Home page
 const HomePage = () => {
   const { seo, hero, works, equipmentSection, eventTypesSection, processSection, ctaSection } =
     homePageContent;
@@ -648,7 +555,7 @@ const HomePage = () => {
         <meta name="keywords" content={seo.keywords} />
       </Helmet>
 
-      {/* ── 1. HERO — fullbleed photo ───────────────────────────────────────── */}
+      {/* Hero */}
       <section
         className="relative flex h-screen items-center justify-center overflow-hidden -mt-16 lg:-mt-20"
         style={{
@@ -657,7 +564,7 @@ const HomePage = () => {
           backgroundPosition: 'center',
         }}
       >
-        {/* Dark overlay + gradient fade to site bg */}
+        {/* Dark overlay and gradient fade to site background */}
         <div className="absolute inset-0 bg-black/55" />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#0a0a0a]" />
 
@@ -668,7 +575,7 @@ const HomePage = () => {
             {hero.badge}
           </div>
 
-          {/* H1 */}
+          {/* Title */}
           <h1 className="font-display mb-6 text-balance text-5xl font-bold leading-tight text-white drop-shadow-lg md:text-7xl lg:text-8xl">
             {hero.titleLines[0]}<br />
             <span className="gradient-text">{hero.titleLines[1]}</span><br />
@@ -706,7 +613,7 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* ── 2. OUR WORK — photo cards ─────────────────────────────────────── */}
+      {/* Our work */}
       <section className="py-24 md:py-32 bg-[#0a0a0a]">
         <div className="container-page">
           <RevealSection>
@@ -732,7 +639,7 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* ── 3. EQUIPMENT ──────────────────────────────────────────────────── */}
+      {/* Equipment */}
       <section id="equipment" className="py-24 md:py-32">
         <div className="container-page">
           <RevealSection>
@@ -765,13 +672,13 @@ const HomePage = () => {
                 />
                 {/* Dark gradient overlay */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/20" />
-                {/* Content — always anchored to bottom */}
+                {/* Content anchored to the bottom */}
                 <div className="absolute bottom-0 left-0 right-0 z-10 p-6">
                   <div
                     className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl text-white"
                     style={{ background: item.gradient }}
                   >
-                    {item.icon}
+                    {homeIcons[item.iconKey]}
                   </div>
                   <h3 className="font-display mb-1 text-lg font-semibold text-white group-hover:text-brand-300 transition-colors">{item.title}</h3>
                   <p className="line-clamp-2 text-sm leading-relaxed text-gray-300 mb-3">{item.desc}</p>
@@ -799,7 +706,7 @@ const HomePage = () => {
                 <div className="absolute inset-0 bg-black/65 group-hover:bg-black/55 transition-colors" />
                 <div className="absolute bottom-0 left-0 right-0 z-10 flex items-center gap-3 p-5">
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white group-hover:bg-brand-500/30 transition-colors">
-                    {item.icon}
+                    {homeIcons[item.iconKey]}
                   </div>
                   <div>
                     <div className="font-medium text-white group-hover:text-brand-300 transition-colors leading-tight">{item.title}</div>
@@ -812,7 +719,7 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* ── 4. EVENT TYPES ────────────────────────────────────────────────── */}
+      {/* Event types */}
       <section id="services" className="py-24 md:py-32">
         <div className="container-page">
           <RevealSection>
@@ -833,7 +740,7 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* ── 5. PROCESS ────────────────────────────────────────────────────── */}
+      {/* Process */}
       <section className="py-24 md:py-32">
         <div className="container-page">
           <RevealSection>
@@ -869,7 +776,7 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* ── 6. CTA ────────────────────────────────────────────────────────── */}
+      {/* CTA */}
       <section id="contacts" className="py-24 md:py-32">
         <div className="container-page">
           <RevealSection>

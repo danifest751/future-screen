@@ -1,8 +1,8 @@
 import { useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useRentalCategories } from '../services/rentalCategories';
+import { rentalDropdownContent } from '../content/components/rentalDropdown';
 
-// Category icons mapping
 const categoryIcons: Record<string, JSX.Element> = {
   video: (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
@@ -84,34 +84,30 @@ export const RentalDropdown = ({ isOpen, onClose }: RentalDropdownProps) => {
       className="absolute left-1/2 top-full z-50 -translate-x-1/2 pt-2"
       style={{ animation: 'dropdownFadeIn 0.2s ease-out' }}
     >
-      {/* Arrow */}
       <div className="relative flex justify-center">
         <div className="h-3 w-3 rotate-45 border-l border-t border-white/15 bg-white/5 backdrop-blur-2xl" />
       </div>
-      
-      {/* Dropdown content */}
-      <div 
+
+      <div
         className="mt-1 min-w-[320px] overflow-hidden rounded-2xl border border-white/10 bg-black/75 backdrop-blur-2xl shadow-2xl"
-        style={{ 
+        style={{
           boxShadow: '0 20px 60px -12px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255,255,255,0.05) inset, 0 0 40px rgba(102, 126, 234, 0.08)',
-          animation: 'dropdownSlideIn 0.25s ease-out'
+          animation: 'dropdownSlideIn 0.25s ease-out',
         }}
       >
-        {/* Header */}
         <div className="border-b border-white/5 px-4 py-3">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-gray-400">Категории аренды</span>
-            <Link 
-              to="/rent" 
+            <span className="text-sm font-medium text-gray-400">{rentalDropdownContent.headerTitle}</span>
+            <Link
+              to="/rent"
               className="text-xs text-brand-400 hover:text-brand-300 transition-colors"
               onClick={onClose}
             >
-              Все →
+              {rentalDropdownContent.allLink}
             </Link>
           </div>
         </div>
 
-        {/* Categories list */}
         <div className="max-h-[400px] overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
           {loading ? (
             <div className="flex items-center justify-center py-8">
@@ -139,12 +135,12 @@ export const RentalDropdown = ({ isOpen, onClose }: RentalDropdownProps) => {
                       </div>
                     )}
                   </div>
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    viewBox="0 0 24 24" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    strokeWidth="2" 
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
                     className="h-4 w-4 text-gray-600 opacity-0 transition-all group-hover:translate-x-1 group-hover:opacity-100"
                   >
                     <path strokeLinecap="round" strokeLinejoin="round" d="m9 18 6-6-6-6"/>
@@ -154,12 +150,11 @@ export const RentalDropdown = ({ isOpen, onClose }: RentalDropdownProps) => {
             </div>
           ) : (
             <div className="py-4 text-center text-sm text-gray-500">
-              Категории не найдены
+              {rentalDropdownContent.emptyState}
             </div>
           )}
         </div>
 
-        {/* Footer with CTA */}
         <div className="border-t border-white/5 p-3">
           <Link
             to="/rent"
@@ -169,7 +164,7 @@ export const RentalDropdown = ({ isOpen, onClose }: RentalDropdownProps) => {
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
               <rect width="20" height="14" x="2" y="3" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/>
             </svg>
-            Вся аренда оборудования
+            {rentalDropdownContent.footerCta}
           </Link>
         </div>
       </div>

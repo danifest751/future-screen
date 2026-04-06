@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import { Zap, Shield, Clock, HeadphonesIcon, Award, Settings } from 'lucide-react';
+import { rentalComponentContent } from '../../content/components/rental';
 
 interface Benefit {
   title: string;
@@ -11,21 +12,23 @@ interface RentalBenefitsProps {
   items: Benefit[];
 }
 
-// Default icons mapped by common benefit keywords
 const getIcon = (title: string) => {
   const lower = title.toLowerCase();
-  if (lower.includes('быстр') || lower.includes('скор') || lower.includes('гибк')) return Zap;
-  if (lower.includes('надёжн') || lower.includes('безопасн') || lower.includes('гарант')) return Shield;
-  if (lower.includes('опыт') || lower.includes('лет') || lower.includes('професс')) return Award;
-  if (lower.includes('поддержк') || lower.includes('сопровожд') || lower.includes('сервис')) return HeadphonesIcon;
-  if (lower.includes('настройк') || lower.includes('монтаж') || lower.includes('установк')) return Settings;
-  if (lower.includes('срок') || lower.includes('время') || lower.includes('пunctуальн')) return Clock;
+  const { benefitKeywordGroups } = rentalComponentContent;
+
+  if (benefitKeywordGroups.speed.some((keyword) => lower.includes(keyword))) return Zap;
+  if (benefitKeywordGroups.reliability.some((keyword) => lower.includes(keyword))) return Shield;
+  if (benefitKeywordGroups.experience.some((keyword) => lower.includes(keyword))) return Award;
+  if (benefitKeywordGroups.support.some((keyword) => lower.includes(keyword))) return HeadphonesIcon;
+  if (benefitKeywordGroups.setup.some((keyword) => lower.includes(keyword))) return Settings;
+  if (benefitKeywordGroups.timing.some((keyword) => lower.includes(keyword))) return Clock;
+
   return Zap;
 };
 
-const RentalBenefits = memo(function RentalBenefits({ 
-  title = 'Преимущества',
-  items 
+const RentalBenefits = memo(function RentalBenefits({
+  title = rentalComponentContent.benefitsTitle,
+  items,
 }: RentalBenefitsProps) {
   if (!Array.isArray(items) || items.length === 0) {
     return null;

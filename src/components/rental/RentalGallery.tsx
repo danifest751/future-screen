@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import { rentalComponentContent } from '../../content/components/rental';
 
 interface GalleryItem {
   image: string;
@@ -11,9 +12,9 @@ interface RentalGalleryProps {
   title?: string;
 }
 
-const RentalGallery = memo(function RentalGallery({ 
+const RentalGallery = memo(function RentalGallery({
   items,
-  title = 'Галерея'
+  title = rentalComponentContent.galleryTitle,
 }: RentalGalleryProps) {
   if (!Array.isArray(items) || items.length === 0) {
     return null;
@@ -41,17 +42,18 @@ const RentalGallery = memo(function RentalGallery({
                 />
               ) : (
                 <div className="flex h-full w-full items-center justify-center bg-white/[0.05]">
-                  <span className="text-slate-500 text-sm">Изображение</span>
+                  <span className="text-slate-500 text-sm">
+                    {rentalComponentContent.galleryEmptyLabel}
+                  </span>
                 </div>
               )}
-              
+
               {item.caption && (
                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-4 opacity-0 transition-opacity group-hover:opacity-100">
                   <p className="text-sm text-white">{item.caption}</p>
                 </div>
               )}
 
-              {/* Overlay on hover */}
               <div className="absolute inset-0 bg-brand-500/10 opacity-0 transition-opacity group-hover:opacity-100" />
             </div>
           ))}
