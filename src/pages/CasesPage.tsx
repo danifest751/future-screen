@@ -5,10 +5,13 @@ import Section from '../components/Section';
 import { useCases } from '../hooks/useCases';
 import type { CaseItem } from '../data/cases';
 import { LazyImage } from '../components/LazyImage';
-import { casesPageContent } from '../content/pages/cases';
+import { useI18n } from '../context/I18nContext';
+import { getCasesPageContent } from '../content/pages/cases';
 
 const CasesPage = () => {
+  const { siteLocale } = useI18n();
   const { cases } = useCases();
+  const casesPageContent = getCasesPageContent(siteLocale);
   const { seo, section, videoOverlay, emptyState } = casesPageContent;
 
   const getPreviewMedia = (item: CaseItem & { videos?: string[] }) => {

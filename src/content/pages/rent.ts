@@ -1,4 +1,6 @@
-export const rentPageContent = {
+import type { Locale } from '../../i18n/types';
+
+const ru = {
   seo: {
     title: 'Аренда оборудования для мероприятий | Фьючер Скрин',
     description:
@@ -25,3 +27,11 @@ export const rentPageContent = {
     ctaText: 'Получить подбор',
   },
 } as const;
+
+const en: typeof ru = ru;
+
+const rentPageContentByLocale: Record<Locale, typeof ru> = { ru, en };
+
+export const getRentPageContent = (locale: Locale) => rentPageContentByLocale[locale];
+
+export const rentPageContent = ru;

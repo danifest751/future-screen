@@ -3,10 +3,13 @@ import { Helmet } from 'react-helmet-async';
 import Section from '../components/Section';
 import { usePackages } from '../hooks/usePackages';
 import { RequestForm } from '../components/RequestForm';
-import { pricesPageContent } from '../content/pages/prices';
+import { useI18n } from '../context/I18nContext';
+import { getPricesPageContent } from '../content/pages/prices';
 
 const PricesPage = () => {
+  const { siteLocale } = useI18n();
   const { packages, loading } = usePackages();
+  const pricesPageContent = getPricesPageContent(siteLocale);
   const { seo, hero, pricing, form } = pricesPageContent;
 
   return (

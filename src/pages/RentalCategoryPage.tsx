@@ -10,11 +10,14 @@ import { RentalBenefits } from '../components/rental/RentalBenefits';
 import { RentalGallery } from '../components/rental/RentalGallery';
 import { RentalFaq } from '../components/rental/RentalFaq';
 import { RentalCta } from '../components/rental/RentalCta';
-import { rentalCategoryPageContent } from '../content/pages/rentalCategory';
+import { useI18n } from '../context/I18nContext';
+import { getRentalCategoryPageContent } from '../content/pages/rentalCategory';
 
 const RentalCategoryPage = () => {
+  const { siteLocale } = useI18n();
   const { slug } = useParams<{ slug: string }>();
   const { item: category, loading, error } = useRentalCategory(slug ?? '');
+  const rentalCategoryPageContent = getRentalCategoryPageContent(siteLocale);
 
   // Scroll to top on mount
   useEffect(() => {

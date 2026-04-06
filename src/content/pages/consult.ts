@@ -1,4 +1,6 @@
-export const consultPageContent = {
+import type { Locale } from '../../i18n/types';
+
+const ru = {
   seo: {
     title: 'Консультация по оборудованию | Фьючер Скрин',
     description:
@@ -24,3 +26,11 @@ export const consultPageContent = {
     ctaText: 'Отправить',
   },
 } as const;
+
+const en: typeof ru = ru;
+
+const consultPageContentByLocale: Record<Locale, typeof ru> = { ru, en };
+
+export const getConsultPageContent = (locale: Locale) => consultPageContentByLocale[locale];
+
+export const consultPageContent = ru;

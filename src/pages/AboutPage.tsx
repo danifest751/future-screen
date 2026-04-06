@@ -1,8 +1,11 @@
 import { Helmet } from 'react-helmet-async';
 import Section from '../components/Section';
-import { aboutPageContent } from '../content/pages/about';
+import { useI18n } from '../context/I18nContext';
+import { getAboutPageContent } from '../content/pages/about';
 
 const AboutPage = () => {
+  const { siteLocale } = useI18n();
+  const aboutPageContent = getAboutPageContent(siteLocale);
   const { seo, section, paragraphs, factsTitle, facts } = aboutPageContent;
 
   return (

@@ -1,4 +1,6 @@
-export const pricesPageContent = {
+import type { Locale } from '../../i18n/types';
+
+const ru = {
   seo: {
     title: 'Пакеты и цены | Фьючер Скрин',
     description:
@@ -27,3 +29,11 @@ export const pricesPageContent = {
     ctaText: 'Запросить вилку',
   },
 } as const;
+
+const en: typeof ru = ru;
+
+const pricesPageContentByLocale: Record<Locale, typeof ru> = { ru, en };
+
+export const getPricesPageContent = (locale: Locale) => pricesPageContentByLocale[locale];
+
+export const pricesPageContent = ru;

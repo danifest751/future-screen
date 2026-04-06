@@ -1,4 +1,6 @@
-export const casesPageContent = {
+import type { Locale } from '../../i18n/types';
+
+const ru = {
   seo: {
     title: 'Кейсы — реализованные проекты | Фьючер Скрин',
     description:
@@ -24,3 +26,11 @@ export const casesPageContent = {
     requestCta: 'Обсудить',
   },
 } as const;
+
+const en: typeof ru = ru;
+
+const casesPageContentByLocale: Record<Locale, typeof ru> = { ru, en };
+
+export const getCasesPageContent = (locale: Locale) => casesPageContentByLocale[locale];
+
+export const casesPageContent = ru;

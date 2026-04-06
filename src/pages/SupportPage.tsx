@@ -2,11 +2,14 @@ import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { RequestForm } from '../components/RequestForm';
 import Section from '../components/Section';
-import { supportPageContent } from '../content/pages/support';
+import { useI18n } from '../context/I18nContext';
+import { getSupportPageContent } from '../content/pages/support';
 import { usePackages } from '../hooks/usePackages';
 
 const SupportPage = () => {
+  const { siteLocale } = useI18n();
   const { packages, loading } = usePackages();
+  const supportPageContent = getSupportPageContent(siteLocale);
 
   return (
     <div className="space-y-2">

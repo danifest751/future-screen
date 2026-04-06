@@ -1,4 +1,6 @@
-export const aboutPageContent = {
+import type { Locale } from '../../i18n/types';
+
+const ru = {
   seo: {
     title: 'О компании | Фьючер Скрин',
     description:
@@ -21,3 +23,11 @@ export const aboutPageContent = {
     'Резерв оборудования и процессинга по запросу',
   ],
 } as const;
+
+const en: typeof ru = ru;
+
+const aboutPageContentByLocale: Record<Locale, typeof ru> = { ru, en };
+
+export const getAboutPageContent = (locale: Locale) => aboutPageContentByLocale[locale];
+
+export const aboutPageContent = ru;

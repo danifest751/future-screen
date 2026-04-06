@@ -6,12 +6,15 @@ import { useCases } from '../hooks/useCases';
 import { RequestForm } from '../components/RequestForm';
 import { trackEvent } from '../lib/analytics';
 import type { CaseItem } from '../data/cases';
-import { casesPageContent } from '../content/pages/cases';
+import { useI18n } from '../context/I18nContext';
+import { getCasesPageContent } from '../content/pages/cases';
 
 const CaseDetailsPage = () => {
+  const { siteLocale } = useI18n();
   const { slug } = useParams();
   const { cases } = useCases();
   const item = cases.find((c) => c.slug === slug);
+  const casesPageContent = getCasesPageContent(siteLocale);
   const { details } = casesPageContent;
 
   useEffect(() => {

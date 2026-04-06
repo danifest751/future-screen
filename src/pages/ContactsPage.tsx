@@ -1,7 +1,8 @@
 import { Helmet } from 'react-helmet-async';
 import { RequestForm } from '../components/RequestForm';
 import Section from '../components/Section';
-import { contactsPageContent } from '../content/pages/contacts';
+import { useI18n } from '../context/I18nContext';
+import { getContactsPageContent } from '../content/pages/contacts';
 import { useContacts } from '../hooks/useContacts';
 
 const PhoneIcon = () => (
@@ -32,6 +33,8 @@ const ClockIcon = () => (
 );
 
 const ContactsPage = () => {
+  const { siteLocale } = useI18n();
+  const contactsPageContent = getContactsPageContent(siteLocale);
   const { contacts, loading, error } = useContacts();
 
   return (

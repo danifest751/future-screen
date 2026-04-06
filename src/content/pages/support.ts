@@ -1,4 +1,6 @@
-export const supportPageContent = {
+import type { Locale } from '../../i18n/types';
+
+const ru = {
   seo: {
     title: 'Техсопровождение мероприятий | Фьючер Скрин',
     description:
@@ -40,4 +42,12 @@ export const supportPageContent = {
     subtitle: 'Опишите формат — подберём пакет и состав',
     ctaText: 'Запросить КП',
   },
-};
+} as const;
+
+const en: typeof ru = ru;
+
+const supportPageContentByLocale: Record<Locale, typeof ru> = { ru, en };
+
+export const getSupportPageContent = (locale: Locale) => supportPageContentByLocale[locale];
+
+export const supportPageContent = ru;

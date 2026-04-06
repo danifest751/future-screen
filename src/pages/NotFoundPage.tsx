@@ -1,10 +1,15 @@
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import Section from '../components/Section';
-import { notFoundPageContent } from '../content/pages/notFound';
+import { useI18n } from '../context/I18nContext';
+import { getNotFoundPageContent } from '../content/pages/notFound';
 
-const NotFoundPage = () => (
-  <div className="space-y-2">
+const NotFoundPage = () => {
+  const { siteLocale } = useI18n();
+  const notFoundPageContent = getNotFoundPageContent(siteLocale);
+
+  return (
+    <div className="space-y-2">
     <Helmet>
       <title>{notFoundPageContent.seoTitle}</title>
     </Helmet>
@@ -21,7 +26,8 @@ const NotFoundPage = () => (
         </div>
       </div>
     </Section>
-  </div>
-);
+    </div>
+  );
+};
 
 export default NotFoundPage;

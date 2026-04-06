@@ -1,3 +1,5 @@
+import type { Locale } from '../../i18n/types';
+
 export type HomeIconKey =
   | 'led'
   | 'panel'
@@ -18,7 +20,7 @@ export type HomeIconKey =
   | 'theater'
   | 'sports';
 
-export const homePageContent = {
+const ru = {
   seo: {
     title: 'Фьючер Скрин — Техническое оснащение мероприятий | LED-экраны, звук, свет',
     description:
@@ -263,3 +265,11 @@ export const homePageContent = {
     },
   },
 } as const;
+
+const en: typeof ru = ru;
+
+const homePageContentByLocale: Record<Locale, typeof ru> = { ru, en };
+
+export const getHomePageContent = (locale: Locale) => homePageContentByLocale[locale];
+
+export const homePageContent = ru;

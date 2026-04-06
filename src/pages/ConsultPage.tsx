@@ -1,9 +1,12 @@
 import { Helmet } from 'react-helmet-async';
 import Section from '../components/Section';
 import { RequestForm } from '../components/RequestForm';
-import { consultPageContent } from '../content/pages/consult';
+import { useI18n } from '../context/I18nContext';
+import { getConsultPageContent } from '../content/pages/consult';
 
 const ConsultPage = () => {
+  const { siteLocale } = useI18n();
+  const consultPageContent = getConsultPageContent(siteLocale);
   const { seo, hero, body, form } = consultPageContent;
 
   return (

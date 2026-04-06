@@ -1,4 +1,6 @@
-export const ledPageContent = {
+import type { Locale } from '../../i18n/types';
+
+const ru = {
   seo: {
     title: 'LED-экраны — аренда и монтаж | Фьючер Скрин',
     description:
@@ -60,4 +62,12 @@ export const ledPageContent = {
     subtitle: 'Опишите площадку и формат, подберём конфигурацию и КП.',
     ctaText: 'Получить предложение',
   },
-};
+} as const;
+
+const en: typeof ru = ru;
+
+const ledPageContentByLocale: Record<Locale, typeof ru> = { ru, en };
+
+export const getLedPageContent = (locale: Locale) => ledPageContentByLocale[locale];
+
+export const ledPageContent = ru;

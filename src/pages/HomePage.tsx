@@ -4,7 +4,8 @@ import { Helmet } from 'react-helmet-async';
 import { trackEvent } from '../lib/analytics';
 import { submitForm } from '../lib/submitForm';
 import { ConsentCheckbox } from '../components/ConsentCheckbox';
-import { homePageContent, type HomeIconKey } from '../content/pages/home';
+import { useI18n } from '../context/I18nContext';
+import { getHomePageContent, type HomeIconKey } from '../content/pages/home';
 
 // Scroll reveal hook
 function useScrollReveal(threshold = 0.15) {
@@ -160,13 +161,6 @@ const homeIcons: Record<HomeIconKey, JSX.Element> = {
   ),
 };
 
-// Home page content aliases
-const equipment = homePageContent.equipmentSection.items;
-const extraEquipment = homePageContent.equipmentSection.extraItems;
-const eventTypes = homePageContent.eventTypesSection.items;
-const processSteps = homePageContent.processSection.steps;
-const worksItems = homePageContent.works.items;
-
 function shuffle<T>(arr: readonly T[]): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -176,8 +170,14 @@ function shuffle<T>(arr: readonly T[]): T[] {
   return a;
 }
 
+type HomeWorkItem = {
+  src: string;
+  tag: string;
+  title: string;
+};
+
 // Works slider
-function WorksSlider({ items }: { items: readonly (typeof worksItems)[number][] }) {
+function WorksSlider({ items, prevLabel, nextLabel }: { items: readonly HomeWorkItem[]; prevLabel: string; nextLabel: string }) {
   const [shuffled] = useState(() => shuffle(items));
   const n = shuffled.length;
   const all = [...shuffled, ...shuffled, ...shuffled];
@@ -256,7 +256,7 @@ function WorksSlider({ items }: { items: readonly (typeof worksItems)[number][] 
       {/* Left arrow */}
       <button
         onClick={() => go(-1)}
-        aria-label={homePageContent.works.prevLabel}
+        aria-label={prevLabel}
         className="absolute left-3 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center w-11 h-11 rounded-full bg-black/70 border border-white/20 text-white transition-all duration-200 hover:bg-brand-600 hover:border-brand-500 hover:scale-110"
         style={{ opacity: hovered ? 1 : 0, pointerEvents: hovered ? 'auto' : 'none' }}
       >
@@ -268,7 +268,7 @@ function WorksSlider({ items }: { items: readonly (typeof worksItems)[number][] 
       {/* Right arrow */}
       <button
         onClick={() => go(1)}
-        aria-label={homePageContent.works.nextLabel}
+        aria-label={nextLabel}
         className="absolute right-3 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center w-11 h-11 rounded-full bg-black/70 border border-white/20 text-white transition-all duration-200 hover:bg-brand-600 hover:border-brand-500 hover:scale-110"
         style={{ opacity: hovered ? 1 : 0, pointerEvents: hovered ? 'auto' : 'none' }}
       >
@@ -281,9 +281,14 @@ function WorksSlider({ items }: { items: readonly (typeof worksItems)[number][] 
 }
 
 // Event types slider
-type EventItem = (typeof eventTypes)[number];
+type EventItem = {
+  iconKey: HomeIconKey;
+  title: string;
+  desc: string;
+  photo: string;
+};
 
-function EventsSlider({ items }: { items: readonly EventItem[] }) {
+function EventsSlider({ items, prevLabel, nextLabel }: { items: readonly EventItem[]; prevLabel: string; nextLabel: string }) {
   const [shuffled] = useState(() => shuffle(items));
   const n = shuffled.length;
   const all = [...shuffled, ...shuffled, ...shuffled];
@@ -369,7 +374,7 @@ function EventsSlider({ items }: { items: readonly EventItem[] }) {
 
       <button
         onClick={() => go(-1)}
-        aria-label={homePageContent.eventTypesSection.prevLabel}
+        aria-label={prevLabel}
         className={`${arrowBtn} left-3`}
         style={{ opacity: hovered ? 1 : 0, pointerEvents: hovered ? 'auto' : 'none' }}
       >
@@ -380,7 +385,7 @@ function EventsSlider({ items }: { items: readonly EventItem[] }) {
 
       <button
         onClick={() => go(1)}
-        aria-label={homePageContent.eventTypesSection.nextLabel}
+        aria-label={nextLabel}
         className={`${arrowBtn} right-3`}
         style={{ opacity: hovered ? 1 : 0, pointerEvents: hovered ? 'auto' : 'none' }}
       >
@@ -406,15 +411,15 @@ const RevealSection = ({ children, className = '' }: { children: React.ReactNode
   );
 };
 
+type CtaFormContent = ReturnType<typeof getHomePageContent>['ctaForm'];
+
 // CTA form
-const CtaForm = () => {
+const CtaForm = ({ ctaForm }: { ctaForm: CtaFormContent }) => {
   const [formData, setFormData] = useState({ name: '', phone: '', email: '' });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [consent, setConsent] = useState(false);
-  const { ctaForm } = homePageContent;
-
   const validate = () => {
     const newErrors: Record<string, string> = {};
     if (!formData.name.trim() || formData.name.trim().length < 2) {
@@ -544,8 +549,15 @@ const CtaForm = () => {
 
 // Home page
 const HomePage = () => {
+  const { siteLocale } = useI18n();
+  const homePageContent = getHomePageContent(siteLocale);
   const { seo, hero, works, equipmentSection, eventTypesSection, processSection, ctaSection } =
     homePageContent;
+  const equipment = equipmentSection.items;
+  const extraEquipment = equipmentSection.extraItems;
+  const eventTypes = eventTypesSection.items;
+  const processSteps = processSection.steps;
+  const worksItems = works.items;
 
   return (
     <div>
@@ -634,7 +646,7 @@ const HomePage = () => {
           </RevealSection>
 
           <RevealSection>
-            <WorksSlider items={worksItems} />
+            <WorksSlider items={worksItems} prevLabel={works.prevLabel} nextLabel={works.nextLabel} />
           </RevealSection>
         </div>
       </section>
@@ -735,7 +747,7 @@ const HomePage = () => {
           </RevealSection>
 
           <RevealSection>
-            <EventsSlider items={eventTypes} />
+            <EventsSlider items={eventTypes} prevLabel={eventTypesSection.prevLabel} nextLabel={eventTypesSection.nextLabel} />
           </RevealSection>
         </div>
       </section>
@@ -806,7 +818,7 @@ const HomePage = () => {
                 <p className="mx-auto mb-8 max-w-xl text-gray-400">
                   {ctaSection.subtitle}
                 </p>
-                <CtaForm />
+                <CtaForm ctaForm={homePageContent.ctaForm} />
               </div>
             </div>
           </RevealSection>

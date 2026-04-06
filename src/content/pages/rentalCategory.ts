@@ -1,4 +1,6 @@
-export const rentalCategoryPageContent = {
+import type { Locale } from '../../i18n/types';
+
+const ru = {
   errorTitle: 'Ошибка загрузки',
   notFoundTitle: 'Категория не найдена',
   fallbackDescription: 'Проверьте URL или вернитесь на страницу аренды',
@@ -15,3 +17,11 @@ export const rentalCategoryPageContent = {
   backLink: 'Вернуться к аренде',
   formCtaText: 'Запросить помощь',
 } as const;
+
+const en: typeof ru = ru;
+
+const rentalCategoryPageContentByLocale: Record<Locale, typeof ru> = { ru, en };
+
+export const getRentalCategoryPageContent = (locale: Locale) => rentalCategoryPageContentByLocale[locale];
+
+export const rentalCategoryPageContent = ru;

@@ -4,10 +4,13 @@ import { Helmet } from 'react-helmet-async';
 import Section from '../components/Section';
 import { useRentalCategories } from '../services/rentalCategories';
 import { RequestForm } from '../components/RequestForm';
-import { rentPageContent } from '../content/pages/rent';
+import { useI18n } from '../context/I18nContext';
+import { getRentPageContent } from '../content/pages/rent';
 
 const RentPage = () => {
+  const { siteLocale } = useI18n();
   const { items, loading, error } = useRentalCategories();
+  const rentPageContent = getRentPageContent(siteLocale);
   const { seo, hero, checklist, form } = rentPageContent;
 
   useEffect(() => {

@@ -2,9 +2,12 @@ import { Helmet } from 'react-helmet-async';
 import Markdown from 'markdown-to-jsx';
 import { usePrivacyPolicyQuery } from '../queries';
 import { sanitizeMarkdown } from '../lib/sanitize';
-import { privacyPageContent } from '../content/pages/privacy';
+import { useI18n } from '../context/I18nContext';
+import { getPrivacyPageContent } from '../content/pages/privacy';
 
 const PrivacyPolicyPage = () => {
+  const { siteLocale } = useI18n();
+  const privacyPageContent = getPrivacyPageContent(siteLocale);
   const { data: content, isLoading, error } = usePrivacyPolicyQuery();
 
   if (isLoading) {

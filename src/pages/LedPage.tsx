@@ -1,10 +1,15 @@
 import { Helmet } from 'react-helmet-async';
 import { RequestForm } from '../components/RequestForm';
 import Section from '../components/Section';
-import { ledPageContent } from '../content/pages/led';
+import { useI18n } from '../context/I18nContext';
+import { getLedPageContent } from '../content/pages/led';
 
-const LedPage = () => (
-  <div className="space-y-2">
+const LedPage = () => {
+  const { siteLocale } = useI18n();
+  const ledPageContent = getLedPageContent(siteLocale);
+
+  return (
+    <div className="space-y-2">
     <Helmet>
       <title>{ledPageContent.seo.title}</title>
       <meta name="description" content={ledPageContent.seo.description} />
@@ -81,7 +86,8 @@ const LedPage = () => (
         />
       </div>
     </Section>
-  </div>
-);
+    </div>
+  );
+};
 
 export default LedPage;

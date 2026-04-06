@@ -1,4 +1,6 @@
-export const contactsPageContent = {
+import type { Locale } from '../../i18n/types';
+
+const ru = {
   seo: {
     title: 'Контакты | Фьючер Скрин',
     description: 'Контакты Фьючер Скрин: телефон, email, адрес. Свяжитесь любым удобным способом.',
@@ -25,4 +27,12 @@ export const contactsPageContent = {
     subtitle: 'Имя, телефон и кратко о задаче — ответим в течение 15 минут',
     ctaText: 'Отправить',
   },
-};
+} as const;
+
+const en: typeof ru = ru;
+
+const contactsPageContentByLocale: Record<Locale, typeof ru> = { ru, en };
+
+export const getContactsPageContent = (locale: Locale) => contactsPageContentByLocale[locale];
+
+export const contactsPageContent = ru;
