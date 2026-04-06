@@ -36,6 +36,9 @@ const normalizeEmail = (value) => normalizeHeaderValue(value, FIELD_LIMITS.email
   .toLowerCase();
 
 const normalizePhone = (value) => normalizeHeaderValue(value, FIELD_LIMITS.phone);
+const normalizeRequestId = (value) => normalizeHeaderValue(value, 120)
+  .replace(/[^a-zA-Z0-9._:-]/g, '')
+  .slice(0, 120);
 
 const normalizeExtra = (value) => {
   if (!isPlainObject(value)) return {};
@@ -288,8 +291,8 @@ export const processEmailSubmission = async ({
   formatTelegramMessage: formatTelegramMessageFn = formatTelegramMessage,
   formatEmailFailureAlertMessage: formatEmailFailureAlertMessageFn = formatEmailFailureAlertMessage,
 }) => {
-  const requestId = createRequestId();
   const rawBody = isPlainObject(body) ? body : {};
+  const requestId = normalizeRequestId(rawBody.requestId) || createRequestId();
   const honey = normalizeText(rawBody.honey, 50);
 
   if (honey) {

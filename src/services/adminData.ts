@@ -4,11 +4,13 @@ import { categories as baseCategories, type Category } from '../data/categories'
 import { contacts as baseContacts } from '../data/contacts';
 import { cases as baseCases, type CaseItem } from '../data/cases';
 import type { LeadLog } from '../types/leads';
+import type { LeadDeliveryLogEntry } from '../types/leads';
 import { normalizeList } from '../utils/normalizeList';
 
 type LeadRow = {
   id: string;
   created_at: string;
+  request_id: string | null;
   source: string;
   name: string;
   phone: string;
@@ -22,6 +24,7 @@ type LeadRow = {
   page_path: string | null;
   referrer: string | null;
   status: string | null;
+  delivery_log: LeadDeliveryLogEntry[] | null;
 };
 
 type PackageRow = {
@@ -55,6 +58,7 @@ const toErrorMessage = (err: unknown) => (err instanceof Error ? err.message : '
 
 const mapLeadFromDB = (row: LeadRow): LeadLog => ({
   id: row.id,
+  requestId: row.request_id ?? undefined,
   timestamp: row.created_at,
   source: row.source,
   name: row.name,
@@ -69,6 +73,7 @@ const mapLeadFromDB = (row: LeadRow): LeadLog => ({
   pagePath: row.page_path ?? undefined,
   referrer: row.referrer ?? undefined,
   status: row.status ?? undefined,
+  deliveryLog: row.delivery_log ?? undefined,
 });
 
 export const mapPackageFromDB = (row: PackageRow): Package => ({

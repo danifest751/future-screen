@@ -224,12 +224,16 @@ export type Database = {
           comment: string | null
           created_at: string | null
           date: string | null
+          delivery_log: Json | null
           email: string | null
           extra: Json | null
           format: string | null
-          id: number
+          id: string
           name: string
+          page_path: string | null
           phone: string
+          referrer: string | null
+          request_id: string | null
           source: string
           status: string | null
           telegram: string | null
@@ -239,12 +243,16 @@ export type Database = {
           comment?: string | null
           created_at?: string | null
           date?: string | null
+          delivery_log?: Json | null
           email?: string | null
           extra?: Json | null
           format?: string | null
-          id?: number
+          id?: string
           name: string
+          page_path?: string | null
           phone: string
+          referrer?: string | null
+          request_id?: string | null
           source: string
           status?: string | null
           telegram?: string | null
@@ -254,12 +262,16 @@ export type Database = {
           comment?: string | null
           created_at?: string | null
           date?: string | null
+          delivery_log?: Json | null
           email?: string | null
           extra?: Json | null
           format?: string | null
-          id?: number
+          id?: string
           name?: string
+          page_path?: string | null
           phone?: string
+          referrer?: string | null
+          request_id?: string | null
           source?: string
           status?: string | null
           telegram?: string | null

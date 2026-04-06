@@ -7,6 +7,7 @@ import type { CaseItem } from '../data/cases';
 import type { Category } from '../data/categories';
 import type { Package } from '../data/packages';
 import type { LeadLog } from '../types/leads';
+import type { LeadDeliveryLogEntry } from '../types/leads';
 
 type CaseRow = Database['public']['Tables']['cases']['Row'];
 type CategoryRow = Database['public']['Tables']['categories']['Row'];
@@ -106,8 +107,13 @@ export function mapPackageToDB(pkg: Package): Record<string, unknown> {
  * Преобразовать лид из БД в формат приложения.
  */
 export function mapLeadFromDB(row: LeadRow): LeadLog {
+  const deliveryLog = Array.isArray(row.delivery_log)
+    ? (row.delivery_log as LeadDeliveryLogEntry[])
+    : undefined;
+
   return {
     id: String(row.id),
+    requestId: row.request_id ?? undefined,
     timestamp: row.created_at ?? '',
     source: row.source,
     name: row.name,
@@ -119,9 +125,10 @@ export function mapLeadFromDB(row: LeadRow): LeadLog {
     format: row.format ?? undefined,
     comment: row.comment ?? undefined,
     extra: (row.extra as Record<string, string>) ?? undefined,
-    pagePath: undefined,
-    referrer: undefined,
+    pagePath: row.page_path ?? undefined,
+    referrer: row.referrer ?? undefined,
     status: row.status ?? undefined,
+    deliveryLog,
   };
 }
 
@@ -159,6 +166,7 @@ export function mapContactsToDB(contacts: { phones: string[]; emails: string[]; 
  */
 export function mapLeadToDB(lead: LeadLog): Record<string, unknown> {
   return {
+    request_id: lead.requestId,
     source: lead.source,
     name: lead.name,
     phone: lead.phone,
@@ -169,6 +177,9 @@ export function mapLeadToDB(lead: LeadLog): Record<string, unknown> {
     format: lead.format,
     comment: lead.comment,
     extra: lead.extra,
+    page_path: lead.pagePath,
+    referrer: lead.referrer,
     status: lead.status,
+    delivery_log: lead.deliveryLog,
   };
 }
