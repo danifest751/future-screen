@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { X, Upload, FileImage, FileVideo, Trash2, Check, AlertCircle } from 'lucide-react';
+import { mediaUploadModalContent } from '../../../content/components/mediaUploadModal';
 import { useMediaUpload, getAcceptedFileTypes, isValidFileType, formatUploadStatus } from '../../../hooks/useMediaUpload';
 import { formatFileSize } from '../../../lib/imageCompression';
 import type { MediaItem } from '../../../types/media';
@@ -11,7 +12,6 @@ interface MediaUploadModalProps {
   defaultTags?: string[];
 }
 
-// Внутренний компонент с логикой - вызывает хуки без условий
 const MediaUploadModalContent = ({
   onClose,
   onUploadComplete,
@@ -106,17 +106,14 @@ const MediaUploadModalContent = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={handleClose}
       />
 
-      {/* Modal */}
       <div className="relative max-h-[90vh] w-full max-w-2xl overflow-auto rounded-xl border border-white/10 bg-slate-900 shadow-2xl">
-        {/* Header */}
         <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
-          <h2 className="text-xl font-semibold text-white">Загрузка файлов</h2>
+          <h2 className="text-xl font-semibold text-white">{mediaUploadModalContent.header.title}</h2>
           <button
             onClick={handleClose}
             disabled={isUploading}
@@ -127,10 +124,9 @@ const MediaUploadModalContent = ({
         </div>
 
         <div className="space-y-6 p-6">
-          {/* Tags Section */}
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-300">
-              Теги для файлов
+              {mediaUploadModalContent.tags.label}
             </label>
             <div className="flex flex-wrap items-center gap-2 rounded-lg border border-white/10 bg-slate-800 p-2">
               {tags.map((tag) => (
@@ -154,17 +150,16 @@ const MediaUploadModalContent = ({
                 onChange={(e) => setTagInput(e.target.value)}
                 onKeyDown={handleTagInputKeyDown}
                 onBlur={addTag}
-                placeholder={tags.length === 0 ? 'Введите теги через запятую...' : ''}
+                placeholder={tags.length === 0 ? mediaUploadModalContent.tags.placeholder : ''}
                 disabled={isUploading}
                 className="min-w-[120px] flex-1 bg-transparent px-2 py-1 text-sm text-white placeholder:text-slate-500 focus:outline-none"
               />
             </div>
             <p className="mt-1 text-xs text-slate-500">
-              Нажмите Enter или запятую для добавления тега
+              {mediaUploadModalContent.tags.hint}
             </p>
           </div>
 
-          {/* Drop Zone */}
           {!hasCompleted && (
             <div
               onDrop={handleDrop}
@@ -190,27 +185,26 @@ const MediaUploadModalContent = ({
               />
               <Upload className="mx-auto mb-3 text-slate-400" size={40} />
               <p className="text-sm text-slate-300">
-                Перетащите файлы сюда или нажмите для выбора
+                {mediaUploadModalContent.dropZone.prompt}
               </p>
               <p className="mt-2 text-xs text-slate-500">
-                JPG, PNG, GIF, WEBP, MP4, WEBM, MOV
+                {mediaUploadModalContent.dropZone.formats}
               </p>
             </div>
           )}
 
-          {/* File List */}
           {totalCount > 0 && (
             <div>
               <div className="mb-2 flex items-center justify-between">
                 <h3 className="text-sm font-medium text-slate-300">
-                  Выбранные файлы ({totalCount})
+                  {mediaUploadModalContent.list.selectedFiles(totalCount)}
                 </h3>
                 {!isUploading && (
                   <button
                     onClick={clearUploads}
                     className="text-xs text-slate-500 hover:text-slate-300"
                   >
-                    Очистить
+                    {mediaUploadModalContent.list.clear}
                   </button>
                 )}
               </div>
@@ -221,7 +215,6 @@ const MediaUploadModalContent = ({
                     key={upload.file.name}
                     className="flex items-center gap-3 rounded bg-slate-900/50 p-2"
                   >
-                    {/* Icon */}
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-slate-800">
                       {upload.file.type.startsWith('image/') ? (
                         <FileImage size={20} className="text-slate-400" />
@@ -230,7 +223,6 @@ const MediaUploadModalContent = ({
                       )}
                     </div>
 
-                    {/* Info */}
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm text-slate-300">
                         {upload.file.name}
@@ -240,17 +232,16 @@ const MediaUploadModalContent = ({
                       </p>
                     </div>
 
-                    {/* Status */}
                     <div className="flex items-center gap-2">
                       {upload.status === 'completed' ? (
                         <span className="flex items-center gap-1 text-xs text-green-400">
                           <Check size={14} />
-                          Готово
+                          {mediaUploadModalContent.list.completed}
                         </span>
                       ) : upload.status === 'error' ? (
                         <span className="flex items-center gap-1 text-xs text-red-400">
                           <AlertCircle size={14} />
-                          Ошибка
+                          {mediaUploadModalContent.list.error}
                         </span>
                       ) : (
                         <span className="text-xs text-brand-400">
@@ -271,20 +262,18 @@ const MediaUploadModalContent = ({
                 ))}
               </div>
 
-              {/* Compression Stats */}
               {originalSize > 0 && completedCount > 0 && (
                 <div className="mt-2 text-xs text-slate-500">
-                  Исходный размер: {formatFileSize(originalSize)}
+                  {mediaUploadModalContent.list.originalSize(formatFileSize(originalSize))}
                 </div>
               )}
             </div>
           )}
 
-          {/* Progress Summary */}
           {isUploading && (
             <div className="rounded-lg bg-slate-800 p-3">
               <div className="mb-2 flex items-center justify-between text-sm">
-                <span className="text-slate-300">Загрузка...</span>
+                <span className="text-slate-300">{mediaUploadModalContent.progress.uploading}</span>
                 <span className="text-slate-400">
                   {completedCount + errorCount} / {totalCount}
                 </span>
@@ -301,14 +290,13 @@ const MediaUploadModalContent = ({
           )}
         </div>
 
-        {/* Footer */}
         <div className="flex items-center justify-end gap-3 border-t border-white/10 px-6 py-4">
           <button
             onClick={handleClose}
             disabled={isUploading}
             className="rounded-lg px-4 py-2 text-sm text-slate-400 transition-colors hover:text-white disabled:opacity-50"
           >
-            {hasCompleted ? 'Закрыть' : 'Отмена'}
+            {hasCompleted ? mediaUploadModalContent.actions.close : mediaUploadModalContent.actions.cancel}
           </button>
 
           {hasCompleted ? (
@@ -316,7 +304,7 @@ const MediaUploadModalContent = ({
               onClick={handleComplete}
               className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-400"
             >
-              Готово ({completedCount})
+              {mediaUploadModalContent.actions.done(completedCount)}
             </button>
           ) : totalCount > 0 ? (
             <button
@@ -324,7 +312,7 @@ const MediaUploadModalContent = ({
               disabled={isUploading}
               className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-400 disabled:opacity-50"
             >
-              {isUploading ? 'Загрузка...' : 'Загрузить'}
+              {isUploading ? mediaUploadModalContent.actions.uploading : mediaUploadModalContent.actions.upload}
             </button>
           ) : null}
         </div>
@@ -333,7 +321,6 @@ const MediaUploadModalContent = ({
   );
 };
 
-// Внешний компонент-обертка - проверяет isOpen ДО вызова хуков
 export const MediaUploadModal = (props: MediaUploadModalProps) => {
   if (!props.isOpen) {
     return null;

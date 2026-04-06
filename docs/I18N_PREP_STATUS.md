@@ -68,6 +68,7 @@ Centralized into `src/content/components/*`:
 - media library
 - media card
 - media bulk actions
+- media upload modal
 
 ### Cleanup side effects already handled
 
@@ -88,15 +89,10 @@ Still contain substantial user-facing hardcode:
 - `src/pages/admin/AdminRentalCategoriesPage.tsx`
 - `src/pages/admin/AdminCasesRedesignedPage.tsx`
 
-### Admin media flow still pending
-
-Remaining shared media UI:
-- `src/components/admin/media/MediaUploadModal.tsx`
-
 ### Likely remaining shared/admin copy
 
 Needs separate pass:
-- `src/components/admin/media/*` leftovers, if any after `MediaUploadModal`
+- `src/components/admin/media/*` leftovers, if any
 - `src/components/admin/ui/*` leftovers with default user-facing labels
 - any admin helper components with visible labels, placeholders, or empty states
 
@@ -118,7 +114,7 @@ Not part of current cleanup scope yet:
 ## Recommended Next Steps
 
 1. Finish remaining shared admin/media components:
-   - `MediaUploadModal`
+   - sweep leftovers in `src/components/admin/media/*` and `src/components/admin/ui/*`
 
 2. Finish heavy admin forms:
    - `AdminCasesManagerPage`
