@@ -2,28 +2,30 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { requestFormContent } from '../content/global';
+import { getGlobalContent } from '../content/global';
+import { useI18n } from '../context/I18nContext';
 import { trackEvent } from '../lib/analytics';
 import { submitForm } from '../lib/submitForm';
 import { ConsentCheckbox } from './ConsentCheckbox';
 
-const schema = z.object({
-  name: z.string().min(1, requestFormContent.validation.nameRequired),
-  phone: z.string().min(5, requestFormContent.validation.phoneRequired),
-  email: z
-    .string()
-    .email(requestFormContent.validation.invalidEmail)
-    .optional()
-    .or(z.literal('')),
-  telegram: z.string().optional(),
-  city: z.string().optional(),
-  date: z.string().optional(),
-  format: z.string().optional(),
-  comment: z.string().optional(),
-  honey: z.string().max(0).optional(),
-});
+const createSchema = (content: ReturnType<typeof getGlobalContent>['requestFormContent']) =>
+  z.object({
+    name: z.string().min(1, content.validation.nameRequired),
+    phone: z.string().min(5, content.validation.phoneRequired),
+    email: z
+      .string()
+      .email(content.validation.invalidEmail)
+      .optional()
+      .or(z.literal('')),
+    telegram: z.string().optional(),
+    city: z.string().optional(),
+    date: z.string().optional(),
+    format: z.string().optional(),
+    comment: z.string().optional(),
+    honey: z.string().max(0).optional(),
+  });
 
-type FormValues = z.infer<typeof schema>;
+type FormValues = z.infer<ReturnType<typeof createSchema>>;
 
 type Props = {
   title?: string;
@@ -32,10 +34,14 @@ type Props = {
 };
 
 export const RequestForm = ({
-  title = requestFormContent.defaults.title,
+  title,
   subtitle,
-  ctaText = requestFormContent.defaults.ctaText,
+  ctaText,
 }: Props) => {
+  const { siteLocale } = useI18n();
+  const { requestFormContent } = getGlobalContent(siteLocale);
+  const schema = createSchema(requestFormContent);
+
   const [sent, setSent] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [showMoreFields, setShowMoreFields] = useState(false);
@@ -46,6 +52,9 @@ export const RequestForm = ({
     formState: { errors, isSubmitting },
     reset,
   } = useForm<FormValues>({ resolver: zodResolver(schema) });
+
+  const resolvedTitle = title ?? requestFormContent.defaults.title;
+  const resolvedCtaText = ctaText ?? requestFormContent.defaults.ctaText;
 
   const onSubmit = async (values: FormValues) => {
     if (values.honey) return;
@@ -78,7 +87,7 @@ export const RequestForm = ({
   return (
     <div className="card">
       <div className="mb-4 space-y-1">
-        <h3 className="text-xl font-semibold text-white">{title}</h3>
+        <h3 className="text-xl font-semibold text-white">{resolvedTitle}</h3>
         {subtitle ? <p className="text-sm text-slate-300">{subtitle}</p> : null}
       </div>
 
@@ -191,7 +200,7 @@ export const RequestForm = ({
           disabled={isSubmitting || !consent}
           className="flex items-center justify-center rounded-lg bg-brand-500 px-4 py-3 font-semibold text-white transition hover:bg-brand-400 disabled:opacity-60"
         >
-          {isSubmitting ? requestFormContent.submitPending : ctaText}
+          {isSubmitting ? requestFormContent.submitPending : resolvedCtaText}
         </button>
 
         {submitError ? <div className="text-sm text-red-400">{submitError}</div> : null}

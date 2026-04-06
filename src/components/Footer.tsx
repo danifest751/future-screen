@@ -1,5 +1,6 @@
-import { Link } from 'react-router-dom';
-import { brandContent, footerContent } from '../content/global';
+import { Link, useLocation } from 'react-router-dom';
+import { getGlobalContent } from '../content/global';
+import { useI18n } from '../context/I18nContext';
 
 const handleHashNav = (event: React.MouseEvent<HTMLAnchorElement>, href: string) => {
   const hash = href.split('#')[1];
@@ -10,7 +11,13 @@ const handleHashNav = (event: React.MouseEvent<HTMLAnchorElement>, href: string)
   if (element) element.scrollIntoView({ behavior: 'smooth' });
 };
 
-const Footer = () => (
+const Footer = () => {
+  const { getLocaleForPath } = useI18n();
+  const location = useLocation();
+  const locale = getLocaleForPath(location.pathname);
+  const { brandContent, footerContent } = getGlobalContent(locale);
+
+  return (
   <footer
     className="relative z-10 border-t"
     style={{
@@ -140,6 +147,7 @@ const Footer = () => (
       </div>
     </div>
   </footer>
-);
+  );
+};
 
 export default Footer;

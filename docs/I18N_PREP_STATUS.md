@@ -8,6 +8,7 @@ Current strategy:
 - remove hardcoded user-facing text from components and pages
 - move copy into `src/content/*`
 - keep behavior unchanged while preparing a clean base for `ru/en`
+- keep locale preferences separate for public site and admin panel
 
 ## What Is Already Done
 
@@ -82,6 +83,19 @@ Centralized into `src/content/components/*`:
 - builds were kept green after each safe slice
 - behavior and routing were intentionally preserved
 
+### Locale infrastructure now in place
+
+- added `I18nProvider` with separate locale state and storage keys:
+  - public site locale
+  - admin panel locale
+- defaults configured as:
+  - public site: `en`
+  - admin panel: `ru`
+- added independent language switchers:
+  - in public header (site scope)
+  - in admin top bar (admin scope)
+- moved shared/global copy access to locale-aware runtime getters
+
 ## What Is Still Remaining
 
 ### High-priority admin pages
@@ -102,6 +116,7 @@ Still needs review:
 - remaining service messages in hooks/libs where text is user-visible
 - form validation and helper text in complex admin forms
 - any toast/error/success messages outside already migrated areas
+- full `en` coverage for all public page-specific content under `src/content/pages/*`
 
 ### Non-goals for this prep pass
 
@@ -127,6 +142,10 @@ Not part of current cleanup scope yet:
    - introduce translation provider
    - split content into `ru/en`
    - decide how bilingual DB-managed content will be modeled
+
+5. Finish public content parity:
+   - add complete `ru/en` variants for each public page content module
+   - validate all public routes in both locales
 
 ## Current Status Summary
 

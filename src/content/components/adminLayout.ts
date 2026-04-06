@@ -1,4 +1,43 @@
-export const adminLayoutContent = {
+import type { Locale } from '../../i18n/types';
+
+type AdminLayoutContent = {
+  nav: {
+    dashboard: string;
+    leads: string;
+    cases: string;
+    backgrounds: string;
+    packages: string;
+    categories: string;
+    rentalCategories: string;
+    contacts: string;
+    settings: string;
+  };
+  breadcrumbs: {
+    admin: string;
+  };
+  menu: {
+    open: string;
+    close: string;
+  };
+  brand: {
+    name: string;
+    adminPanel: string;
+  };
+  actions: {
+    logout: string;
+  };
+  quickLinks: {
+    label: string;
+  };
+  profile: {
+    role: string;
+  };
+  locale: {
+    label: string;
+  };
+};
+
+const ru: AdminLayoutContent = {
   nav: {
     dashboard: 'Дашборд',
     leads: 'Заявки',
@@ -30,4 +69,48 @@ export const adminLayoutContent = {
   profile: {
     role: 'Admin',
   },
-} as const;
+  locale: {
+    label: 'Язык админки',
+  },
+};
+
+const en: AdminLayoutContent = {
+  nav: {
+    dashboard: 'Dashboard',
+    leads: 'Leads',
+    cases: 'Cases',
+    backgrounds: 'Backgrounds',
+    packages: 'Packages',
+    categories: 'Categories',
+    rentalCategories: 'Rental',
+    contacts: 'Contacts',
+    settings: 'Settings',
+  },
+  breadcrumbs: {
+    admin: 'Admin',
+  },
+  menu: {
+    open: 'Open menu',
+    close: 'Close menu',
+  },
+  brand: {
+    name: 'Future Screen',
+    adminPanel: 'Control panel',
+  },
+  actions: {
+    logout: 'Sign out',
+  },
+  quickLinks: {
+    label: 'Quick links:',
+  },
+  profile: {
+    role: 'Admin',
+  },
+  locale: {
+    label: 'Admin language',
+  },
+};
+
+const adminLayoutByLocale: Record<Locale, AdminLayoutContent> = { ru, en };
+
+export const getAdminLayoutContent = (locale: Locale): AdminLayoutContent => adminLayoutByLocale[locale];

@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
-import { protectedRouteContent } from '../content/global';
+import { getGlobalContent } from '../content/global';
 import { useAuth } from '../context/AuthContext';
+import { useI18n } from '../context/I18nContext';
 import { useUserRole } from '../hooks/useUserRole';
 import type { UserRole } from '../hooks/useUserRole';
 
@@ -12,7 +13,9 @@ type ProtectedRouteProps = {
 
 const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { adminLocale } = useI18n();
   const { user, loading: roleLoading, hasRole } = useUserRole();
+  const { protectedRouteContent } = getGlobalContent(adminLocale);
 
   const isLoading = authLoading || roleLoading;
 

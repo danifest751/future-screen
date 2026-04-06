@@ -1,11 +1,12 @@
 import { lazy, Suspense, useEffect } from 'react';
-import { useRoutes } from 'react-router-dom';
+import { useLocation, useRoutes } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import { StructuredData } from './components/StructuredData';
 import { useStarBorderGlobal } from './hooks/useStarBorderGlobal';
-import { appContent } from './content/global';
+import { getGlobalContent } from './content/global';
+import { useI18n } from './context/I18nContext';
 
 const HomePage = lazy(() => import('./pages/HomePage'));
 const LedPage = lazy(() => import('./pages/LedPage'));
@@ -66,6 +67,14 @@ function ChunkErrorHandler() {
 
 const App = () => {
   useStarBorderGlobal();
+  const location = useLocation();
+  const { getLocaleForPath } = useI18n();
+  const locale = getLocaleForPath(location.pathname);
+  const { appContent } = getGlobalContent(locale);
+
+  useEffect(() => {
+    document.documentElement.lang = locale;
+  }, [locale]);
 
   const routes = [
     { path: '/', element: <HomePage /> },

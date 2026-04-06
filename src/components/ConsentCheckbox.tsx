@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import { Link } from 'react-router-dom';
-import { consentContent } from '../content/global';
+import { getGlobalContent } from '../content/global';
+import { useI18n } from '../context/I18nContext';
 
 type Props = {
   checked: boolean;
@@ -15,6 +16,9 @@ export const ConsentCheckbox = memo(function ConsentCheckbox({
   error,
   className = '',
 }: Props) {
+  const { siteLocale } = useI18n();
+  const { consentContent } = getGlobalContent(siteLocale);
+
   return (
     <div className={className}>
       <label className="flex cursor-pointer items-start gap-3">

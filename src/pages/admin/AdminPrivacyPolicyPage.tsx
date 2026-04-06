@@ -157,7 +157,7 @@ const AdminPrivacyPolicyPage = () => {
             <div className="border-t border-white/10 pt-4">
               <h3 className="mb-3 text-sm font-medium text-slate-300">{adminPrivacyPolicyContent.editor.seoTitle}</h3>
               <Field
-                label="Meta Title"
+                label={adminPrivacyPolicyContent.editor.metaTitleLabel}
                 hint={adminPrivacyPolicyContent.editor.metaTitleHint}
                 error={errors.metaTitle?.message}
               >
@@ -168,7 +168,7 @@ const AdminPrivacyPolicyPage = () => {
               </Field>
 
               <Field
-                label="Meta Description"
+                label={adminPrivacyPolicyContent.editor.metaDescriptionLabel}
                 hint={adminPrivacyPolicyContent.editor.metaDescriptionHint}
                 error={errors.metaDescription?.message}
               >

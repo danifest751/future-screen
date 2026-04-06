@@ -1,14 +1,17 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { adminGearContent } from '../content/global';
+import { getGlobalContent } from '../content/global';
 import { useAuth } from '../context/AuthContext';
+import { useI18n } from '../context/I18nContext';
 import LoginModal from './LoginModal';
 
 const AdminGearButton = () => {
   const { isAuthenticated, logout } = useAuth();
+  const { adminLocale } = useI18n();
   const navigate = useNavigate();
   const [showLogin, setShowLogin] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const { adminGearContent } = getGlobalContent(adminLocale);
 
   const handleClick = () => {
     if (isAuthenticated) {

@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useI18n } from '../context/I18nContext';
 import { PrefetchLink } from './PrefetchLink';
 import { RentalDropdown } from './RentalDropdown';
 import LoginModal from './LoginModal';
-import { brandContent, headerContent } from '../content/global';
+import LocaleSwitch from './LocaleSwitch';
+import { getGlobalContent } from '../content/global';
 
 const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -13,8 +15,12 @@ const Header = () => {
   const [rentalDropdownOpen, setRentalDropdownOpen] = useState(false);
   const rentalTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { isAuthenticated, logout } = useAuth();
+  const { siteLocale, setSiteLocale, getLocaleForPath } = useI18n();
   const navigate = useNavigate();
   const location = useLocation();
+  const locale = getLocaleForPath(location.pathname);
+  const isAdminPath = location.pathname.startsWith('/admin');
+  const { brandContent, headerContent } = getGlobalContent(locale);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -163,6 +169,15 @@ const Header = () => {
         </nav>
 
         <div className="flex shrink-0 items-center gap-2">
+          {!isAdminPath ? (
+            <LocaleSwitch
+              value={siteLocale}
+              onChange={setSiteLocale}
+              ariaLabel="Site language"
+              className="hidden lg:inline-flex"
+            />
+          ) : null}
+
           <a
             href={`tel:${brandContent.phoneHref}`}
             className="hidden items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-sm font-medium text-white transition-all duration-200 hover:border-white/30 hover:bg-white/5 lg:flex"
@@ -221,6 +236,12 @@ const Header = () => {
       {menuOpen ? (
         <div className="border-t border-white/10 bg-black/85 px-4 py-4 backdrop-blur lg:hidden">
           <nav className="container-page flex flex-col gap-2">
+            {!isAdminPath ? (
+              <div className="mb-1">
+                <LocaleSwitch value={siteLocale} onChange={setSiteLocale} ariaLabel="Site language" />
+              </div>
+            ) : null}
+
             {headerContent.navLinks.map((item) => (
               <a
                 key={item.to}

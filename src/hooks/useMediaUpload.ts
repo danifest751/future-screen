@@ -6,7 +6,9 @@ import { useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { compressImages, isImageFile, formatFileSize } from '../lib/imageCompression';
 import { useCreateMediaItemMutation } from '../queries/mediaLibrary';
-import { mediaUploadContent } from '../content/hooks/mediaUpload';
+import { useI18n } from '../context/I18nContext';
+import { getMediaUploadContent } from '../content/hooks/mediaUpload';
+import type { Locale } from '../i18n/types';
 import type { MediaItem, MediaUploadProgress, MediaType } from '../types/media';
 
 export interface UploadOptions {
@@ -38,6 +40,8 @@ const generateFilePath = (file: File): string => {
 export const useMediaUpload = () => {
   const [uploads, setUploads] = useState<MediaUploadProgress[]>([]);
   const createMediaMutation = useCreateMediaItemMutation();
+  const { adminLocale } = useI18n();
+  const mediaUploadContent = getMediaUploadContent(adminLocale);
 
   const updateUploadProgress = useCallback((file: File, updates: Partial<MediaUploadProgress>) => {
     setUploads((prev) => {
@@ -122,7 +126,7 @@ export const useMediaUpload = () => {
 
       if (mediaType === 'image') {
         try {
-          const dimensions = await getImageDimensions(fileToUpload);
+          const dimensions = await getImageDimensions(fileToUpload, mediaUploadContent.errors.failedToLoadImage);
           newItem.width = dimensions.width;
           newItem.height = dimensions.height;
         } catch {
@@ -147,7 +151,7 @@ export const useMediaUpload = () => {
       });
       return { success: false, error: errorMessage };
     }
-  }, [createMediaMutation, updateUploadProgress]);
+  }, [createMediaMutation, mediaUploadContent.errors.failedToLoadImage, updateUploadProgress]);
 
   const uploadFiles = useCallback(async (
     files: FileList | File[],
@@ -193,7 +197,10 @@ export const useMediaUpload = () => {
   };
 };
 
-const getImageDimensions = (file: File): Promise<{ width: number; height: number }> => {
+const getImageDimensions = (
+  file: File,
+  errorMessage = 'Failed to load image'
+): Promise<{ width: number; height: number }> => {
   return new Promise((resolve, reject) => {
     const img = new Image();
     const url = URL.createObjectURL(file);
@@ -205,7 +212,7 @@ const getImageDimensions = (file: File): Promise<{ width: number; height: number
 
     img.onerror = () => {
       URL.revokeObjectURL(url);
-      reject(new Error('Failed to load image'));
+      reject(new Error(errorMessage));
     };
 
     img.src = url;
@@ -229,7 +236,8 @@ export const isValidFileType = (file: File): boolean => {
   return validTypes.includes(file.type);
 };
 
-export const formatUploadStatus = (status: MediaUploadProgress['status']): string => {
+export const formatUploadStatus = (status: MediaUploadProgress['status'], locale: Locale = 'ru'): string => {
+  const mediaUploadContent = getMediaUploadContent(locale);
   switch (status) {
     case 'pending':
       return mediaUploadContent.statuses.pending;

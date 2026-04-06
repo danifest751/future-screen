@@ -19,7 +19,9 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { adminLayoutContent } from '../../content/components/adminLayout';
+import { useI18n } from '../../context/I18nContext';
+import { getAdminLayoutContent } from '../../content/components/adminLayout';
+import LocaleSwitch from '../LocaleSwitch';
 import { supabase } from '../../lib/supabase';
 
 interface Props {
@@ -40,22 +42,25 @@ type NavItem = {
   badge?: boolean;
 };
 
-const defaultNavItems: NavItem[] = [
-  { to: '/admin', label: adminLayoutContent.nav.dashboard, Icon: LayoutDashboard },
-  { to: '/admin/leads', label: adminLayoutContent.nav.leads, Icon: Inbox, badge: true },
-  { to: '/admin/cases', label: adminLayoutContent.nav.cases, Icon: FolderOpen },
-  { to: '/admin/backgrounds', label: adminLayoutContent.nav.backgrounds, Icon: Palette },
-  { to: '/admin/packages', label: adminLayoutContent.nav.packages, Icon: Package },
-  { to: '/admin/categories', label: adminLayoutContent.nav.categories, Icon: Tag },
-  { to: '/admin/rental-categories', label: adminLayoutContent.nav.rentalCategories, Icon: ShoppingCart },
-  { to: '/admin/contacts', label: adminLayoutContent.nav.contacts, Icon: Phone },
-  { to: '/admin/content', label: adminLayoutContent.nav.settings, Icon: Settings },
+const createDefaultNavItems = (content: ReturnType<typeof getAdminLayoutContent>): NavItem[] => [
+  { to: '/admin', label: content.nav.dashboard, Icon: LayoutDashboard },
+  { to: '/admin/leads', label: content.nav.leads, Icon: Inbox, badge: true },
+  { to: '/admin/cases', label: content.nav.cases, Icon: FolderOpen },
+  { to: '/admin/backgrounds', label: content.nav.backgrounds, Icon: Palette },
+  { to: '/admin/packages', label: content.nav.packages, Icon: Package },
+  { to: '/admin/categories', label: content.nav.categories, Icon: Tag },
+  { to: '/admin/rental-categories', label: content.nav.rentalCategories, Icon: ShoppingCart },
+  { to: '/admin/contacts', label: content.nav.contacts, Icon: Phone },
+  { to: '/admin/content', label: content.nav.settings, Icon: Settings },
 ];
 
 const AdminLayout = ({ title, subtitle, children }: Props) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { logout } = useAuth();
+  const { adminLocale, setAdminLocale } = useI18n();
+  const adminLayoutContent = getAdminLayoutContent(adminLocale);
+  const defaultNavItems = createDefaultNavItems(adminLayoutContent);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [leadCount, setLeadCount] = useState<number>(0);
   const [navItems, setNavItems] = useState<NavItem[]>(() => {
@@ -77,6 +82,17 @@ const AdminLayout = ({ title, subtitle, children }: Props) => {
   });
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    setNavItems((prev) => {
+      const ordered = prev
+        .map((item) => defaultNavItems.find((nextItem) => nextItem.to === item.to))
+        .filter((item): item is NavItem => Boolean(item));
+      const orderedKeys = ordered.map((item) => item.to);
+      const extras = defaultNavItems.filter((item) => !orderedKeys.includes(item.to));
+      return [...ordered, ...extras];
+    });
+  }, [adminLocale]);
 
   const activeNavItem = navItems.find((item) =>
     item.to === '/admin' ? location.pathname === '/admin' : location.pathname.startsWith(item.to),
@@ -289,12 +305,17 @@ const AdminLayout = ({ title, subtitle, children }: Props) => {
                 <div className="hidden text-right sm:block">
                   <div className="text-sm font-medium text-white">{adminLayoutContent.profile.role}</div>
                   <div className="text-xs text-slate-400">
-                    {new Date().toLocaleDateString('ru-RU', {
+                    {new Date().toLocaleDateString(adminLocale === 'ru' ? 'ru-RU' : 'en-US', {
                       day: 'numeric',
                       month: 'long',
                     })}
                   </div>
                 </div>
+                <LocaleSwitch
+                  value={adminLocale}
+                  onChange={setAdminLocale}
+                  ariaLabel={adminLayoutContent.locale.label}
+                />
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-500 text-sm font-bold text-white">
                   A
                 </div>

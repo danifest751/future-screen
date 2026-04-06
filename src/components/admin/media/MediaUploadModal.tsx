@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { X, Upload, FileImage, FileVideo, Trash2, Check, AlertCircle } from 'lucide-react';
 import { mediaUploadModalContent } from '../../../content/components/mediaUploadModal';
+import { useI18n } from '../../../context/I18nContext';
 import { useMediaUpload, getAcceptedFileTypes, isValidFileType, formatUploadStatus } from '../../../hooks/useMediaUpload';
 import { formatFileSize } from '../../../lib/imageCompression';
 import type { MediaItem } from '../../../types/media';
@@ -21,6 +22,7 @@ const MediaUploadModalContent = ({
   const [tagInput, setTagInput] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { adminLocale } = useI18n();
 
   const {
     uploads,
@@ -245,7 +247,7 @@ const MediaUploadModalContent = ({
                         </span>
                       ) : (
                         <span className="text-xs text-brand-400">
-                          {formatUploadStatus(upload.status)}
+                          {formatUploadStatus(upload.status, adminLocale)}
                         </span>
                       )}
 

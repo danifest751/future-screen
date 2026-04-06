@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { loginModalContent } from '../content/global';
+import { useI18n } from '../context/I18nContext';
+import { getGlobalContent } from '../content/global';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 
 type Props = {
@@ -11,6 +12,7 @@ type Props = {
 
 const LoginModal = ({ open, onClose }: Props) => {
   const { login, isLoading } = useAuth();
+  const { adminLocale } = useI18n();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -21,6 +23,7 @@ const LoginModal = ({ open, onClose }: Props) => {
     active: open,
     onEscape: onClose,
   });
+  const { loginModalContent } = getGlobalContent(adminLocale);
 
   if (!open) return null;
 
