@@ -87,9 +87,96 @@ const ru = {
     emptySearchDescription: 'По вашему запросу ничего не найдено',
     emptyDefaultDescription: 'Добавьте первый кейс через форму слева',
   },
-} as const;
+};
 
-const en: typeof ru = ru;
+const en: typeof ru = {
+  validation: {
+    slugRequired: 'Slug is required',
+    slugPattern: 'Slug: latin letters, numbers and hyphens only',
+    titleRequired: 'Title is required',
+    summaryRequired: 'Summary is required',
+  },
+  formatOptions: [
+    'Corporate event',
+    'Concert',
+    'Conference',
+    'Exhibition',
+    'Wedding',
+    'Presentation',
+    'Festival',
+    'Team building',
+    'Other',
+  ],
+  layout: {
+    title: 'Cases',
+    subtitle: 'Manage projects and media library',
+  },
+  tabs: {
+    cases: 'Cases',
+    media: 'Media library',
+  },
+  toasts: {
+    saveError: 'Failed to save case',
+    updateSuccess: 'Case updated',
+    addSuccess: 'Case created',
+    deleteSuccess: 'Case deleted',
+    deleteError: 'Failed to delete case',
+    resetSuccess: 'Cases reset to demo values',
+  },
+  confirm: {
+    deleteTitle: 'Delete case?',
+    deleteDescription: (title: string) => `Case "${title}" will be deleted permanently.`,
+    deleteConfirm: 'Delete',
+    cancel: 'Cancel',
+    resetTitle: 'Reset all cases to defaults?',
+    resetDescription: 'Current cases will be overwritten with demo data.',
+    resetConfirm: 'Reset',
+  },
+  mediaSection: {
+    title: 'Media library',
+    description: 'Centralized photo and video storage with tags',
+  },
+  form: {
+    editTitle: 'Edit case',
+    newTitle: 'New case',
+    unsavedChanges: 'You have unsaved changes',
+    cancel: 'Cancel',
+    slugLabel: 'Slug*',
+    slugAutoLabel: '(auto)',
+    slugPlaceholder: 'case-name',
+    slugHint: 'Unique identifier for URL',
+    titleLabel: 'Title*',
+    titlePlaceholder: 'Example: Corporate event for Gazprom',
+    cityLabel: 'City',
+    cityPlaceholder: 'Yekaterinburg',
+    dateLabel: 'Date',
+    formatLabel: 'Format',
+    formatPlaceholder: 'Select format',
+    summaryLabel: 'Summary*',
+    summaryPlaceholder: 'Describe the task and delivered setup...',
+    metricsLabel: 'Metrics',
+    metricsPlaceholder: '500+ guests, 50 m² LED screen',
+    servicesLabel: 'Services (comma separated)',
+    servicesPlaceholder: 'LED screen, sound, lighting',
+    mediaFilesLabel: 'Media files',
+    submitting: 'Saving...',
+    submitEdit: 'Save changes',
+    submitCreate: 'Create case',
+  },
+  list: {
+    title: 'Cases list',
+    resetAction: 'Reset to defaults',
+    searchPlaceholder: 'Search by title, city, format...',
+    separator: '•',
+    photosSuffix: 'photos',
+    videosSuffix: 'videos',
+    editAction: 'Edit',
+    deleteAction: 'Delete',
+    emptyTitle: 'No cases yet',
+    emptySearchDescription: 'No results for your query',
+    emptyDefaultDescription: 'Add the first case using the form on the left',
+  },
+};
 
 const adminCasesRedesignedContentByLocale: Record<Locale, typeof ru> = { ru, en };
 

@@ -25,9 +25,34 @@ const ru = {
     requestSubtitle: 'Опишите формат и сроки — предложим конфигурацию',
     requestCta: 'Обсудить',
   },
-} as const;
+};
 
-const en: typeof ru = ru;
+const en: typeof ru = {
+  seo: {
+    title: 'Cases — Completed Projects | Future Screen',
+    description:
+      'Portfolio of completed projects: forums, concerts, and exhibitions. Key metrics, scope of work, and photos.',
+  },
+  section: {
+    title: 'Cases',
+    subtitle: 'Completed projects with measurable results and production scope',
+  },
+  videoOverlay: {
+    watch: 'Watch video',
+    many: (count: number) => `${count} videos`,
+  },
+  emptyState: 'No cases added yet',
+  details: {
+    titleSuffix: '— case | Future Screen',
+    servicesLabel: 'Services:',
+    videosLabel: 'Video',
+    contactPrompt: 'Need more details?',
+    contactLink: 'Contact us',
+    requestTitle: 'Request a similar project',
+    requestSubtitle: 'Describe format and timeline, and we will propose a suitable setup',
+    requestCta: 'Discuss',
+  },
+};
 
 const casesPageContentByLocale: Record<Locale, typeof ru> = { ru, en };
 

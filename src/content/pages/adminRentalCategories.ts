@@ -32,9 +32,41 @@ const ru = {
     openPage: 'Открыть страницу',
     edit: 'Редактировать',
   },
-} as const;
+};
 
-const en: typeof ru = ru;
+const en: typeof ru = {
+  layout: {
+    title: 'Rental categories',
+    subtitle: 'Manage rental equipment sections',
+  },
+  toasts: {
+    saveSuccess: 'Setting saved',
+    saveError: 'Save error',
+  },
+  actions: {
+    refresh: 'Refresh',
+    add: 'Add',
+  },
+  state: {
+    count: (value: number) => `${value} categories`,
+    loading: 'Loading...',
+    errorPrefix: 'Error:',
+    empty: 'No rental categories yet. Create the first one.',
+  },
+  table: {
+    name: 'Name',
+    slug: 'Slug',
+    order: 'Order',
+    status: 'Status',
+    actions: 'Actions',
+    published: 'Published',
+    draft: 'Draft',
+    blurEnabled: 'Blur effect enabled',
+    blurDisabled: 'Blur effect disabled',
+    openPage: 'Open page',
+    edit: 'Edit',
+  },
+};
 
 const adminRentalCategoriesContentByLocale: Record<Locale, typeof ru> = { ru, en };
 

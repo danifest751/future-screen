@@ -24,9 +24,33 @@ const ru = {
   starBorderSpeed: 'Скорость',
   starBorderThickness: 'Толщина',
   starBorderGlow: 'Свечение',
-} as const;
+};
 
-const en: typeof ru = ru;
+const en: typeof ru = {
+  title: 'Backgrounds',
+  subtitle: 'Global site background',
+  loadingSubtitle: 'Managing global site background',
+  saving: 'Saving...',
+  backgroundPickerTitle: 'Background selection',
+  settingsTitle: 'Settings',
+  resetButton: 'Reset',
+  motionLabel: 'Animation speed',
+  motionOptions: {
+    slow: 'Slow',
+    normal: 'Normal',
+    fast: 'Fast',
+  },
+  starBorderTitle: 'Star Border',
+  starBorderSubtitle: 'Glowing frame on hover',
+  starBorderOn: 'On',
+  starBorderOff: 'Off',
+  starBorderEnable: 'Enable',
+  starBorderDisable: 'Disable',
+  starBorderColor: 'Color',
+  starBorderSpeed: 'Speed',
+  starBorderThickness: 'Thickness',
+  starBorderGlow: 'Glow',
+};
 
 const adminBackgroundsPageContentByLocale: Record<Locale, typeof ru> = { ru, en };
 

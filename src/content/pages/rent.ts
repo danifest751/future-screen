@@ -26,9 +26,35 @@ const ru = {
     subtitle: 'Опишите формат и площадку, подберём комплект',
     ctaText: 'Получить подбор',
   },
-} as const;
+};
 
-const en: typeof ru = ru;
+const en: typeof ru = {
+  seo: {
+    title: 'Event Equipment Rental | Future Screen',
+    description:
+      'Rental of lighting, audio, video equipment, stage structures, and instruments for events.',
+  },
+  hero: {
+    title: 'Equipment Rental',
+    subtitle: 'Lighting, sound, video, stages, instruments',
+    loading: 'Loading...',
+    error: 'Failed to load categories',
+  },
+  checklist: {
+    title: 'What to consider',
+    items: [
+      'Format and venue: indoor/outdoor, ceiling height, rigging points',
+      'Scenario: performances, presentations, broadcast, microphone count',
+      'Timeline and logistics: installation/dismantling windows, access',
+      'Backup: power source, processing, spare channels',
+    ],
+  },
+  form: {
+    title: 'Request rental',
+    subtitle: 'Describe event format and venue, and we will prepare a setup',
+    ctaText: 'Get selection',
+  },
+};
 
 const rentPageContentByLocale: Record<Locale, typeof ru> = { ru, en };
 

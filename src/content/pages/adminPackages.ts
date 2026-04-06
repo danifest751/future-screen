@@ -68,9 +68,77 @@ const ru = {
     emptyDescription: 'Добавьте первый пакет через форму слева.',
     notFoundDescription: 'Попробуйте изменить поисковый запрос или очистить фильтр.',
   },
-} as const;
+};
 
-const en: typeof ru = ru;
+const en: typeof ru = {
+  validation: {
+    idPositive: 'ID must be a number',
+    nameRequired: 'Name is required',
+    forFormatsRequired: 'Specify at least 1 format',
+    includesRequired: 'Specify package composition',
+  },
+  toast: {
+    saveError: 'Failed to save package',
+    created: 'Package created',
+    updated: 'Package updated',
+    deleted: 'Package deleted',
+    deleteError: 'Failed to delete package',
+    resetSuccess: 'Packages reset to defaults',
+  },
+  layout: {
+    title: 'Packages',
+    subtitle: 'Manage packages and pricing offers',
+  },
+  deleteModal: {
+    title: 'Delete package?',
+    confirmText: 'Delete',
+    cancelText: 'Cancel',
+    description: (name: string) => `Package "${name}" will be deleted permanently.`,
+  },
+  resetModal: {
+    title: 'Reset all packages to defaults?',
+    description: 'Current changes will be overwritten with demo data.',
+    confirmText: 'Reset',
+    cancelText: 'Cancel',
+  },
+  form: {
+    editTitle: 'Edit package',
+    createTitle: 'New package',
+    editDescription: (id: number) =>
+      `You are editing package ${String(id)}. Save changes or press "Cancel".`,
+    createDescription: 'Create a new package or select an existing one on the right to edit.',
+    restoredDraft: 'Form draft restored, you can continue where you left off.',
+    editMode: 'Edit mode',
+    unsavedChanges: 'You have unsaved changes',
+    cancel: 'Cancel',
+    idLabel: 'ID',
+    nameLabel: 'Name',
+    forFormatsLabel: 'For formats',
+    forFormatsHint: 'Comma or new line separated',
+    includesLabel: 'Includes',
+    includesHint: 'One item per line',
+    optionsLabel: 'Options',
+    optionsHint: 'Optional',
+    priceHintLabel: 'Price hint',
+    save: 'Save',
+    add: 'Add',
+  },
+  list: {
+    title: 'Packages list',
+    shown: (filteredCount: number, totalCount: number) => `Shown ${filteredCount} of ${totalCount}`,
+    resetToDefault: 'Reset to defaults',
+    searchPlaceholder: 'Search by name, ID, includes, options...',
+    clear: 'Clear',
+    forFormatsPrefix: 'For:',
+    includesPrefix: 'Includes:',
+    edit: 'Edit',
+    remove: 'Delete',
+    emptyTitle: 'No packages yet',
+    notFoundTitle: 'Nothing found',
+    emptyDescription: 'Add your first package using the form on the left.',
+    notFoundDescription: 'Try changing the search query or clear the filter.',
+  },
+};
 
 const adminPackagesPageContentByLocale: Record<Locale, typeof ru> = { ru, en };
 

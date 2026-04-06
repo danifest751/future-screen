@@ -41,9 +41,50 @@ const ru = {
     emptyTitle: 'Контент не загружен',
     emptyDescription: 'Заполните форму слева и сохраните.',
   },
-} as const;
+};
 
-const en: typeof ru = ru;
+const en: typeof ru = {
+  layout: {
+    title: 'Privacy Policy',
+    loadingSubtitle: 'Loading...',
+    lastSaved: (value: string) => `Last saved: ${value}`,
+  },
+  validation: {
+    titleRequired: 'Title is required',
+    contentRequired: 'Content is required',
+  },
+  toasts: {
+    saveSuccess: 'Privacy policy saved',
+    saveError: 'Save error',
+  },
+  editor: {
+    title: 'Editor',
+    restoredDraft: 'Draft restored',
+    unsavedChanges: 'You have unsaved changes',
+    pageTitleLabel: 'Page title (H1)',
+    pageTitlePlaceholder: 'Privacy Policy',
+    contentLabel: 'Content (Markdown)',
+    contentPlaceholder: '# Heading\n\nYour content here...',
+    seoTitle: 'SEO settings',
+    metaTitleLabel: 'Meta Title',
+    metaTitleHint: 'Up to 60 characters',
+    metaTitlePlaceholder: 'Privacy Policy — Future Screen',
+    metaDescriptionLabel: 'Meta Description',
+    metaDescriptionHint: 'Up to 160 characters',
+    metaDescriptionPlaceholder: 'Page description for search engines...',
+    fontSizeTitle: 'Font size',
+    fontSizeScale: ['Small', 'Normal', 'Large', 'Extra large'],
+    current: 'Current:',
+    defaultNote: 'default',
+    save: 'Save',
+  },
+  preview: {
+    title: 'Preview',
+    openOnSite: 'Open on site →',
+    emptyTitle: 'Content not loaded',
+    emptyDescription: 'Fill in the form on the left and save.',
+  },
+};
 
 const adminPrivacyPolicyContentByLocale: Record<Locale, typeof ru> = { ru, en };
 

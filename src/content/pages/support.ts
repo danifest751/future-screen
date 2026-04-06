@@ -42,9 +42,51 @@ const ru = {
     subtitle: 'Опишите формат — подберём пакет и состав',
     ctaText: 'Запросить КП',
   },
-} as const;
+};
 
-const en: typeof ru = ru;
+const en: typeof ru = {
+  seo: {
+    title: 'Event Technical Production | Future Screen',
+    description:
+      'Technical production packages for events: LED, sound, lighting, and stage. Lite, Medium, Big for any format.',
+  },
+  hero: {
+    title: 'Turnkey Technical Production',
+    subtitle: 'Lite · Medium · Big — adjusted to your event format',
+  },
+  loading: 'Loading...',
+  universalBadge: 'Universal',
+  optionsPrefix: 'Options:',
+  formatsPrefix: 'For:',
+  discussPackage: 'Discuss package',
+  process: {
+    title: 'Process',
+    subtitle: 'Transparent and with backup',
+    stepPrefix: 'Step',
+    items: [
+      'Brief: what, where, when, and event format',
+      'Estimate and proposal in 15 minutes, venue scheme',
+      'Equipment selection, backup on request',
+      'Logistics, setup, and programming',
+      'On-site engineering support and quick adjustments',
+      'Dismantling and reporting',
+    ],
+  },
+  advantages: {
+    title: 'Why us',
+    items: [
+      'Since 2007, projects across Russia',
+      'In-house engineers and installation teams',
+      'Equipment and processing backup on request',
+      'Clear ownership of results and deadlines',
+    ],
+  },
+  form: {
+    title: 'Get a proposal',
+    subtitle: 'Describe the event format, and we will suggest package and scope',
+    ctaText: 'Request quote',
+  },
+};
 
 const supportPageContentByLocale: Record<Locale, typeof ru> = { ru, en };
 

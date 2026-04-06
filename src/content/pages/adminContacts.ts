@@ -50,9 +50,59 @@ const ru = {
     addressLabel: 'Адрес',
     workingHoursLabel: 'Время работы',
   },
-} as const;
+};
 
-const en: typeof ru = ru;
+const en: typeof ru = {
+  validation: {
+    phonesRequired: 'Enter at least one phone number',
+    emailsRequired: 'Enter at least one email',
+    addressRequired: 'Address is required',
+    workingHoursRequired: 'Working hours are required',
+  },
+  toast: {
+    saveSuccess: 'Contacts saved',
+    saveError: 'Failed to save contacts',
+    resetSuccess: 'Contacts reset to defaults',
+  },
+  layout: {
+    title: 'Contacts',
+    loadingSubtitle: 'Loading...',
+    loadErrorSubtitle: 'Failed to load',
+    subtitle: 'Phones, email, address, and working hours',
+  },
+  states: {
+    notLoadedTitle: 'Contacts are not loaded',
+    notLoadedDescription: 'Try refreshing the page or contact an administrator',
+  },
+  resetModal: {
+    title: 'Reset contacts to defaults?',
+    description: 'Current contacts will be overwritten with demo values.',
+    confirmText: 'Reset',
+    cancelText: 'Cancel',
+  },
+  form: {
+    title: 'Edit contacts',
+    restoredDraft: 'Draft restored',
+    unsavedChanges: 'You have unsaved changes',
+    resetToDefault: 'Reset to defaults',
+    phonesLabel: 'Phones',
+    phonesHint: 'One phone per line',
+    emailsLabel: 'Email',
+    emailsHint: 'One email per line',
+    addressLabel: 'Address',
+    workingHoursLabel: 'Working hours',
+    submit: 'Save contacts',
+  },
+  current: {
+    title: 'Current data',
+    emptyTitle: 'Contacts are empty',
+    emptyDescription: 'Fill in the form on the left and save your changes.',
+    phonesLabel: 'Phones',
+    emailsLabel: 'Email',
+    addressLabel: 'Address',
+    workingHoursLabel: 'Working hours',
+  },
+};
 
 const adminContactsPageContentByLocale: Record<Locale, typeof ru> = { ru, en };
 

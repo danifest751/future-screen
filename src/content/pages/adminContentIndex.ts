@@ -49,9 +49,58 @@ const ru = {
       icon: 'inbox',
     },
   ],
-} as const;
+};
 
-const en: typeof ru = ru;
+const en: typeof ru = {
+  layout: {
+    title: 'All settings',
+    subtitle: 'Control center',
+  },
+  sections: [
+    {
+      to: '/admin/packages',
+      title: 'Packages',
+      desc: 'Plans, composition, pricing hints',
+      icon: 'package',
+    },
+    {
+      to: '/admin/categories',
+      title: 'Categories',
+      desc: 'Rental categories and page content',
+      icon: 'tag',
+    },
+    {
+      to: '/admin/contacts',
+      title: 'Contacts',
+      desc: 'Phones, email, address, schedule',
+      icon: 'phone',
+    },
+    {
+      to: '/admin/cases',
+      title: 'Cases',
+      desc: 'Portfolio, metrics, and images',
+      icon: 'folderOpen',
+    },
+    {
+      to: '/admin/backgrounds',
+      title: 'Backgrounds',
+      desc: 'Global background and animation parameters',
+      icon: 'palette',
+    },
+    {
+      to: '/admin/privacy-policy',
+      title: 'Privacy Policy',
+      desc: 'Privacy policy page content',
+      icon: 'fileText',
+    },
+    {
+      to: '/admin/leads',
+      title: 'Leads',
+      desc: 'Lead feed and export',
+      icon: 'inbox',
+    },
+  ],
+};
 
 const adminContentIndexContentByLocale: Record<Locale, typeof ru> = { ru, en };
 

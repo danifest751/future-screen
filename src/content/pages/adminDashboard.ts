@@ -31,9 +31,40 @@ const ru = {
   lead: {
     separator: '·',
   },
-} as const;
+};
 
-const en: typeof ru = ru;
+const en: typeof ru = {
+  layout: {
+    title: 'Dashboard',
+    subtitle: 'Activity and analytics overview',
+  },
+  state: {
+    loading: 'Loading analytics...',
+    errorPrefix: 'Leads loading error:',
+  },
+  stats: {
+    total: 'Total leads',
+    week: 'This week',
+    month: 'This month',
+    conversion: 'Conversion',
+    noNew: 'No new leads',
+    todaySuffix: 'today',
+    withContactsSuffix: 'with contacts',
+    fromTotal: (withContacts: number, total: number) => `${withContacts} of ${total}`,
+  },
+  sections: {
+    sources: 'Lead sources',
+    cities: 'Cities',
+    recentLeads: 'Recent leads',
+    allLeads: 'All leads ->',
+    noData: 'No data yet',
+    emptyRecent:
+      'No leads yet. Submit the form on the website to see the first record.',
+  },
+  lead: {
+    separator: '·',
+  },
+};
 
 const adminDashboardContentByLocale: Record<Locale, typeof ru> = { ru, en };
 

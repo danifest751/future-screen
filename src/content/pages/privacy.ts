@@ -4,9 +4,13 @@ const ru = {
   fallbackTitle: 'Политика конфиденциальности',
   fallbackDescription:
     'Политика конфиденциальности временно недоступна. Пожалуйста, попробуйте позже.',
-} as const;
+};
 
-const en: typeof ru = ru;
+const en: typeof ru = {
+  fallbackTitle: 'Privacy Policy',
+  fallbackDescription:
+    'The privacy policy is temporarily unavailable. Please try again later.',
+};
 
 const privacyPageContentByLocale: Record<Locale, typeof ru> = { ru, en };
 

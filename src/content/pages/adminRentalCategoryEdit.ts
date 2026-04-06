@@ -144,9 +144,153 @@ const ru = {
     create: 'Создать категорию',
     save: 'Сохранить изменения',
   },
-} as const;
+};
 
-const en: typeof ru = ru;
+const en: typeof ru = {
+  validation: {
+    nameRequired: 'Name is required',
+    shortNameRequired: 'Short name is required',
+    slugRequired: 'Slug is required',
+    slugFormat: 'Slug: latin letters, numbers and hyphens only',
+  },
+  toasts: {
+    notFound: 'Category not found',
+    loadError: 'Failed to load category',
+    createSuccess: 'Category created',
+    updateSuccess: 'Category updated',
+    saveError: 'Save error',
+  },
+  loading: {
+    title: 'Loading...',
+    description: 'Loading category data...',
+  },
+  layout: {
+    createTitle: 'New rental category',
+    editTitle: (name: string) => `Editing: ${name}`,
+    createSubtitle: 'Create a new rental equipment section',
+    editSubtitle: 'Edit category content',
+    unknownName: '...',
+  },
+  topBar: {
+    back: 'Back',
+    unsaved: 'You have unsaved changes',
+    published: 'Published',
+    saving: 'Saving...',
+    create: 'Create',
+    save: 'Save',
+  },
+  sections: {
+    basics: {
+      title: 'Basics',
+      name: 'Name',
+      namePlaceholder: 'Lighting equipment',
+      shortName: 'Short name',
+      shortNameHint: 'Used for cards on /rent',
+      shortNamePlaceholder: 'Lighting',
+      slug: 'Slug',
+      slugHint: 'URL: /rent/{slug}. Latin letters, numbers and hyphens only',
+      slugPlaceholder: 'light',
+      sortOrder: 'Sort order',
+    },
+    seo: {
+      title: 'SEO',
+      metaTitle: 'Meta Title',
+      metaTitleHint: 'Up to 60 characters',
+      metaTitlePlaceholder: 'Lighting equipment rental — Future Screen',
+      metaDescription: 'Meta Description',
+      metaDescriptionHint: 'Up to 160 characters',
+      metaDescriptionPlaceholder: 'Professional rental...',
+    },
+    hero: {
+      title: 'Hero block',
+      h1: 'H1 title',
+      h1Placeholder: 'Lighting equipment rental',
+      subtitle: 'Subtitle',
+      ctaPrimary: 'Primary CTA',
+      ctaPrimaryPlaceholder: 'Request quote',
+      ctaSecondary: 'Secondary CTA',
+      ctaSecondaryPlaceholder: 'Learn more',
+      highlights: 'Highlights',
+      highlightsHint: 'One item per line',
+      highlightsPlaceholder: 'Fast delivery\nOn-site setup\n24/7 support',
+    },
+    about: {
+      title: 'About section',
+      sectionTitle: 'Section title',
+      sectionTitlePlaceholder: 'About category',
+      text: 'Text',
+      items: 'Items',
+      itemsHint: 'One item per line',
+    },
+    useCases: {
+      title: 'Use Cases',
+      sectionTitle: 'Section title',
+      sectionTitlePlaceholder: 'Use cases',
+      rows: 'Use cases',
+      rowsHint: 'Format: Title | Description (one per line)',
+      rowsPlaceholder:
+        'Corporate event | Full stage and hall lighting\n' +
+        'Concert | Professional show lighting\n' +
+        'Exhibition | Booth and exhibit illumination',
+    },
+    serviceIncludes: {
+      title: 'Service Includes',
+      sectionTitle: 'Section title',
+      sectionTitlePlaceholder: 'Service includes',
+      items: 'Items',
+      itemsHint: 'One item per line',
+      itemsPlaceholder:
+        'Equipment delivery\n' +
+        'Installation and setup\n' +
+        'Technical support\n' +
+        'Dismantling and pickup',
+    },
+    benefits: {
+      title: 'Benefits',
+      sectionTitle: 'Section title',
+      sectionTitlePlaceholder: 'Why choose us',
+      rows: 'Benefits',
+      rowsHint: 'Format: Title | Description (one per line)',
+      rowsPlaceholder:
+        '15+ years experience | Operating since 2007\n' +
+        'Own fleet | No dependency on subcontractors',
+    },
+    gallery: {
+      title: 'Gallery',
+      rows: 'Images',
+      rowsHint: 'Format: URL | Alt | Caption (one per line)',
+      rowsPlaceholder:
+        '/images/rental/light-1.jpg | Stage lighting | Lighting setup example\n' +
+        '/images/rental/light-2.jpg | Hall lighting | Architectural light',
+    },
+    faq: {
+      title: 'FAQ',
+      sectionTitle: 'Section title',
+      sectionTitlePlaceholder: 'Frequently asked questions',
+      rows: 'Questions and answers',
+      rowsHint: 'Format: Question | Answer (one per line)',
+      rowsPlaceholder:
+        'What is the minimum rental period? | Minimum period is 1 day. Delivery and installation are included.\n' +
+        'Do you provide an operator? | Yes, we provide an on-site technician.',
+    },
+    bottomCta: {
+      title: 'Bottom CTA',
+      heading: 'Heading',
+      headingPlaceholder: 'Ready to discuss your project?',
+      text: 'Text',
+      primary: 'Primary CTA',
+      primaryPlaceholder: 'Request quote',
+      secondary: 'Secondary CTA',
+      secondaryPlaceholder: 'Call us',
+    },
+  },
+  footer: {
+    cancel: 'Cancel',
+    saving: 'Saving...',
+    create: 'Create category',
+    save: 'Save changes',
+  },
+};
 
 const adminRentalCategoryEditContentByLocale: Record<Locale, typeof ru> = { ru, en };
 

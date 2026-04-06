@@ -62,9 +62,71 @@ const ru = {
     subtitle: 'Опишите площадку и формат, подберём конфигурацию и КП.',
     ctaText: 'Получить предложение',
   },
-} as const;
+};
 
-const en: typeof ru = ru;
+const en: typeof ru = {
+  seo: {
+    title: 'LED Screens — Rental and Installation | Future Screen',
+    description:
+      'LED screen rental for events: stage backdrops, portals, and curved structures. Installation, processing, and engineering included.',
+  },
+  hero: {
+    title: 'LED Screens',
+    subtitle: 'Stage backdrops, portals, curved and suspended structures',
+  },
+  benefitsTitle: 'Benefits',
+  benefits: [
+    'High brightness and contrast in sunlight and stage lighting',
+    'Modularity: any size and shape',
+    'Fast setup and teardown with lightweight cabinets',
+    'Processing, engineers, and service included',
+  ],
+  configsTitle: 'Typical Configurations',
+  configs: [
+    'Stage backdrop with portal and side wings',
+    'Suspended construction for indoor venues',
+    'Concave/convex screen with radius setup',
+    'Stand/totem for registration desks',
+    'Portals and podiums for entrance groups',
+  ],
+  selection: {
+    title: 'How to choose',
+    subtitle: 'A simple logic based on your task',
+    cards: [
+      {
+        caption: 'Pixel pitch',
+        title: 'Based on viewing distance',
+        description: 'Up to 5 m — 2–2.6 mm, 5–10 m — 3–4 mm, outdoor/farther — 4–6 mm.',
+      },
+      {
+        caption: 'Construction',
+        title: 'Indoor, outdoor, or suspended',
+        description: 'We select frames, rigging, and stands based on loads and wind zones.',
+      },
+      {
+        caption: 'Content',
+        title: 'Playout and processing',
+        description: 'Media server, switchers, and optional backup source.',
+      },
+    ],
+  },
+  faqTitle: 'FAQ',
+  faq: [
+    'How to choose pixel pitch? — Based on viewing distance: 2–3 mm indoors, 3–4 mm outdoors.',
+    'What is included? — Delivery, installation, processing, and on-site engineer (by agreement).',
+    'Can it be suspended? — Yes, with available rigging points and load calculation.',
+    'Do you provide backup? — Yes, we can include backup modules and processing on request.',
+  ],
+  included: {
+    title: 'What is included',
+    items: ['Delivery and installation', 'Processing and playout', 'On-site engineer', 'Backup on request'],
+  },
+  form: {
+    title: 'Select an LED setup',
+    subtitle: 'Describe venue and format, and we will prepare configuration and quote.',
+    ctaText: 'Get proposal',
+  },
+};
 
 const ledPageContentByLocale: Record<Locale, typeof ru> = { ru, en };
 

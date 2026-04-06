@@ -7,9 +7,16 @@ const ru = {
   description: 'Такой страницы нет. Возможно, она была перемещена или удалена.',
   homeLink: 'На главную',
   contactsLink: 'Контакты',
-} as const;
+};
 
-const en: typeof ru = ru;
+const en: typeof ru = {
+  seoTitle: 'Page Not Found | Future Screen',
+  title: 'Page not found',
+  subtitle: 'Check the URL or return to the homepage',
+  description: 'This page does not exist. It may have been moved or removed.',
+  homeLink: 'Home',
+  contactsLink: 'Contacts',
+};
 
 const notFoundPageContentByLocale: Record<Locale, typeof ru> = { ru, en };
 
