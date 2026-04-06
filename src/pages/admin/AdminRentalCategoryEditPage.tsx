@@ -8,11 +8,15 @@ import AdminLayout from '../../components/admin/AdminLayout';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 import { upsertRentalCategory, loadRentalCategories, type RentalCategory } from '../../services/rentalCategories';
 import { ChevronDown, ChevronUp, ArrowLeft } from 'lucide-react';
+import { adminRentalCategoryEditContent } from '../../content/pages/adminRentalCategoryEdit';
 
 const schema = z.object({
-  name: z.string().min(2, 'Название обязательно'),
-  shortName: z.string().min(2, 'Краткое название обязательно'),
-  slug: z.string().min(2, 'Slug обязателен').regex(/^[a-z0-9-]+$/, 'Slug: только латиница, цифры и дефис'),
+  name: z.string().min(2, adminRentalCategoryEditContent.validation.nameRequired),
+  shortName: z.string().min(2, adminRentalCategoryEditContent.validation.shortNameRequired),
+  slug: z
+    .string()
+    .min(2, adminRentalCategoryEditContent.validation.slugRequired)
+    .regex(/^[a-z0-9-]+$/, adminRentalCategoryEditContent.validation.slugFormat),
   isPublished: z.boolean().default(false),
   sortOrder: z.coerce.number().default(0),
   seoTitle: z.string().default(''),
@@ -99,7 +103,7 @@ const Section = ({
         <span className="text-lg font-semibold text-white">{title}</span>
         {open ? <ChevronUp size={18} className="text-slate-400" /> : <ChevronDown size={18} className="text-slate-400" />}
       </button>
-      {open && <div className="border-t border-white/5 px-5 py-5 space-y-4">{children}</div>}
+      {open && <div className="space-y-4 border-t border-white/5 px-5 py-5">{children}</div>}
     </div>
   );
 };
@@ -116,7 +120,7 @@ const Field = ({
   children: React.ReactNode;
 }) => (
   <div>
-    <label className="block text-sm font-medium text-slate-200 mb-1.5">{label}</label>
+    <label className="mb-1.5 block text-sm font-medium text-slate-200">{label}</label>
     {children}
     {hint && <p className="mt-1 text-xs text-slate-500">{hint}</p>}
     {error && <p className="mt-1 text-xs text-red-400">{error}</p>}
@@ -137,7 +141,6 @@ const AdminRentalCategoryEditPage = () => {
     handleSubmit,
     reset,
     watch,
-    setValue,
     formState: { errors, isSubmitting, isDirty },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -157,7 +160,7 @@ const AdminRentalCategoryEditPage = () => {
         const all = await loadRentalCategories();
         const cat = all.find((c) => c.id === Number(id));
         if (!cat) {
-          toast.error('Категория не найдена');
+          toast.error(adminRentalCategoryEditContent.toasts.notFound);
           navigate('/admin/rental-categories');
           return;
         }
@@ -208,7 +211,7 @@ const AdminRentalCategoryEditPage = () => {
           bottomCtaSecondary: (cat.bottomCta?.secondaryCta as string) || '',
         });
       } catch {
-        toast.error('Ошибка загрузки категории');
+        toast.error(adminRentalCategoryEditContent.toasts.loadError);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -285,25 +288,35 @@ const AdminRentalCategoryEditPage = () => {
 
     try {
       await upsertRentalCategory(cat);
-      toast.success(isNew ? 'Категория создана' : 'Категория обновлена');
+      toast.success(isNew ? adminRentalCategoryEditContent.toasts.createSuccess : adminRentalCategoryEditContent.toasts.updateSuccess);
       navigate('/admin/rental-categories');
     } catch {
-      toast.error('Ошибка сохранения');
+      toast.error(adminRentalCategoryEditContent.toasts.saveError);
     }
   };
 
   if (loading) {
     return (
-      <AdminLayout title="Загрузка..." subtitle="">
-        <div className="text-sm text-slate-400">Загрузка данных категории...</div>
+      <AdminLayout title={adminRentalCategoryEditContent.loading.title} subtitle="">
+        <div className="text-sm text-slate-400">{adminRentalCategoryEditContent.loading.description}</div>
       </AdminLayout>
     );
   }
 
   return (
     <AdminLayout
-      title={isNew ? 'Новая категория аренды' : `Редактирование: ${watch('name') || '...'}`}
-      subtitle={isNew ? 'Создание нового раздела оборудования в аренду' : 'Изменение контента категории'}
+      title={
+        isNew
+          ? adminRentalCategoryEditContent.layout.createTitle
+          : adminRentalCategoryEditContent.layout.editTitle(
+            watch('name') || adminRentalCategoryEditContent.layout.unknownName,
+          )
+      }
+      subtitle={
+        isNew
+          ? adminRentalCategoryEditContent.layout.createSubtitle
+          : adminRentalCategoryEditContent.layout.editSubtitle
+      }
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div className="flex items-center justify-between">
@@ -313,11 +326,11 @@ const AdminRentalCategoryEditPage = () => {
               onClick={() => navigate('/admin/rental-categories')}
               className="flex items-center gap-1 text-sm text-slate-400 hover:text-white"
             >
-              <ArrowLeft size={16} /> Назад
+              <ArrowLeft size={16} /> {adminRentalCategoryEditContent.topBar.back}
             </button>
             {isDirty && (
               <span className="rounded-full border border-amber-400/40 bg-amber-500/10 px-2 py-0.5 text-xs text-amber-200">
-                Есть несохраненные изменения
+                {adminRentalCategoryEditContent.topBar.unsaved}
               </span>
             )}
           </div>
@@ -328,178 +341,202 @@ const AdminRentalCategoryEditPage = () => {
                 {...register('isPublished')}
                 className="rounded border-white/20 bg-white/5 text-brand-500"
               />
-              Опубликовано
+              {adminRentalCategoryEditContent.topBar.published}
             </label>
             <button
               type="submit"
               disabled={isSubmitting}
               className="rounded-lg bg-brand-500 px-5 py-2 text-sm font-semibold text-white hover:bg-brand-400 disabled:opacity-60"
             >
-              {isSubmitting ? 'Сохраняем...' : isNew ? 'Создать' : 'Сохранить'}
+              {isSubmitting
+                ? adminRentalCategoryEditContent.topBar.saving
+                : isNew
+                  ? adminRentalCategoryEditContent.topBar.create
+                  : adminRentalCategoryEditContent.topBar.save}
             </button>
           </div>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
           <div className="space-y-6">
-            <Section title="Основные" defaultOpen>
-              <Field label="Название" error={errors.name?.message}>
-                <input className={inputClass} {...register('name')} placeholder="Световое оборудование" />
+            <Section title={adminRentalCategoryEditContent.sections.basics.title} defaultOpen>
+              <Field label={adminRentalCategoryEditContent.sections.basics.name} error={errors.name?.message}>
+                <input className={inputClass} {...register('name')} placeholder={adminRentalCategoryEditContent.sections.basics.namePlaceholder} />
               </Field>
-              <Field label="Краткое название" hint="Для карточек на /rent" error={errors.shortName?.message}>
-                <input className={inputClass} {...register('shortName')} placeholder="Свет" />
+              <Field
+                label={adminRentalCategoryEditContent.sections.basics.shortName}
+                hint={adminRentalCategoryEditContent.sections.basics.shortNameHint}
+                error={errors.shortName?.message}
+              >
+                <input className={inputClass} {...register('shortName')} placeholder={adminRentalCategoryEditContent.sections.basics.shortNamePlaceholder} />
               </Field>
-              <Field label="Slug" hint="URL: /rent/{slug}. Только латиница, цифры и дефис" error={errors.slug?.message}>
-                <input className={inputClass} {...register('slug')} placeholder="light" />
+              <Field
+                label={adminRentalCategoryEditContent.sections.basics.slug}
+                hint={adminRentalCategoryEditContent.sections.basics.slugHint}
+                error={errors.slug?.message}
+              >
+                <input className={inputClass} {...register('slug')} placeholder={adminRentalCategoryEditContent.sections.basics.slugPlaceholder} />
               </Field>
-              <Field label="Порядок сортировки">
+              <Field label={adminRentalCategoryEditContent.sections.basics.sortOrder}>
                 <input type="number" className={inputClass} {...register('sortOrder')} />
               </Field>
             </Section>
 
-            <Section title="SEO">
-              <Field label="Meta Title" hint="До 60 символов" error={errors.seoTitle?.message}>
-                <input className={inputClass} {...register('seoTitle')} placeholder="Аренда светового оборудования — Фьючер Скрин" />
+            <Section title={adminRentalCategoryEditContent.sections.seo.title}>
+              <Field
+                label={adminRentalCategoryEditContent.sections.seo.metaTitle}
+                hint={adminRentalCategoryEditContent.sections.seo.metaTitleHint}
+                error={errors.seoTitle?.message}
+              >
+                <input className={inputClass} {...register('seoTitle')} placeholder={adminRentalCategoryEditContent.sections.seo.metaTitlePlaceholder} />
               </Field>
-              <Field label="Meta Description" hint="До 160 символов" error={errors.seoDescription?.message}>
-                <textarea className={textareaClass} rows={2} {...register('seoDescription')} placeholder="Профессиональная аренда..." />
+              <Field
+                label={adminRentalCategoryEditContent.sections.seo.metaDescription}
+                hint={adminRentalCategoryEditContent.sections.seo.metaDescriptionHint}
+                error={errors.seoDescription?.message}
+              >
+                <textarea className={textareaClass} rows={2} {...register('seoDescription')} placeholder={adminRentalCategoryEditContent.sections.seo.metaDescriptionPlaceholder} />
               </Field>
             </Section>
 
-            <Section title="Hero-блок">
-              <Field label="Заголовок H1" error={errors.heroTitle?.message}>
-                <input className={inputClass} {...register('heroTitle')} placeholder="Аренда светового оборудования" />
+            <Section title={adminRentalCategoryEditContent.sections.hero.title}>
+              <Field label={adminRentalCategoryEditContent.sections.hero.h1} error={errors.heroTitle?.message}>
+                <input className={inputClass} {...register('heroTitle')} placeholder={adminRentalCategoryEditContent.sections.hero.h1Placeholder} />
               </Field>
-              <Field label="Подзаголовок" error={errors.heroSubtitle?.message}>
+              <Field label={adminRentalCategoryEditContent.sections.hero.subtitle} error={errors.heroSubtitle?.message}>
                 <textarea className={textareaClass} rows={2} {...register('heroSubtitle')} />
               </Field>
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Основной CTA" error={errors.heroCtaPrimary?.message}>
-                  <input className={inputClass} {...register('heroCtaPrimary')} placeholder="Запросить КП" />
+                <Field label={adminRentalCategoryEditContent.sections.hero.ctaPrimary} error={errors.heroCtaPrimary?.message}>
+                  <input className={inputClass} {...register('heroCtaPrimary')} placeholder={adminRentalCategoryEditContent.sections.hero.ctaPrimaryPlaceholder} />
                 </Field>
-                <Field label="Вторичный CTA" error={errors.heroCtaSecondary?.message}>
-                  <input className={inputClass} {...register('heroCtaSecondary')} placeholder="Подробнее" />
+                <Field label={adminRentalCategoryEditContent.sections.hero.ctaSecondary} error={errors.heroCtaSecondary?.message}>
+                  <input className={inputClass} {...register('heroCtaSecondary')} placeholder={adminRentalCategoryEditContent.sections.hero.ctaSecondaryPlaceholder} />
                 </Field>
               </div>
-              <Field label="Highlights" hint="Каждый пункт с новой строки">
-                <textarea className={textareaClass} rows={4} {...register('heroHighlightsText')} placeholder="Быстрая доставка\nНастройка на площадке\nТехподдержка 24/7" />
+              <Field label={adminRentalCategoryEditContent.sections.hero.highlights} hint={adminRentalCategoryEditContent.sections.hero.highlightsHint}>
+                <textarea className={textareaClass} rows={4} {...register('heroHighlightsText')} placeholder={adminRentalCategoryEditContent.sections.hero.highlightsPlaceholder} />
               </Field>
             </Section>
 
-            <Section title="Описание (About)">
-              <Field label="Заголовок секции">
-                <input className={inputClass} {...register('aboutTitle')} placeholder="О категории" />
+            <Section title={adminRentalCategoryEditContent.sections.about.title}>
+              <Field label={adminRentalCategoryEditContent.sections.about.sectionTitle}>
+                <input className={inputClass} {...register('aboutTitle')} placeholder={adminRentalCategoryEditContent.sections.about.sectionTitlePlaceholder} />
               </Field>
-              <Field label="Текст">
+              <Field label={adminRentalCategoryEditContent.sections.about.text}>
                 <textarea className={textareaClass} rows={4} {...register('aboutText')} />
               </Field>
-              <Field label="Пункты" hint="Каждый пункт с новой строки">
+              <Field label={adminRentalCategoryEditContent.sections.about.items} hint={adminRentalCategoryEditContent.sections.about.itemsHint}>
                 <textarea className={textareaClass} rows={4} {...register('aboutItemsText')} />
               </Field>
             </Section>
 
-            <Section title="Сценарии использования (Use Cases)">
-              <Field label="Заголовок секции">
-                <input className={inputClass} {...register('useCasesTitle')} placeholder="Сценарии использования" />
+            <Section title={adminRentalCategoryEditContent.sections.useCases.title}>
+              <Field label={adminRentalCategoryEditContent.sections.useCases.sectionTitle}>
+                <input className={inputClass} {...register('useCasesTitle')} placeholder={adminRentalCategoryEditContent.sections.useCases.sectionTitlePlaceholder} />
               </Field>
-              <Field label="Сценарии" hint="Формат: Заголовок | Описание (каждый с новой строки)">
+              <Field label={adminRentalCategoryEditContent.sections.useCases.rows} hint={adminRentalCategoryEditContent.sections.useCases.rowsHint}>
                 <textarea
                   className={textareaClass}
                   rows={8}
                   {...register('useCasesText')}
-                  placeholder="Корпоратив | Полное освещение сцены и зала&#10;Концерт | Профессиональный свет для живых выступлений&#10;Выставка | Подсветка стендов и экспозиций"
+                  placeholder={adminRentalCategoryEditContent.sections.useCases.rowsPlaceholder}
                 />
               </Field>
             </Section>
           </div>
 
           <div className="space-y-6">
-            <Section title="Состав услуги (Service Includes)">
-              <Field label="Заголовок секции">
-                <input className={inputClass} {...register('serviceIncludesTitle')} placeholder="В услугу входит" />
+            <Section title={adminRentalCategoryEditContent.sections.serviceIncludes.title}>
+              <Field label={adminRentalCategoryEditContent.sections.serviceIncludes.sectionTitle}>
+                <input className={inputClass} {...register('serviceIncludesTitle')} placeholder={adminRentalCategoryEditContent.sections.serviceIncludes.sectionTitlePlaceholder} />
               </Field>
-              <Field label="Пункты" hint="Каждый пункт с новой строки">
+              <Field label={adminRentalCategoryEditContent.sections.serviceIncludes.items} hint={adminRentalCategoryEditContent.sections.serviceIncludes.itemsHint}>
                 <textarea
                   className={textareaClass}
                   rows={6}
                   {...register('serviceIncludesText')}
-                  placeholder="Доставка оборудования\nМонтаж и настройка\nТехническое сопровождение\nДемонтаж и вывоз"
+                  placeholder={adminRentalCategoryEditContent.sections.serviceIncludes.itemsPlaceholder}
                 />
               </Field>
             </Section>
 
-            <Section title="Преимущества (Benefits)">
-              <Field label="Заголовок секции">
-                <input className={inputClass} {...register('benefitsTitle')} placeholder="Почему выбирают нас" />
+            <Section title={adminRentalCategoryEditContent.sections.benefits.title}>
+              <Field label={adminRentalCategoryEditContent.sections.benefits.sectionTitle}>
+                <input className={inputClass} {...register('benefitsTitle')} placeholder={adminRentalCategoryEditContent.sections.benefits.sectionTitlePlaceholder} />
               </Field>
-              <Field label="Преимущества" hint="Формат: Заголовок | Описание (каждый с новой строки)">
+              <Field label={adminRentalCategoryEditContent.sections.benefits.rows} hint={adminRentalCategoryEditContent.sections.benefits.rowsHint}>
                 <textarea
                   className={textareaClass}
                   rows={6}
                   {...register('benefitsText')}
-                  placeholder="Опыт 15+ лет | Работаем с 2007 года на рынке\nСобственный парк | Не зависим от подрядчиков"
+                  placeholder={adminRentalCategoryEditContent.sections.benefits.rowsPlaceholder}
                 />
               </Field>
             </Section>
 
-            <Section title="Галерея">
-              <Field label="Изображения" hint="Формат: URL | Alt | Подпись (каждый с новой строки)">
+            <Section title={adminRentalCategoryEditContent.sections.gallery.title}>
+              <Field label={adminRentalCategoryEditContent.sections.gallery.rows} hint={adminRentalCategoryEditContent.sections.gallery.rowsHint}>
                 <textarea
                   className={textareaClass}
                   rows={6}
                   {...register('galleryText')}
-                  placeholder="/images/rental/light-1.jpg | Свет на сцене | Пример освещения&#10;/images/rental/light-2.jpg | Подсветка зала | Архитектурный свет"
+                  placeholder={adminRentalCategoryEditContent.sections.gallery.rowsPlaceholder}
                 />
               </Field>
             </Section>
 
-            <Section title="FAQ">
-              <Field label="Заголовок секции">
-                <input className={inputClass} {...register('faqTitle')} placeholder="Частые вопросы" />
+            <Section title={adminRentalCategoryEditContent.sections.faq.title}>
+              <Field label={adminRentalCategoryEditContent.sections.faq.sectionTitle}>
+                <input className={inputClass} {...register('faqTitle')} placeholder={adminRentalCategoryEditContent.sections.faq.sectionTitlePlaceholder} />
               </Field>
-              <Field label="Вопросы и ответы" hint="Формат: Вопрос | Ответ (каждый с новой строки)">
+              <Field label={adminRentalCategoryEditContent.sections.faq.rows} hint={adminRentalCategoryEditContent.sections.faq.rowsHint}>
                 <textarea
                   className={textareaClass}
                   rows={8}
                   {...register('faqText')}
-                  placeholder="Какие сроки аренды? | Минимальный срок — 1 день. Доставка и монтаж включены.&#10;Нужен ли оператор? | Да, мы предоставляем техника на площадке."
+                  placeholder={adminRentalCategoryEditContent.sections.faq.rowsPlaceholder}
                 />
               </Field>
             </Section>
 
-            <Section title="CTA внизу страницы">
-              <Field label="Заголовок">
-                <input className={inputClass} {...register('bottomCtaTitle')} placeholder="Готовы обсудить проект?" />
+            <Section title={adminRentalCategoryEditContent.sections.bottomCta.title}>
+              <Field label={adminRentalCategoryEditContent.sections.bottomCta.heading}>
+                <input className={inputClass} {...register('bottomCtaTitle')} placeholder={adminRentalCategoryEditContent.sections.bottomCta.headingPlaceholder} />
               </Field>
-              <Field label="Текст">
+              <Field label={adminRentalCategoryEditContent.sections.bottomCta.text}>
                 <textarea className={textareaClass} rows={2} {...register('bottomCtaText')} />
               </Field>
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Основной CTA">
-                  <input className={inputClass} {...register('bottomCtaPrimary')} placeholder="Запросить КП" />
+                <Field label={adminRentalCategoryEditContent.sections.bottomCta.primary}>
+                  <input className={inputClass} {...register('bottomCtaPrimary')} placeholder={adminRentalCategoryEditContent.sections.bottomCta.primaryPlaceholder} />
                 </Field>
-                <Field label="Вторичный CTA">
-                  <input className={inputClass} {...register('bottomCtaSecondary')} placeholder="Позвонить" />
+                <Field label={adminRentalCategoryEditContent.sections.bottomCta.secondary}>
+                  <input className={inputClass} {...register('bottomCtaSecondary')} placeholder={adminRentalCategoryEditContent.sections.bottomCta.secondaryPlaceholder} />
                 </Field>
               </div>
             </Section>
           </div>
         </div>
 
-        <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
+        <div className="flex justify-end gap-3 border-t border-white/10 pt-4">
           <button
             type="button"
             onClick={() => navigate('/admin/rental-categories')}
             className="rounded-lg border border-white/10 px-5 py-2 text-sm text-slate-300 hover:bg-white/5"
           >
-            Отмена
+            {adminRentalCategoryEditContent.footer.cancel}
           </button>
           <button
             type="submit"
             disabled={isSubmitting}
             className="rounded-lg bg-brand-500 px-5 py-2 text-sm font-semibold text-white hover:bg-brand-400 disabled:opacity-60"
           >
-            {isSubmitting ? 'Сохраняем...' : isNew ? 'Создать категорию' : 'Сохранить изменения'}
+            {isSubmitting
+              ? adminRentalCategoryEditContent.footer.saving
+              : isNew
+                ? adminRentalCategoryEditContent.footer.create
+                : adminRentalCategoryEditContent.footer.save}
           </button>
         </div>
       </form>
