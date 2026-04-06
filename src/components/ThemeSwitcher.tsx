@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useTheme } from '../context/ThemeContext';
+import { themeSwitcherContent } from '../content/components/themeSwitcher';
 
 const ThemeSwitcher = () => {
   const { theme, setTheme, themes } = useTheme();
@@ -24,7 +25,7 @@ const ThemeSwitcher = () => {
           border: '1px solid var(--border-color)',
           color: 'var(--text-secondary)',
         }}
-        title="Сменить тему"
+        title={themeSwitcherContent.toggleTitle}
       >
         <span>{theme.emoji}</span>
         <span className="hidden sm:inline">{theme.name}</span>

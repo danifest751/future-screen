@@ -4,6 +4,7 @@ import Section from '../components/Section';
 import { useCategories } from '../hooks/useCategories';
 import { rentCategoriesContent } from '../data/rentCategoriesContent';
 import { RequestForm } from '../components/RequestForm';
+import { rentalCategoryPageContent } from '../content/pages/rentalCategory';
 import type { Category } from '../data/categories';
 
 type Props = {
@@ -20,29 +21,29 @@ const RentCategoryPage = ({ categoryId }: Props) => {
   return (
     <div className="space-y-2">
       <Helmet>
-        <title>{category.title} — аренда | Фьючер Скрин</title>
+        <title>{`${category.title} - ${rentalCategoryPageContent.seoTitleSuffix}`}</title>
         <meta name="description" content={`${category.shortDescription} ${content.description}`} />
       </Helmet>
       <Section title={category.title} subtitle={content.description}>
         <div className="grid gap-6 md:grid-cols-2">
           <div className="card">
-            <div className="text-lg font-semibold text-white">Факты</div>
+            <div className="text-lg font-semibold text-white">{rentalCategoryPageContent.factsTitle}</div>
             <ul className="mt-2 space-y-2 text-sm text-slate-200">
-              {content.facts.map((f) => (
-                <li key={f} className="flex items-start gap-2">
-                  <span className="mt-1 h-2 w-2 rounded-full bg-brand-400"></span>
-                  <span>{f}</span>
+              {content.facts.map((fact) => (
+                <li key={fact} className="flex items-start gap-2">
+                  <span className="mt-1 h-2 w-2 rounded-full bg-brand-400" />
+                  <span>{fact}</span>
                 </li>
               ))}
             </ul>
           </div>
           <div className="card">
-            <div className="text-lg font-semibold text-white">Что можно арендовать</div>
+            <div className="text-lg font-semibold text-white">{rentalCategoryPageContent.itemsTitle}</div>
             <ul className="mt-2 space-y-2 text-sm text-slate-200">
-              {content.items.map((f) => (
-                <li key={f} className="flex items-start gap-2">
-                  <span className="mt-1 h-2 w-2 rounded-full bg-brand-400"></span>
-                  <span>{f}</span>
+              {content.items.map((item) => (
+                <li key={item} className="flex items-start gap-2">
+                  <span className="mt-1 h-2 w-2 rounded-full bg-brand-400" />
+                  <span>{item}</span>
                 </li>
               ))}
             </ul>
@@ -50,7 +51,11 @@ const RentCategoryPage = ({ categoryId }: Props) => {
         </div>
       </Section>
 
-      <Section title="Советы" subtitle="Что важно учесть" className="pb-4">
+      <Section
+        title={rentalCategoryPageContent.tipsTitle}
+        subtitle={rentalCategoryPageContent.tipsSubtitle}
+        className="pb-4"
+      >
         <div className="grid gap-3 md:grid-cols-3">
           {content.tips.map((tip) => (
             <div key={tip} className="card text-sm text-slate-200">
@@ -63,13 +68,13 @@ const RentCategoryPage = ({ categoryId }: Props) => {
       <Section className="pb-16">
         <div className="grid gap-6 md:grid-cols-2">
           <RequestForm
-            title="Получить подбор"
-            subtitle="Опишите формат и площадку — соберём комплект"
-            ctaText="Подобрать оборудование"
+            title={rentalCategoryPageContent.requestTitle}
+            subtitle={rentalCategoryPageContent.requestSubtitle}
+            ctaText={rentalCategoryPageContent.requestCtaText}
           />
           <div className="card space-y-3 text-sm text-slate-200">
-            <div className="text-lg font-semibold text-white">Нужно другое?</div>
-            <p>Посмотрите остальные категории аренды.</p>
+            <div className="text-lg font-semibold text-white">{rentalCategoryPageContent.alternativeTitle}</div>
+            <p>{rentalCategoryPageContent.alternativeDescription}</p>
             <div className="flex flex-wrap gap-2">
               {categories
                 .filter((c) => c.id !== categoryId)
@@ -80,7 +85,7 @@ const RentCategoryPage = ({ categoryId }: Props) => {
                 ))}
             </div>
             <Link to="/rent" className="inline-flex items-center text-brand-200 hover:text-brand-100">
-              Вернуться к аренде
+              {rentalCategoryPageContent.backLink}
             </Link>
           </div>
         </div>

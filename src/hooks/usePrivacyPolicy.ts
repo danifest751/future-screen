@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { errorBoundaryContent } from '../content/components/errorBoundary';
 import { loadSiteContent, saveSiteContent, type SiteContent } from '../services/siteContent';
 
 const CONTENT_KEY = 'privacy_policy';
@@ -16,7 +17,7 @@ export function usePrivacyPolicy() {
       const data = await loadSiteContent(CONTENT_KEY);
       setContent(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ошибка загрузки');
+      setError(err instanceof Error ? err.message : errorBoundaryContent.loadingError);
     } finally {
       setLoading(false);
     }
@@ -30,7 +31,7 @@ export function usePrivacyPolicy() {
       setContent(data);
       return true;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ошибка сохранения');
+      setError(err instanceof Error ? err.message : errorBoundaryContent.savingError);
       return false;
     } finally {
       setSaving(false);

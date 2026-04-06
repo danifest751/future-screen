@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect } from 'react';
+import { errorBoundaryContent } from '../content/components/errorBoundary';
 
 export const useUnsavedChangesGuard = (hasUnsavedChanges: boolean) => {
   useEffect(() => {
@@ -43,7 +44,7 @@ export const useUnsavedChangesGuard = (hasUnsavedChanges: boolean) => {
         return;
       }
 
-      const shouldProceed = window.confirm('Есть несохраненные изменения. Уйти со страницы?');
+      const shouldProceed = window.confirm(errorBoundaryContent.unsavedChangesConfirm);
       if (!shouldProceed) {
         event.preventDefault();
         event.stopPropagation();
