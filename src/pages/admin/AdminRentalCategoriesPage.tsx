@@ -4,6 +4,7 @@ import { useRentalCategories, toggleRentalCategoryBlurTitle } from '../../servic
 import { Link } from 'react-router-dom';
 import { Plus, Edit2, Eye, EyeOff, Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { adminRentalCategoriesContent } from '../../content/pages/adminRentalCategories';
 
 const AdminRentalCategoriesPage = () => {
   const { items, loading, error, reload } = useRentalCategories();
@@ -14,44 +15,47 @@ const AdminRentalCategoriesPage = () => {
     try {
       await toggleRentalCategoryBlurTitle(id, !currentValue);
       await reload();
-      toast.success('Настройка сохранена');
+      toast.success(adminRentalCategoriesContent.toasts.saveSuccess);
     } catch {
-      toast.error('Ошибка сохранения');
+      toast.error(adminRentalCategoriesContent.toasts.saveError);
     } finally {
       setTogglingId(null);
     }
   };
 
   return (
-    <AdminLayout title="Категории аренды" subtitle="Управление разделами оборудования в аренду">
+    <AdminLayout
+      title={adminRentalCategoriesContent.layout.title}
+      subtitle={adminRentalCategoriesContent.layout.subtitle}
+    >
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <p className="text-sm text-slate-400">
-            {items.length} категорий
+            {adminRentalCategoriesContent.state.count(items.length)}
           </p>
           <div className="flex gap-3">
             <button
               onClick={reload}
               className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm text-white transition hover:bg-white/10"
             >
-              Обновить
+              {adminRentalCategoriesContent.actions.refresh}
             </button>
             <Link
               to="/admin/rental/new"
               className="flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-brand-400"
             >
               <Plus size={16} />
-              Добавить
+              {adminRentalCategoriesContent.actions.add}
             </Link>
           </div>
         </div>
 
-        {loading && <div className="text-sm text-slate-400">Загрузка...</div>}
-        {error && <div className="text-sm text-red-400">Ошибка: {error}</div>}
+        {loading && <div className="text-sm text-slate-400">{adminRentalCategoriesContent.state.loading}</div>}
+        {error && <div className="text-sm text-red-400">{adminRentalCategoriesContent.state.errorPrefix} {error}</div>}
 
         {!loading && !error && items.length === 0 && (
           <div className="rounded-xl border border-white/10 bg-slate-800/40 p-8 text-center text-slate-400">
-            Нет категорий аренды. Создайте первую.
+            {adminRentalCategoriesContent.state.empty}
           </div>
         )}
 
@@ -60,27 +64,27 @@ const AdminRentalCategoriesPage = () => {
             <table className="w-full text-sm">
               <thead className="border-b border-white/10 bg-slate-800/60">
                 <tr>
-                  <th className="px-4 py-3 text-left font-medium text-slate-300">Название</th>
-                  <th className="px-4 py-3 text-left font-medium text-slate-300">Slug</th>
-                  <th className="px-4 py-3 text-center font-medium text-slate-300">Порядок</th>
-                  <th className="px-4 py-3 text-center font-medium text-slate-300">Статус</th>
-                  <th className="px-4 py-3 text-right font-medium text-slate-300">Действия</th>
+                  <th className="px-4 py-3 text-left font-medium text-slate-300">{adminRentalCategoriesContent.table.name}</th>
+                  <th className="px-4 py-3 text-left font-medium text-slate-300">{adminRentalCategoriesContent.table.slug}</th>
+                  <th className="px-4 py-3 text-center font-medium text-slate-300">{adminRentalCategoriesContent.table.order}</th>
+                  <th className="px-4 py-3 text-center font-medium text-slate-300">{adminRentalCategoriesContent.table.status}</th>
+                  <th className="px-4 py-3 text-right font-medium text-slate-300">{adminRentalCategoriesContent.table.actions}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5 bg-slate-800/30">
                 {items.map((cat) => (
                   <tr key={cat.id} className="transition hover:bg-white/5">
                     <td className="px-4 py-3 font-medium text-white">{cat.name}</td>
-                    <td className="px-4 py-3 text-slate-400 font-mono text-xs">/rent/{cat.slug}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-slate-400">/rent/{cat.slug}</td>
                     <td className="px-4 py-3 text-center text-slate-300">{cat.sortOrder}</td>
                     <td className="px-4 py-3 text-center">
                       {cat.isPublished ? (
                         <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-400">
-                          <Eye size={12} /> Опубликовано
+                          <Eye size={12} /> {adminRentalCategoriesContent.table.published}
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 rounded-full bg-slate-500/10 px-2 py-0.5 text-xs text-slate-400">
-                          <EyeOff size={12} /> Черновик
+                          <EyeOff size={12} /> {adminRentalCategoriesContent.table.draft}
                         </span>
                       )}
                     </td>
@@ -94,7 +98,7 @@ const AdminRentalCategoriesPage = () => {
                               ? 'text-brand-400'
                               : 'text-slate-600 hover:text-slate-400'
                           }`}
-                          title={(cat.hero as Record<string, unknown>)?.showBlurTitle ? 'Blur-эффект включен' : 'Blur-эффект выключен'}
+                          title={(cat.hero as Record<string, unknown>)?.showBlurTitle ? adminRentalCategoriesContent.table.blurEnabled : adminRentalCategoriesContent.table.blurDisabled}
                         >
                           <Sparkles size={16} className={togglingId === cat.id ? 'animate-spin' : ''} />
                         </button>
@@ -102,14 +106,14 @@ const AdminRentalCategoriesPage = () => {
                           to={`/rent/${cat.slug}`}
                           target="_blank"
                           className="rounded p-1 text-slate-400 transition hover:text-white"
-                          title="Открыть страницу"
+                          title={adminRentalCategoriesContent.table.openPage}
                         >
                           <Eye size={16} />
                         </Link>
                         <Link
                           to={`/admin/rental/${cat.id}`}
                           className="rounded p-1 text-slate-400 transition hover:text-brand-400"
-                          title="Редактировать"
+                          title={adminRentalCategoriesContent.table.edit}
                         >
                           <Edit2 size={16} />
                         </Link>

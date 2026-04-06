@@ -60,6 +60,7 @@ Centralized into `src/content/pages/*`:
 - content index
 - privacy policy (admin)
 - leads
+- rental categories (list)
 
 ### Admin shared UI already converted
 
@@ -86,7 +87,6 @@ Centralized into `src/content/components/*`:
 Still contain substantial user-facing hardcode:
 - `src/pages/admin/AdminCasesManagerPage.tsx`
 - `src/pages/admin/AdminRentalCategoryEditPage.tsx`
-- `src/pages/admin/AdminRentalCategoriesPage.tsx`
 - `src/pages/admin/AdminCasesRedesignedPage.tsx`
 
 ### Likely remaining shared/admin copy
