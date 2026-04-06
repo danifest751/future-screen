@@ -57,6 +57,9 @@ Centralized into `src/content/pages/*`:
 - contacts
 - packages
 - categories
+- content index
+- privacy policy (admin)
+- leads
 
 ### Admin shared UI already converted
 
@@ -83,9 +86,6 @@ Centralized into `src/content/components/*`:
 Still contain substantial user-facing hardcode:
 - `src/pages/admin/AdminCasesManagerPage.tsx`
 - `src/pages/admin/AdminRentalCategoryEditPage.tsx`
-- `src/pages/admin/AdminLeadsPage.tsx`
-- `src/pages/admin/AdminPrivacyPolicyPage.tsx`
-- `src/pages/admin/AdminContentIndexPage.tsx`
 - `src/pages/admin/AdminRentalCategoriesPage.tsx`
 - `src/pages/admin/AdminCasesRedesignedPage.tsx`
 

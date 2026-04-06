@@ -4,23 +4,27 @@ import AdminLayout from '../../components/admin/AdminLayout';
 import { useLeads } from '../../hooks/useLeads';
 import type { LeadDeliveryLogEntry, LeadLog } from '../../types/leads';
 import { Button, ConfirmModal, EmptyState, Input, LoadingState } from '../../components/admin/ui';
+import { adminLeadsContent } from '../../content/pages/adminLeads';
 
 const formatStatusLabel = (status?: string) => {
   switch (status) {
     case 'queued':
-      return 'В очереди';
+      return adminLeadsContent.statusLabels.queued;
     case 'processing':
-      return 'В обработке';
+      return adminLeadsContent.statusLabels.processing;
     case 'delivered':
-      return 'Доставлено';
+      return adminLeadsContent.statusLabels.delivered;
     case 'partial':
-      return 'Частично';
+      return adminLeadsContent.statusLabels.partial;
     case 'failed':
-      return 'Ошибка';
+      return adminLeadsContent.statusLabels.failed;
     default:
-      return status || 'Новый';
+      return status || adminLeadsContent.statusLabels.newFallback;
   }
 };
+
+const entryStatusLabel = (status: LeadDeliveryLogEntry['status']) =>
+  adminLeadsContent.entryStatusLabels[status];
 
 const statusClasses: Record<string, string> = {
   queued: 'border-slate-400/30 bg-slate-400/10 text-slate-200',
@@ -39,12 +43,12 @@ const entryStatusClasses: Record<LeadDeliveryLogEntry['status'], string> = {
 };
 
 const channelLabels: Record<LeadDeliveryLogEntry['channel'], string> = {
-  system: 'Система',
-  api: 'API',
-  telegram: 'Telegram',
-  email: 'Email',
-  'client-email': 'Письмо клиенту',
-  database: 'База',
+  system: adminLeadsContent.channelLabels.system,
+  api: adminLeadsContent.channelLabels.api,
+  telegram: adminLeadsContent.channelLabels.telegram,
+  email: adminLeadsContent.channelLabels.email,
+  'client-email': adminLeadsContent.channelLabels['client-email'],
+  database: adminLeadsContent.channelLabels.database,
 };
 
 const formatDate = (value: string) =>
@@ -81,38 +85,38 @@ const LeadLogModal = ({
       <div className="relative max-h-[85vh] w-full max-w-3xl overflow-hidden rounded-2xl border border-white/10 bg-slate-950 shadow-2xl">
         <div className="flex items-start justify-between gap-4 border-b border-white/10 px-6 py-5">
           <div>
-            <div className="text-lg font-semibold text-white">Лог заявки</div>
+            <div className="text-lg font-semibold text-white">{adminLeadsContent.logModal.title}</div>
             <div className="mt-1 text-sm text-slate-400">
               {log.name} · {log.phone}
             </div>
             {log.requestId ? (
-              <div className="mt-1 text-xs text-slate-500">Request ID: {log.requestId}</div>
+              <div className="mt-1 text-xs text-slate-500">{adminLeadsContent.requestId.label}: {log.requestId}</div>
             ) : null}
           </div>
           <Button variant="ghost" size="sm" onClick={onClose}>
-            Закрыть
+            {adminLeadsContent.logModal.close}
           </Button>
         </div>
 
         <div className="max-h-[calc(85vh-88px)] space-y-5 overflow-y-auto px-6 py-5">
           <div className="grid gap-3 md:grid-cols-3">
             <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-              <div className="text-xs uppercase tracking-wide text-slate-500">Статус</div>
+              <div className="text-xs uppercase tracking-wide text-slate-500">{adminLeadsContent.logModal.cards.status}</div>
               <div className="mt-2 text-sm font-medium text-white">{formatStatusLabel(log.status)}</div>
             </div>
             <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-              <div className="text-xs uppercase tracking-wide text-slate-500">Создана</div>
+              <div className="text-xs uppercase tracking-wide text-slate-500">{adminLeadsContent.logModal.cards.created}</div>
               <div className="mt-2 text-sm font-medium text-white">{formatDateTime(log.timestamp)}</div>
             </div>
             <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-              <div className="text-xs uppercase tracking-wide text-slate-500">Шагов</div>
+              <div className="text-xs uppercase tracking-wide text-slate-500">{adminLeadsContent.logModal.cards.steps}</div>
               <div className="mt-2 text-sm font-medium text-white">{entries.length}</div>
             </div>
           </div>
 
           {entries.length === 0 ? (
             <div className="rounded-xl border border-dashed border-white/10 bg-white/5 p-5 text-sm text-slate-400">
-              Подробный лог ещё не записан.
+              {adminLeadsContent.logModal.empty}
             </div>
           ) : (
             <div className="space-y-3">
@@ -122,7 +126,7 @@ const LeadLogModal = ({
                     <span
                       className={`rounded-full border px-2.5 py-1 text-xs font-medium ${entryStatusClasses[entry.status]}`}
                     >
-                      {entry.status}
+                      {entryStatusLabel(entry.status)}
                     </span>
                     <span className="rounded-full border border-white/10 bg-slate-900 px-2.5 py-1 text-xs text-slate-300">
                       {channelLabels[entry.channel]}
@@ -182,12 +186,12 @@ const LeadCard = ({
             </span>
           </div>
           <div className="mt-1 text-xs text-slate-500">{time}</div>
-          {log.requestId ? <div className="mt-1 text-xs text-slate-500">Request ID: {log.requestId}</div> : null}
+          {log.requestId ? <div className="mt-1 text-xs text-slate-500">{adminLeadsContent.requestId.label}: {log.requestId}</div> : null}
         </div>
 
         <div className="flex flex-wrap gap-2">
           <Button variant="secondary" size="sm" onClick={() => onOpenLog(log)}>
-            Лог
+            {adminLeadsContent.leadCard.actions.log}
           </Button>
           {log.pagePath ? (
             <a
@@ -196,7 +200,7 @@ const LeadCard = ({
               rel="noopener noreferrer"
               className="inline-flex items-center rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-xs text-slate-200 hover:bg-white/10"
             >
-              Страница
+              {adminLeadsContent.leadCard.actions.page}
             </a>
           ) : null}
         </div>
@@ -204,14 +208,14 @@ const LeadCard = ({
 
       <div className="grid gap-2 text-sm md:grid-cols-2">
         <div>
-          <span className="text-slate-400">Телефон:</span>{' '}
+          <span className="text-slate-400">{adminLeadsContent.leadCard.fields.phone}:</span>{' '}
           <a href={`tel:${log.phone}`} className="text-white hover:text-brand-100">
             {log.phone}
           </a>
         </div>
         {log.email ? (
           <div>
-            <span className="text-slate-400">Email:</span>{' '}
+            <span className="text-slate-400">{adminLeadsContent.leadCard.fields.email}:</span>{' '}
             <a href={`mailto:${log.email}`} className="text-white hover:text-brand-100">
               {log.email}
             </a>
@@ -219,25 +223,25 @@ const LeadCard = ({
         ) : null}
         {log.telegram ? (
           <div>
-            <span className="text-slate-400">Telegram:</span>{' '}
+            <span className="text-slate-400">{adminLeadsContent.leadCard.fields.telegram}:</span>{' '}
             <span className="text-white">{log.telegram}</span>
           </div>
         ) : null}
         {log.city ? (
           <div>
-            <span className="text-slate-400">Город:</span>{' '}
+            <span className="text-slate-400">{adminLeadsContent.leadCard.fields.city}:</span>{' '}
             <span className="text-white">{log.city}</span>
           </div>
         ) : null}
         {log.date ? (
           <div>
-            <span className="text-slate-400">Дата:</span>{' '}
+            <span className="text-slate-400">{adminLeadsContent.leadCard.fields.date}:</span>{' '}
             <span className="text-white">{log.date}</span>
           </div>
         ) : null}
         {log.format ? (
           <div>
-            <span className="text-slate-400">Формат:</span>{' '}
+            <span className="text-slate-400">{adminLeadsContent.leadCard.fields.format}:</span>{' '}
             <span className="text-white">{log.format}</span>
           </div>
         ) : null}
@@ -245,7 +249,7 @@ const LeadCard = ({
 
       {lastEntry ? (
         <div className="mt-3 rounded-lg border border-white/10 bg-white/5 p-3 text-sm">
-          <div className="text-xs uppercase tracking-wide text-slate-500">Последний шаг</div>
+          <div className="text-xs uppercase tracking-wide text-slate-500">{adminLeadsContent.leadCard.fields.lastStep}</div>
           <div className="mt-1 text-white">{lastEntry.message}</div>
           <div className="mt-1 text-xs text-slate-500">
             {channelLabels[lastEntry.channel]} · {formatDateTime(lastEntry.at)}
@@ -255,7 +259,7 @@ const LeadCard = ({
 
       {log.extra && Object.keys(log.extra).length > 0 ? (
         <div className="mt-3 rounded-lg bg-white/5 p-3">
-          <div className="mb-2 text-xs font-semibold text-slate-400">Детали расчёта</div>
+          <div className="mb-2 text-xs font-semibold text-slate-400">{adminLeadsContent.leadCard.fields.details}</div>
           <div className="grid gap-1 text-xs md:grid-cols-2">
             {Object.entries(log.extra).map(([key, value]) => (
               <div key={key}>
@@ -269,7 +273,7 @@ const LeadCard = ({
 
       {log.comment ? (
         <div className="mt-3 rounded-lg bg-white/5 p-3 text-sm">
-          <span className="text-slate-400">Комментарий:</span>{' '}
+          <span className="text-slate-400">{adminLeadsContent.leadCard.fields.comment}:</span>{' '}
           <span className="text-slate-300">{log.comment}</span>
         </div>
       ) : null}
@@ -297,8 +301,8 @@ const AdminLeadsPage = () => {
     setClearSubmitting(true);
     try {
       const ok = await clearLeads();
-      if (ok) toast.success('Заявки удалены');
-      else toast.error('Не удалось удалить заявки');
+      if (ok) toast.success(adminLeadsContent.toasts.clearSuccess);
+      else toast.error(adminLeadsContent.toasts.clearError);
     } finally {
       setClearSubmitting(false);
     }
@@ -319,30 +323,15 @@ const AdminLeadsPage = () => {
       link.download = `leads-${new Date().toISOString().split('T')[0]}.json`;
       link.click();
       URL.revokeObjectURL(url);
-      toast.success('JSON экспорт готов');
+      toast.success(adminLeadsContent.toasts.exportJsonSuccess);
     } catch {
-      toast.error('Ошибка экспорта JSON');
+      toast.error(adminLeadsContent.toasts.exportJsonError);
     }
   };
 
   const exportCSV = () => {
     try {
-      const headers = [
-        'ID',
-        'Request ID',
-        'Дата',
-        'Время',
-        'Источник',
-        'Статус',
-        'Имя',
-        'Телефон',
-        'Email',
-        'Telegram',
-        'Город',
-        'Дата события',
-        'Формат',
-        'Комментарий',
-      ];
+      const headers = adminLeadsContent.csvHeaders;
 
       const rows = leads.map((lead) => [
         lead.id,
@@ -369,9 +358,9 @@ const AdminLeadsPage = () => {
       link.download = `leads-${new Date().toISOString().split('T')[0]}.csv`;
       link.click();
       URL.revokeObjectURL(url);
-      toast.success('CSV экспорт готов');
+      toast.success(adminLeadsContent.toasts.exportCsvSuccess);
     } catch {
-      toast.error('Ошибка экспорта CSV');
+      toast.error(adminLeadsContent.toasts.exportCsvError);
     }
   };
 
@@ -403,14 +392,14 @@ const AdminLeadsPage = () => {
   }, {});
 
   return (
-    <AdminLayout title="Лента заявок" subtitle="Все заявки с сайта и подробный журнал их доставки">
+    <AdminLayout title={adminLeadsContent.layout.title} subtitle={adminLeadsContent.layout.subtitle}>
       <ConfirmModal
         open={clearModalOpen}
         danger
-        title="Очистить все заявки?"
-        description="Будут удалены все записи из таблицы leads. Действие необратимо."
-        confirmText="Очистить"
-        cancelText="Отмена"
+        title={adminLeadsContent.confirm.clearTitle}
+        description={adminLeadsContent.confirm.clearDescription}
+        confirmText={adminLeadsContent.confirm.clearConfirm}
+        cancelText={adminLeadsContent.confirm.cancel}
         confirmDisabled={clearSubmitting}
         onCancel={() => setClearModalOpen(false)}
         onConfirm={() => handleClearConfirm()}
@@ -420,33 +409,32 @@ const AdminLeadsPage = () => {
 
       {loading ? (
         <div className="mb-4">
-          <LoadingState title="Загрузка заявок" description="Подождите, данные подтягиваются из базы" />
+          <LoadingState title={adminLeadsContent.loading.title} description={adminLeadsContent.loading.description} />
         </div>
       ) : null}
-      {leadsError ? <div className="mb-4 text-sm text-red-400">Ошибка: {leadsError}</div> : null}
+      {leadsError ? <div className="mb-4 text-sm text-red-400">{adminLeadsContent.errors.prefix}: {leadsError}</div> : null}
 
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div className="text-sm text-slate-400">
-          Показано: <span className="font-semibold text-white">{filteredLogs.length}</span> из{' '}
-          <span className="font-semibold text-white">{leads.length}</span>
+          <span className="font-semibold text-white">{adminLeadsContent.summary.shown(filteredLogs.length, leads.length)}</span>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="secondary" size="sm" onClick={exportCSV}>
-            Экспорт CSV
+            {adminLeadsContent.actions.exportCsv}
           </Button>
           <Button variant="secondary" size="sm" onClick={exportLogs}>
-            Экспорт JSON
+            {adminLeadsContent.actions.exportJson}
           </Button>
           <Button variant="danger" size="sm" onClick={() => setClearModalOpen(true)}>
-            Очистить всё
+            {adminLeadsContent.actions.clearAll}
           </Button>
         </div>
       </div>
 
       <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-slate-400">
-        {filter.trim() ? <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1">Поиск: {filter.trim()}</span> : null}
+        {filter.trim() ? <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1">{adminLeadsContent.chips.search(filter.trim())}</span> : null}
         {selectedSource !== 'all' ? (
-          <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1">Источник: {selectedSource}</span>
+          <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1">{adminLeadsContent.chips.source(selectedSource)}</span>
         ) : null}
         {filter.trim() || selectedSource !== 'all' ? (
           <button
@@ -454,29 +442,29 @@ const AdminLeadsPage = () => {
             onClick={resetFilters}
             className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-slate-300 hover:text-white"
           >
-            Сбросить фильтры
+            {adminLeadsContent.chips.reset}
           </button>
         ) : null}
       </div>
 
       <div className="mb-6 grid gap-4 md:grid-cols-2">
         <label className="text-sm text-slate-200">
-          Поиск
+          {adminLeadsContent.filters.searchLabel}
           <Input
             type="text"
             value={filter}
             onChange={(event) => setFilter(event.target.value)}
-            placeholder="Имя, телефон, email, город, request id"
+            placeholder={adminLeadsContent.filters.searchPlaceholder}
           />
         </label>
         <label className="text-sm text-slate-200">
-          Источник
+          {adminLeadsContent.filters.sourceLabel}
           <select
             value={selectedSource}
             onChange={(event) => setSelectedSource(event.target.value)}
             className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-white focus:border-brand-500 focus:outline-none"
           >
-            <option value="all">Все источники</option>
+            <option value="all">{adminLeadsContent.filters.sourceAll}</option>
             {sources.map((source) => (
               <option key={source} value={source}>
                 {source}
@@ -489,11 +477,11 @@ const AdminLeadsPage = () => {
       {filteredLogs.length === 0 ? (
         <EmptyState
           icon="..."
-          title={leads.length === 0 ? 'Заявок пока нет' : 'Ничего не найдено'}
+          title={leads.length === 0 ? adminLeadsContent.empty.noLeadsTitle : adminLeadsContent.empty.notFoundTitle}
           description={
             leads.length === 0
-              ? 'После первой отправки формы здесь появятся карточки заявок и журнал доставки.'
-              : 'Измените поисковый запрос или сбросьте фильтры.'
+              ? adminLeadsContent.empty.noLeadsDescription
+              : adminLeadsContent.empty.notFoundDescription
           }
         />
       ) : (

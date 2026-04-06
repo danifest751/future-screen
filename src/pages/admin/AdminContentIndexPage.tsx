@@ -2,30 +2,27 @@ import { Link } from 'react-router-dom';
 import AdminLayout from '../../components/admin/AdminLayout';
 import { Package, Tag, Phone, FolderOpen, Inbox, Palette, FileText } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { adminContentIndexContent } from '../../content/pages/adminContentIndex';
 
-type Section = {
-  to: string;
-  title: string;
-  desc: string;
-  Icon: LucideIcon;
+const iconMap: Record<string, LucideIcon> = {
+  package: Package,
+  tag: Tag,
+  phone: Phone,
+  folderOpen: FolderOpen,
+  inbox: Inbox,
+  palette: Palette,
+  fileText: FileText,
 };
-
-const sections: Section[] = [
-  { to: '/admin/packages', title: 'Пакеты', desc: 'Тарифы, состав, ценовые подсказки', Icon: Package },
-  { to: '/admin/categories', title: 'Категории', desc: 'Категории аренды и контент страниц', Icon: Tag },
-  { to: '/admin/contacts', title: 'Контакты', desc: 'Телефоны, email, адрес, график', Icon: Phone },
-  { to: '/admin/cases', title: 'Кейсы', desc: 'Портфолио, метрики и изображения', Icon: FolderOpen },
-  { to: '/admin/backgrounds', title: 'Фоны', desc: 'Глобальный фон и все параметры анимаций', Icon: Palette },
-  { to: '/admin/privacy-policy', title: 'Политика', desc: 'Текст политики конфиденциальности', Icon: FileText },
-  { to: '/admin/leads', title: 'Заявки', desc: 'Лента заявок и экспорт', Icon: Inbox },
-];
 
 const AdminContentIndexPage = () => {
   return (
-    <AdminLayout title="Все настройки" subtitle="Центр управления">
+    <AdminLayout
+      title={adminContentIndexContent.layout.title}
+      subtitle={adminContentIndexContent.layout.subtitle}
+    >
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {sections.map((section) => {
-          const { Icon } = section;
+        {adminContentIndexContent.sections.map((section) => {
+          const Icon = iconMap[section.icon];
           return (
             <Link
               key={section.to}

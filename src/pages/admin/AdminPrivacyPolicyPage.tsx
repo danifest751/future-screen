@@ -11,10 +11,11 @@ import { useFormDraftPersistence } from '../../hooks/useFormDraftPersistence';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 import Markdown from 'markdown-to-jsx';
 import { sanitizeMarkdown } from '../../lib/sanitize';
+import { adminPrivacyPolicyContent } from '../../content/pages/adminPrivacyPolicy';
 
 const schema = z.object({
-  title: z.string().min(1, 'Заголовок обязателен'),
-  content: z.string().min(1, 'Контент обязателен'),
+  title: z.string().min(1, adminPrivacyPolicyContent.validation.titleRequired),
+  content: z.string().min(1, adminPrivacyPolicyContent.validation.contentRequired),
   metaTitle: z.string().optional(),
   metaDescription: z.string().optional(),
   fontSize: z.string().optional(),
@@ -33,7 +34,7 @@ const defaultValues: FormValues = {
 const fontSizes = ['0.875rem', '1rem', '1.125rem', '1.5rem'];
 
 const AdminPrivacyPolicyPage = () => {
-  const { content, loading, saving, save, reload } = usePrivacyPolicy();
+  const { content, loading, saving, save } = usePrivacyPolicy();
   const [lastSaved, setLastSaved] = useState<string | null>(null);
 
   const {
@@ -86,17 +87,20 @@ const AdminPrivacyPolicyPage = () => {
     });
 
     if (ok) {
-      toast.success('Политика конфиденциальности сохранена');
+      toast.success(adminPrivacyPolicyContent.toasts.saveSuccess);
       clearFormDraft();
       setLastSaved(new Date().toLocaleString('ru-RU'));
     } else {
-      toast.error('Ошибка сохранения');
+      toast.error(adminPrivacyPolicyContent.toasts.saveError);
     }
   };
 
   if (loading) {
     return (
-      <AdminLayout title="Политика конфиденциальности" subtitle="Загрузка...">
+      <AdminLayout
+        title={adminPrivacyPolicyContent.layout.title}
+        subtitle={adminPrivacyPolicyContent.layout.loadingSubtitle}
+      >
         <div className="flex h-64 items-center justify-center">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />
         </div>
@@ -106,36 +110,39 @@ const AdminPrivacyPolicyPage = () => {
 
   return (
     <AdminLayout
-      title="Политика конфиденциальности"
-      subtitle={lastSaved ? `Последнее сохранение: ${lastSaved}` : undefined}
+      title={adminPrivacyPolicyContent.layout.title}
+      subtitle={lastSaved ? adminPrivacyPolicyContent.layout.lastSaved(lastSaved) : undefined}
     >
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="rounded-xl border border-white/10 bg-slate-800 p-6">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-white">Редактирование</h2>
+            <h2 className="text-xl font-semibold text-white">{adminPrivacyPolicyContent.editor.title}</h2>
             {isHydrated && hasFormDraft && (
               <span className="rounded-full border border-brand-500/40 bg-brand-500/10 px-2 py-0.5 text-xs text-brand-100">
-                Восстановлен черновик
+                {adminPrivacyPolicyContent.editor.restoredDraft}
               </span>
             )}
             {isDirty && (
               <span className="rounded-full border border-amber-400/40 bg-amber-500/10 px-2 py-0.5 text-xs text-amber-200">
-                Есть несохраненные изменения
+                {adminPrivacyPolicyContent.editor.unsavedChanges}
               </span>
             )}
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <Field
-              label="Заголовок страницы (H1)"
+              label={adminPrivacyPolicyContent.editor.pageTitleLabel}
               required
               error={errors.title?.message}
             >
-              <Input {...register('title')} placeholder="Политика конфиденциальности" />
+              <Input
+                {...register('title')}
+                placeholder={adminPrivacyPolicyContent.editor.pageTitlePlaceholder}
+              />
             </Field>
 
             <Field
-              label="Контент (Markdown)"
+              label={adminPrivacyPolicyContent.editor.contentLabel}
               required
               error={errors.content?.message}
             >
@@ -143,44 +150,43 @@ const AdminPrivacyPolicyPage = () => {
                 rows={20}
                 {...register('content')}
                 className="font-mono text-sm"
-                placeholder="# Заголовок&#10;&#10;Ваш контент здесь..."
+                placeholder={adminPrivacyPolicyContent.editor.contentPlaceholder}
               />
             </Field>
 
             <div className="border-t border-white/10 pt-4">
-              <h3 className="mb-3 text-sm font-medium text-slate-300">SEO настройки</h3>
+              <h3 className="mb-3 text-sm font-medium text-slate-300">{adminPrivacyPolicyContent.editor.seoTitle}</h3>
               <Field
                 label="Meta Title"
-                hint="До 60 символов"
+                hint={adminPrivacyPolicyContent.editor.metaTitleHint}
                 error={errors.metaTitle?.message}
               >
                 <Input
                   {...register('metaTitle')}
-                  placeholder="Политика конфиденциальности — Фьючер Скрин"
+                  placeholder={adminPrivacyPolicyContent.editor.metaTitlePlaceholder}
                 />
               </Field>
 
               <Field
                 label="Meta Description"
-                hint="До 160 символов"
+                hint={adminPrivacyPolicyContent.editor.metaDescriptionHint}
                 error={errors.metaDescription?.message}
               >
                 <Textarea
                   rows={2}
                   {...register('metaDescription')}
-                  placeholder="Описание страницы для поисковых систем..."
+                  placeholder={adminPrivacyPolicyContent.editor.metaDescriptionPlaceholder}
                 />
               </Field>
             </div>
 
             <div className="border-t border-white/10 pt-4">
-              <h3 className="mb-3 text-sm font-medium text-slate-300">Размер шрифта</h3>
+              <h3 className="mb-3 text-sm font-medium text-slate-300">{adminPrivacyPolicyContent.editor.fontSizeTitle}</h3>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-slate-400">Мелкий</span>
-                  <span className="text-xs text-slate-400">Обычный</span>
-                  <span className="text-xs text-slate-400">Крупный</span>
-                  <span className="text-xs text-slate-400">Очень крупный</span>
+                  {adminPrivacyPolicyContent.editor.fontSizeScale.map((label) => (
+                    <span key={label} className="text-xs text-slate-400">{label}</span>
+                  ))}
                 </div>
                 <input
                   type="range"
@@ -192,32 +198,32 @@ const AdminPrivacyPolicyPage = () => {
                   className="w-full accent-brand-500"
                 />
                 <div className="flex items-center justify-center gap-2">
-                  <span className="text-xs text-slate-500">Текущий:</span>
+                  <span className="text-xs text-slate-500">{adminPrivacyPolicyContent.editor.current}</span>
                   <span
                     className="rounded bg-slate-900 px-2 py-1 text-slate-200"
                     style={{ fontSize: watch('fontSize') || '1rem' }}
                   >
-                    {watch('fontSize') || '1rem'} (по умолчанию)
+                    {watch('fontSize') || '1rem'} ({adminPrivacyPolicyContent.editor.defaultNote})
                   </span>
                 </div>
               </div>
             </div>
 
             <Button type="submit" loading={isSubmitting || saving} className="w-full">
-              Сохранить
+              {adminPrivacyPolicyContent.editor.save}
             </Button>
           </form>
         </div>
 
         <div className="rounded-xl border border-white/10 bg-slate-800 p-6">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-white">Предпросмотр</h2>
+            <h2 className="text-xl font-semibold text-white">{adminPrivacyPolicyContent.preview.title}</h2>
             <button
               type="button"
               onClick={() => window.open('/privacy', '_blank')}
               className="text-sm text-brand-400 hover:text-brand-300"
             >
-              Открыть на сайте →
+              {adminPrivacyPolicyContent.preview.openOnSite}
             </button>
           </div>
 
@@ -231,8 +237,8 @@ const AdminPrivacyPolicyPage = () => {
           ) : (
             <EmptyState
               icon={<FileText size={32} className="text-brand-400" />}
-              title="Контент не загружен"
-              description="Заполните форму слева и сохраните."
+              title={adminPrivacyPolicyContent.preview.emptyTitle}
+              description={adminPrivacyPolicyContent.preview.emptyDescription}
             />
           )}
         </div>

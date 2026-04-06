@@ -1,0 +1,40 @@
+export const adminPrivacyPolicyContent = {
+  layout: {
+    title: 'Политика конфиденциальности',
+    loadingSubtitle: 'Загрузка...',
+    lastSaved: (value: string) => `Последнее сохранение: ${value}`,
+  },
+  validation: {
+    titleRequired: 'Заголовок обязателен',
+    contentRequired: 'Контент обязателен',
+  },
+  toasts: {
+    saveSuccess: 'Политика конфиденциальности сохранена',
+    saveError: 'Ошибка сохранения',
+  },
+  editor: {
+    title: 'Редактирование',
+    restoredDraft: 'Восстановлен черновик',
+    unsavedChanges: 'Есть несохраненные изменения',
+    pageTitleLabel: 'Заголовок страницы (H1)',
+    pageTitlePlaceholder: 'Политика конфиденциальности',
+    contentLabel: 'Контент (Markdown)',
+    contentPlaceholder: '# Заголовок\n\nВаш контент здесь...',
+    seoTitle: 'SEO настройки',
+    metaTitleHint: 'До 60 символов',
+    metaTitlePlaceholder: 'Политика конфиденциальности — Фьючер Скрин',
+    metaDescriptionHint: 'До 160 символов',
+    metaDescriptionPlaceholder: 'Описание страницы для поисковых систем...',
+    fontSizeTitle: 'Размер шрифта',
+    fontSizeScale: ['Мелкий', 'Обычный', 'Крупный', 'Очень крупный'],
+    current: 'Текущий:',
+    defaultNote: 'по умолчанию',
+    save: 'Сохранить',
+  },
+  preview: {
+    title: 'Предпросмотр',
+    openOnSite: 'Открыть на сайте →',
+    emptyTitle: 'Контент не загружен',
+    emptyDescription: 'Заполните форму слева и сохраните.',
+  },
+} as const;
