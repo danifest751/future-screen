@@ -1,10 +1,11 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { useRoutes } from 'react-router-dom';
-import Layout from './components/Layout';
-import { useStarBorderGlobal } from './hooks/useStarBorderGlobal';
 import { Helmet } from 'react-helmet-async';
+import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import { StructuredData } from './components/StructuredData';
+import { useStarBorderGlobal } from './hooks/useStarBorderGlobal';
+import { appContent } from './content/global';
 
 const HomePage = lazy(() => import('./pages/HomePage'));
 const LedPage = lazy(() => import('./pages/LedPage'));
@@ -32,27 +33,26 @@ const AdminPrivacyPolicyPage = lazy(() => import('./pages/admin/AdminPrivacyPoli
 const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'));
 
 const PageLoader = () => (
-  <div className="flex min-h-[60vh] items-center justify-center" style={{ backgroundColor: 'var(--bg-primary, #0a0a0a)' }}>
+  <div
+    className="flex min-h-[60vh] items-center justify-center"
+    style={{ backgroundColor: 'var(--bg-primary, #0a0a0a)' }}
+  >
     <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />
   </div>
 );
 
-/**
- * Обработчик глобальных ошибок загрузки чанков.
- * При обнаружении ошибки "Failed to fetch dynamically imported module" перезагружает страницу.
- */
 function ChunkErrorHandler() {
   useEffect(() => {
     const handleError = (event: ErrorEvent) => {
       const message = event.message || '';
       const target = event.target as HTMLElement | null;
       const isScript = target?.tagName === 'SCRIPT';
-      const isChunkError = message.includes('Failed to fetch dynamically') ||
+      const isChunkError =
+        message.includes('Failed to fetch dynamically') ||
         (isScript && target?.getAttribute('src')?.includes('/assets/'));
 
       if (isChunkError) {
         console.warn('[ChunkErrorHandler] Detected chunk load error, reloading...');
-        // Небольшая задержка чтобы избежать бесконечного цикла при проблемах с сетью
         setTimeout(() => window.location.reload(), 500);
       }
     };
@@ -66,103 +66,32 @@ function ChunkErrorHandler() {
 
 const App = () => {
   useStarBorderGlobal();
+
   const routes = [
-    {
-      path: '/',
-      element: <HomePage />,
-    },
-    {
-      path: '/led',
-      element: <LedPage />,
-    },
-    {
-      path: '/support',
-      element: <SupportPage />,
-    },
-    {
-      path: '/rent',
-      element: <RentPage />,
-    },
-    {
-      path: '/rent/:slug',
-      element: <RentalCategoryPage />,
-    },
-    {
-      path: '/cases',
-      element: <CasesPage />,
-    },
-    {
-      path: '/cases/:slug',
-      element: <CaseDetailsPage />,
-    },
-    {
-      path: '/prices',
-      element: <PricesPage />,
-    },
-    {
-      path: '/about',
-      element: <AboutPage />,
-    },
-    {
-      path: '/contacts',
-      element: <ContactsPage />,
-    },
-    {
-      path: '/consult',
-      element: <ConsultPage />,
-    },
-    {
-      path: '/privacy',
-      element: <PrivacyPolicyPage />,
-    },
-    {
-      path: '/admin/content',
-      element: <ProtectedRoute><AdminContentPage /></ProtectedRoute>,
-    },
-    {
-      path: '/admin/leads',
-      element: <ProtectedRoute><AdminLeadsPage /></ProtectedRoute>,
-    },
-    {
-      path: '/admin/cases',
-      element: <ProtectedRoute><AdminCasesPage /></ProtectedRoute>,
-    },
-    {
-      path: '/admin/packages',
-      element: <ProtectedRoute><AdminPackagesPage /></ProtectedRoute>,
-    },
-    {
-      path: '/admin/categories',
-      element: <ProtectedRoute><AdminCategoriesPage /></ProtectedRoute>,
-    },
-    {
-      path: '/admin/contacts',
-      element: <ProtectedRoute><AdminContactsPage /></ProtectedRoute>,
-    },
-    {
-      path: '/admin/backgrounds',
-      element: <ProtectedRoute><AdminBackgroundsPage /></ProtectedRoute>,
-    },
-    {
-      path: '/admin/rental-categories',
-      element: <ProtectedRoute><AdminRentalCategoriesPage /></ProtectedRoute>,
-    },
-    {
-      path: '/admin/rental/:id',
-      element: <ProtectedRoute><AdminRentalCategoryEditPage /></ProtectedRoute>,
-    },
-    {
-      path: '/admin/privacy-policy',
-      element: <ProtectedRoute><AdminPrivacyPolicyPage /></ProtectedRoute>,
-    },
-    {
-      path: '/admin',
-      element: <ProtectedRoute><AdminDashboard /></ProtectedRoute>,
-    },
-    {
-      path: '*',
-      element: <NotFoundPage />,
-    },
+    { path: '/', element: <HomePage /> },
+    { path: '/led', element: <LedPage /> },
+    { path: '/support', element: <SupportPage /> },
+    { path: '/rent', element: <RentPage /> },
+    { path: '/rent/:slug', element: <RentalCategoryPage /> },
+    { path: '/cases', element: <CasesPage /> },
+    { path: '/cases/:slug', element: <CaseDetailsPage /> },
+    { path: '/prices', element: <PricesPage /> },
+    { path: '/about', element: <AboutPage /> },
+    { path: '/contacts', element: <ContactsPage /> },
+    { path: '/consult', element: <ConsultPage /> },
+    { path: '/privacy', element: <PrivacyPolicyPage /> },
+    { path: '/admin/content', element: <ProtectedRoute><AdminContentPage /></ProtectedRoute> },
+    { path: '/admin/leads', element: <ProtectedRoute><AdminLeadsPage /></ProtectedRoute> },
+    { path: '/admin/cases', element: <ProtectedRoute><AdminCasesPage /></ProtectedRoute> },
+    { path: '/admin/packages', element: <ProtectedRoute><AdminPackagesPage /></ProtectedRoute> },
+    { path: '/admin/categories', element: <ProtectedRoute><AdminCategoriesPage /></ProtectedRoute> },
+    { path: '/admin/contacts', element: <ProtectedRoute><AdminContactsPage /></ProtectedRoute> },
+    { path: '/admin/backgrounds', element: <ProtectedRoute><AdminBackgroundsPage /></ProtectedRoute> },
+    { path: '/admin/rental-categories', element: <ProtectedRoute><AdminRentalCategoriesPage /></ProtectedRoute> },
+    { path: '/admin/rental/:id', element: <ProtectedRoute><AdminRentalCategoryEditPage /></ProtectedRoute> },
+    { path: '/admin/privacy-policy', element: <ProtectedRoute><AdminPrivacyPolicyPage /></ProtectedRoute> },
+    { path: '/admin', element: <ProtectedRoute><AdminDashboard /></ProtectedRoute> },
+    { path: '*', element: <NotFoundPage /> },
   ];
 
   const element = useRoutes(routes);
@@ -171,16 +100,11 @@ const App = () => {
     <Layout>
       <ChunkErrorHandler />
       <Helmet>
-        <title>Фьючер Скрин — LED, звук, свет, сцены</title>
-        <meta
-          name="description"
-          content="Техсопровождение мероприятий: LED-экраны, звук, свет, сцены. КП за 15 минут. Работаем по РФ с 2007 года."
-        />
+        <title>{appContent.title}</title>
+        <meta name="description" content={appContent.description} />
       </Helmet>
       <StructuredData />
-      <Suspense fallback={<PageLoader />}>
-        {element}
-      </Suspense>
+      <Suspense fallback={<PageLoader />}>{element}</Suspense>
     </Layout>
   );
 };

@@ -4,6 +4,7 @@ import { Helmet } from 'react-helmet-async';
 import { trackEvent } from '../lib/analytics';
 import { submitForm } from '../lib/submitForm';
 import { ConsentCheckbox } from '../components/ConsentCheckbox';
+import { homePageContent } from '../content/pages/home';
 
 // ─── Scroll reveal hook ───────────────────────────────────────────────────────
 function useScrollReveal(threshold = 0.15) {
@@ -348,7 +349,7 @@ function WorksSlider({ items }: { items: typeof worksItems }) {
       {/* Left arrow */}
       <button
         onClick={() => go(-1)}
-        aria-label="Назад"
+        aria-label={homePageContent.works.prevLabel}
         className="absolute left-3 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center w-11 h-11 rounded-full bg-black/70 border border-white/20 text-white transition-all duration-200 hover:bg-brand-600 hover:border-brand-500 hover:scale-110"
         style={{ opacity: hovered ? 1 : 0, pointerEvents: hovered ? 'auto' : 'none' }}
       >
@@ -360,7 +361,7 @@ function WorksSlider({ items }: { items: typeof worksItems }) {
       {/* Right arrow */}
       <button
         onClick={() => go(1)}
-        aria-label="Вперёд"
+        aria-label={homePageContent.works.nextLabel}
         className="absolute right-3 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center w-11 h-11 rounded-full bg-black/70 border border-white/20 text-white transition-all duration-200 hover:bg-brand-600 hover:border-brand-500 hover:scale-110"
         style={{ opacity: hovered ? 1 : 0, pointerEvents: hovered ? 'auto' : 'none' }}
       >
@@ -461,7 +462,7 @@ function EventsSlider({ items }: { items: EventItem[] }) {
 
       <button
         onClick={() => go(-1)}
-        aria-label="Назад"
+        aria-label={homePageContent.eventTypesSection.prevLabel}
         className={`${arrowBtn} left-3`}
         style={{ opacity: hovered ? 1 : 0, pointerEvents: hovered ? 'auto' : 'none' }}
       >
@@ -472,7 +473,7 @@ function EventsSlider({ items }: { items: EventItem[] }) {
 
       <button
         onClick={() => go(1)}
-        aria-label="Вперёд"
+        aria-label={homePageContent.eventTypesSection.nextLabel}
         className={`${arrowBtn} right-3`}
         style={{ opacity: hovered ? 1 : 0, pointerEvents: hovered ? 'auto' : 'none' }}
       >
@@ -505,24 +506,25 @@ const CtaForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [consent, setConsent] = useState(false);
+  const { ctaForm } = homePageContent;
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
     if (!formData.name.trim() || formData.name.trim().length < 2) {
-      newErrors.name = 'Введите имя (минимум 2 символа)';
+      newErrors.name = ctaForm.errors.name;
     }
     const phoneRegex = /^[+\d\s\-()]{10,20}$/;
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const hasPhone = formData.phone.trim() && phoneRegex.test(formData.phone.trim());
     const hasEmail = formData.email.trim() && emailRegex.test(formData.email.trim());
     if (!hasPhone && !hasEmail) {
-      newErrors.contact = 'Укажите телефон или email';
+      newErrors.contact = ctaForm.errors.contact;
     }
     if (formData.phone.trim() && !phoneRegex.test(formData.phone.trim())) {
-      newErrors.phone = 'Некорректный формат телефона';
+      newErrors.phone = ctaForm.errors.phone;
     }
     if (formData.email.trim() && !emailRegex.test(formData.email.trim())) {
-      newErrors.email = 'Некорректный формат email';
+      newErrors.email = ctaForm.errors.email;
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -545,10 +547,10 @@ const CtaForm = () => {
         setIsSuccess(true);
         setFormData({ name: '', phone: '', email: '' });
       } else {
-        setErrors({ submit: 'Ошибка отправки. Попробуйте позже или позвоните нам.' });
+        setErrors({ submit: ctaForm.errors.submit });
       }
     } catch {
-      setErrors({ submit: 'Ошибка отправки. Попробуйте позже или позвоните нам.' });
+      setErrors({ submit: ctaForm.errors.submit });
     } finally {
       setIsSubmitting(false);
     }
@@ -562,10 +564,10 @@ const CtaForm = () => {
             <path d="m20 6-11 11-5-5"/>
           </svg>
         </div>
-        <h3 className="mb-2 text-lg font-semibold text-white">Заявка отправлена!</h3>
-        <p className="text-gray-400">Мы свяжемся с вами в ближайшее время</p>
+        <h3 className="mb-2 text-lg font-semibold text-white">{ctaForm.success.title}</h3>
+        <p className="text-gray-400">{ctaForm.success.subtitle}</p>
         <button onClick={() => setIsSuccess(false)} className="mt-4 text-sm text-brand-400 hover:text-brand-300">
-          Отправить ещё
+          {ctaForm.success.reset}
         </button>
       </div>
     );
@@ -578,7 +580,7 @@ const CtaForm = () => {
           <div>
             <input
               type="text"
-              placeholder="Ваше имя"
+              placeholder={ctaForm.placeholders.name}
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-gray-500 outline-none transition focus:border-brand-500 focus:bg-white/10"
@@ -589,7 +591,7 @@ const CtaForm = () => {
             <div>
               <input
                 type="tel"
-                placeholder="Телефон"
+                placeholder={ctaForm.placeholders.phone}
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-gray-500 outline-none transition focus:border-brand-500 focus:bg-white/10"
@@ -599,7 +601,7 @@ const CtaForm = () => {
             <div>
               <input
                 type="email"
-                placeholder="Email"
+                placeholder={ctaForm.placeholders.email}
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-gray-500 outline-none transition focus:border-brand-500 focus:bg-white/10"
@@ -620,10 +622,10 @@ const CtaForm = () => {
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
               </svg>
-              Отправка...
+              {ctaForm.submit.loading}
             </span>
           ) : (
-            'Обсудить'
+            ctaForm.submit.idle
           )}
         </button>
       </div>
@@ -635,12 +637,15 @@ const CtaForm = () => {
 
 // ─── HomePage ─────────────────────────────────────────────────────────────────
 const HomePage = () => {
+  const { seo, hero, works, equipmentSection, eventTypesSection, processSection, ctaSection } =
+    homePageContent;
+
   return (
     <div>
       <Helmet>
-        <title>Фьючер Скрин — Техническое оснащение мероприятий | LED-экраны, звук, свет</title>
-        <meta name="description" content="Аренда LED-экранов, звукового и светового оборудования в Екатеринбурге. Техническое сопровождение концертов, корпоративов, конференций с 2007 года." />
-        <meta name="keywords" content="аренда led экранов, техническое оснащение мероприятий, аренда звука, аренда света, сценические конструкции, светодиодные экраны, Екатеринбург" />
+        <title>{seo.title}</title>
+        <meta name="description" content={seo.description} />
+        <meta name="keywords" content={seo.keywords} />
       </Helmet>
 
       {/* ── 1. HERO — fullbleed photo ───────────────────────────────────────── */}
@@ -660,19 +665,19 @@ const HomePage = () => {
           {/* Badge */}
           <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm text-gray-200 backdrop-blur-sm">
             <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
-            Работаем по всей России с 2007 года
+            {hero.badge}
           </div>
 
           {/* H1 */}
           <h1 className="font-display mb-6 text-balance text-5xl font-bold leading-tight text-white drop-shadow-lg md:text-7xl lg:text-8xl">
-            Аренда экранов,<br />
-            <span className="gradient-text">звука, света</span><br />
-            и сцены
+            {hero.titleLines[0]}<br />
+            <span className="gradient-text">{hero.titleLines[1]}</span><br />
+            {hero.titleLines[2]}
           </h1>
 
           {/* Subtitle */}
           <p className="mx-auto mb-10 max-w-2xl text-pretty text-lg leading-relaxed text-gray-200 md:text-xl">
-            Техническое обеспечение корпоративов, концертов, конференций и выставок любого масштаба
+            {hero.subtitle}
           </p>
 
           {/* CTA */}
@@ -682,21 +687,16 @@ const HomePage = () => {
               onClick={(e) => { e.preventDefault(); document.getElementById('contacts')?.scrollIntoView({ behavior: 'smooth' }); trackEvent('click_cta_hero'); }}
               className="btn-primary text-base"
             >
-              Рассчитать мероприятие
+              {hero.primaryCta}
             </a>
             <Link to="/cases" className="btn-secondary text-base">
-              Смотреть кейсы
+              {hero.secondaryCta}
             </Link>
           </div>
 
           {/* Stats */}
           <div className="mt-16 grid grid-cols-2 gap-4 md:grid-cols-4">
-            {[
-              { value: '18+', label: 'лет опыта' },
-              { value: '500+', label: 'мероприятий/год' },
-              { value: '300+', label: 'единиц техники' },
-              { value: '24/7', label: 'поддержка' },
-            ].map((stat) => (
+            {hero.stats.map((stat) => (
               <div key={stat.label} className="rounded-2xl border border-white/15 bg-black/30 p-4 text-center backdrop-blur-sm">
                 <div className="font-display gradient-text text-3xl font-bold md:text-4xl">{stat.value}</div>
                 <div className="mt-1 text-sm text-gray-300">{stat.label}</div>
@@ -713,15 +713,15 @@ const HomePage = () => {
             <div className="mb-12 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
               <div>
                 <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-sm text-gray-400">
-                  Наши работы
+                  {works.badge}
                 </div>
                 <h2 className="font-display text-balance text-4xl font-bold text-white md:text-5xl">
-                  Мероприятия,{' '}
-                  <span className="gradient-text">которые мы делали</span>
+                  {works.title}{' '}
+                  <span className="gradient-text">{works.accentTitle}</span>
                 </h2>
               </div>
               <Link to="/cases" className="text-brand-400 hover:text-brand-300 transition-colors text-sm font-medium whitespace-nowrap">
-                Все кейсы →
+                {works.allCasesLink}
               </Link>
             </div>
           </RevealSection>
@@ -738,14 +738,14 @@ const HomePage = () => {
           <RevealSection>
             <div className="mb-12 text-center">
               <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-sm text-gray-400">
-                Парк оборудования
+                {equipmentSection.badge}
               </div>
               <h2 className="font-display mb-4 text-balance text-4xl font-bold text-white md:text-5xl">
-                Оборудование{' '}
-                <span className="gradient-text">в аренду</span>
+                {equipmentSection.title}{' '}
+                <span className="gradient-text">{equipmentSection.accentTitle}</span>
               </h2>
               <p className="mx-auto max-w-2xl text-gray-400">
-                Полный спектр профессионального оборудования для мероприятий любого масштаба
+                {equipmentSection.subtitle}
               </p>
             </div>
           </RevealSection>
@@ -818,11 +818,11 @@ const HomePage = () => {
           <RevealSection>
             <div className="mb-12 text-center">
               <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-sm text-gray-400">
-                Наши направления
+                {eventTypesSection.badge}
               </div>
               <h2 className="font-display mb-4 text-balance text-4xl font-bold text-white md:text-5xl">
-                Направления{' '}
-                <span className="gradient-text">мероприятий</span>
+                {eventTypesSection.title}{' '}
+                <span className="gradient-text">{eventTypesSection.accentTitle}</span>
               </h2>
             </div>
           </RevealSection>
@@ -839,11 +839,11 @@ const HomePage = () => {
           <RevealSection>
             <div className="mb-12 text-center">
               <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-sm text-gray-400">
-                Процесс работы
+                {processSection.badge}
               </div>
               <h2 className="font-display mb-4 text-balance text-4xl font-bold text-white md:text-5xl">
-                Как мы{' '}
-                <span className="gradient-text">работаем</span>
+                {processSection.title}{' '}
+                <span className="gradient-text">{processSection.accentTitle}</span>
               </h2>
             </div>
           </RevealSection>
@@ -893,11 +893,11 @@ const HomePage = () => {
               />
               <div className="relative z-10">
                 <h2 className="font-display mb-4 text-balance text-4xl font-bold text-white md:text-5xl">
-                  Готовы обсудить{' '}
-                  <span className="gradient-text">ваше мероприятие?</span>
+                  {ctaSection.title}{' '}
+                  <span className="gradient-text">{ctaSection.accentTitle}</span>
                 </h2>
                 <p className="mx-auto mb-8 max-w-xl text-gray-400">
-                  Расскажите о вашем проекте — мы рассчитаем стоимость и предложим лучшее техническое решение
+                  {ctaSection.subtitle}
                 </p>
                 <CtaForm />
               </div>

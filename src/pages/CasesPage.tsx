@@ -5,9 +5,11 @@ import Section from '../components/Section';
 import { useCases } from '../hooks/useCases';
 import type { CaseItem } from '../data/cases';
 import { LazyImage } from '../components/LazyImage';
+import { casesPageContent } from '../content/pages/cases';
 
 const CasesPage = () => {
   const { cases } = useCases();
+  const { seo, section, videoOverlay, emptyState } = casesPageContent;
 
   const getPreviewMedia = (item: CaseItem & { videos?: string[] }) => {
     const images = item.images || [];
@@ -23,10 +25,10 @@ const CasesPage = () => {
   return (
     <div className="space-y-2">
       <Helmet>
-        <title>Кейсы — реализованные проекты | Фьючер Скрин</title>
-        <meta name="description" content="Портфолио реализованных проектов: форумы, концерты, выставки. Цифры, состав работ и фото." />
+        <title>{seo.title}</title>
+        <meta name="description" content={seo.description} />
       </Helmet>
-      <Section title="Кейсы" subtitle="Реализованные проекты с цифрами и составом работ">
+      <Section title={section.title} subtitle={section.subtitle}>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {cases.map((item) => {
             const { previewImages, hasVideo, videoCount } = getPreviewMedia(item as CaseItem & { videos?: string[] });
@@ -71,7 +73,7 @@ const CasesPage = () => {
                       <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
                         <div className="flex items-center gap-2 rounded-full bg-brand-500 px-4 py-2 text-sm font-medium text-white shadow-lg">
                           <Play size={16} fill="currentColor" />
-                          {videoCount > 1 ? `${videoCount} видео` : 'Смотреть видео'}
+                          {videoCount > 1 ? videoOverlay.many(videoCount) : videoOverlay.watch}
                         </div>
                       </div>
                     )}
@@ -140,7 +142,7 @@ const CasesPage = () => {
         
         {cases.length === 0 && (
           <div className="rounded-xl border border-white/10 bg-slate-800/50 p-12 text-center">
-            <div className="text-slate-500">Кейсы пока не добавлены</div>
+            <div className="text-slate-500">{emptyState}</div>
           </div>
         )}
       </Section>

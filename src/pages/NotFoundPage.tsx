@@ -1,21 +1,22 @@
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import Section from '../components/Section';
+import { notFoundPageContent } from '../content/pages/notFound';
 
 const NotFoundPage = () => (
   <div className="space-y-2">
     <Helmet>
-      <title>Страница не найдена | Фьючер Скрин</title>
+      <title>{notFoundPageContent.seoTitle}</title>
     </Helmet>
-    <Section title="Страница не найдена" subtitle="Проверьте адрес или вернитесь на главную">
+    <Section title={notFoundPageContent.title} subtitle={notFoundPageContent.subtitle}>
       <div className="card space-y-3 text-sm text-slate-200">
-        <p>Такой страницы нет. Возможно, она была перемещена или удалена.</p>
+        <p>{notFoundPageContent.description}</p>
         <div className="flex gap-3">
           <Link to="/" className="rounded-lg bg-brand-500 px-4 py-2 font-semibold text-white hover:bg-brand-400">
-            На главную
+            {notFoundPageContent.homeLink}
           </Link>
           <Link to="/contacts" className="rounded-lg border border-white/20 px-4 py-2 font-semibold text-white hover:border-white/40">
-            Контакты
+            {notFoundPageContent.contactsLink}
           </Link>
         </div>
       </div>

@@ -10,6 +10,7 @@ import { RentalBenefits } from '../components/rental/RentalBenefits';
 import { RentalGallery } from '../components/rental/RentalGallery';
 import { RentalFaq } from '../components/rental/RentalFaq';
 import { RentalCta } from '../components/rental/RentalCta';
+import { rentalCategoryPageContent } from '../content/pages/rentalCategory';
 
 const RentalCategoryPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -32,10 +33,10 @@ const RentalCategoryPage = () => {
     return (
       <div className="py-12 text-center">
         <h2 className="mb-2 text-xl font-semibold text-white">
-          {error ? 'Ошибка загрузки' : 'Категория не найдена'}
+          {error ? rentalCategoryPageContent.errorTitle : rentalCategoryPageContent.notFoundTitle}
         </h2>
         <p className="text-slate-400">
-          {error ? error : 'Проверьте URL или вернитесь на страницу аренды'}
+          {error ? error : rentalCategoryPageContent.fallbackDescription}
         </p>
       </div>
     );
@@ -115,7 +116,7 @@ const RentalCategoryPage = () => {
         <RentalCta
           data={bottomCta as { title: string; text: string; primaryCta?: string; primaryCtaLink?: string; secondaryCta?: string; secondaryCtaLink?: string }}
           showForm={true}
-          formCtaText="Запросить помощь"
+          formCtaText={rentalCategoryPageContent.formCtaText}
         />
       )}
     </div>

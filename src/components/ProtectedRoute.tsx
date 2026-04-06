@@ -1,12 +1,12 @@
+import type { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
+import { protectedRouteContent } from '../content/global';
 import { useAuth } from '../context/AuthContext';
 import { useUserRole } from '../hooks/useUserRole';
-import type { ReactNode } from 'react';
 import type { UserRole } from '../hooks/useUserRole';
 
 type ProtectedRouteProps = {
   children: ReactNode;
-  /** Минимальная требуемая роль. Если не указана — достаточно любой аутентификации */
   requiredRole?: UserRole;
 };
 
@@ -28,26 +28,27 @@ const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
     return <Navigate to="/" replace />;
   }
 
-  // Если указана requiredRole, проверяем что у пользователя есть достаточная роль
   if (requiredRole && !hasRole(requiredRole)) {
     console.warn(
-      `[ProtectedRoute] Access denied: user role "${user?.role}" < required "${requiredRole}"`
+      `[ProtectedRoute] Access denied: user role "${user?.role}" < required "${requiredRole}"`,
     );
+
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4">
-        <div className="text-4xl" aria-hidden="true">🔒</div>
-        <h2 className="text-xl font-semibold text-white">Доступ запрещён</h2>
-        <p className="text-slate-400">
-          У вас недостаточно прав для доступа к этому разделу.
-        </p>
+        <div className="text-4xl" aria-hidden="true">
+          🔒
+        </div>
+        <h2 className="text-xl font-semibold text-white">{protectedRouteContent.accessDeniedTitle}</h2>
+        <p className="text-slate-400">{protectedRouteContent.accessDeniedDescription}</p>
         <p className="text-xs text-slate-500">
-          Ваша роль: {user?.role || 'не определена'}
+          {protectedRouteContent.currentRolePrefix}{' '}
+          {user?.role || protectedRouteContent.currentRoleUnknown}
         </p>
         <button
           onClick={() => window.history.back()}
           className="rounded-lg border border-white/20 bg-transparent px-4 py-2 text-sm font-medium text-white transition hover:bg-white/10"
         >
-          Вернуться назад
+          {protectedRouteContent.backButton}
         </button>
       </div>
     );

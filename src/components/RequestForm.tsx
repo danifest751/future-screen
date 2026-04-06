@@ -1,15 +1,20 @@
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { requestFormContent } from '../content/global';
 import { trackEvent } from '../lib/analytics';
 import { submitForm } from '../lib/submitForm';
-import { useState } from 'react';
 import { ConsentCheckbox } from './ConsentCheckbox';
 
 const schema = z.object({
-  name: z.string().min(1, 'Укажите имя'),
-  phone: z.string().min(5, 'Укажите телефон'),
-  email: z.string().email('Некорректный email').optional().or(z.literal('')),
+  name: z.string().min(1, requestFormContent.validation.nameRequired),
+  phone: z.string().min(5, requestFormContent.validation.phoneRequired),
+  email: z
+    .string()
+    .email(requestFormContent.validation.invalidEmail)
+    .optional()
+    .or(z.literal('')),
   telegram: z.string().optional(),
   city: z.string().optional(),
   date: z.string().optional(),
@@ -26,7 +31,11 @@ type Props = {
   ctaText?: string;
 };
 
-export const RequestForm = ({ title = 'Запросить КП', subtitle, ctaText = 'Отправить' }: Props) => {
+export const RequestForm = ({
+  title = requestFormContent.defaults.title,
+  subtitle,
+  ctaText = requestFormContent.defaults.ctaText,
+}: Props) => {
   const [sent, setSent] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [showMoreFields, setShowMoreFields] = useState(false);
@@ -40,10 +49,12 @@ export const RequestForm = ({ title = 'Запросить КП', subtitle, ctaTe
 
   const onSubmit = async (values: FormValues) => {
     if (values.honey) return;
+
     setSubmitError(null);
     trackEvent('submit_form', { pagePath: window.location.pathname, ...values });
+
     const result = await submitForm({
-      source: `Форма КП (${window.location.pathname})`,
+      source: `${requestFormContent.sourcePrefix} (${window.location.pathname})`,
       name: values.name,
       phone: values.phone,
       email: values.email,
@@ -55,7 +66,7 @@ export const RequestForm = ({ title = 'Запросить КП', subtitle, ctaTe
     });
 
     if (!result.tg && !result.email) {
-      setSubmitError('Не удалось отправить заявку. Проверьте соединение или попробуйте позже.');
+      setSubmitError(requestFormContent.submitError);
       return;
     }
 
@@ -68,27 +79,44 @@ export const RequestForm = ({ title = 'Запросить КП', subtitle, ctaTe
     <div className="card">
       <div className="mb-4 space-y-1">
         <h3 className="text-xl font-semibold text-white">{title}</h3>
-        {subtitle && <p className="text-sm text-slate-300">{subtitle}</p>}
+        {subtitle ? <p className="text-sm text-slate-300">{subtitle}</p> : null}
       </div>
+
       <form className="grid gap-3" onSubmit={handleSubmit(onSubmit)}>
         <input type="text" className="hidden" tabIndex={-1} autoComplete="off" {...register('honey')} />
+
         <label className="space-y-1 text-sm text-slate-200">
-          Email
-          <input className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2" placeholder="example@mail.ru" {...register('email')} />
-          {errors.email && <span className="text-xs text-red-400">{errors.email.message}</span>}
+          {requestFormContent.fields.emailLabel}
+          <input
+            className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+            placeholder={requestFormContent.fields.emailPlaceholder}
+            {...register('email')}
+          />
+          {errors.email ? <span className="text-xs text-red-400">{errors.email.message}</span> : null}
         </label>
+
         <div className="grid gap-2 md:grid-cols-2">
           <label className="space-y-1 text-sm text-slate-200">
-            Имя*
-            <input className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2" placeholder="Имя" {...register('name')} />
-            {errors.name && <span className="text-xs text-red-400">{errors.name.message}</span>}
+            {requestFormContent.fields.nameLabel}
+            <input
+              className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+              placeholder={requestFormContent.fields.namePlaceholder}
+              {...register('name')}
+            />
+            {errors.name ? <span className="text-xs text-red-400">{errors.name.message}</span> : null}
           </label>
+
           <label className="space-y-1 text-sm text-slate-200">
-            Телефон*
-            <input className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2" placeholder="+7" {...register('phone')} />
-            {errors.phone && <span className="text-xs text-red-400">{errors.phone.message}</span>}
+            {requestFormContent.fields.phoneLabel}
+            <input
+              className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+              placeholder={requestFormContent.fields.phonePlaceholder}
+              {...register('phone')}
+            />
+            {errors.phone ? <span className="text-xs text-red-400">{errors.phone.message}</span> : null}
           </label>
         </div>
+
         <button
           type="button"
           onClick={() => setShowMoreFields((value) => !value)}
@@ -97,46 +125,77 @@ export const RequestForm = ({ title = 'Запросить КП', subtitle, ctaTe
           <span className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-white/15 text-xs">
             {showMoreFields ? '−' : '+'}
           </span>
-          {showMoreFields ? 'Скрыть дополнительные поля' : 'Ещё поля'}
+          {showMoreFields
+            ? requestFormContent.fields.moreFieldsHide
+            : requestFormContent.fields.moreFieldsShow}
         </button>
-        {showMoreFields && (
+
+        {showMoreFields ? (
           <div className="grid gap-3">
             <div className="grid gap-2 md:grid-cols-2">
               <label className="space-y-1 text-sm text-slate-200">
-                Telegram
-                <input className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2" placeholder="@username" {...register('telegram')} />
+                {requestFormContent.fields.telegramLabel}
+                <input
+                  className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                  placeholder={requestFormContent.fields.telegramPlaceholder}
+                  {...register('telegram')}
+                />
               </label>
+
               <label className="space-y-1 text-sm text-slate-200">
-                Город
-                <input className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2" placeholder="Екатеринбург" {...register('city')} />
+                {requestFormContent.fields.cityLabel}
+                <input
+                  className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                  placeholder={requestFormContent.fields.cityPlaceholder}
+                  {...register('city')}
+                />
               </label>
             </div>
+
             <div className="grid gap-2 md:grid-cols-2">
               <label className="space-y-1 text-sm text-slate-200">
-                Дата/период
-                <input className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2" placeholder="25–27 мая" {...register('date')} />
+                {requestFormContent.fields.dateLabel}
+                <input
+                  className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                  placeholder={requestFormContent.fields.datePlaceholder}
+                  {...register('date')}
+                />
               </label>
+
               <label className="space-y-1 text-sm text-slate-200">
-                Формат
-                <input className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2" placeholder="Форум, концерт, выставка..." {...register('format')} />
+                {requestFormContent.fields.formatLabel}
+                <input
+                  className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                  placeholder={requestFormContent.fields.formatPlaceholder}
+                  {...register('format')}
+                />
               </label>
             </div>
+
             <label className="space-y-1 text-sm text-slate-200">
-              Комментарий
-              <textarea className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2" rows={3} placeholder="Кратко опишите задачу" {...register('comment')} />
+              {requestFormContent.fields.commentLabel}
+              <textarea
+                className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                rows={3}
+                placeholder={requestFormContent.fields.commentPlaceholder}
+                {...register('comment')}
+              />
             </label>
           </div>
-        )}
+        ) : null}
+
         <ConsentCheckbox checked={consent} onChange={setConsent} className="mt-2" />
+
         <button
           type="submit"
           disabled={isSubmitting || !consent}
           className="flex items-center justify-center rounded-lg bg-brand-500 px-4 py-3 font-semibold text-white transition hover:bg-brand-400 disabled:opacity-60"
         >
-          {isSubmitting ? 'Отправляем...' : ctaText}
+          {isSubmitting ? requestFormContent.submitPending : ctaText}
         </button>
-        {submitError && <div className="text-sm text-red-400">{submitError}</div>}
-        {sent && <div className="text-sm text-emerald-300">Спасибо! Мы свяжемся в течение 15 минут.</div>}
+
+        {submitError ? <div className="text-sm text-red-400">{submitError}</div> : null}
+        {sent ? <div className="text-sm text-emerald-300">{requestFormContent.submitSuccess}</div> : null}
       </form>
     </div>
   );
