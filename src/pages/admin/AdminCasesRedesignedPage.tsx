@@ -105,7 +105,7 @@ const getCaseIdBySlug = async (slug: string): Promise<number | null> => {
 const AdminCasesRedesignedPage = () => {
   const { adminLocale } = useI18n();
   const adminCasesRedesignedContent = getAdminCasesRedesignedContent(adminLocale);
-  const { cases, addCase, updateCase, deleteCase, resetToDefault } = useCases();
+  const { cases, addCase, updateCase, deleteCase, resetToDefault } = useCases(adminLocale);
   const [activeTab, setActiveTab] = useState<'cases' | 'media'>('cases');
   const [caseEditing, setCaseEditing] = useState<string | null>(null);
   const [editingCaseId, setEditingCaseId] = useState<number | null>(null);

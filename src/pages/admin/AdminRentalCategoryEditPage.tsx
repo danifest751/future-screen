@@ -160,7 +160,7 @@ const AdminRentalCategoryEditPage = () => {
     const load = async () => {
       setLoading(true);
       try {
-        const all = await loadRentalCategories();
+        const all = await loadRentalCategories(adminLocale);
         const cat = all.find((c) => c.id === Number(id));
         if (!cat) {
           toast.error(adminRentalCategoryEditContent.toasts.notFound);
@@ -223,7 +223,7 @@ const AdminRentalCategoryEditPage = () => {
     return () => {
       cancelled = true;
     };
-  }, [id, isNew, navigate, reset]);
+  }, [id, isNew, navigate, reset, adminLocale, adminRentalCategoryEditContent.toasts.loadError, adminRentalCategoryEditContent.toasts.notFound]);
 
   const onSubmit = async (values: FormValues) => {
     const highlights = parseLines(values.heroHighlightsText || '').map((text) => ({ text }));
@@ -290,7 +290,7 @@ const AdminRentalCategoryEditPage = () => {
     };
 
     try {
-      await upsertRentalCategory(cat);
+      await upsertRentalCategory(cat, adminLocale);
       toast.success(isNew ? adminRentalCategoryEditContent.toasts.createSuccess : adminRentalCategoryEditContent.toasts.updateSuccess);
       navigate('/admin/rental-categories');
     } catch {

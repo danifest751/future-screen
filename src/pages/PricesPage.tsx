@@ -8,7 +8,7 @@ import { getPricesPageContent } from '../content/pages/prices';
 
 const PricesPage = () => {
   const { siteLocale } = useI18n();
-  const { packages, loading } = usePackages();
+  const { packages, loading } = usePackages(siteLocale);
   const pricesPageContent = getPricesPageContent(siteLocale);
   const { seo, hero, pricing, form } = pricesPageContent;
 

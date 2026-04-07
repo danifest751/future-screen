@@ -37,7 +37,7 @@ const splitLines = (value: string) =>
 const AdminContactsPage = () => {
   const { adminLocale } = useI18n();
   const adminContactsPageContent = getAdminContactsPageContent(adminLocale);
-  const { contacts, loading, update, resetToDefault } = useContacts();
+  const { contacts, loading, update, resetToDefault } = useContacts(adminLocale);
   const [resetModalOpen, setResetModalOpen] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
 

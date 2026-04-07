@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import type { Database } from '../lib/database.types';
+import type { Database, Json } from '../lib/database.types';
+import type { Locale } from '../i18n/types';
 
 type RentalCategoryRow = Database['public']['Tables']['rental_categories']['Row'];
 
@@ -22,54 +23,129 @@ export type RentalCategory = {
   bottomCta: Record<string, unknown>;
 };
 
-const mapFromDB = (row: RentalCategoryRow): RentalCategory => ({
-  id: row.id,
-  slug: row.slug,
-  name: row.name,
-  shortName: row.short_name,
-  isPublished: row.is_published,
-  sortOrder: row.sort_order,
-  seo: (row.seo as Record<string, unknown>) || {},
-  hero: (row.hero as Record<string, unknown>) || {},
-  about: (row.about as Record<string, unknown>) || {},
-  useCases: (row.use_cases as Array<{ title: string; description: string }>) || [],
-  serviceIncludes: (row.service_includes as { title: string; items: string[] }) || { title: '', items: [] },
-  benefits: (row.benefits as { title: string; items: Array<{ title: string; description: string }> }) || { title: '', items: [] },
-  gallery: (row.gallery as Array<{ image: string; alt: string; caption: string }>) || [],
-  faq: (row.faq as { title: string; items: Array<{ question: string; answer: string }> }) || { title: '', items: [] },
-  bottomCta: (row.bottom_cta as Record<string, unknown>) || {},
-});
+const isNonEmptyObject = (value: unknown): value is Record<string, unknown> =>
+  !!value && typeof value === 'object' && !Array.isArray(value) && Object.keys(value as Record<string, unknown>).length > 0;
 
-const mapToDB = (cat: Partial<RentalCategory>) => {
+const isNonEmptyArray = (value: unknown): value is unknown[] => Array.isArray(value) && value.length > 0;
+
+const pickLocalizedObject = (
+  ruValue: Json,
+  enValue: Json,
+  locale: Locale
+): Record<string, unknown> => {
+  const ruObj = (ruValue as Record<string, unknown>) || {};
+  const enObj = (enValue as Record<string, unknown>) || {};
+  if (locale === 'en' && isNonEmptyObject(enObj)) {
+    return { ...ruObj, ...enObj };
+  }
+  return ruObj;
+};
+
+const pickLocalizedArray = <T>(ruValue: Json, enValue: Json, locale: Locale): T[] => {
+  const ruArr = (ruValue as T[]) || [];
+  const enArr = (enValue as T[]) || [];
+  if (locale === 'en' && isNonEmptyArray(enArr)) {
+    return enArr;
+  }
+  return ruArr;
+};
+
+const mapFromDB = (row: RentalCategoryRow, locale: Locale): RentalCategory => {
+  const hero = pickLocalizedObject(row.hero, row.hero_en, locale);
+
+  // Keep blur-title toggle shared across locales.
+  const ruHero = (row.hero as Record<string, unknown>) || {};
+  if (typeof ruHero.showBlurTitle === 'boolean' && typeof hero.showBlurTitle !== 'boolean') {
+    hero.showBlurTitle = ruHero.showBlurTitle;
+  }
+
+  return {
+    id: row.id,
+    slug: row.slug,
+    name: locale === 'en' && row.name_en ? row.name_en : row.name,
+    shortName: locale === 'en' && row.short_name_en ? row.short_name_en : row.short_name,
+    isPublished: row.is_published,
+    sortOrder: row.sort_order,
+    seo: pickLocalizedObject(row.seo, row.seo_en, locale),
+    hero,
+    about: pickLocalizedObject(row.about, row.about_en, locale),
+    useCases: pickLocalizedArray<Array<{ title: string; description: string }>[number]>(
+      row.use_cases,
+      row.use_cases_en,
+      locale
+    ),
+    serviceIncludes: pickLocalizedObject(
+      row.service_includes,
+      row.service_includes_en,
+      locale
+    ) as { title: string; items: string[] },
+    benefits: pickLocalizedObject(row.benefits, row.benefits_en, locale) as {
+      title: string;
+      items: Array<{ title: string; description: string }>;
+    },
+    gallery: pickLocalizedArray<Array<{ image: string; alt: string; caption: string }>[number]>(
+      row.gallery,
+      row.gallery_en,
+      locale
+    ),
+    faq: pickLocalizedObject(row.faq, row.faq_en, locale) as {
+      title: string;
+      items: Array<{ question: string; answer: string }>;
+    },
+    bottomCta: pickLocalizedObject(row.bottom_cta, row.bottom_cta_en, locale),
+  };
+};
+
+const mapToDB = (cat: Partial<RentalCategory>, locale: Locale) => {
   const result: Record<string, unknown> = {};
-  if (cat.name !== undefined) result.name = cat.name;
-  if (cat.shortName !== undefined) result.short_name = cat.shortName;
+
   if (cat.slug !== undefined) result.slug = cat.slug;
   if (cat.isPublished !== undefined) result.is_published = cat.isPublished;
   if (cat.sortOrder !== undefined) result.sort_order = cat.sortOrder;
-  if (cat.seo !== undefined) result.seo = cat.seo;
-  if (cat.hero !== undefined) result.hero = cat.hero;
-  if (cat.about !== undefined) result.about = cat.about;
-  if (cat.useCases !== undefined) result.use_cases = cat.useCases;
-  if (cat.serviceIncludes !== undefined) result.service_includes = cat.serviceIncludes;
-  if (cat.benefits !== undefined) result.benefits = cat.benefits;
-  if (cat.gallery !== undefined) result.gallery = cat.gallery;
-  if (cat.faq !== undefined) result.faq = cat.faq;
-  if (cat.bottomCta !== undefined) result.bottom_cta = cat.bottomCta;
+
+  if (locale === 'en') {
+    if (cat.name !== undefined) result.name_en = cat.name;
+    if (cat.shortName !== undefined) result.short_name_en = cat.shortName;
+    if (cat.seo !== undefined) result.seo_en = cat.seo;
+    if (cat.hero !== undefined) result.hero_en = cat.hero;
+    if (cat.about !== undefined) result.about_en = cat.about;
+    if (cat.useCases !== undefined) result.use_cases_en = cat.useCases;
+    if (cat.serviceIncludes !== undefined) result.service_includes_en = cat.serviceIncludes;
+    if (cat.benefits !== undefined) result.benefits_en = cat.benefits;
+    if (cat.gallery !== undefined) result.gallery_en = cat.gallery;
+    if (cat.faq !== undefined) result.faq_en = cat.faq;
+    if (cat.bottomCta !== undefined) result.bottom_cta_en = cat.bottomCta;
+  } else {
+    if (cat.name !== undefined) result.name = cat.name;
+    if (cat.shortName !== undefined) result.short_name = cat.shortName;
+    if (cat.seo !== undefined) result.seo = cat.seo;
+    if (cat.hero !== undefined) result.hero = cat.hero;
+    if (cat.about !== undefined) result.about = cat.about;
+    if (cat.useCases !== undefined) result.use_cases = cat.useCases;
+    if (cat.serviceIncludes !== undefined) result.service_includes = cat.serviceIncludes;
+    if (cat.benefits !== undefined) result.benefits = cat.benefits;
+    if (cat.gallery !== undefined) result.gallery = cat.gallery;
+    if (cat.faq !== undefined) result.faq = cat.faq;
+    if (cat.bottomCta !== undefined) result.bottom_cta = cat.bottomCta;
+  }
+
   return result;
 };
 
-export const loadRentalCategories = async (): Promise<RentalCategory[]> => {
+export const loadRentalCategories = async (locale: Locale = 'ru'): Promise<RentalCategory[]> => {
   const { data, error } = await supabase
     .from('rental_categories')
     .select('*')
     .eq('is_published', true)
     .order('sort_order');
   if (error) throw new Error(error.message);
-  return (data ?? []).map(mapFromDB);
+  return (data ?? []).map((row) => mapFromDB(row as RentalCategoryRow, locale));
 };
 
-export const loadRentalCategoryBySlug = async (slug: string): Promise<RentalCategory | null> => {
+export const loadRentalCategoryBySlug = async (
+  slug: string,
+  locale: Locale = 'ru'
+): Promise<RentalCategory | null> => {
   const { data, error } = await supabase
     .from('rental_categories')
     .select('*')
@@ -79,17 +155,38 @@ export const loadRentalCategoryBySlug = async (slug: string): Promise<RentalCate
     if (error.code === 'PGRST116') return null;
     throw new Error(error.message);
   }
-  return mapFromDB(data as RentalCategoryRow);
+  return mapFromDB(data as RentalCategoryRow, locale);
 };
 
-export const upsertRentalCategory = async (cat: RentalCategory): Promise<RentalCategory> => {
+export const upsertRentalCategory = async (
+  cat: RentalCategory,
+  locale: Locale = 'ru'
+): Promise<RentalCategory> => {
+  const isInsert = !cat.id || cat.id <= 0;
+  const mapped = mapToDB(cat, locale);
+
+  if (locale === 'en' && isInsert) {
+    // Required RU columns must be present on insert.
+    if (cat.name !== undefined) mapped.name = cat.name;
+    if (cat.shortName !== undefined) mapped.short_name = cat.shortName;
+    if (cat.seo !== undefined) mapped.seo = cat.seo;
+    if (cat.hero !== undefined) mapped.hero = cat.hero;
+    if (cat.about !== undefined) mapped.about = cat.about;
+    if (cat.useCases !== undefined) mapped.use_cases = cat.useCases;
+    if (cat.serviceIncludes !== undefined) mapped.service_includes = cat.serviceIncludes;
+    if (cat.benefits !== undefined) mapped.benefits = cat.benefits;
+    if (cat.gallery !== undefined) mapped.gallery = cat.gallery;
+    if (cat.faq !== undefined) mapped.faq = cat.faq;
+    if (cat.bottomCta !== undefined) mapped.bottom_cta = cat.bottomCta;
+  }
+
   const { data, error } = await supabase
     .from('rental_categories')
-    .upsert({ id: cat.id, ...mapToDB(cat) })
+    .upsert({ id: cat.id, ...mapped })
     .select()
     .single();
   if (error) throw new Error(error.message);
-  return mapFromDB(data as RentalCategoryRow);
+  return mapFromDB(data as RentalCategoryRow, locale);
 };
 
 export const deleteRentalCategory = async (id: number): Promise<void> => {
@@ -98,14 +195,24 @@ export const deleteRentalCategory = async (id: number): Promise<void> => {
 };
 
 export const toggleRentalCategoryBlurTitle = async (id: number, showBlurTitle: boolean): Promise<void> => {
+  const { data, error: loadError } = await supabase
+    .from('rental_categories')
+    .select('hero')
+    .eq('id', id)
+    .single();
+  if (loadError) throw new Error(loadError.message);
+
+  const hero = ((data?.hero as Record<string, unknown>) || {});
+  const nextHero = { ...hero, showBlurTitle };
+
   const { error } = await supabase
     .from('rental_categories')
-    .update({ hero: { showBlurTitle } })
+    .update({ hero: nextHero })
     .eq('id', id);
   if (error) throw new Error(error.message);
 };
 
-export const useRentalCategories = () => {
+export const useRentalCategories = (locale: Locale = 'ru') => {
   const [items, setItems] = useState<RentalCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -114,21 +221,23 @@ export const useRentalCategories = () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await loadRentalCategories();
+      const data = await loadRentalCategories(locale);
       setItems(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [locale]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   return { items, loading, error, reload: load };
 };
 
-export const useRentalCategory = (slug: string) => {
+export const useRentalCategory = (slug: string, locale: Locale = 'ru') => {
   const [item, setItem] = useState<RentalCategory | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -138,16 +247,18 @@ export const useRentalCategory = (slug: string) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await loadRentalCategoryBySlug(slug);
+      const data = await loadRentalCategoryBySlug(slug, locale);
       setItem(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setLoading(false);
     }
-  }, [slug]);
+  }, [slug, locale]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   return { item, loading, error, reload: load };
 };

@@ -8,6 +8,7 @@ import type { Category } from '../data/categories';
 import type { Package } from '../data/packages';
 import type { LeadLog } from '../types/leads';
 import type { LeadDeliveryLogEntry } from '../types/leads';
+import type { Locale } from '../i18n/types';
 
 type CaseRow = Database['public']['Tables']['cases']['Row'];
 type CategoryRow = Database['public']['Tables']['categories']['Row'];
@@ -18,16 +19,16 @@ type ContactRow = Database['public']['Tables']['contacts']['Row'];
 /**
  * Преобразовать кейс из БД в формат приложения.
  */
-export function mapCaseFromDB(row: CaseRow): CaseItem {
+export function mapCaseFromDB(row: CaseRow, locale: Locale = 'ru'): CaseItem {
   return {
     slug: row.slug,
-    title: row.title,
-    city: row.city ?? '',
-    date: row.date ?? '',
-    format: row.format ?? '',
+    title: locale === 'en' && row.title_en ? row.title_en : row.title,
+    city: locale === 'en' && row.city_en ? row.city_en : row.city ?? '',
+    date: locale === 'en' && row.date_en ? row.date_en : row.date ?? '',
+    format: locale === 'en' && row.format_en ? row.format_en : row.format ?? '',
     services: (row.services ?? []) as CaseItem['services'],
-    summary: row.summary ?? '',
-    metrics: row.metrics ?? undefined,
+    summary: locale === 'en' && row.summary_en ? row.summary_en : row.summary ?? '',
+    metrics: (locale === 'en' && row.metrics_en ? row.metrics_en : row.metrics) ?? undefined,
     images: row.images ?? undefined,
     videos: row.videos ?? undefined,
   };
@@ -36,16 +37,43 @@ export function mapCaseFromDB(row: CaseRow): CaseItem {
 /**
  * Преобразовать кейс из формата приложения в БД.
  */
-export function mapCaseToDB(caseItem: { slug: string; title?: string; city?: string; date?: string; format?: string; services?: string[]; summary?: string; metrics?: string; images?: string[]; videos?: string[] }): Record<string, unknown> {
+export function mapCaseToDB(
+  caseItem: { slug: string; title?: string; city?: string; date?: string; format?: string; services?: string[]; summary?: string; metrics?: string; images?: string[]; videos?: string[] },
+  locale: Locale = 'ru',
+  forInsert = false
+): Record<string, unknown> {
+  const localized = locale === 'en'
+    ? {
+        ...(forInsert
+          ? {
+              title: caseItem.title,
+              city: caseItem.city,
+              date: caseItem.date,
+              format: caseItem.format,
+              summary: caseItem.summary,
+              metrics: caseItem.metrics,
+            }
+          : {}),
+        title_en: caseItem.title,
+        city_en: caseItem.city,
+        date_en: caseItem.date,
+        format_en: caseItem.format,
+        summary_en: caseItem.summary,
+        metrics_en: caseItem.metrics,
+      }
+    : {
+        title: caseItem.title,
+        city: caseItem.city,
+        date: caseItem.date,
+        format: caseItem.format,
+        summary: caseItem.summary,
+        metrics: caseItem.metrics,
+      };
+
   return {
     slug: caseItem.slug,
-    title: caseItem.title,
-    city: caseItem.city,
-    date: caseItem.date,
-    format: caseItem.format,
+    ...localized,
     services: caseItem.services,
-    summary: caseItem.summary,
-    metrics: caseItem.metrics,
     images: caseItem.images,
     videos: caseItem.videos,
   };
@@ -54,12 +82,15 @@ export function mapCaseToDB(caseItem: { slug: string; title?: string; city?: str
 /**
  * Преобразовать категорию из БД в формат приложения.
  */
-export function mapCategoryFromDB(row: CategoryRow): Category {
+export function mapCategoryFromDB(row: CategoryRow, locale: Locale = 'ru'): Category {
   return {
     id: row.id,
-    title: row.title,
-    shortDescription: row.short_description ?? '',
-    bullets: row.bullets ?? [],
+    title: locale === 'en' && row.title_en ? row.title_en : row.title,
+    shortDescription:
+      locale === 'en' && row.short_description_en
+        ? row.short_description_en
+        : row.short_description ?? '',
+    bullets: (locale === 'en' && row.bullets_en?.length ? row.bullets_en : row.bullets) ?? [],
     pagePath: row.page_path ?? '',
   };
 }
@@ -67,11 +98,28 @@ export function mapCategoryFromDB(row: CategoryRow): Category {
 /**
  * Преобразовать категорию из формата приложения в БД.
  */
-export function mapCategoryToDB(cat: Category): Record<string, unknown> {
+export function mapCategoryToDB(cat: Category, locale: Locale = 'ru', forInsert = false): Record<string, unknown> {
+  const localized = locale === 'en'
+    ? {
+        ...(forInsert
+          ? {
+              title: cat.title,
+              short_description: cat.shortDescription,
+              bullets: cat.bullets,
+            }
+          : {}),
+        title_en: cat.title,
+        short_description_en: cat.shortDescription,
+        bullets_en: cat.bullets,
+      }
+    : {
+        title: cat.title,
+        short_description: cat.shortDescription,
+        bullets: cat.bullets,
+      };
+
   return {
-    title: cat.title,
-    short_description: cat.shortDescription,
-    bullets: cat.bullets,
+    ...localized,
     page_path: cat.pagePath,
   };
 }
@@ -79,27 +127,50 @@ export function mapCategoryToDB(cat: Category): Record<string, unknown> {
 /**
  * Преобразовать пакет из БД в формат приложения.
  */
-export function mapPackageFromDB(row: PackageRow): Package {
+export function mapPackageFromDB(row: PackageRow, locale: Locale = 'ru'): Package {
   return {
     id: row.id,
-    name: row.name,
-    forFormats: row.for_formats ?? [],
-    includes: row.includes ?? [],
-    options: row.options ?? undefined,
-    priceHint: row.price_hint ?? undefined,
+    name: locale === 'en' && row.name_en ? row.name_en : row.name,
+    forFormats: (locale === 'en' && row.for_formats_en?.length ? row.for_formats_en : row.for_formats) ?? [],
+    includes: (locale === 'en' && row.includes_en?.length ? row.includes_en : row.includes) ?? [],
+    options:
+      (locale === 'en' && row.options_en?.length ? row.options_en : row.options) ?? undefined,
+    priceHint:
+      (locale === 'en' && row.price_hint_en ? row.price_hint_en : row.price_hint) ?? undefined,
   };
 }
 
 /**
  * Преобразовать пакет из формата приложения в БД.
  */
-export function mapPackageToDB(pkg: Package): Record<string, unknown> {
+export function mapPackageToDB(pkg: Package, locale: Locale = 'ru', forInsert = false): Record<string, unknown> {
+  const localized = locale === 'en'
+    ? {
+        ...(forInsert
+          ? {
+              name: pkg.name,
+              for_formats: pkg.forFormats,
+              includes: pkg.includes,
+              options: pkg.options,
+              price_hint: pkg.priceHint,
+            }
+          : {}),
+        name_en: pkg.name,
+        for_formats_en: pkg.forFormats,
+        includes_en: pkg.includes,
+        options_en: pkg.options,
+        price_hint_en: pkg.priceHint,
+      }
+    : {
+        name: pkg.name,
+        for_formats: pkg.forFormats,
+        includes: pkg.includes,
+        options: pkg.options,
+        price_hint: pkg.priceHint,
+      };
+
   return {
-    name: pkg.name,
-    for_formats: pkg.forFormats,
-    includes: pkg.includes,
-    options: pkg.options,
-    price_hint: pkg.priceHint,
+    ...localized,
   };
 }
 
@@ -135,7 +206,7 @@ export function mapLeadFromDB(row: LeadRow): LeadLog {
 /**
  * Преобразовать контакты из БД в формат приложения.
  */
-export function mapContactsFromDB(rows: ContactRow[]): { phones: string[]; emails: string[]; address: string; workingHours: string; id?: number } {
+export function mapContactsFromDB(rows: ContactRow[], locale: Locale = 'ru'): { phones: string[]; emails: string[]; address: string; workingHours: string; id?: number } {
   if (rows.length === 0) {
     return { phones: [], emails: [], address: '', workingHours: '' };
   }
@@ -144,20 +215,24 @@ export function mapContactsFromDB(rows: ContactRow[]): { phones: string[]; email
     id: row.id,
     phones: row.phones ?? [],
     emails: row.emails ?? [],
-    address: row.address ?? '',
-    workingHours: row.working_hours ?? '',
+    address: locale === 'en' && row.address_en ? row.address_en : row.address ?? '',
+    workingHours:
+      locale === 'en' && row.working_hours_en ? row.working_hours_en : row.working_hours ?? '',
   };
 }
 
 /**
  * Преобразовать контакты из формата приложения в БД.
  */
-export function mapContactsToDB(contacts: { phones: string[]; emails: string[]; address: string; workingHours: string }): Record<string, unknown> {
+export function mapContactsToDB(contacts: { phones: string[]; emails: string[]; address: string; workingHours: string }, locale: Locale = 'ru'): Record<string, unknown> {
+  const localized = locale === 'en'
+    ? { address_en: contacts.address, working_hours_en: contacts.workingHours }
+    : { address: contacts.address, working_hours: contacts.workingHours };
+
   return {
     phones: contacts.phones,
     emails: contacts.emails,
-    address: contacts.address,
-    working_hours: contacts.workingHours,
+    ...localized,
   };
 }
 

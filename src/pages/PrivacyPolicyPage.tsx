@@ -8,7 +8,7 @@ import { getPrivacyPageContent } from '../content/pages/privacy';
 const PrivacyPolicyPage = () => {
   const { siteLocale } = useI18n();
   const privacyPageContent = getPrivacyPageContent(siteLocale);
-  const { data: content, isLoading, error } = usePrivacyPolicyQuery();
+  const { data: content, isLoading, error } = usePrivacyPolicyQuery(siteLocale);
 
   if (isLoading) {
     return (

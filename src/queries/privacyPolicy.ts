@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { queryKeys } from './keys';
 import type { Database } from '../lib/database.types';
+import type { Locale } from '../i18n/types';
 
 type SiteContentRow = Database['public']['Tables']['site_content']['Row'];
 
@@ -14,9 +15,9 @@ const PRIVACY_KEY = 'privacy_policy';
 /**
  * Получить политику конфиденциальности.
  */
-export function usePrivacyPolicyQuery() {
+export function usePrivacyPolicyQuery(locale: Locale = 'ru') {
   return useQuery({
-    queryKey: queryKeys.privacyPolicy.all,
+    queryKey: queryKeys.privacyPolicy.all(locale),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('site_content')
@@ -25,7 +26,18 @@ export function usePrivacyPolicyQuery() {
         .single();
 
       if (error) throw error;
-      return data as SiteContentRow;
+      const row = data as SiteContentRow;
+      if (locale !== 'en') return row;
+
+      return {
+        ...row,
+        title: row.title_en ?? row.title,
+        content: row.content_en ?? row.content,
+        content_html: row.content_html_en ?? row.content_html,
+        meta_title: row.meta_title_en ?? row.meta_title,
+        meta_description: row.meta_description_en ?? row.meta_description,
+        font_size: row.font_size_en ?? row.font_size,
+      } as SiteContentRow;
     },
   });
 }
@@ -33,7 +45,7 @@ export function usePrivacyPolicyQuery() {
 /**
  * Сохранить политику конфиденциальности.
  */
-export function useSavePrivacyPolicyMutation() {
+export function useSavePrivacyPolicyMutation(locale: Locale = 'ru') {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -44,16 +56,28 @@ export function useSavePrivacyPolicyMutation() {
       metaDescription?: string | null;
       fontSize?: string | null;
     }) => {
+      const payload =
+        locale === 'en'
+          ? {
+              key: PRIVACY_KEY,
+              title_en: input.title,
+              content_en: input.content,
+              meta_title_en: input.metaTitle,
+              meta_description_en: input.metaDescription,
+              font_size_en: input.fontSize,
+            }
+          : {
+              key: PRIVACY_KEY,
+              title: input.title,
+              content: input.content,
+              meta_title: input.metaTitle,
+              meta_description: input.metaDescription,
+              font_size: input.fontSize,
+            };
+
       const { data, error } = await supabase
         .from('site_content')
-        .upsert({
-          key: PRIVACY_KEY,
-          title: input.title,
-          content: input.content,
-          meta_title: input.metaTitle,
-          meta_description: input.metaDescription,
-          font_size: input.fontSize,
-        })
+        .upsert(payload)
         .select()
         .single();
 
@@ -61,7 +85,7 @@ export function useSavePrivacyPolicyMutation() {
       return data as SiteContentRow;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.privacyPolicy.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.privacyPolicy.all(locale) });
     },
   });
 }

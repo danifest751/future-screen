@@ -10,7 +10,7 @@ import { getAdminRentalCategoriesContent } from '../../content/pages/adminRental
 const AdminRentalCategoriesPage = () => {
   const { adminLocale } = useI18n();
   const adminRentalCategoriesContent = getAdminRentalCategoriesContent(adminLocale);
-  const { items, loading, error, reload } = useRentalCategories();
+  const { items, loading, error, reload } = useRentalCategories(adminLocale);
   const [togglingId, setTogglingId] = useState<number | null>(null);
 
   const handleToggleBlurTitle = async (id: number, currentValue: boolean) => {

@@ -7,25 +7,25 @@
 export const queryKeys = {
   // Cases
   cases: {
-    all: ['cases'] as const,
-    byId: (slug: string) => ['cases', slug] as const,
+    all: (locale: string = 'ru') => ['cases', locale] as const,
+    byId: (slug: string, locale: string = 'ru') => ['cases', locale, slug] as const,
   },
   
   // Categories
   categories: {
-    all: ['categories'] as const,
-    byId: (id: number) => ['categories', id] as const,
+    all: (locale: string = 'ru') => ['categories', locale] as const,
+    byId: (id: number, locale: string = 'ru') => ['categories', locale, id] as const,
   },
   
   // Contacts
   contacts: {
-    all: ['contacts'] as const,
+    all: (locale: string = 'ru') => ['contacts', locale] as const,
   },
   
   // Packages
   packages: {
-    all: ['packages'] as const,
-    byId: (id: number) => ['packages', id] as const,
+    all: (locale: string = 'ru') => ['packages', locale] as const,
+    byId: (id: number, locale: string = 'ru') => ['packages', locale, id] as const,
   },
   
   // Leads
@@ -35,7 +35,7 @@ export const queryKeys = {
   
   // Privacy Policy
   privacyPolicy: {
-    all: ['privacy-policy'] as const,
+    all: (locale: string = 'ru') => ['privacy-policy', locale] as const,
   },
   
   // Site Settings

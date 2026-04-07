@@ -11,17 +11,23 @@ import {
 } from './mappers';
 
 describe('mapCaseFromDB', () => {
-  it('должен преобразовать кейс из БД в формат приложения', () => {
+  it('maps case row to app shape', () => {
     const row = {
       id: 1,
       slug: 'test-case',
       title: 'Тестовый кейс',
+      title_en: null,
       city: 'Москва',
+      city_en: null,
       date: '2024',
+      date_en: null,
       format: 'Концерт',
+      format_en: null,
       services: ['led', 'sound'],
       summary: 'Описание',
+      summary_en: null,
       metrics: '1000 зрителей',
+      metrics_en: null,
       images: ['img1.jpg', 'img2.jpg'],
       videos: ['video1.mp4'],
       created_at: '2024-01-01T00:00:00Z',
@@ -38,17 +44,23 @@ describe('mapCaseFromDB', () => {
     expect(result.videos).toEqual(['video1.mp4']);
   });
 
-  it('должен обработать null значения', () => {
+  it('handles nullable values', () => {
     const row = {
       id: 1,
       slug: 'test-case',
       title: 'Тестовый кейс',
+      title_en: null,
       city: null,
+      city_en: null,
       date: null,
+      date_en: null,
       format: null,
+      format_en: null,
       services: null,
       summary: null,
+      summary_en: null,
       metrics: null,
+      metrics_en: null,
       images: null,
       videos: null,
       created_at: null,
@@ -65,7 +77,7 @@ describe('mapCaseFromDB', () => {
 });
 
 describe('mapCaseToDB', () => {
-  it('должен преобразовать кейс в формат БД', () => {
+  it('maps case item to db shape', () => {
     const caseItem = {
       slug: 'test-case',
       title: 'Тестовый кейс',
@@ -88,12 +100,15 @@ describe('mapCaseToDB', () => {
 });
 
 describe('mapCategoryFromDB', () => {
-  it('должен преобразовать категорию из БД в формат приложения', () => {
+  it('maps category row to app shape', () => {
     const row = {
       id: 1,
       title: 'Свет',
+      title_en: null,
       short_description: 'Краткое описание',
+      short_description_en: null,
       bullets: ['буллет 1', 'буллет 2'],
+      bullets_en: null,
       page_path: '/rent/light',
       created_at: '2024-01-01T00:00:00Z',
     };
@@ -107,12 +122,15 @@ describe('mapCategoryFromDB', () => {
     expect(result.pagePath).toBe('/rent/light');
   });
 
-  it('должен обработать null значения', () => {
+  it('handles nullable values', () => {
     const row = {
       id: 1,
       title: 'Свет',
+      title_en: null,
       short_description: null,
+      short_description_en: null,
       bullets: null,
+      bullets_en: null,
       page_path: null,
       created_at: null,
     };
@@ -126,7 +144,7 @@ describe('mapCategoryFromDB', () => {
 });
 
 describe('mapCategoryToDB', () => {
-  it('должен преобразовать категорию в формат БД', () => {
+  it('maps category item to db shape', () => {
     const category = {
       id: 1,
       title: 'Свет',
@@ -145,14 +163,19 @@ describe('mapCategoryToDB', () => {
 });
 
 describe('mapPackageFromDB', () => {
-  it('должен преобразовать пакет из БД в формат приложения', () => {
+  it('maps package row to app shape', () => {
     const row = {
       id: 1,
       name: 'Лайт',
+      name_en: null,
       for_formats: ['Концерт', 'Форум'],
+      for_formats_en: null,
       includes: ['Включено 1', 'Включено 2'],
+      includes_en: null,
       options: ['Опция 1'],
+      options_en: null,
       price_hint: 'Быстрый запуск',
+      price_hint_en: null,
       created_at: '2024-01-01T00:00:00Z',
     };
 
@@ -166,14 +189,19 @@ describe('mapPackageFromDB', () => {
     expect(result.priceHint).toBe('Быстрый запуск');
   });
 
-  it('должен обработать null значения', () => {
+  it('handles nullable values', () => {
     const row = {
       id: 1,
       name: 'Лайт',
+      name_en: null,
       for_formats: null,
+      for_formats_en: null,
       includes: null,
+      includes_en: null,
       options: null,
+      options_en: null,
       price_hint: null,
+      price_hint_en: null,
       created_at: null,
     };
 
@@ -187,7 +215,7 @@ describe('mapPackageFromDB', () => {
 });
 
 describe('mapPackageToDB', () => {
-  it('должен преобразовать пакет в формат БД', () => {
+  it('maps package item to db shape', () => {
     const pkg = {
       id: 1,
       name: 'Лайт',
@@ -208,7 +236,7 @@ describe('mapPackageToDB', () => {
 });
 
 describe('mapLeadFromDB', () => {
-  it('должен преобразовать лид из БД в формат приложения', () => {
+  it('maps lead row to app shape', () => {
     const row = {
       id: '1',
       created_at: '2024-01-01T00:00:00Z',
@@ -243,7 +271,7 @@ describe('mapLeadFromDB', () => {
     expect(result.city).toBe('Москва');
   });
 
-  it('должен обработать null значения', () => {
+  it('handles nullable values', () => {
     const row = {
       id: '1',
       created_at: null,
@@ -273,14 +301,16 @@ describe('mapLeadFromDB', () => {
 });
 
 describe('mapContactsFromDB', () => {
-  it('должен преобразовать контакты из БД в формат приложения', () => {
+  it('maps contacts rows to app shape', () => {
     const rows = [
       {
         id: 1,
         phones: ['+79991234567'],
         emails: ['test@example.com'],
         address: 'Адрес',
+        address_en: null,
         working_hours: '10:00-20:00',
+        working_hours_en: null,
         updated_at: '2024-01-01T00:00:00Z',
       },
     ];
@@ -294,7 +324,7 @@ describe('mapContactsFromDB', () => {
     expect(result.workingHours).toBe('10:00-20:00');
   });
 
-  it('должен вернуть пустые значения при отсутствии данных', () => {
+  it('returns empty values when no rows exist', () => {
     const result = mapContactsFromDB([]);
 
     expect(result.phones).toEqual([]);
@@ -305,41 +335,41 @@ describe('mapContactsFromDB', () => {
 });
 
 describe('ID conversion for mutations', () => {
-  it('должен конвертировать строковый ID в числовой', () => {
+  it('converts string id to number', () => {
     const id = '123';
     const numId = typeof id === 'string' ? parseInt(id, 10) : id;
     expect(numId).toBe(123);
     expect(typeof numId).toBe('number');
   });
 
-  it('должен оставить числовой ID как есть', () => {
+  it('keeps numeric id as is', () => {
     const id = 456;
     const numId = typeof id === 'string' ? parseInt(id as unknown as string, 10) : id;
     expect(numId).toBe(456);
     expect(typeof numId).toBe('number');
   });
 
-  it('должен обнаружить невалидный строковый ID', () => {
+  it('detects invalid numeric id string', () => {
     const id = 'invalid';
     const numId = typeof id === 'string' ? parseInt(id, 10) : id;
     expect(isNaN(numId)).toBe(true);
   });
 
-  it('должен исключить id из rest при деструктуризации', () => {
+  it('excludes id from rest in destructuring for string id', () => {
     const pkg = { id: '123', name: 'Test', for_formats: ['format1'] };
     const { id, ...rest } = pkg;
     const { id: _, ...dataWithoutId } = rest as Record<string, unknown> & { id?: unknown };
-    
+
     expect(id).toBe('123');
     expect('id' in dataWithoutId).toBe(false);
     expect(dataWithoutId).toEqual({ name: 'Test', for_formats: ['format1'] });
   });
 
-  it('должен исключить id из rest при числовом id', () => {
+  it('excludes id from rest in destructuring for numeric id', () => {
     const pkg = { id: 123, name: 'Test', for_formats: ['format1'] };
     const { id, ...rest } = pkg;
     const { id: _, ...dataWithoutId } = rest as Record<string, unknown> & { id?: unknown };
-    
+
     expect(id).toBe(123);
     expect('id' in dataWithoutId).toBe(false);
     expect(dataWithoutId).toEqual({ name: 'Test', for_formats: ['format1'] });

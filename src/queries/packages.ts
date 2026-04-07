@@ -8,6 +8,7 @@ import { queryKeys } from './keys';
 import type { Database } from '../lib/database.types';
 import { packages as basePackages } from '../data/packages';
 import { mapPackageToDB } from '../lib/mappers';
+import type { Locale } from '../i18n/types';
 
 type PackageRow = Database['public']['Tables']['packages']['Row'];
 type PackageInsert = Database['public']['Tables']['packages']['Insert'];
@@ -16,9 +17,9 @@ type PackageUpdate = Database['public']['Tables']['packages']['Update'];
 /**
  * Получить все пакеты.
  */
-export function usePackagesQuery() {
+export function usePackagesQuery(locale: Locale = 'ru') {
   return useQuery({
-    queryKey: queryKeys.packages.all,
+    queryKey: queryKeys.packages.all(locale),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('packages')
@@ -34,7 +35,7 @@ export function usePackagesQuery() {
 /**
  * Создать или обновить пакет.
  */
-export function useUpsertPackageMutation() {
+export function useUpsertPackageMutation(locale: Locale = 'ru') {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -70,7 +71,7 @@ export function useUpsertPackageMutation() {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.packages.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.packages.all(locale) });
     },
   });
 }
@@ -91,7 +92,7 @@ export function useDeletePackageMutation() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.packages.all });
+      queryClient.invalidateQueries({ queryKey: ['packages'] });
     },
   });
 }
@@ -107,13 +108,13 @@ export function useResetPackagesMutation() {
       await supabase.from('packages').delete().not('id', 'is', null);
       const { data, error } = await supabase
         .from('packages')
-        .insert(basePackages.map(mapPackageToDB))
+        .insert(basePackages.map((item) => mapPackageToDB(item)))
         .select();
       if (error) throw error;
       return data as PackageRow[];
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.packages.all });
+      queryClient.invalidateQueries({ queryKey: ['packages'] });
     },
   });
 }

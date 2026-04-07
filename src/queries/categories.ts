@@ -8,6 +8,7 @@ import { queryKeys } from './keys';
 import type { Database } from '../lib/database.types';
 import { categories as baseCategories } from '../data/categories';
 import { mapCategoryToDB } from '../lib/mappers';
+import type { Locale } from '../i18n/types';
 
 type CategoryRow = Database['public']['Tables']['categories']['Row'];
 type CategoryInsert = Database['public']['Tables']['categories']['Insert'];
@@ -16,9 +17,9 @@ type CategoryUpdate = Database['public']['Tables']['categories']['Update'];
 /**
  * Получить все категории.
  */
-export function useCategoriesQuery() {
+export function useCategoriesQuery(locale: Locale = 'ru') {
   return useQuery({
-    queryKey: queryKeys.categories.all,
+    queryKey: queryKeys.categories.all(locale),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('categories')
@@ -34,7 +35,7 @@ export function useCategoriesQuery() {
 /**
  * Создать или обновить категорию.
  */
-export function useUpsertCategoryMutation() {
+export function useUpsertCategoryMutation(locale: Locale = 'ru') {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -70,7 +71,7 @@ export function useUpsertCategoryMutation() {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.categories.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.categories.all(locale) });
     },
   });
 }
@@ -91,7 +92,7 @@ export function useDeleteCategoryMutation() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.categories.all });
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
     },
   });
 }
@@ -107,13 +108,13 @@ export function useResetCategoriesMutation() {
       await supabase.from('categories').delete().not('id', 'is', null);
       const { data, error } = await supabase
         .from('categories')
-        .insert(baseCategories.map(mapCategoryToDB))
+        .insert(baseCategories.map((item) => mapCategoryToDB(item)))
         .select();
       if (error) throw error;
       return data as CategoryRow[];
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.categories.all });
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
     },
   });
 }

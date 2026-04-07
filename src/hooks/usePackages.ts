@@ -1,18 +1,19 @@
 import { usePackagesQuery, useUpsertPackageMutation, useDeletePackageMutation, useResetPackagesMutation } from '../queries';
 import { mapPackageFromDB, mapPackageToDB } from '../lib/mappers';
 import type { Package } from '../data/packages';
+import type { Locale } from '../i18n/types';
 
-export const usePackages = () => {
-  const { data: packagesRaw, isLoading, error } = usePackagesQuery();
-  const upsertMutation = useUpsertPackageMutation();
+export const usePackages = (locale: Locale = 'ru') => {
+  const { data: packagesRaw, isLoading, error } = usePackagesQuery(locale);
+  const upsertMutation = useUpsertPackageMutation(locale);
   const deleteMutation = useDeletePackageMutation();
   const resetMutation = useResetPackagesMutation();
 
-  const packages: Package[] = packagesRaw?.map(mapPackageFromDB) ?? [];
+  const packages: Package[] = packagesRaw?.map((row) => mapPackageFromDB(row, locale)) ?? [];
 
   const upsert = async (payload: Package) => {
     try {
-      const dbPayload = mapPackageToDB(payload);
+      const dbPayload = mapPackageToDB(payload, locale);
       await upsertMutation.mutateAsync({ ...dbPayload, id: payload.id } as Parameters<typeof upsertMutation.mutateAsync>[0]);
       return true;
     } catch {

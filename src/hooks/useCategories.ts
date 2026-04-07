@@ -1,18 +1,19 @@
 import { useCategoriesQuery, useUpsertCategoryMutation, useDeleteCategoryMutation, useResetCategoriesMutation } from '../queries';
 import { mapCategoryFromDB, mapCategoryToDB } from '../lib/mappers';
 import type { Category } from '../data/categories';
+import type { Locale } from '../i18n/types';
 
-export const useCategories = () => {
-  const { data: categoriesRaw, isLoading, error } = useCategoriesQuery();
-  const upsertMutation = useUpsertCategoryMutation();
+export const useCategories = (locale: Locale = 'ru') => {
+  const { data: categoriesRaw, isLoading, error } = useCategoriesQuery(locale);
+  const upsertMutation = useUpsertCategoryMutation(locale);
   const deleteMutation = useDeleteCategoryMutation();
   const resetMutation = useResetCategoriesMutation();
 
-  const categories: Category[] = categoriesRaw?.map(mapCategoryFromDB) ?? [];
+  const categories: Category[] = categoriesRaw?.map((row) => mapCategoryFromDB(row, locale)) ?? [];
 
   const upsert = async (payload: Category) => {
     try {
-      const dbPayload = mapCategoryToDB(payload);
+      const dbPayload = mapCategoryToDB(payload, locale, false);
       await upsertMutation.mutateAsync({ ...dbPayload, id: payload.id } as Parameters<typeof upsertMutation.mutateAsync>[0]);
       return true;
     } catch {

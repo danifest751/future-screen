@@ -1,17 +1,18 @@
 import { useContactsQuery, useUpdateContactsMutation, useResetContactsMutation } from '../queries';
 import { mapContactsFromDB, mapContactsToDB } from '../lib/mappers';
+import type { Locale } from '../i18n/types';
 
-export const useContacts = () => {
-  const { data: contactsRaw, isLoading, error } = useContactsQuery();
-  const updateMutation = useUpdateContactsMutation();
+export const useContacts = (locale: Locale = 'ru') => {
+  const { data: contactsRaw, isLoading, error } = useContactsQuery(locale);
+  const updateMutation = useUpdateContactsMutation(locale);
   const resetMutation = useResetContactsMutation();
 
-  const contacts = contactsRaw ? mapContactsFromDB(contactsRaw) : null;
+  const contacts = contactsRaw ? mapContactsFromDB(contactsRaw, locale) : null;
 
   const update = async (payload: { phones: string[]; emails: string[]; address: string; workingHours: string }) => {
     try {
       if (!contacts?.id) return false;
-      const dbPayload = mapContactsToDB(payload);
+      const dbPayload = mapContactsToDB(payload, locale);
       await updateMutation.mutateAsync({
         id: contacts.id,
         ...dbPayload,

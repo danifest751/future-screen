@@ -42,7 +42,7 @@ const splitList = (value: string) =>
 const AdminPackagesPage = () => {
   const { adminLocale } = useI18n();
   const adminPackagesPageContent = getAdminPackagesPageContent(adminLocale);
-  const { packages, upsert, remove, resetToDefault } = usePackages();
+  const { packages, upsert, remove, resetToDefault } = usePackages(adminLocale);
   const [editingId, setEditingId] = useState<Package['id'] | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Package | null>(null);
   const [resetModalOpen, setResetModalOpen] = useState(false);

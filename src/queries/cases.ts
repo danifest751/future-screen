@@ -7,6 +7,8 @@ import { supabase } from '../lib/supabase';
 import { queryKeys } from './keys';
 import type { Database } from '../lib/database.types';
 import { cases as baseCases } from '../data/cases';
+import { mapCaseToDB } from '../lib/mappers';
+import type { Locale } from '../i18n/types';
 
 type CaseRow = Database['public']['Tables']['cases']['Row'];
 type CaseInsert = Database['public']['Tables']['cases']['Insert'];
@@ -15,9 +17,9 @@ type CaseUpdate = Database['public']['Tables']['cases']['Update'];
 /**
  * Получить все кейсы.
  */
-export function useCasesQuery() {
+export function useCasesQuery(locale: Locale = 'ru') {
   return useQuery({
-    queryKey: queryKeys.cases.all,
+    queryKey: queryKeys.cases.all(locale),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('cases')
@@ -33,9 +35,9 @@ export function useCasesQuery() {
 /**
  * Получить кейс по slug.
  */
-export function useCaseBySlugQuery(slug: string | undefined) {
+export function useCaseBySlugQuery(slug: string | undefined, locale: Locale = 'ru') {
   return useQuery({
-    queryKey: queryKeys.cases.byId(slug!),
+    queryKey: queryKeys.cases.byId(slug!, locale),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('cases')
@@ -53,7 +55,7 @@ export function useCaseBySlugQuery(slug: string | undefined) {
 /**
  * Создать новый кейс.
  */
-export function useCreateCaseMutation() {
+export function useCreateCaseMutation(locale: Locale = 'ru') {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -68,7 +70,7 @@ export function useCreateCaseMutation() {
       return data as CaseRow;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.cases.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.cases.all(locale) });
     },
   });
 }
@@ -76,7 +78,7 @@ export function useCreateCaseMutation() {
 /**
  * Обновить существующий кейс.
  */
-export function useUpdateCaseMutation() {
+export function useUpdateCaseMutation(locale: Locale = 'ru') {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -92,8 +94,8 @@ export function useUpdateCaseMutation() {
       return data as CaseRow;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.cases.all });
-      queryClient.invalidateQueries({ queryKey: queryKeys.cases.byId(variables.slug) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.cases.all(locale) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.cases.byId(variables.slug, locale) });
     },
   });
 }
@@ -114,7 +116,7 @@ export function useDeleteCaseMutation() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.cases.all });
+      queryClient.invalidateQueries({ queryKey: ['cases'] });
     },
   });
 }
@@ -128,12 +130,15 @@ export function useResetCasesMutation() {
   return useMutation({
     mutationFn: async () => {
       await supabase.from('cases').delete().neq('slug', 'temp_impossible_slug');
-      const { data, error } = await supabase.from('cases').insert(baseCases).select();
+      const { data, error } = await supabase
+        .from('cases')
+        .insert(baseCases.map((item) => mapCaseToDB(item)))
+        .select();
       if (error) throw error;
       return data as CaseRow[];
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.cases.all });
+      queryClient.invalidateQueries({ queryKey: ['cases'] });
     },
   });
 }

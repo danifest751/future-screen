@@ -10,7 +10,7 @@ import { getCasesPageContent } from '../content/pages/cases';
 
 const CasesPage = () => {
   const { siteLocale } = useI18n();
-  const { cases } = useCases();
+  const { cases } = useCases(siteLocale);
   const casesPageContent = getCasesPageContent(siteLocale);
   const { seo, section, videoOverlay, emptyState } = casesPageContent;
 

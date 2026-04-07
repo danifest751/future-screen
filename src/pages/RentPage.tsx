@@ -6,11 +6,10 @@ import { useRentalCategories } from '../services/rentalCategories';
 import { RequestForm } from '../components/RequestForm';
 import { useI18n } from '../context/I18nContext';
 import { getRentPageContent } from '../content/pages/rent';
-import { getRentalCategoryDisplay } from '../content/data/rentalCategoryLabels';
 
 const RentPage = () => {
   const { siteLocale } = useI18n();
-  const { items, loading, error } = useRentalCategories();
+  const { items, loading, error } = useRentalCategories(siteLocale);
   const rentPageContent = getRentPageContent(siteLocale);
   const { seo, hero, checklist, form } = rentPageContent;
 
@@ -35,15 +34,8 @@ const RentPage = () => {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {items.map((cat) => (
               <Link key={cat.id} to={`/rent/${cat.slug}`} className="card block hover:border-brand-500/40">
-                {(() => {
-                  const display = getRentalCategoryDisplay(cat.slug, cat.name, cat.shortName, siteLocale);
-                  return (
-                    <>
-                      <div className="text-xl font-semibold text-white">{display.name}</div>
-                      <p className="text-sm text-slate-300">{display.shortName}</p>
-                    </>
-                  );
-                })()}
+                <div className="text-xl font-semibold text-white">{cat.name}</div>
+                <p className="text-sm text-slate-300">{cat.shortName}</p>
               </Link>
             ))}
           </div>

@@ -12,12 +12,11 @@ import { RentalFaq } from '../components/rental/RentalFaq';
 import { RentalCta } from '../components/rental/RentalCta';
 import { useI18n } from '../context/I18nContext';
 import { getRentalCategoryPageContent } from '../content/pages/rentalCategory';
-import { getRentalCategoryDisplay } from '../content/data/rentalCategoryLabels';
 
 const RentalCategoryPage = () => {
   const { siteLocale } = useI18n();
   const { slug } = useParams<{ slug: string }>();
-  const { item: category, loading, error } = useRentalCategory(slug ?? '');
+  const { item: category, loading, error } = useRentalCategory(slug ?? '', siteLocale);
   const rentalCategoryPageContent = getRentalCategoryPageContent(siteLocale);
 
   // Scroll to top on mount
@@ -55,12 +54,11 @@ const RentalCategoryPage = () => {
   const gallery = category.gallery;
   const faq = category.faq;
   const bottomCta = category.bottomCta;
-  const categoryDisplay = getRentalCategoryDisplay(category.slug, category.name, category.shortName, siteLocale);
 
   return (
     <div className="container-page py-8">
       <Helmet>
-        <title>{(seo.metaTitle as string) || categoryDisplay.name}</title>
+        <title>{(seo.metaTitle as string) || category.name}</title>
         <meta name="description" content={(seo.metaDescription as string) || ''} />
         {(seo.ogTitle as string) && <meta property="og:title" content={seo.ogTitle as string} />}
         {(seo.ogDescription as string) && <meta property="og:description" content={seo.ogDescription as string} />}
@@ -68,7 +66,7 @@ const RentalCategoryPage = () => {
       </Helmet>
 
         <RentalHero
-        title={(hero.title as string) || categoryDisplay.name}
+        title={(hero.title as string) || category.name}
         subtitle={(hero.subtitle as string) || ''}
         primaryCtaText={hero.cta as string}
         primaryCtaLink={hero.ctaLink as string}

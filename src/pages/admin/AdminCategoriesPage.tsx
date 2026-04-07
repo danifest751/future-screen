@@ -43,7 +43,7 @@ const splitList = (value: string) =>
 const AdminCategoriesPage = () => {
   const { adminLocale } = useI18n();
   const adminCategoriesPageContent = getAdminCategoriesPageContent(adminLocale);
-  const { categories, upsert, remove, resetToDefault } = useCategories();
+  const { categories, upsert, remove, resetToDefault } = useCategories(adminLocale);
   const [editingId, setEditingId] = useState<Category['id'] | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
   const [resetModalOpen, setResetModalOpen] = useState(false);

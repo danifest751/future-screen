@@ -7,6 +7,7 @@ import { supabase } from '../lib/supabase';
 import { queryKeys } from './keys';
 import type { Database } from '../lib/database.types';
 import { contacts as baseContacts } from '../data/contacts';
+import type { Locale } from '../i18n/types';
 
 type ContactRow = Database['public']['Tables']['contacts']['Row'];
 type ContactUpdate = Database['public']['Tables']['contacts']['Update'];
@@ -14,9 +15,9 @@ type ContactUpdate = Database['public']['Tables']['contacts']['Update'];
 /**
  * Получить контакты.
  */
-export function useContactsQuery() {
+export function useContactsQuery(locale: Locale = 'ru') {
   return useQuery({
-    queryKey: queryKeys.contacts.all,
+    queryKey: queryKeys.contacts.all(locale),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('contacts')
@@ -32,7 +33,7 @@ export function useContactsQuery() {
 /**
  * Обновить контакты.
  */
-export function useUpdateContactsMutation() {
+export function useUpdateContactsMutation(locale: Locale = 'ru') {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -58,7 +59,7 @@ export function useUpdateContactsMutation() {
       return data as ContactRow;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.contacts.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.contacts.all(locale) });
     },
   });
 }
@@ -85,7 +86,7 @@ export function useResetContactsMutation() {
       return data as ContactRow[];
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.contacts.all });
+      queryClient.invalidateQueries({ queryKey: ['contacts'] });
     },
   });
 }

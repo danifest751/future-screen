@@ -87,46 +87,64 @@ export type Database = {
       cases: {
         Row: {
           city: string | null
+          city_en: string | null
           created_at: string | null
           date: string | null
+          date_en: string | null
           format: string | null
+          format_en: string | null
           id: number
           images: string[] | null
           metrics: string | null
+          metrics_en: string | null
           services: string[] | null
           slug: string
           summary: string | null
+          summary_en: string | null
           title: string
+          title_en: string | null
           updated_at: string | null
           videos: string[] | null
         }
         Insert: {
           city?: string | null
+          city_en?: string | null
           created_at?: string | null
           date?: string | null
+          date_en?: string | null
           format?: string | null
+          format_en?: string | null
           id?: number
           images?: string[] | null
           metrics?: string | null
+          metrics_en?: string | null
           services?: string[] | null
           slug: string
           summary?: string | null
+          summary_en?: string | null
           title: string
+          title_en?: string | null
           updated_at?: string | null
           videos?: string[] | null
         }
         Update: {
           city?: string | null
+          city_en?: string | null
           created_at?: string | null
           date?: string | null
+          date_en?: string | null
           format?: string | null
+          format_en?: string | null
           id?: number
           images?: string[] | null
           metrics?: string | null
+          metrics_en?: string | null
           services?: string[] | null
           slug?: string
           summary?: string | null
+          summary_en?: string | null
           title?: string
+          title_en?: string | null
           updated_at?: string | null
           videos?: string[] | null
         }
@@ -135,54 +153,69 @@ export type Database = {
       categories: {
         Row: {
           bullets: string[] | null
+          bullets_en: string[] | null
           created_at: string | null
           id: number
           page_path: string | null
           short_description: string | null
+          short_description_en: string | null
           title: string
+          title_en: string | null
         }
         Insert: {
           bullets?: string[] | null
+          bullets_en?: string[] | null
           created_at?: string | null
           id?: number
           page_path?: string | null
           short_description?: string | null
+          short_description_en?: string | null
           title: string
+          title_en?: string | null
         }
         Update: {
           bullets?: string[] | null
+          bullets_en?: string[] | null
           created_at?: string | null
           id?: number
           page_path?: string | null
           short_description?: string | null
+          short_description_en?: string | null
           title?: string
+          title_en?: string | null
         }
         Relationships: []
       }
       contacts: {
         Row: {
           address: string | null
+          address_en: string | null
           emails: string[] | null
           id: number
           phones: string[] | null
           updated_at: string | null
           working_hours: string | null
+          working_hours_en: string | null
         }
         Insert: {
           address?: string | null
+          address_en?: string | null
           emails?: string[] | null
           id?: number
           phones?: string[] | null
           updated_at?: string | null
           working_hours?: string | null
+          working_hours_en?: string | null
         }
         Update: {
           address?: string | null
+          address_en?: string | null
           emails?: string[] | null
           id?: number
           phones?: string[] | null
           updated_at?: string | null
           working_hours?: string | null
+          working_hours_en?: string | null
         }
         Relationships: []
       }
@@ -339,89 +372,137 @@ export type Database = {
         Row: {
           created_at: string | null
           for_formats: string[] | null
+          for_formats_en: string[] | null
           id: number
           includes: string[] | null
+          includes_en: string[] | null
           name: string
+          name_en: string | null
           options: string[] | null
+          options_en: string[] | null
           price_hint: string | null
+          price_hint_en: string | null
         }
         Insert: {
           created_at?: string | null
           for_formats?: string[] | null
+          for_formats_en?: string[] | null
           id?: number
           includes?: string[] | null
+          includes_en?: string[] | null
           name: string
+          name_en?: string | null
           options?: string[] | null
+          options_en?: string[] | null
           price_hint?: string | null
+          price_hint_en?: string | null
         }
         Update: {
           created_at?: string | null
           for_formats?: string[] | null
+          for_formats_en?: string[] | null
           id?: number
           includes?: string[] | null
+          includes_en?: string[] | null
           name?: string
+          name_en?: string | null
           options?: string[] | null
+          options_en?: string[] | null
           price_hint?: string | null
+          price_hint_en?: string | null
         }
         Relationships: []
       }
       rental_categories: {
         Row: {
           about: Json
+          about_en: Json
           benefits: Json
+          benefits_en: Json
           bottom_cta: Json
+          bottom_cta_en: Json
           created_at: string
           faq: Json
+          faq_en: Json
           gallery: Json
+          gallery_en: Json
           hero: Json
+          hero_en: Json
           id: number
           is_published: boolean
           name: string
+          name_en: string | null
           seo: Json
+          seo_en: Json
           service_includes: Json
+          service_includes_en: Json
           short_name: string
+          short_name_en: string | null
           slug: string
           sort_order: number
           updated_at: string
           use_cases: Json
+          use_cases_en: Json
         }
         Insert: {
           about?: Json
+          about_en?: Json
           benefits?: Json
+          benefits_en?: Json
           bottom_cta?: Json
+          bottom_cta_en?: Json
           created_at?: string
           faq?: Json
+          faq_en?: Json
           gallery?: Json
+          gallery_en?: Json
           hero?: Json
+          hero_en?: Json
           id?: number
           is_published?: boolean
           name: string
+          name_en?: string | null
           seo?: Json
+          seo_en?: Json
           service_includes?: Json
+          service_includes_en?: Json
           short_name: string
+          short_name_en?: string | null
           slug: string
           sort_order?: number
           updated_at?: string
           use_cases?: Json
+          use_cases_en?: Json
         }
         Update: {
           about?: Json
+          about_en?: Json
           benefits?: Json
+          benefits_en?: Json
           bottom_cta?: Json
+          bottom_cta_en?: Json
           created_at?: string
           faq?: Json
+          faq_en?: Json
           gallery?: Json
+          gallery_en?: Json
           hero?: Json
+          hero_en?: Json
           id?: number
           is_published?: boolean
           name?: string
+          name_en?: string | null
           seo?: Json
+          seo_en?: Json
           service_includes?: Json
+          service_includes_en?: Json
           short_name?: string
+          short_name_en?: string | null
           slug?: string
           sort_order?: number
           updated_at?: string
           use_cases?: Json
+          use_cases_en?: Json
         }
         Relationships: []
       }
@@ -449,41 +530,59 @@ export type Database = {
       site_content: {
         Row: {
           content: string | null
+          content_en: string | null
           content_html: string | null
+          content_html_en: string | null
           created_at: string | null
           font_size: string | null
+          font_size_en: string | null
           id: string
           is_published: boolean | null
           key: string
           meta_description: string | null
+          meta_description_en: string | null
           meta_title: string | null
+          meta_title_en: string | null
           title: string | null
+          title_en: string | null
           updated_at: string | null
         }
         Insert: {
           content?: string | null
+          content_en?: string | null
           content_html?: string | null
+          content_html_en?: string | null
           created_at?: string | null
           font_size?: string | null
+          font_size_en?: string | null
           id?: string
           is_published?: boolean | null
           key: string
           meta_description?: string | null
+          meta_description_en?: string | null
           meta_title?: string | null
+          meta_title_en?: string | null
           title?: string | null
+          title_en?: string | null
           updated_at?: string | null
         }
         Update: {
           content?: string | null
+          content_en?: string | null
           content_html?: string | null
+          content_html_en?: string | null
           created_at?: string | null
           font_size?: string | null
+          font_size_en?: string | null
           id?: string
           is_published?: boolean | null
           key?: string
           meta_description?: string | null
+          meta_description_en?: string | null
           meta_title?: string | null
+          meta_title_en?: string | null
           title?: string | null
+          title_en?: string | null
           updated_at?: string | null
         }
         Relationships: []
