@@ -10,6 +10,7 @@ import { upsertRentalCategory, loadRentalCategories, type RentalCategory } from 
 import { ChevronDown, ChevronUp, ArrowLeft } from 'lucide-react';
 import { useI18n } from '../../context/I18nContext';
 import { adminRentalCategoryEditContent as adminRentalCategoryEditContentStatic, getAdminRentalCategoryEditContent } from '../../content/pages/adminRentalCategoryEdit';
+import { FallbackDot } from '../../components/admin/ui';
 
 const schema = z.object({
   name: z.string().min(2, adminRentalCategoryEditContentStatic.validation.nameRequired),
@@ -153,12 +154,17 @@ const AdminRentalCategoryEditPage = () => {
   useUnsavedChangesGuard(isDirty);
 
   const [loading, setLoading] = useState(!isNew);
+  const [fallbackUsed, setFallbackUsed] = useState(false);
 
   useEffect(() => {
-    if (isNew) return;
+    if (isNew) {
+      setFallbackUsed(false);
+      return;
+    }
     let cancelled = false;
     const load = async () => {
       setLoading(true);
+      setFallbackUsed(false);
       try {
         const all = await loadRentalCategories(adminLocale);
         const cat = all.find((c) => c.id === Number(id));
@@ -168,6 +174,7 @@ const AdminRentalCategoryEditPage = () => {
           return;
         }
         if (cancelled) return;
+        setFallbackUsed(!!cat.isFallbackFromRu);
 
         const highlights = (cat.hero.highlights as Array<{ text: string }>) || [];
         const useCases = cat.useCases || [];
@@ -331,6 +338,7 @@ const AdminRentalCategoryEditPage = () => {
             >
               <ArrowLeft size={16} /> {adminRentalCategoryEditContent.topBar.back}
             </button>
+            <FallbackDot visible={!isNew && adminLocale === 'en' && fallbackUsed} locale={adminLocale} />
             {isDirty && (
               <span className="rounded-full border border-amber-400/40 bg-amber-500/10 px-2 py-0.5 text-xs text-amber-200">
                 {adminRentalCategoryEditContent.topBar.unsaved}

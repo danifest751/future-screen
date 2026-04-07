@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import toast from 'react-hot-toast';
 import AdminLayout from '../../components/admin/AdminLayout';
-import { Button, EmptyState, Field, Input, Textarea } from '../../components/admin/ui';
+import { Button, EmptyState, FallbackDot, Field, Input, Textarea } from '../../components/admin/ui';
 import { FileText } from 'lucide-react';
 import { usePrivacyPolicy } from '../../hooks/usePrivacyPolicy';
 import { useFormDraftPersistence } from '../../hooks/useFormDraftPersistence';
@@ -38,7 +38,7 @@ const AdminPrivacyPolicyPage = () => {
   const { adminLocale } = useI18n();
   const adminPrivacyPolicyContent = getAdminPrivacyPolicyContent(adminLocale);
   const localeTag = adminLocale === 'ru' ? 'ru-RU' : 'en-US';
-  const { content, loading, saving, save } = usePrivacyPolicy(adminLocale);
+  const { content, fallbackUsed, loading, saving, save } = usePrivacyPolicy(adminLocale);
   const [lastSaved, setLastSaved] = useState<string | null>(null);
 
   const {
@@ -120,7 +120,10 @@ const AdminPrivacyPolicyPage = () => {
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="rounded-xl border border-white/10 bg-slate-800 p-6">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-white">{adminPrivacyPolicyContent.editor.title}</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-xl font-semibold text-white">{adminPrivacyPolicyContent.editor.title}</h2>
+              <FallbackDot visible={adminLocale === 'en' && fallbackUsed} locale={adminLocale} />
+            </div>
             {isHydrated && hasFormDraft && (
               <span className="rounded-full border border-brand-500/40 bg-brand-500/10 px-2 py-0.5 text-xs text-brand-100">
                 {adminPrivacyPolicyContent.editor.restoredDraft}

@@ -6,6 +6,7 @@ import { Plus, Edit2, Eye, EyeOff, Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useI18n } from '../../context/I18nContext';
 import { getAdminRentalCategoriesContent } from '../../content/pages/adminRentalCategories';
+import { FallbackDot } from '../../components/admin/ui';
 
 const AdminRentalCategoriesPage = () => {
   const { adminLocale } = useI18n();
@@ -77,7 +78,12 @@ const AdminRentalCategoriesPage = () => {
               <tbody className="divide-y divide-white/5 bg-slate-800/30">
                 {items.map((cat) => (
                   <tr key={cat.id} className="transition hover:bg-white/5">
-                    <td className="px-4 py-3 font-medium text-white">{cat.name}</td>
+                    <td className="px-4 py-3 font-medium text-white">
+                      <span className="inline-flex items-center gap-2">
+                        <span>{cat.name}</span>
+                        <FallbackDot visible={adminLocale === 'en' && !!cat.isFallbackFromRu} locale={adminLocale} />
+                      </span>
+                    </td>
                     <td className="px-4 py-3 font-mono text-xs text-slate-400">/rent/{cat.slug}</td>
                     <td className="px-4 py-3 text-center text-slate-300">{cat.sortOrder}</td>
                     <td className="px-4 py-3 text-center">

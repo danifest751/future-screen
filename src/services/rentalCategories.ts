@@ -21,12 +21,26 @@ export type RentalCategory = {
   gallery: Array<{ image: string; alt: string; caption: string }>;
   faq: { title: string; items: Array<{ question: string; answer: string }> };
   bottomCta: Record<string, unknown>;
+  isFallbackFromRu?: boolean;
 };
 
 const isNonEmptyObject = (value: unknown): value is Record<string, unknown> =>
   !!value && typeof value === 'object' && !Array.isArray(value) && Object.keys(value as Record<string, unknown>).length > 0;
 
 const isNonEmptyArray = (value: unknown): value is unknown[] => Array.isArray(value) && value.length > 0;
+
+const hasText = (value: string | null | undefined): boolean => typeof value === 'string' && value.trim().length > 0;
+
+const hasRuFallback = (ruValue: Json, enValue: Json): boolean => {
+  const ruObj = (ruValue as Record<string, unknown>) || {};
+  const enObj = (enValue as Record<string, unknown>) || {};
+  const ruArr = (ruValue as unknown[]) || [];
+  const enArr = (enValue as unknown[]) || [];
+
+  if (isNonEmptyObject(ruObj) && !isNonEmptyObject(enObj)) return true;
+  if (isNonEmptyArray(ruArr) && !isNonEmptyArray(enArr)) return true;
+  return false;
+};
 
 const pickLocalizedObject = (
   ruValue: Json,
@@ -93,6 +107,19 @@ const mapFromDB = (row: RentalCategoryRow, locale: Locale): RentalCategory => {
       items: Array<{ question: string; answer: string }>;
     },
     bottomCta: pickLocalizedObject(row.bottom_cta, row.bottom_cta_en, locale),
+    isFallbackFromRu:
+      locale === 'en' &&
+      ((hasText(row.name) && !hasText(row.name_en)) ||
+        (hasText(row.short_name) && !hasText(row.short_name_en)) ||
+        hasRuFallback(row.seo, row.seo_en) ||
+        hasRuFallback(row.hero, row.hero_en) ||
+        hasRuFallback(row.about, row.about_en) ||
+        hasRuFallback(row.use_cases, row.use_cases_en) ||
+        hasRuFallback(row.service_includes, row.service_includes_en) ||
+        hasRuFallback(row.benefits, row.benefits_en) ||
+        hasRuFallback(row.gallery, row.gallery_en) ||
+        hasRuFallback(row.faq, row.faq_en) ||
+        hasRuFallback(row.bottom_cta, row.bottom_cta_en)),
   };
 };
 

@@ -17,4 +17,5 @@ export { default as EmptyState } from './EmptyState';
 export { default as LoadingState } from './LoadingState';
 export { default as ConfirmModal } from './ConfirmModal';
 export type { ConfirmModalProps } from './ConfirmModal';
+export { default as FallbackDot } from './FallbackDot';
 

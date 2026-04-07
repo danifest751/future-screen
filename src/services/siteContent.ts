@@ -16,6 +16,7 @@ export type SiteContent = {
   fontSize: string | null;
   createdAt: string;
   updatedAt: string;
+  fallbackUsed: boolean;
 };
 
 export type SiteContentInput = {
@@ -27,6 +28,8 @@ export type SiteContentInput = {
   isPublished?: boolean;
   fontSize?: string | null;
 };
+
+const hasText = (value: string | null | undefined): boolean => typeof value === 'string' && value.trim().length > 0;
 
 const mapFromDB = (row: SiteContentRow, locale: Locale = 'ru'): SiteContent => ({
   id: row.id,
@@ -46,6 +49,14 @@ const mapFromDB = (row: SiteContentRow, locale: Locale = 'ru'): SiteContent => (
       : ((row as Record<string, unknown>).font_size as string | null) ?? null,
   createdAt: row.created_at ?? '',
   updatedAt: row.updated_at ?? '',
+  fallbackUsed:
+    locale === 'en' &&
+    ((hasText(row.title) && !hasText(row.title_en)) ||
+      (hasText(row.content) && !hasText(row.content_en)) ||
+      (hasText(row.content_html) && !hasText(row.content_html_en)) ||
+      (hasText(row.meta_title) && !hasText(row.meta_title_en)) ||
+      (hasText(row.meta_description) && !hasText(row.meta_description_en)) ||
+      (hasText(row.font_size) && !hasText(row.font_size_en))),
 });
 
 const mapToDB = (input: SiteContentInput, locale: Locale = 'ru'): Record<string, unknown> => {

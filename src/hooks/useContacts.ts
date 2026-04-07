@@ -8,6 +8,13 @@ export const useContacts = (locale: Locale = 'ru') => {
   const resetMutation = useResetContactsMutation();
 
   const contacts = contactsRaw ? mapContactsFromDB(contactsRaw, locale) : null;
+  const row = contactsRaw?.[0];
+  const hasText = (value: string | null | undefined): boolean => typeof value === 'string' && value.trim().length > 0;
+  const fallbackUsed =
+    locale === 'en' &&
+    !!row &&
+    ((hasText(row.address) && !hasText(row.address_en)) ||
+      (hasText(row.working_hours) && !hasText(row.working_hours_en)));
 
   const update = async (payload: { phones: string[]; emails: string[]; address: string; workingHours: string }) => {
     try {
@@ -34,6 +41,7 @@ export const useContacts = (locale: Locale = 'ru') => {
 
   return {
     contacts,
+    fallbackUsed,
     loading: isLoading,
     error: error?.message ?? null,
     update,

@@ -45,6 +45,7 @@ export function usePrivacyPolicy(locale: Locale = 'ru') {
 
   return {
     content,
+    fallbackUsed: content?.fallbackUsed ?? false,
     loading,
     error,
     saving,

@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import toast from 'react-hot-toast';
 import { Package as PackageIcon } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout';
-import { Button, ConfirmModal, EmptyState, Field, Input, Textarea } from '../../components/admin/ui';
+import { Button, ConfirmModal, EmptyState, FallbackDot, Field, Input, Textarea } from '../../components/admin/ui';
 import { useI18n } from '../../context/I18nContext';
 import { adminPackagesPageContent as adminPackagesPageContentStatic, getAdminPackagesPageContent } from '../../content/pages/adminPackages';
 import type { Package } from '../../data/packages';
@@ -42,7 +42,7 @@ const splitList = (value: string) =>
 const AdminPackagesPage = () => {
   const { adminLocale } = useI18n();
   const adminPackagesPageContent = getAdminPackagesPageContent(adminLocale);
-  const { packages, upsert, remove, resetToDefault } = usePackages(adminLocale);
+  const { packages, fallbackById, upsert, remove, resetToDefault } = usePackages(adminLocale);
   const [editingId, setEditingId] = useState<Package['id'] | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Package | null>(null);
   const [resetModalOpen, setResetModalOpen] = useState(false);
@@ -291,7 +291,10 @@ const AdminPackagesPage = () => {
               <div key={item.id} className="rounded-lg border border-white/10 bg-white/5 p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <div className="font-semibold text-white">{item.name}</div>
+                    <div className="flex items-center gap-2 font-semibold text-white">
+                      <span>{item.name}</span>
+                      <FallbackDot visible={adminLocale === 'en' && !!fallbackById[String(item.id)]} locale={adminLocale} />
+                    </div>
                     <div className="text-xs text-slate-400">ID: {item.id}</div>
                     <div className="mt-1 text-xs text-slate-300">
                       {adminPackagesPageContent.list.forFormatsPrefix} {item.forFormats.join(', ')}

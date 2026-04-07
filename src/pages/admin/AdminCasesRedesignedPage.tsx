@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout';
 import AdminFieldError from '../../components/admin/AdminFieldError';
-import { ConfirmModal, EmptyState } from '../../components/admin/ui';
+import { ConfirmModal, EmptyState, FallbackDot } from '../../components/admin/ui';
 import { CaseMediaSelector } from '../../components/admin/cases';
 import { MediaLibrary } from '../../components/admin/media';
 import { useCases } from '../../hooks/useCases';
@@ -105,7 +105,7 @@ const getCaseIdBySlug = async (slug: string): Promise<number | null> => {
 const AdminCasesRedesignedPage = () => {
   const { adminLocale } = useI18n();
   const adminCasesRedesignedContent = getAdminCasesRedesignedContent(adminLocale);
-  const { cases, addCase, updateCase, deleteCase, resetToDefault } = useCases(adminLocale);
+  const { cases, fallbackBySlug, addCase, updateCase, deleteCase, resetToDefault } = useCases(adminLocale);
   const [activeTab, setActiveTab] = useState<'cases' | 'media'>('cases');
   const [caseEditing, setCaseEditing] = useState<string | null>(null);
   const [editingCaseId, setEditingCaseId] = useState<number | null>(null);
@@ -588,6 +588,7 @@ const AdminCasesRedesignedPage = () => {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           <h3 className="truncate font-semibold text-white">{c.title}</h3>
+                          <FallbackDot visible={adminLocale === 'en' && !!fallbackBySlug[c.slug]} locale={adminLocale} />
                           <span className="text-xs text-slate-500">({c.slug})</span>
                         </div>
                         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400">

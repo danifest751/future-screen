@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Phone } from 'lucide-react';
 import toast from 'react-hot-toast';
 import AdminLayout from '../../components/admin/AdminLayout';
-import { Button, ConfirmModal, EmptyState, Field, Input, Textarea } from '../../components/admin/ui';
+import { Button, ConfirmModal, EmptyState, FallbackDot, Field, Input, Textarea } from '../../components/admin/ui';
 import { useI18n } from '../../context/I18nContext';
 import { adminContactsPageContent as adminContactsPageContentStatic, getAdminContactsPageContent } from '../../content/pages/adminContacts';
 import { useContacts } from '../../hooks/useContacts';
@@ -37,7 +37,7 @@ const splitLines = (value: string) =>
 const AdminContactsPage = () => {
   const { adminLocale } = useI18n();
   const adminContactsPageContent = getAdminContactsPageContent(adminLocale);
-  const { contacts, loading, update, resetToDefault } = useContacts(adminLocale);
+  const { contacts, fallbackUsed, loading, update, resetToDefault } = useContacts(adminLocale);
   const [resetModalOpen, setResetModalOpen] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
 
@@ -145,7 +145,10 @@ const AdminContactsPage = () => {
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="rounded-xl border border-white/10 bg-slate-800 p-6">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-white">{adminContactsPageContent.form.title}</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-xl font-semibold text-white">{adminContactsPageContent.form.title}</h2>
+              <FallbackDot visible={adminLocale === 'en' && fallbackUsed} locale={adminLocale} />
+            </div>
             {isHydrated && hasContactsDraft && (
               <span className="rounded-full border border-brand-500/40 bg-brand-500/10 px-2 py-0.5 text-xs text-brand-100">
                 {adminContactsPageContent.form.restoredDraft}

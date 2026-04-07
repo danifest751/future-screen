@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Tag } from 'lucide-react';
 import toast from 'react-hot-toast';
 import AdminLayout from '../../components/admin/AdminLayout';
-import { Button, ConfirmModal, EmptyState, Field, Input, Textarea } from '../../components/admin/ui';
+import { Button, ConfirmModal, EmptyState, FallbackDot, Field, Input, Textarea } from '../../components/admin/ui';
 import { useI18n } from '../../context/I18nContext';
 import { adminCategoriesPageContent as adminCategoriesPageContentStatic, getAdminCategoriesPageContent } from '../../content/pages/adminCategories';
 import type { Category } from '../../data/categories';
@@ -43,7 +43,7 @@ const splitList = (value: string) =>
 const AdminCategoriesPage = () => {
   const { adminLocale } = useI18n();
   const adminCategoriesPageContent = getAdminCategoriesPageContent(adminLocale);
-  const { categories, upsert, remove, resetToDefault } = useCategories(adminLocale);
+  const { categories, fallbackById, upsert, remove, resetToDefault } = useCategories(adminLocale);
   const [editingId, setEditingId] = useState<Category['id'] | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
   const [resetModalOpen, setResetModalOpen] = useState(false);
@@ -277,7 +277,10 @@ const AdminCategoriesPage = () => {
               <div key={item.id} className="rounded-lg border border-white/10 bg-white/5 p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <div className="font-semibold text-white">{item.title}</div>
+                    <div className="flex items-center gap-2 font-semibold text-white">
+                      <span>{item.title}</span>
+                      <FallbackDot visible={adminLocale === 'en' && !!fallbackById[String(item.id)]} locale={adminLocale} />
+                    </div>
                     <div className="text-xs text-slate-400">ID: {item.id}</div>
                     <div className="mt-1 text-xs text-slate-300">{item.shortDescription}</div>
                     <div className="mt-1 text-xs text-slate-400">
