@@ -18,10 +18,10 @@ const CasesPage = () => {
     const images = item.images || [];
     const videos = item.videos || [];
     const hasVideo = videos.length > 0;
-    
+
     // Show max 2 images side-by-side
     const previewImages = images.slice(0, 2);
-    
+
     return { previewImages, hasVideo, videoCount: videos.length };
   };
 
@@ -35,11 +35,11 @@ const CasesPage = () => {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {cases.map((item) => {
             const { previewImages, hasVideo, videoCount } = getPreviewMedia(item as CaseItem & { videos?: string[] });
-            
+
             return (
-              <Link 
-                key={item.slug} 
-                to={`/cases/${item.slug}`} 
+              <Link
+                key={item.slug}
+                to={`/cases/${item.slug}`}
                 className="card group block overflow-hidden p-0 hover:border-brand-500/40"
               >
                 {/* Preview Gallery */}
@@ -70,7 +70,7 @@ const CasesPage = () => {
                         ))}
                       </div>
                     )}
-                    
+
                     {/* Video indicator overlay */}
                     {hasVideo && (
                       <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
@@ -80,11 +80,9 @@ const CasesPage = () => {
                         </div>
                       </div>
                     )}
-                    
-
                   </div>
                 )}
-                
+
                 {/* Content */}
                 <div className="p-4">
                   {/* Tags row */}
@@ -93,26 +91,26 @@ const CasesPage = () => {
                       {item.format}
                     </span>
                     <span className="text-xs text-slate-500">
-                      {item.city} · {item.date}
+                      {item.city} • {item.date}
                     </span>
                   </div>
-                  
+
                   {/* Title */}
                   <div className="text-lg font-semibold text-white transition-colors group-hover:text-brand-300">
                     {item.title}
                   </div>
-                  
+
                   {/* Summary */}
                   <p className="mt-1 line-clamp-2 text-sm text-slate-400">
                     {item.summary}
                   </p>
-                  
+
                   {/* Metrics - prominent */}
                   {item.metrics && (
                     <div className="mt-3 flex flex-wrap gap-2">
                       {item.metrics.split(',').map((m, i) => (
-                        <span 
-                          key={i} 
+                        <span
+                          key={i}
                           className="rounded-full border border-brand-500/30 bg-brand-500/10 px-2.5 py-1 text-xs text-brand-200"
                         >
                           {m.trim()}
@@ -120,14 +118,14 @@ const CasesPage = () => {
                       ))}
                     </div>
                   )}
-                  
+
                   {/* Services tags */}
                   <div className="mt-3 flex flex-wrap gap-1">
                     {item.services.slice(0, 4).map((s, idx) => (
                       <span key={s} className="text-[10px] uppercase text-slate-500">
                         {s}
                         {idx < Math.min(item.services.length, 4) - 1 && (
-                          <span className="ml-1 text-slate-600">·</span>
+                          <span className="ml-1 text-slate-600">•</span>
                         )}
                       </span>
                     ))}
@@ -142,7 +140,7 @@ const CasesPage = () => {
             );
           })}
         </div>
-        
+
         {cases.length === 0 && (
           <div className="rounded-xl border border-white/10 bg-slate-800/50 p-12 text-center">
             <div className="text-slate-500">{emptyState}</div>

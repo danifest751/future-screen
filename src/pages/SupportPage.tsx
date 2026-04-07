@@ -46,7 +46,7 @@ const SupportPage = () => {
                   </div>
                 ) : null}
                 <div className="text-xs text-slate-400">
-                  {supportPageContent.formatsPrefix} {pack.forFormats?.join(' · ') || '—'}
+                  {supportPageContent.formatsPrefix} {pack.forFormats?.join(' • ') || '—'}
                 </div>
                 <Link
                   to="/consult"

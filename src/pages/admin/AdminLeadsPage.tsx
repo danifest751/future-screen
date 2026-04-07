@@ -171,7 +171,7 @@ const LeadCard = ({
   log: LeadLog;
   onOpenLog: (log: LeadLog) => void;
 }) => {
-  const time = new Date(log.timestamp).toLocaleTimeString('ru-RU', {
+  const time = new Date(log.timestamp).toLocaleTimeString(localeTag, {
     hour: '2-digit',
     minute: '2-digit',
   });

@@ -31,7 +31,7 @@ const CaseDetailsPage = () => {
         <title>{`${item.title} ${details.titleSuffix}`}</title>
         <meta name="description" content={item.summary} />
       </Helmet>
-      <Section title={item.title} subtitle={`${item.city} · ${item.date} · ${item.format}`}>
+      <Section title={item.title} subtitle={`${item.city} • ${item.date} • ${item.format}`}>
         <div className="grid gap-6 md:grid-cols-3">
           <div className="card md:col-span-2">
             <div className="text-sm text-slate-400">{details.servicesLabel} {item.services.join(', ')}</div>
