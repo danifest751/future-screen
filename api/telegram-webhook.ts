@@ -1,17 +1,15 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import 'dotenv/config';
 
 /**
  * Telegram Bot Webhook Handler
- * Handles file uploads from Telegram bot to media library
- *
- * Storage: Supabase bucket "images"
- * Sessions: Supabase table "telegram_sessions" (persistent across cold starts)
- * Dedup: Supabase table "telegram_processed_messages"
+ * Upload flow:
+ * 1) /upload
+ * 2) Choose tags
+ * 3) Send photos/videos
  */
 
-// Database types for media_items table
 interface MediaItem {
   id?: string;
   name: string;
@@ -28,33 +26,6 @@ interface MediaItem {
   telegram_message_id?: number;
   created_at?: string;
 }
-
-// Lazy Supabase client initialization
-let supabase: SupabaseClient | null = null;
-
-const getSupabaseClient = (): SupabaseClient => {
-  if (!supabase) {
-    const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-    // Prefer service role key (bypasses RLS), fall back to anon key
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
-
-    if (!supabaseUrl || !supabaseKey) {
-      console.error('[Webhook] Missing env vars:', {
-        hasSupabaseUrl: !!supabaseUrl,
-        hasServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
-        hasAnonKey: !!process.env.VITE_SUPABASE_ANON_KEY,
-      });
-      throw new Error('SUPABASE_URL must be configured along with SUPABASE_SERVICE_ROLE_KEY');
-    }
-
-    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      console.warn('[Webhook] SUPABASE_SERVICE_ROLE_KEY not set! Session storage and dedup will fail. Add it to Vercel env vars.');
-    }
-
-    supabase = createClient(supabaseUrl, supabaseKey);
-  }
-  return supabase;
-};
 
 interface TelegramUpdate {
   update_id?: number;
@@ -84,12 +55,6 @@ interface TelegramUpdate {
       mime_type?: string;
       file_size?: number;
     };
-    caption?: string;
-    from?: {
-      id: number;
-      username?: string;
-      first_name?: string;
-    };
   };
   callback_query?: {
     id: string;
@@ -99,8 +64,6 @@ interface TelegramUpdate {
   };
 }
 
-// ── Session management (Supabase persistent + in-memory fallback) ──────────
-
 type SessionState = 'awaiting_tags' | 'awaiting_files' | 'awaiting_new_tag';
 
 interface Session {
@@ -108,106 +71,35 @@ interface Session {
   selectedTags: string[];
 }
 
-// In-memory fallback (used when Supabase service_role unavailable)
+let supabase: SupabaseClient | null = null;
 const sessionCache = new Map<number, Session & { lastActivity: number }>();
 
-const hasServiceRole = () => !!process.env.SUPABASE_SERVICE_ROLE_KEY;
+const SESSION_EXPIRED_MESSAGE =
+  '⚠️ Сессия истекла.\n\nНажмите /upload и начните заново. Я подскажу каждый шаг.';
 
-const getSession = async (chatId: number): Promise<Session | null> => {
-  // Try Supabase first if service role is configured
-  if (hasServiceRole()) {
-    try {
-      const { data, error } = await getSupabaseClient()
-        .from('telegram_sessions')
-        .select('state, selected_tags')
-        .eq('chat_id', chatId)
-        .single();
+const CANCELLED_MESSAGE =
+  '❌ Загрузка отменена.\n\nКогда будете готовы, отправьте /upload.';
 
-      if (!error && data) {
-        return {
-          state: data.state as SessionState,
-          selectedTags: data.selected_tags || [],
-        };
-      }
-    } catch (err) {
-      console.error('[Session] Supabase read failed, using cache:', err);
+const START_HELP_MESSAGE =
+  '💡 Нужна помощь? Отправьте /help, там есть пошаговая инструкция.';
+
+const SUPPORTED_FORMATS = 'JPG, PNG, GIF, WEBP, MP4, WEBM, MOV';
+
+const hasServiceRole = () => Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY);
+
+const getSupabaseClient = (): SupabaseClient => {
+  if (!supabase) {
+    const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (or anon key) must be configured');
     }
-  }
 
-  // Fallback to in-memory cache
-  const cached = sessionCache.get(chatId);
-  if (cached) {
-    cached.lastActivity = Date.now();
-    return { state: cached.state, selectedTags: cached.selectedTags };
+    supabase = createClient(supabaseUrl, supabaseKey);
   }
-  return null;
+  return supabase;
 };
-
-const setSession = async (chatId: number, session: Session): Promise<void> => {
-  // Always update in-memory cache (instant, no network call)
-  sessionCache.set(chatId, { ...session, lastActivity: Date.now() });
-
-  // Also persist to Supabase if service role key is configured (survives cold starts)
-  if (hasServiceRole()) {
-    try {
-      await getSupabaseClient()
-        .from('telegram_sessions')
-        .upsert({
-          chat_id: chatId,
-          state: session.state,
-          selected_tags: session.selectedTags,
-          last_activity: Date.now(),
-        });
-    } catch (err) {
-      console.error('[Session] Supabase write failed, session only in memory:', err);
-    }
-  }
-};
-
-const clearSession = async (chatId: number): Promise<void> => {
-  // Always clear in-memory cache
-  sessionCache.delete(chatId);
-
-  // Also clear from Supabase if service role key is configured
-  if (hasServiceRole()) {
-    try {
-      await getSupabaseClient()
-        .from('telegram_sessions')
-        .delete()
-        .eq('chat_id', chatId);
-    } catch (err) {
-      console.error('[Session] Supabase delete failed:', err);
-    }
-  }
-};
-
-// ── Deduplication ────────────────────────────────────────────────────────────
-
-const isMessageAlreadyProcessed = async (messageId: number): Promise<boolean> => {
-  try {
-    const { data } = await getSupabaseClient()
-      .from('telegram_processed_messages')
-      .select('message_id')
-      .eq('message_id', messageId)
-      .single();
-    return !!data;
-  } catch {
-    return false;
-  }
-};
-
-const markMessageAsProcessed = async (messageId: number): Promise<void> => {
-  try {
-    await getSupabaseClient()
-      .from('telegram_processed_messages')
-      .insert({ message_id: messageId })
-      .select();
-  } catch (err) {
-    console.error('[Dedup] Failed to mark message:', err);
-  }
-};
-
-// ── Telegram API helpers ─────────────────────────────────────────────────────
 
 const sendTelegramMessage = async (chatId: number, text: string, options?: { replyMarkup?: unknown }) => {
   const token = process.env.TG_BOT_TOKEN;
@@ -224,15 +116,156 @@ const sendTelegramMessage = async (chatId: number, text: string, options?: { rep
         reply_markup: options?.replyMarkup,
       }),
     });
+
     if (!response.ok) {
       const err = await response.text();
       console.error('[Telegram] sendMessage error:', err);
     }
+
     return response.ok;
   } catch (err) {
-    console.error('[Telegram] Failed to send message:', err);
+    console.error('[Telegram] sendMessage failed:', err);
     return false;
   }
+};
+
+const answerCallbackQuery = async (callbackQueryId: string) => {
+  const token = process.env.TG_BOT_TOKEN;
+  if (!token) return;
+
+  await fetch(`https://api.telegram.org/bot${token}/answerCallbackQuery`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ callback_query_id: callbackQueryId }),
+  }).catch(() => {});
+};
+
+const getSession = async (chatId: number): Promise<Session | null> => {
+  if (hasServiceRole()) {
+    try {
+      const { data, error } = await getSupabaseClient()
+        .from('telegram_sessions')
+        .select('state, selected_tags')
+        .eq('chat_id', chatId)
+        .single();
+
+      if (!error && data) {
+        return {
+          state: data.state as SessionState,
+          selectedTags: data.selected_tags || [],
+        };
+      }
+    } catch (err) {
+      console.error('[Session] Supabase read failed, fallback to memory:', err);
+    }
+  }
+
+  const cached = sessionCache.get(chatId);
+  if (cached) {
+    cached.lastActivity = Date.now();
+    return { state: cached.state, selectedTags: cached.selectedTags };
+  }
+  return null;
+};
+
+const setSession = async (chatId: number, session: Session): Promise<void> => {
+  sessionCache.set(chatId, { ...session, lastActivity: Date.now() });
+
+  if (hasServiceRole()) {
+    try {
+      await getSupabaseClient().from('telegram_sessions').upsert({
+        chat_id: chatId,
+        state: session.state,
+        selected_tags: session.selectedTags,
+        last_activity: Date.now(),
+      });
+    } catch (err) {
+      console.error('[Session] Supabase write failed:', err);
+    }
+  }
+};
+
+const clearSession = async (chatId: number): Promise<void> => {
+  sessionCache.delete(chatId);
+
+  if (hasServiceRole()) {
+    try {
+      await getSupabaseClient().from('telegram_sessions').delete().eq('chat_id', chatId);
+    } catch (err) {
+      console.error('[Session] Supabase delete failed:', err);
+    }
+  }
+};
+
+const isMessageAlreadyProcessed = async (messageId: number): Promise<boolean> => {
+  try {
+    const { data } = await getSupabaseClient()
+      .from('telegram_processed_messages')
+      .select('message_id')
+      .eq('message_id', messageId)
+      .single();
+    return Boolean(data);
+  } catch {
+    return false;
+  }
+};
+
+const markMessageAsProcessed = async (messageId: number): Promise<void> => {
+  try {
+    await getSupabaseClient().from('telegram_processed_messages').insert({ message_id: messageId }).select();
+  } catch (err) {
+    console.error('[Dedup] Failed to mark message:', err);
+  }
+};
+
+const getAllTags = async (): Promise<string[]> => {
+  try {
+    const { data } = await getSupabaseClient().from('media_items').select('tags') as {
+      data: Pick<MediaItem, 'tags'>[] | null;
+    };
+
+    const tags = new Set<string>();
+    data?.forEach((item) => {
+      item.tags?.forEach((tag) => {
+        const normalized = String(tag || '').trim().toLowerCase();
+        if (normalized) tags.add(normalized);
+      });
+    });
+
+    return Array.from(tags).sort().slice(0, 20);
+  } catch {
+    return [];
+  }
+};
+
+const formatSelectedTags = (tags: string[]) => (tags.length > 0 ? tags.join(', ') : '<code>untitled</code>');
+
+const buildTagKeyboard = (allTags: string[], selectedTags: string[]) => {
+  const rows: Array<Array<{ text: string; callback_data: string }>> = [];
+
+  if (allTags.length > 0) {
+    rows.push(
+      allTags.slice(0, 4).map((tag) => ({
+        text: `${selectedTags.includes(tag) ? '✅ ' : ''}${tag}`,
+        callback_data: `tag:${tag}`,
+      })),
+    );
+    if (allTags.length > 4) {
+      rows.push(
+        allTags.slice(4, 8).map((tag) => ({
+          text: `${selectedTags.includes(tag) ? '✅ ' : ''}${tag}`,
+          callback_data: `tag:${tag}`,
+        })),
+      );
+    }
+  }
+
+  rows.push([{ text: '🏷️ Добавить новый тег', callback_data: 'newtag' }]);
+  rows.push([{ text: '⏭️ Без тега (будет untitled)', callback_data: 'skip' }]);
+  rows.push([{ text: '✅ Теги выбраны, перейти к загрузке', callback_data: 'done' }]);
+  rows.push([{ text: '❌ Отменить', callback_data: 'cancel' }]);
+
+  return { inline_keyboard: rows };
 };
 
 const getTelegramFile = async (fileId: string): Promise<{ data: ArrayBuffer } | null> => {
@@ -242,184 +275,119 @@ const getTelegramFile = async (fileId: string): Promise<{ data: ArrayBuffer } | 
   try {
     const fileInfoResponse = await fetch(`https://api.telegram.org/bot${token}/getFile?file_id=${fileId}`);
     const fileInfo = await fileInfoResponse.json() as { ok: boolean; result?: { file_path?: string } };
-
-    if (!fileInfo.ok || !fileInfo.result?.file_path) {
-      console.error('[Telegram] Failed to get file info:', fileInfo);
-      return null;
-    }
+    if (!fileInfo.ok || !fileInfo.result?.file_path) return null;
 
     const fileUrl = `https://api.telegram.org/file/bot${token}/${fileInfo.result.file_path}`;
     const fileResponse = await fetch(fileUrl);
-    if (!fileResponse.ok) {
-      console.error('[Telegram] Failed to download file, status:', fileResponse.status);
-      return null;
-    }
+    if (!fileResponse.ok) return null;
 
     const data = await fileResponse.arrayBuffer();
     return { data };
   } catch (err) {
-    console.error('[Telegram] Error getting file:', err);
+    console.error('[Telegram] getFile failed:', err);
     return null;
   }
 };
-
-// ── Tags ─────────────────────────────────────────────────────────────────────
-
-const getAllTags = async (): Promise<string[]> => {
-  try {
-    const { data } = await getSupabaseClient()
-      .from('media_items')
-      .select('tags') as { data: Pick<MediaItem, 'tags'>[] | null };
-
-    const allTags = new Set<string>();
-    data?.forEach((item) => {
-      item.tags?.forEach((tag: string) => {
-        if (tag) allTags.add(tag);
-      });
-    });
-
-    return Array.from(allTags).sort().slice(0, 20);
-  } catch {
-    return [];
-  }
-};
-
-// Build tag selection keyboard
-const buildTagKeyboard = (allTags: string[], selectedTags: string[]) => {
-  const rows: Array<Array<{ text: string; callback_data: string }>> = [];
-
-  if (allTags.length > 0) {
-    rows.push(allTags.slice(0, 4).map((t) => ({
-      text: `${selectedTags.includes(t) ? '✅ ' : ''}${t}`,
-      callback_data: `tag:${t}`,
-    })));
-    if (allTags.length > 4) {
-      rows.push(allTags.slice(4, 8).map((t) => ({
-        text: `${selectedTags.includes(t) ? '✅ ' : ''}${t}`,
-        callback_data: `tag:${t}`,
-      })));
-    }
-  }
-
-  rows.push([{ text: '🏷️ Ввести новый тег', callback_data: 'newtag' }]);
-  rows.push([{ text: '⏭️ Пропустить (без тега)', callback_data: 'skip' }]);
-  rows.push([{ text: '✅ Готово, загрузить файлы', callback_data: 'done' }]);
-  rows.push([{ text: '❌ Отмена', callback_data: 'cancel' }]);
-
-  return { inline_keyboard: rows };
-};
-
-// ── Command handlers ─────────────────────────────────────────────────────────
 
 const handleStart = async (chatId: number) => {
   const tags = await getAllTags();
   await setSession(chatId, { state: 'awaiting_tags', selectedTags: [] });
 
-  const keyboard = buildTagKeyboard(tags, []);
-  const message = tags.length > 0
-    ? '📁 <b>Загрузка файлов в медиа-библиотеку</b>\n\nВыберите теги для файлов (можно несколько).\nИли нажмите <b>⏭️ Пропустить</b> — файлы получат тег <code>untitled</code>.'
-    : '📁 <b>Загрузка файлов в медиа-библиотеку</b>\n\nТегов пока нет. Введите новый тег, или нажмите <b>⏭️ Пропустить</b> — файлы получат тег <code>untitled</code>.';
+  const message =
+    '📥 <b>Загрузка фото/видео в медиатеку</b>\n\n' +
+    '<b>Сейчас шаг 1 из 3: выберите теги</b>\n' +
+    '1. Нажмите готовые теги или добавьте новый.\n' +
+    '2. Нажмите <b>✅ Теги выбраны, перейти к загрузке</b>.\n' +
+    '3. Отправьте фото или видео в чат.\n\n' +
+    `📎 Поддерживаемые форматы: ${SUPPORTED_FORMATS}\n` +
+    '📝 Если тег не нужен, нажмите <b>⏭️ Без тега</b> (файл получит <code>untitled</code>).';
 
-  await sendTelegramMessage(chatId, message, { replyMarkup: keyboard });
+  await sendTelegramMessage(chatId, message, { replyMarkup: buildTagKeyboard(tags, []) });
 };
-
-// ── Callback query handler ───────────────────────────────────────────────────
 
 const handleCallbackQuery = async (update: TelegramUpdate) => {
   const callback = update.callback_query;
   if (!callback?.data || !callback.message) return;
 
+  await answerCallbackQuery(callback.id);
+
   const chatId = callback.message.chat.id;
   const data = callback.data;
   const session = await getSession(chatId);
 
-  // Answer callback query to remove loading indicator
-  const token = process.env.TG_BOT_TOKEN;
-  if (token) {
-    await fetch(`https://api.telegram.org/bot${token}/answerCallbackQuery`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ callback_query_id: callback.id }),
-    }).catch(() => {});
-  }
-
   if (data === 'cancel') {
     await clearSession(chatId);
-    await sendTelegramMessage(chatId, '❌ Загрузка отменена');
+    await sendTelegramMessage(chatId, CANCELLED_MESSAGE);
+    return;
+  }
+
+  if (!session) {
+    await sendTelegramMessage(chatId, SESSION_EXPIRED_MESSAGE);
     return;
   }
 
   if (data === 'newtag') {
-    if (!session) {
-      await sendTelegramMessage(chatId, '⚠️ Сессия истекла. Начните сначала с /upload');
-      return;
-    }
     await setSession(chatId, { ...session, state: 'awaiting_new_tag' });
-    await sendTelegramMessage(chatId, '🏷️ Введите название нового тега (например: концерт, студия, event):');
+    await sendTelegramMessage(
+      chatId,
+      '🏷️ <b>Шаг 1 из 3: новый тег</b>\n\n' +
+      'Напишите название тега одним сообщением.\n' +
+      'Примеры: <code>концерт</code>, <code>сцена</code>, <code>backstage</code>.\n\n' +
+      'После этого вы вернетесь к выбору тегов.',
+    );
     return;
   }
 
   if (data === 'skip') {
-    if (!session) {
-      await sendTelegramMessage(chatId, '⚠️ Сессия истекла. Начните сначала с /upload');
-      return;
-    }
     await setSession(chatId, { ...session, state: 'awaiting_files', selectedTags: [] });
     await sendTelegramMessage(
       chatId,
-      `⏭️ Тег пропущен — файлы получат тег <code>untitled</code>.\n\n📤 Отправьте фото или видео для загрузки:\n(можно несколько файлов подряд)`
+      '⏭️ <b>Тег пропущен</b> (будет <code>untitled</code>).\n\n' +
+      '<b>Сейчас шаг 3 из 3: отправьте файл</b>\n' +
+      `📎 Форматы: ${SUPPORTED_FORMATS}\n` +
+      '📤 Просто отправьте фото/видео в этот чат.\n\n' +
+      START_HELP_MESSAGE,
     );
     return;
   }
 
   if (data === 'done') {
-    if (!session) {
-      await sendTelegramMessage(chatId, '⚠️ Сессия истекла. Начните сначала с /upload');
-      return;
-    }
     await setSession(chatId, { ...session, state: 'awaiting_files' });
-    const tagsDisplay = session.selectedTags.length > 0
-      ? session.selectedTags.join(', ')
-      : '<code>untitled</code> (будет присвоен автоматически)';
     await sendTelegramMessage(
       chatId,
-      `🏷️ <b>Теги:</b> ${tagsDisplay}\n\n📤 Отправьте фото или видео для загрузки:\n(можно несколько файлов подряд)`
+      '✅ <b>Теги сохранены</b>\n' +
+      `🏷️ Выбрано: ${formatSelectedTags(session.selectedTags)}\n\n` +
+      '<b>Сейчас шаг 3 из 3: отправьте файл</b>\n' +
+      `📎 Форматы: ${SUPPORTED_FORMATS}\n` +
+      '📤 Можно отправить несколько файлов подряд.\n\n' +
+      START_HELP_MESSAGE,
     );
     return;
   }
 
   if (data.startsWith('tag:')) {
     const tag = data.slice(4);
-    if (!session) {
-      await sendTelegramMessage(chatId, '⚠️ Сессия истекла. Начните сначала с /upload');
-      return;
-    }
-
-    const newTags = session.selectedTags.includes(tag)
+    const nextTags = session.selectedTags.includes(tag)
       ? session.selectedTags.filter((t) => t !== tag)
       : [...session.selectedTags, tag];
 
-    await setSession(chatId, { ...session, selectedTags: newTags });
+    await setSession(chatId, { ...session, selectedTags: nextTags });
 
-    // Update keyboard
-    const allTags = await getAllTags();
-    const keyboard = buildTagKeyboard(allTags, newTags);
-
+    const token = process.env.TG_BOT_TOKEN;
     if (token && callback.message.message_id) {
+      const allTags = await getAllTags();
       await fetch(`https://api.telegram.org/bot${token}/editMessageReplyMarkup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           chat_id: chatId,
           message_id: callback.message.message_id,
-          reply_markup: keyboard,
+          reply_markup: buildTagKeyboard(allTags, nextTags),
         }),
       }).catch(() => {});
     }
   }
 };
-
-// ── File upload handler ──────────────────────────────────────────────────────
 
 const handleFileUpload = async (update: TelegramUpdate) => {
   const message = update.message;
@@ -428,12 +396,27 @@ const handleFileUpload = async (update: TelegramUpdate) => {
   const chatId = message.chat.id;
   const session = await getSession(chatId);
 
-  if (!session || session.state !== 'awaiting_files') {
-    await sendTelegramMessage(chatId, 'ℹ️ Для загрузки файлов используйте команду /upload');
+  if (!session) {
+    await sendTelegramMessage(chatId, SESSION_EXPIRED_MESSAGE);
     return;
   }
 
-  // Determine file type
+  if (session.state !== 'awaiting_files') {
+    if (session.state === 'awaiting_new_tag') {
+      await sendTelegramMessage(
+        chatId,
+        '✍️ Сейчас вы на шаге ввода тега.\n\nСначала отправьте текст тега, затем переходите к загрузке файлов.',
+      );
+      return;
+    }
+
+    await sendTelegramMessage(
+      chatId,
+      'ℹ️ Сначала нужно выбрать теги.\n\nНажмите /upload и пройдите шаги по кнопкам.',
+    );
+    return;
+  }
+
   let fileInfo: {
     fileId: string;
     fileName: string;
@@ -464,66 +447,87 @@ const handleFileUpload = async (update: TelegramUpdate) => {
       duration: message.video.duration,
     };
   } else if (message.document) {
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/webm', 'video/quicktime'];
-    if (!allowedTypes.includes(message.document.mime_type || '')) {
-      await sendTelegramMessage(chatId, '⚠️ Неподдерживаемый формат. Разрешены: JPG, PNG, GIF, WEBP, MP4, WEBM, MOV');
+    const allowed = new Set([
+      'image/jpeg',
+      'image/png',
+      'image/gif',
+      'image/webp',
+      'video/mp4',
+      'video/webm',
+      'video/quicktime',
+    ]);
+
+    const mimeType = message.document.mime_type || '';
+    if (!allowed.has(mimeType)) {
+      await sendTelegramMessage(
+        chatId,
+        '⚠️ Этот формат не поддерживается.\n\n' +
+        `Разрешены: ${SUPPORTED_FORMATS}\n\n` +
+        'Попробуйте отправить файл в одном из этих форматов.',
+      );
       return;
     }
+
     fileInfo = {
       fileId: message.document.file_id,
       fileName: message.document.file_name || `file_${Date.now()}`,
-      mimeType: message.document.mime_type || 'application/octet-stream',
+      mimeType: mimeType || 'application/octet-stream',
       fileSize: message.document.file_size,
     };
   }
 
   if (!fileInfo) {
-    await sendTelegramMessage(chatId, '⚠️ Не удалось получить информацию о файле');
+    await sendTelegramMessage(
+      chatId,
+      '⚠️ Я не смог распознать вложение.\n\nОтправьте фото или видео.',
+    );
     return;
   }
 
-  await sendTelegramMessage(chatId, '⏳ Загрузка файла...');
+  await sendTelegramMessage(chatId, '⏳ Принял файл. Загружаю в медиатеку...');
 
-  // Download from Telegram
-  const fileData = await getTelegramFile(fileInfo.fileId);
-  if (!fileData) {
-    await sendTelegramMessage(chatId, '❌ Ошибка загрузки файла из Telegram');
+  const telegramFile = await getTelegramFile(fileInfo.fileId);
+  if (!telegramFile) {
+    await sendTelegramMessage(
+      chatId,
+      '❌ Не удалось скачать файл с серверов Telegram.\n\nПопробуйте отправить файл еще раз.',
+    );
     return;
   }
 
-  // Generate storage path
   const isVideo = fileInfo.mimeType.startsWith('video/');
   const folder = isVideo ? 'videos' : 'images';
   const ext = fileInfo.fileName.split('.').pop() || (isVideo ? 'mp4' : 'jpg');
   const storagePath = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2, 10)}.${ext}`;
 
-  // Upload to Supabase Storage (bucket: "images")
   const { error: uploadError } = await getSupabaseClient().storage
     .from('images')
-    .upload(storagePath, fileData.data, {
+    .upload(storagePath, telegramFile.data, {
       contentType: fileInfo.mimeType,
       upsert: false,
     });
 
   if (uploadError) {
     console.error('[Storage] Upload error:', uploadError);
-    await sendTelegramMessage(chatId, `❌ Ошибка сохранения файла: ${uploadError.message}`);
+    await sendTelegramMessage(
+      chatId,
+      '❌ Не удалось сохранить файл в хранилище.\n' +
+      `Причина: <code>${uploadError.message}</code>\n\n` +
+      'Попробуйте еще раз или обратитесь к администратору.',
+    );
     return;
   }
 
-  // Get public URL
   const { data: urlData } = getSupabaseClient().storage.from('images').getPublicUrl(storagePath);
   const publicUrl = urlData.publicUrl;
 
-  // Save to media_items table
-  const mediaType = isVideo ? 'video' : 'image';
   const { error: dbError } = await getSupabaseClient().from('media_items').insert([{
     name: fileInfo.fileName,
     storage_path: storagePath,
     public_url: publicUrl,
-    type: mediaType,
+    type: isVideo ? 'video' : 'image',
     mime_type: fileInfo.mimeType,
-    size_bytes: fileInfo.fileSize || fileData.data.byteLength,
+    size_bytes: fileInfo.fileSize || telegramFile.data.byteLength,
     tags: session.selectedTags.length > 0 ? session.selectedTags : ['untitled'],
     width: fileInfo.width,
     height: fileInfo.height,
@@ -534,20 +538,42 @@ const handleFileUpload = async (update: TelegramUpdate) => {
 
   if (dbError) {
     console.error('[DB] Insert error:', dbError);
-    await sendTelegramMessage(chatId, `❌ Ошибка сохранения в базу данных: ${dbError.message}`);
+    await sendTelegramMessage(
+      chatId,
+      '❌ Файл загрузился, но не записался в базу.\n' +
+      `Причина: <code>${dbError.message}</code>\n\n` +
+      'Сообщите администратору.',
+    );
     return;
   }
 
   await sendTelegramMessage(
     chatId,
-    `✅ <b>Файл загружен!</b>\n\n` +
-    `📂 Путь: <code>${storagePath}</code>\n` +
-    `🏷️ <b>Теги:</b> ${session.selectedTags.length > 0 ? session.selectedTags.join(', ') : 'untitled'}\n\n` +
-    `Отправьте ещё файлы или используйте /upload для новой сессии.`
+    '✅ <b>Готово! Файл успешно добавлен в медиатеку.</b>\n\n' +
+    `📁 Путь: <code>${storagePath}</code>\n` +
+    `🏷️ Теги: ${formatSelectedTags(session.selectedTags)}\n\n` +
+    '📤 Можете отправить следующий файл прямо сейчас.\n' +
+    '🔁 Для новой сессии с другими тегами используйте /upload.',
   );
 };
 
-// ── Main handler ─────────────────────────────────────────────────────────────
+const sendHelp = async (chatId: number) => {
+  const message =
+    '📘 <b>Как загрузить фото/видео в медиатеку</b>\n\n' +
+    '<b>Коротко:</b>\n' +
+    '1. Отправьте <code>/upload</code>\n' +
+    '2. Выберите теги (или пропустите)\n' +
+    '3. Нажмите кнопку перехода к загрузке\n' +
+    '4. Отправьте фото/видео в чат\n\n' +
+    '<b>Что можно отправлять:</b>\n' +
+    `📎 ${SUPPORTED_FORMATS}\n\n` +
+    '<b>Полезные команды:</b>\n' +
+    '• <code>/upload</code> — начать новую загрузку\n' +
+    '• <code>/help</code> — показать эту справку\n\n' +
+    'Если запутались — просто отправьте <code>/upload</code>, бот проведет по шагам.';
+
+  await sendTelegramMessage(chatId, message);
+};
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
@@ -558,9 +584,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const token = process.env.TG_BOT_TOKEN;
-  console.log('[Webhook] Request:', req.method, 'Token:', !!token);
 
-  // ── Management endpoints (GET) ──────────────────────────────────────────────
   if (req.method === 'GET') {
     if (!token) return res.status(500).json({ error: 'TG_BOT_TOKEN not configured' });
 
@@ -569,12 +593,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (!webhookUrl) return res.status(400).json({ error: 'url query param required' });
 
       try {
-        const r = await fetch(`https://api.telegram.org/bot${token}/setWebhook`, {
+        const response = await fetch(`https://api.telegram.org/bot${token}/setWebhook`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ url: webhookUrl, allowed_updates: ['message', 'callback_query'] }),
         });
-        return res.status(200).json(await r.json());
+        return res.status(200).json(await response.json());
       } catch (err) {
         return res.status(500).json({ error: String(err) });
       }
@@ -582,21 +606,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (req.query?.action === 'getWebhookInfo') {
       try {
-        const r = await fetch(`https://api.telegram.org/bot${token}/getWebhookInfo`);
-        return res.status(200).json(await r.json());
+        const response = await fetch(`https://api.telegram.org/bot${token}/getWebhookInfo`);
+        return res.status(200).json(await response.json());
       } catch (err) {
         return res.status(500).json({ error: String(err) });
       }
     }
 
-    return res.status(200).json({ ok: true, message: 'Telegram Webhook is running' });
+    return res.status(200).json({ ok: true, message: 'Telegram webhook is running' });
   }
 
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // ── Webhook secret verification ──────────────────────────────────────────────
   const webhookSecret = process.env.TELEGRAM_WEBHOOK_SECRET;
   if (webhookSecret) {
     const secret = req.headers['x-telegram-bot-api-secret-token'];
@@ -606,89 +629,86 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   if (!token) {
-    console.error('[Webhook] TG_BOT_TOKEN not configured!');
     return res.status(500).json({ error: 'Bot token not configured' });
   }
 
-  // ── Process update ───────────────────────────────────────────────────────────
   try {
     const update: TelegramUpdate = req.body;
 
-    // Handle callback queries (button clicks)
     if (update.callback_query) {
       await handleCallbackQuery(update);
       return res.status(200).json({ ok: true });
     }
 
-    // Handle messages
-    if (update.message) {
-      const { message } = update;
-      const chatId = message.chat.id;
-      const text = message.text || '';
+    if (!update.message) {
+      return res.status(200).json({ ok: true });
+    }
 
-      // Deduplication check
-      const alreadyProcessed = await isMessageAlreadyProcessed(message.message_id);
-      if (alreadyProcessed) {
-        console.log('[Dedup] Skipping already processed message:', message.message_id);
-        return res.status(200).json({ ok: true });
-      }
-      await markMessageAsProcessed(message.message_id);
+    const { message } = update;
+    const chatId = message.chat.id;
+    const text = message.text || '';
 
-      const session = await getSession(chatId);
+    const alreadyProcessed = await isMessageAlreadyProcessed(message.message_id);
+    if (alreadyProcessed) {
+      return res.status(200).json({ ok: true });
+    }
+    await markMessageAsProcessed(message.message_id);
 
-      // Handle new tag input
-      if (session?.state === 'awaiting_new_tag' && text && !text.startsWith('/')) {
-        const newTag = text.trim().toLowerCase();
-        if (newTag.length > 0 && newTag.length <= 50) {
-          const newTags = session.selectedTags.includes(newTag)
-            ? session.selectedTags
-            : [...session.selectedTags, newTag];
-          await setSession(chatId, { ...session, state: 'awaiting_tags', selectedTags: newTags });
-          await sendTelegramMessage(
-            chatId,
-            `✅ Тег "${newTag}" добавлен.\n\n<b>Выбранные теги:</b> ${newTags.join(', ')}\n\nНажмите "Готово" когда закончите выбор.`
-          );
-        } else {
-          await sendTelegramMessage(chatId, '⚠️ Тег должен быть от 1 до 50 символов. Попробуйте ещё раз.');
-        }
-        return res.status(200).json({ ok: true });
-      }
+    const session = await getSession(chatId);
 
-      // Commands
-      if (text === '/start' || text === '/upload') {
-        await handleStart(chatId);
-        return res.status(200).json({ ok: true });
-      }
-
-      if (text === '/help') {
+    if (session?.state === 'awaiting_new_tag' && text && !text.startsWith('/')) {
+      const newTag = text.trim().toLowerCase();
+      if (newTag.length === 0 || newTag.length > 50) {
         await sendTelegramMessage(
           chatId,
-          '📖 <b>Справка по боту</b>\n\n' +
-          '/upload — Загрузить файлы в медиа-библиотеку\n' +
-          '/help — Показать эту справку\n\n' +
-          '<b>Как загрузить файлы:</b>\n' +
-          '1. Отправьте /upload\n' +
-          '2. Выберите теги или введите новый\n' +
-          '3. Нажмите "Готово"\n' +
-          '4. Отправьте фото или видео'
+          '⚠️ Тег должен быть от 1 до 50 символов.\n\nПример: <code>концерт</code>',
         );
         return res.status(200).json({ ok: true });
       }
 
-      // File uploads
-      if (message.photo || message.video || message.document) {
-        await handleFileUpload(update);
-        return res.status(200).json({ ok: true });
-      }
+      const nextTags = session.selectedTags.includes(newTag)
+        ? session.selectedTags
+        : [...session.selectedTags, newTag];
 
-      // Default
+      await setSession(chatId, { state: 'awaiting_tags', selectedTags: nextTags });
+
       await sendTelegramMessage(
         chatId,
-        'ℹ️ Отправьте /upload для загрузки файлов или /help для справки'
+        `✅ Новый тег добавлен: <b>${newTag}</b>\n` +
+        `🏷️ Сейчас выбрано: ${formatSelectedTags(nextTags)}\n\n` +
+        'Нажмите кнопку <b>✅ Теги выбраны, перейти к загрузке</b> в сообщении выше.',
+      );
+
+      return res.status(200).json({ ok: true });
+    }
+
+    if (text === '/start' || text === '/upload') {
+      await handleStart(chatId);
+      return res.status(200).json({ ok: true });
+    }
+
+    if (text === '/help') {
+      await sendHelp(chatId);
+      return res.status(200).json({ ok: true });
+    }
+
+    if (message.photo || message.video || message.document) {
+      await handleFileUpload(update);
+      return res.status(200).json({ ok: true });
+    }
+
+    if (session?.state === 'awaiting_files') {
+      await sendTelegramMessage(
+        chatId,
+        '📤 Сейчас ожидаю файл.\n\nПожалуйста, отправьте фото или видео.',
       );
       return res.status(200).json({ ok: true });
     }
 
+    await sendTelegramMessage(
+      chatId,
+      '👋 Чтобы загрузить фото/видео, отправьте /upload\n\n' + START_HELP_MESSAGE,
+    );
     return res.status(200).json({ ok: true });
   } catch (err) {
     console.error('[Webhook] Unhandled error:', err);
