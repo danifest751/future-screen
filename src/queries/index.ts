@@ -42,6 +42,7 @@ export {
   useLeadsQuery,
   useInvalidateLeads,
   useClearLeadsMutation,
+  useDeleteLeadMutation,
 } from './leads';
 
 // Privacy Policy

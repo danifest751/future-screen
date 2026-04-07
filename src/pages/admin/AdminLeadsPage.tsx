@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
+import { Trash2 } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout';
 import { useLeads } from '../../hooks/useLeads';
 import type { LeadDeliveryLogEntry, LeadLog } from '../../types/leads';
@@ -86,15 +87,17 @@ const LeadLogModal = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="presentation">
       <div className="absolute inset-0 bg-black/70" onClick={onClose} aria-hidden="true" />
-      <div className="relative max-h-[85vh] w-full max-w-3xl overflow-hidden rounded-2xl border border-white/10 bg-slate-950 shadow-2xl">
-        <div className="flex items-start justify-between gap-4 border-b border-white/10 px-6 py-5">
+      <div className="relative max-h-[85vh] w-full max-w-4xl overflow-hidden rounded-2xl border border-white/10 bg-slate-950 shadow-2xl">
+        <div className="flex items-start justify-between gap-4 border-b border-white/10 px-6 py-4">
           <div>
             <div className="text-lg font-semibold text-white">{adminLeadsContent.logModal.title}</div>
             <div className="mt-1 text-sm text-slate-400">
               {log.name} · {log.phone}
             </div>
             {log.requestId ? (
-              <div className="mt-1 text-xs text-slate-500">{adminLeadsContent.requestId.label}: {log.requestId}</div>
+              <div className="mt-1 text-xs text-slate-500">
+                {adminLeadsContent.requestId.label}: {log.requestId}
+              </div>
             ) : null}
           </div>
           <Button variant="ghost" size="sm" onClick={onClose}>
@@ -102,54 +105,51 @@ const LeadLogModal = ({
           </Button>
         </div>
 
-        <div className="max-h-[calc(85vh-88px)] space-y-5 overflow-y-auto px-6 py-5">
+        <div className="max-h-[calc(85vh-80px)] space-y-4 overflow-y-auto px-6 py-4">
           <div className="grid gap-3 md:grid-cols-3">
-            <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-              <div className="text-xs uppercase tracking-wide text-slate-500">{adminLeadsContent.logModal.cards.status}</div>
-              <div className="mt-2 text-sm font-medium text-white">{formatStatusLabel(log.status)}</div>
+            <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2">
+              <div className="text-[11px] uppercase tracking-wide text-slate-500">{adminLeadsContent.logModal.cards.status}</div>
+              <div className="text-sm font-medium text-white">{formatStatusLabel(log.status)}</div>
             </div>
-            <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-              <div className="text-xs uppercase tracking-wide text-slate-500">{adminLeadsContent.logModal.cards.created}</div>
-              <div className="mt-2 text-sm font-medium text-white">{formatDateTime(log.timestamp)}</div>
+            <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2">
+              <div className="text-[11px] uppercase tracking-wide text-slate-500">{adminLeadsContent.logModal.cards.created}</div>
+              <div className="text-sm font-medium text-white">{formatDateTime(log.timestamp)}</div>
             </div>
-            <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-              <div className="text-xs uppercase tracking-wide text-slate-500">{adminLeadsContent.logModal.cards.steps}</div>
-              <div className="mt-2 text-sm font-medium text-white">{entries.length}</div>
+            <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2">
+              <div className="text-[11px] uppercase tracking-wide text-slate-500">{adminLeadsContent.logModal.cards.steps}</div>
+              <div className="text-sm font-medium text-white">{entries.length}</div>
             </div>
           </div>
 
           {entries.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-white/10 bg-white/5 p-5 text-sm text-slate-400">
+            <div className="rounded-lg border border-dashed border-white/10 bg-white/5 p-4 text-sm text-slate-400">
               {adminLeadsContent.logModal.empty}
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {entries.map((entry, index) => (
-                <div key={`${entry.at}-${entry.step}-${index}`} className="rounded-xl border border-white/10 bg-white/5 p-4">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span
-                      className={`rounded-full border px-2.5 py-1 text-xs font-medium ${entryStatusClasses[entry.status]}`}
-                    >
+                <div key={`${entry.at}-${entry.step}-${index}`} className="rounded-lg border border-white/10 bg-white/5 px-3 py-2">
+                  <div className="flex flex-wrap items-center gap-2 text-xs">
+                    <span className={`rounded-full border px-2 py-0.5 font-medium ${entryStatusClasses[entry.status]}`}>
                       {entryStatusLabel(entry.status)}
                     </span>
-                    <span className="rounded-full border border-white/10 bg-slate-900 px-2.5 py-1 text-xs text-slate-300">
+                    <span className="rounded-full border border-white/10 bg-slate-900 px-2 py-0.5 text-slate-300">
                       {channelLabels[entry.channel]}
                     </span>
-                    <span className="text-xs text-slate-500">{formatDateTime(entry.at)}</span>
+                    <span className="text-slate-500">{formatDateTime(entry.at)}</span>
+                    <span className="text-slate-500">· {entry.step}</span>
                   </div>
-                  <div className="mt-3 text-sm font-medium text-white">{entry.message}</div>
-                  <div className="mt-1 text-xs uppercase tracking-wide text-slate-500">{entry.step}</div>
+                  <div className="mt-1 text-sm text-white">{entry.message}</div>
                   {entry.details ? (
-                    <div className="mt-3 rounded-lg border border-white/10 bg-slate-950/70 p-3 text-sm text-slate-300">
+                    <div className="mt-1 rounded border border-white/10 bg-slate-950/70 px-2 py-1 text-xs text-slate-300">
                       {entry.details}
                     </div>
                   ) : null}
                   {entry.meta && Object.keys(entry.meta).length > 0 ? (
-                    <div className="mt-3 grid gap-2 md:grid-cols-2">
+                    <div className="mt-1 grid gap-1 md:grid-cols-2 xl:grid-cols-3">
                       {Object.entries(entry.meta).map(([key, value]) => (
-                        <div key={key} className="rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2 text-xs">
-                          <span className="text-slate-500">{key}:</span>{' '}
-                          <span className="text-slate-300">{value}</span>
+                        <div key={key} className="rounded border border-white/10 bg-slate-950/70 px-2 py-1 text-xs">
+                          <span className="text-slate-500">{key}:</span> <span className="text-slate-300">{value}</span>
                         </div>
                       ))}
                     </div>
@@ -167,9 +167,13 @@ const LeadLogModal = ({
 const LeadCard = ({
   log,
   onOpenLog,
+  onDelete,
+  deleteTitle,
 }: {
   log: LeadLog;
   onOpenLog: (log: LeadLog) => void;
+  onDelete: (log: LeadLog) => void;
+  deleteTitle: string;
 }) => {
   const time = new Date(log.timestamp).toLocaleTimeString(localeTag, {
     hour: '2-digit',
@@ -179,18 +183,22 @@ const LeadCard = ({
   const statusClass = statusClasses[log.status ?? 'default'] ?? statusClasses.default;
 
   return (
-    <div className="card border-l-4 border-l-brand-500">
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+    <div className="card border-l-4 border-l-brand-500 p-4">
+      <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-lg font-semibold text-white">{log.name}</span>
-            <span className="rounded bg-brand-500/10 px-2 py-0.5 text-xs text-brand-100">{log.source}</span>
+            <span className="text-base font-semibold text-white">{log.name}</span>
+            <span className="rounded bg-brand-500/10 px-2 py-0.5 text-[11px] text-brand-100">{log.source}</span>
             <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${statusClass}`}>
               {formatStatusLabel(log.status)}
             </span>
           </div>
-          <div className="mt-1 text-xs text-slate-500">{time}</div>
-          {log.requestId ? <div className="mt-1 text-xs text-slate-500">{adminLeadsContent.requestId.label}: {log.requestId}</div> : null}
+          <div className="mt-0.5 text-xs text-slate-500">{time}</div>
+          {log.requestId ? (
+            <div className="text-xs text-slate-500">
+              {adminLeadsContent.requestId.label}: {log.requestId}
+            </div>
+          ) : null}
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -207,10 +215,18 @@ const LeadCard = ({
               {adminLeadsContent.leadCard.actions.page}
             </a>
           ) : null}
+          <button
+            type="button"
+            onClick={() => onDelete(log)}
+            title={deleteTitle}
+            className="inline-flex items-center rounded-lg border border-red-400/30 bg-red-500/10 px-2.5 py-1.5 text-red-100 hover:border-red-400/60"
+          >
+            <Trash2 size={14} />
+          </button>
         </div>
       </div>
 
-      <div className="grid gap-2 text-sm md:grid-cols-2">
+      <div className="mt-3 grid gap-x-4 gap-y-1 text-xs md:grid-cols-3 xl:grid-cols-4">
         <div>
           <span className="text-slate-400">{adminLeadsContent.leadCard.fields.phone}:</span>{' '}
           <a href={`tel:${log.phone}`} className="text-white hover:text-brand-100">
@@ -252,23 +268,22 @@ const LeadCard = ({
       </div>
 
       {lastEntry ? (
-        <div className="mt-3 rounded-lg border border-white/10 bg-white/5 p-3 text-sm">
-          <div className="text-xs uppercase tracking-wide text-slate-500">{adminLeadsContent.leadCard.fields.lastStep}</div>
-          <div className="mt-1 text-white">{lastEntry.message}</div>
-          <div className="mt-1 text-xs text-slate-500">
+        <div className="mt-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs">
+          <div className="text-[11px] uppercase tracking-wide text-slate-500">{adminLeadsContent.leadCard.fields.lastStep}</div>
+          <div className="mt-0.5 text-slate-100">{lastEntry.message}</div>
+          <div className="text-[11px] text-slate-500">
             {channelLabels[lastEntry.channel]} · {formatDateTime(lastEntry.at)}
           </div>
         </div>
       ) : null}
 
       {log.extra && Object.keys(log.extra).length > 0 ? (
-        <div className="mt-3 rounded-lg bg-white/5 p-3">
-          <div className="mb-2 text-xs font-semibold text-slate-400">{adminLeadsContent.leadCard.fields.details}</div>
-          <div className="grid gap-1 text-xs md:grid-cols-2">
+        <div className="mt-2 rounded-lg bg-white/5 px-3 py-2">
+          <div className="mb-1 text-[11px] font-semibold text-slate-400">{adminLeadsContent.leadCard.fields.details}</div>
+          <div className="grid gap-x-3 gap-y-0.5 text-xs md:grid-cols-2 xl:grid-cols-3">
             {Object.entries(log.extra).map(([key, value]) => (
               <div key={key}>
-                <span className="text-slate-500">{key}:</span>{' '}
-                <span className="text-slate-300">{value}</span>
+                <span className="text-slate-500">{key}:</span> <span className="text-slate-300">{value}</span>
               </div>
             ))}
           </div>
@@ -276,7 +291,7 @@ const LeadCard = ({
       ) : null}
 
       {log.comment ? (
-        <div className="mt-3 rounded-lg bg-white/5 p-3 text-sm">
+        <div className="mt-2 rounded-lg bg-white/5 px-3 py-2 text-xs">
           <span className="text-slate-400">{adminLeadsContent.leadCard.fields.comment}:</span>{' '}
           <span className="text-slate-300">{log.comment}</span>
         </div>
@@ -289,13 +304,31 @@ const AdminLeadsPage = () => {
   const { adminLocale } = useI18n();
   adminLeadsContent = getAdminLeadsContent(adminLocale);
   localeTag = adminLocale === 'ru' ? 'ru-RU' : 'en-US';
-  const { leads, loading, error: leadsError, clearLeads } = useLeads();
+  const { leads, loading, error: leadsError, clearLeads, deleteLead } = useLeads();
   const [filter, setFilter] = useState('');
   const [debouncedFilter, setDebouncedFilter] = useState(filter);
   const [selectedSource, setSelectedSource] = useState<string>('all');
   const [clearModalOpen, setClearModalOpen] = useState(false);
   const [clearSubmitting, setClearSubmitting] = useState(false);
   const [selectedLog, setSelectedLog] = useState<LeadLog | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<LeadLog | null>(null);
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false);
+
+  const deleteCopy = adminLocale === 'ru'
+    ? {
+        title: 'Удалить заявку?',
+        description: (name: string) => `Заявка «${name}» будет удалена без возможности восстановления.`,
+        action: 'Удалить',
+        success: 'Заявка удалена',
+        error: 'Не удалось удалить заявку',
+      }
+    : {
+        title: 'Delete lead?',
+        description: (name: string) => `Lead "${name}" will be permanently deleted.`,
+        action: 'Delete',
+        success: 'Lead deleted',
+        error: 'Failed to delete lead',
+      };
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -312,6 +345,22 @@ const AdminLeadsPage = () => {
       else toast.error(adminLeadsContent.toasts.clearError);
     } finally {
       setClearSubmitting(false);
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return;
+    setDeleteSubmitting(true);
+    try {
+      const ok = await deleteLead(deleteTarget.id);
+      if (ok) {
+        toast.success(deleteCopy.success);
+        setDeleteTarget(null);
+      } else {
+        toast.error(deleteCopy.error);
+      }
+    } finally {
+      setDeleteSubmitting(false);
     }
   };
 
@@ -412,6 +461,18 @@ const AdminLeadsPage = () => {
         onConfirm={() => handleClearConfirm()}
       />
 
+      <ConfirmModal
+        open={Boolean(deleteTarget)}
+        danger
+        title={deleteCopy.title}
+        description={deleteTarget ? deleteCopy.description(deleteTarget.name) : ''}
+        confirmText={deleteCopy.action}
+        cancelText={adminLeadsContent.confirm.cancel}
+        confirmDisabled={deleteSubmitting}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={handleDeleteConfirm}
+      />
+
       <LeadLogModal log={selectedLog} onClose={() => setSelectedLog(null)} />
 
       {loading ? (
@@ -483,7 +544,7 @@ const AdminLeadsPage = () => {
 
       {filteredLogs.length === 0 ? (
         <EmptyState
-          icon="..."
+          icon={<Trash2 size={32} className="text-brand-400" />}
           title={leads.length === 0 ? adminLeadsContent.empty.noLeadsTitle : adminLeadsContent.empty.notFoundTitle}
           description={
             leads.length === 0
@@ -492,13 +553,19 @@ const AdminLeadsPage = () => {
           }
         />
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-5">
           {Object.entries(logsByDate).map(([date, dateLogs]) => (
             <div key={date}>
-              <div className="mb-3 text-sm font-semibold text-slate-400">{date}</div>
-              <div className="grid gap-4">
+              <div className="mb-2 text-sm font-semibold text-slate-400">{date}</div>
+              <div className="grid gap-3">
                 {dateLogs.map((log) => (
-                  <LeadCard key={log.id} log={log} onOpenLog={setSelectedLog} />
+                  <LeadCard
+                    key={log.id}
+                    log={log}
+                    onOpenLog={setSelectedLog}
+                    onDelete={setDeleteTarget}
+                    deleteTitle={deleteCopy.action}
+                  />
                 ))}
               </div>
             </div>

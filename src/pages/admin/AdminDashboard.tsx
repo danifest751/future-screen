@@ -1,16 +1,37 @@
-﻿import { useMemo } from 'react';
-import { BarChart3, CalendarDays, Inbox, PhoneCall } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { BarChart3, CalendarDays, Inbox, PhoneCall, Trash2 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import toast from 'react-hot-toast';
 import AdminLayout from '../../components/admin/AdminLayout';
+import { ConfirmModal } from '../../components/admin/ui';
 import { useI18n } from '../../context/I18nContext';
 import { getAdminDashboardContent } from '../../content/pages/adminDashboard';
 import { useLeads } from '../../hooks/useLeads';
+import type { LeadLog } from '../../types/leads';
 
 const AdminDashboard = () => {
   const { adminLocale } = useI18n();
   const adminDashboardContent = getAdminDashboardContent(adminLocale);
   const localeTag = adminLocale === 'ru' ? 'ru-RU' : 'en-US';
-  const { leads: logs, loading, error } = useLeads();
+  const { leads: logs, loading, error, deleteLead } = useLeads();
+  const [deleteTarget, setDeleteTarget] = useState<LeadLog | null>(null);
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false);
+
+  const deleteCopy = adminLocale === 'ru'
+    ? {
+        title: 'Удалить заявку?',
+        description: (name: string) => `Заявка «${name}» будет удалена без возможности восстановления.`,
+        action: 'Удалить',
+        success: 'Заявка удалена',
+        error: 'Не удалось удалить заявку',
+      }
+    : {
+        title: 'Delete lead?',
+        description: (name: string) => `Lead "${name}" will be permanently deleted.`,
+        action: 'Delete',
+        success: 'Lead deleted',
+        error: 'Failed to delete lead',
+      };
 
   const stats = useMemo(() => {
     const now = new Date();
@@ -57,11 +78,39 @@ const AdminDashboard = () => {
     return [...logs].sort((a, b) => b.timestamp.localeCompare(a.timestamp)).slice(0, 10);
   }, [logs]);
 
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return;
+    setDeleteSubmitting(true);
+    try {
+      const ok = await deleteLead(deleteTarget.id);
+      if (ok) {
+        toast.success(deleteCopy.success);
+        setDeleteTarget(null);
+      } else {
+        toast.error(deleteCopy.error);
+      }
+    } finally {
+      setDeleteSubmitting(false);
+    }
+  };
+
   return (
     <AdminLayout
       title={adminDashboardContent.layout.title}
       subtitle={adminDashboardContent.layout.subtitle}
     >
+      <ConfirmModal
+        open={Boolean(deleteTarget)}
+        danger
+        title={deleteCopy.title}
+        description={deleteTarget ? deleteCopy.description(deleteTarget.name) : ''}
+        confirmText={deleteCopy.action}
+        cancelText={adminLocale === 'ru' ? 'Отмена' : 'Cancel'}
+        confirmDisabled={deleteSubmitting}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={handleDeleteConfirm}
+      />
+
       <div className="space-y-6">
         {loading && <div className="text-sm text-slate-400">{adminDashboardContent.state.loading}</div>}
         {error && (
@@ -161,34 +210,42 @@ const AdminDashboard = () => {
           </div>
           <div className="divide-y divide-white/10">
             {recentLogs.map((log) => (
-              <div key={log.id} className="flex items-start justify-between gap-4 p-4">
-                <div className="flex-1">
+              <div key={log.id} className="flex items-center justify-between gap-3 p-3">
+                <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium text-white">{log.name}</span>
+                    <span className="truncate font-medium text-white">{log.name}</span>
                     <span className="rounded bg-slate-700 px-2 py-0.5 text-xs text-slate-300">
                       {log.source.split(' (')[0]}
                     </span>
                   </div>
-                  <div className="mt-1 text-sm text-slate-400">
+                  <div className="mt-0.5 truncate text-xs text-slate-400">
                     {log.phone}
                     {log.email && <span className="ml-2">{adminDashboardContent.lead.separator} {log.email}</span>}
                     {log.city && <span className="ml-2">{adminDashboardContent.lead.separator} {log.city}</span>}
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-sm text-slate-400">
+                  <div className="text-xs text-slate-400">
                     {new Date(log.timestamp).toLocaleDateString(localeTag, {
                       day: 'numeric',
                       month: 'short',
                     })}
                   </div>
-                  <div className="text-xs text-slate-500">
+                  <div className="text-[11px] text-slate-500">
                     {new Date(log.timestamp).toLocaleTimeString(localeTag, {
                       hour: '2-digit',
                       minute: '2-digit',
                     })}
                   </div>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setDeleteTarget(log)}
+                  title={deleteCopy.action}
+                  className="inline-flex items-center rounded-lg border border-red-400/30 bg-red-500/10 px-2 py-1.5 text-red-100 hover:border-red-400/60"
+                >
+                  <Trash2 size={14} />
+                </button>
               </div>
             ))}
             {recentLogs.length === 0 && (
