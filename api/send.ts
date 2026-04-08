@@ -91,10 +91,10 @@ const getSupabaseAdmin = (): SupabaseClient | null => {
 };
 
 const emailPayloadSchema = z.object({
-  source: z.string().max(100).default('Site').optional(),
-  name: z.string().min(1, 'Name is required').max(100),
-  phone: z.string().min(5, 'Phone is too short').max(20),
-  email: z.string().email('Invalid email').max(100).optional().nullable(),
+  source: z.string().max(100).default('Сайт').optional(),
+  name: z.string().min(1, 'Укажите имя').max(100),
+  phone: z.string().min(5, 'Телефон слишком короткий').max(20),
+  email: z.string().email('Некорректный email').max(100).optional().nullable(),
   telegram: z.string().max(100).optional().nullable(),
   city: z.string().max(100).optional().nullable(),
   date: z.string().max(50).optional().nullable(),
@@ -150,10 +150,10 @@ const wait = (ms: number): Promise<void> =>
   });
 
 const toErrorMessage = (err: unknown): string => {
-  if (!err) return 'Unknown error';
+  if (!err) return 'Неизвестная ошибка';
   if (typeof err === 'string') return err;
   if (typeof err === 'object' && err !== null && 'message' in err) {
-    return String((err as { message?: unknown }).message ?? 'Unknown error');
+    return String((err as { message?: unknown }).message ?? 'Неизвестная ошибка');
   }
   return String(err);
 };
@@ -394,7 +394,7 @@ const formatEmailFailureAlertMessage = ({
   if (cleanEmail) lines.push(`<b>Email:</b> ${escapeHtml(cleanEmail)}`);
 
   lines.push('');
-  lines.push(`<b>Причина:</b> ${escapeHtml(toCleanString(errorMessage) || 'Unknown error')}`);
+  lines.push(`<b>Причина:</b> ${escapeHtml(toCleanString(errorMessage) || 'Неизвестная ошибка')}`);
   return lines.join('\n');
 };
 
@@ -477,22 +477,24 @@ const sendEmail = async (
   requestId: string,
   logDelivery?: DeliveryLogger,
 ): Promise<EmailSendResult> => {
+  const sourceLabel = localizeSourceToRu(payload.source);
   const lines = [
-    `New lead: ${payload.source || 'Site'}`,
+    `Новая заявка: ${sourceLabel}`,
     '',
-    `Name: ${payload.name}`,
-    `Phone: ${payload.phone}`,
+    `Имя: ${payload.name}`,
+    `Телефон: ${payload.phone}`,
   ];
 
   if (payload.email) lines.push(`Email: ${payload.email}`);
   if (payload.telegram) lines.push(`Telegram: ${payload.telegram}`);
-  if (payload.city) lines.push(`City: ${payload.city}`);
-  if (payload.date) lines.push(`Date: ${payload.date}`);
-  if (payload.format) lines.push(`Format: ${payload.format}`);
-  if (payload.comment) lines.push(`Comment: ${payload.comment}`);
+  if (payload.city) lines.push(`Город: ${payload.city}`);
+  if (payload.date) lines.push(`Дата: ${payload.date}`);
+  if (payload.format) lines.push(`Формат: ${payload.format}`);
+  if (payload.comment) lines.push(`Комментарий: ${payload.comment}`);
 
   if (payload.extra) {
     lines.push('');
+    lines.push('Параметры расчета:');
     for (const [key, value] of Object.entries(payload.extra)) {
       lines.push(`${key}: ${value}`);
     }
@@ -526,7 +528,7 @@ const sendEmail = async (
         transporter.sendMail({
           from: `"Future Screen" <${process.env.SMTP_USER}>`,
           to: process.env.SMTP_TO || process.env.SMTP_USER,
-          subject: `Lead: ${payload.source || 'Site'} - ${payload.name}`,
+          subject: `Заявка: ${sourceLabel} — ${payload.name}`,
           text,
           html,
         }),
@@ -564,30 +566,31 @@ const sendEmail = async (
         });
 
         const clientText = [
-          `Hello, ${payload.name}!`,
+          `Здравствуйте, ${payload.name}!`,
           '',
-          'Your request has been received. We will contact you shortly.',
+          'Ваша заявка получена. Мы свяжемся с вами в ближайшее время.',
           '',
-          'Request details:',
-          `Source: ${payload.source}`,
-          `Phone: ${payload.phone}`,
+          'Детали заявки:',
+          `Источник: ${sourceLabel}`,
+          `Телефон: ${payload.phone}`,
         ];
 
-        if (payload.city) clientText.push(`City: ${payload.city}`);
-        if (payload.date) clientText.push(`Date: ${payload.date}`);
-        if (payload.format) clientText.push(`Format: ${payload.format}`);
-        if (payload.comment) clientText.push(`Comment: ${payload.comment}`);
+        if (payload.city) clientText.push(`Город: ${payload.city}`);
+        if (payload.date) clientText.push(`Дата: ${payload.date}`);
+        if (payload.format) clientText.push(`Формат: ${payload.format}`);
+        if (payload.comment) clientText.push(`Комментарий: ${payload.comment}`);
 
         if (payload.extra) {
           clientText.push('');
-          clientText.push('Calculated fields:');
+          clientText.push('Параметры расчета:');
           for (const [key, value] of Object.entries(payload.extra)) {
             clientText.push(`${key}: ${value}`);
           }
         }
 
         clientText.push('');
-        clientText.push('Future Screen');
+        clientText.push('С уважением,');
+        clientText.push('Команда Future Screen');
 
         const clientHtml = clientText
           .map((line) => {
@@ -603,7 +606,7 @@ const sendEmail = async (
             transporter.sendMail({
               from: `"Future Screen" <${process.env.SMTP_USER}>`,
               to: payload.email,
-              subject: 'Your request has been received - Future Screen',
+              subject: 'Ваша заявка принята — Future Screen',
               text: clientText.join('\n'),
               html: clientHtml,
             }),
