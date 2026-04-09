@@ -29,6 +29,10 @@ export const useCases = (locale: Locale = 'ru') => {
   const resetMutation = useResetCasesMutation();
 
   const cases: CaseItem[] = casesRaw?.map((row) => mapCaseFromDB(row, locale)) ?? [];
+  const getEditorCase = (slug: string): CaseItem | null => {
+    const row = casesRaw?.find((item) => item.slug === slug);
+    return row ? mapCaseFromDB(row, locale, false) : null;
+  };
   const fallbackBySlug = Object.fromEntries(
     (casesRaw ?? []).map((row) => [row.slug, isCaseFallbackFromRu(row, locale)])
   ) as Record<string, boolean>;
@@ -73,6 +77,7 @@ export const useCases = (locale: Locale = 'ru') => {
 
   return {
     cases,
+    getEditorCase,
     fallbackBySlug,
     loading: isLoading,
     error: error?.message ?? null,

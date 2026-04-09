@@ -43,7 +43,7 @@ const splitList = (value: string) =>
 const AdminPackagesPage = () => {
   const { adminLocale, adminContentLocale, setAdminContentLocale } = useI18n();
   const adminPackagesPageContent = getAdminPackagesPageContent(adminLocale);
-  const { packages, fallbackById, upsert, remove, resetToDefault } = usePackages(adminContentLocale);
+  const { packages, getEditorPackage, fallbackById, upsert, remove, resetToDefault } = usePackages(adminContentLocale);
   const [editingId, setEditingId] = useState<Package['id'] | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Package | null>(null);
   const [resetModalOpen, setResetModalOpen] = useState(false);
@@ -73,7 +73,7 @@ const AdminPackagesPage = () => {
   React.useEffect(() => {
     if (editingId === null) return;
 
-    const currentItem = packages.find((item) => item.id === editingId);
+    const currentItem = getEditorPackage(editingId);
     if (!currentItem) return;
 
     reset({
@@ -84,7 +84,7 @@ const AdminPackagesPage = () => {
       optionsText: (currentItem.options ?? []).join('\n'),
       priceHint: currentItem.priceHint ?? '',
     });
-  }, [editingId, packages, reset]);
+  }, [editingId, getEditorPackage, reset]);
 
   const onSubmit = async (values: FormValues) => {
     const payload: Package = {
@@ -109,14 +109,15 @@ const AdminPackagesPage = () => {
   };
 
   const startEdit = (item: Package) => {
+    const editorItem = getEditorPackage(item.id) ?? item;
     setEditingId(item.id);
     reset({
-      id: item.id,
-      name: item.name,
-      forFormatsText: item.forFormats.join('\n'),
-      includesText: item.includes.join('\n'),
-      optionsText: (item.options ?? []).join('\n'),
-      priceHint: item.priceHint ?? '',
+      id: editorItem.id,
+      name: editorItem.name,
+      forFormatsText: editorItem.forFormats.join('\n'),
+      includesText: editorItem.includes.join('\n'),
+      optionsText: (editorItem.options ?? []).join('\n'),
+      priceHint: editorItem.priceHint ?? '',
     });
   };
 

@@ -105,7 +105,7 @@ const getCaseIdBySlug = async (slug: string): Promise<number | null> => {
 const AdminCasesRedesignedPage = () => {
   const { adminLocale, adminContentLocale, setAdminContentLocale } = useI18n();
   const adminCasesRedesignedContent = getAdminCasesRedesignedContent(adminLocale);
-  const { cases, fallbackBySlug, addCase, updateCase, deleteCase, resetToDefault } = useCases(adminContentLocale);
+  const { cases, getEditorCase, fallbackBySlug, addCase, updateCase, deleteCase, resetToDefault } = useCases(adminContentLocale);
   const [activeTab, setActiveTab] = useState<'cases' | 'media'>('cases');
   const [caseEditing, setCaseEditing] = useState<string | null>(null);
   const [editingCaseId, setEditingCaseId] = useState<number | null>(null);
@@ -137,7 +137,7 @@ const AdminCasesRedesignedPage = () => {
   useEffect(() => {
     if (!caseEditing) return;
 
-    const currentCase = cases.find((item) => item.slug === caseEditing);
+    const currentCase = getEditorCase(caseEditing);
     if (!currentCase) return;
 
     reset({
@@ -150,7 +150,7 @@ const AdminCasesRedesignedPage = () => {
       metrics: currentCase.metrics ?? '',
       servicesText: currentCase.services.join(', '),
     });
-  }, [caseEditing, cases, reset]);
+  }, [caseEditing, getEditorCase, reset]);
 
   useEffect(() => {
     if (caseMediaLinks && caseMediaLinks.length > 0) {
@@ -272,17 +272,18 @@ const AdminCasesRedesignedPage = () => {
   };
 
   const startEdit = async (item: CaseItem) => {
+    const editorCase = getEditorCase(item.slug) ?? item;
     setCaseEditing(item.slug);
     setAutoSlug(false);
     reset({
-      slug: item.slug,
-      title: item.title,
-      city: item.city,
-      date: item.date,
-      format: item.format,
-      summary: item.summary,
-      metrics: item.metrics ?? '',
-      servicesText: item.services.join(', '),
+      slug: editorCase.slug,
+      title: editorCase.title,
+      city: editorCase.city,
+      date: editorCase.date,
+      format: editorCase.format,
+      summary: editorCase.summary,
+      metrics: editorCase.metrics ?? '',
+      servicesText: editorCase.services.join(', '),
     });
 
     const caseId = await getCaseIdBySlug(item.slug);
@@ -290,8 +291,8 @@ const AdminCasesRedesignedPage = () => {
       setEditingCaseId(caseId);
     } else {
       const mediaItems: MediaItem[] = [];
-      if (item.images) {
-        item.images.forEach((url, index) => {
+      if (editorCase.images) {
+        editorCase.images.forEach((url, index) => {
           mediaItems.push({
             id: `img-${index}`,
             name: url.split('/').pop() || 'image',
@@ -307,8 +308,8 @@ const AdminCasesRedesignedPage = () => {
           });
         });
       }
-      if ((item as CaseItem & { videos?: string[] }).videos) {
-        (item as CaseItem & { videos?: string[] }).videos?.forEach((url, index) => {
+      if ((editorCase as CaseItem & { videos?: string[] }).videos) {
+        (editorCase as CaseItem & { videos?: string[] }).videos?.forEach((url, index) => {
           mediaItems.push({
             id: `vid-${index}`,
             name: url.split('/').pop() || 'video',

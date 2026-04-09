@@ -38,7 +38,7 @@ const AdminPrivacyPolicyPage = () => {
   const { adminLocale, adminContentLocale, setAdminContentLocale } = useI18n();
   const adminPrivacyPolicyContent = getAdminPrivacyPolicyContent(adminLocale);
   const localeTag = adminLocale === 'ru' ? 'ru-RU' : 'en-US';
-  const { content, fallbackUsed, loading, saving, save } = usePrivacyPolicy(adminContentLocale);
+  const { content, fallbackUsed, loading, saving, save } = usePrivacyPolicy(adminContentLocale, false);
   const [lastSaved, setLastSaved] = useState<string | null>(null);
 
   const {

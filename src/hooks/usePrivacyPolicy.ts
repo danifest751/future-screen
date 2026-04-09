@@ -5,7 +5,7 @@ import type { Locale } from '../i18n/types';
 
 const CONTENT_KEY = 'privacy_policy';
 
-export function usePrivacyPolicy(locale: Locale = 'ru') {
+export function usePrivacyPolicy(locale: Locale = 'ru', fallbackToRu = true) {
   const [content, setContent] = useState<SiteContent | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -15,20 +15,20 @@ export function usePrivacyPolicy(locale: Locale = 'ru') {
     setLoading(true);
     setError(null);
     try {
-      const data = await loadSiteContent(CONTENT_KEY, locale);
+      const data = await loadSiteContent(CONTENT_KEY, locale, fallbackToRu);
       setContent(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : errorBoundaryContent.loadingError);
     } finally {
       setLoading(false);
     }
-  }, [locale]);
+  }, [fallbackToRu, locale]);
 
   const save = useCallback(async (input: Parameters<typeof saveSiteContent>[1]) => {
     setSaving(true);
     setError(null);
     try {
-      const data = await saveSiteContent(CONTENT_KEY, input, locale);
+      const data = await saveSiteContent(CONTENT_KEY, input, locale, fallbackToRu);
       setContent(data);
       return true;
     } catch (err) {
@@ -37,7 +37,7 @@ export function usePrivacyPolicy(locale: Locale = 'ru') {
     } finally {
       setSaving(false);
     }
-  }, [locale]);
+  }, [fallbackToRu, locale]);
 
   useEffect(() => {
     void load();

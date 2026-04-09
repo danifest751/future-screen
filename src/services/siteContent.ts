@@ -31,21 +31,22 @@ export type SiteContentInput = {
 
 const hasText = (value: string | null | undefined): boolean => typeof value === 'string' && value.trim().length > 0;
 
-const mapFromDB = (row: SiteContentRow, locale: Locale = 'ru'): SiteContent => ({
+const mapFromDB = (row: SiteContentRow, locale: Locale = 'ru', fallbackToRu = true): SiteContent => ({
   id: row.id,
   key: row.key,
-  title: locale === 'en' ? row.title_en ?? row.title : row.title,
-  content: locale === 'en' ? row.content_en ?? row.content : row.content,
-  contentHtml: locale === 'en' ? row.content_html_en ?? row.content_html : row.content_html,
-  metaTitle: locale === 'en' ? row.meta_title_en ?? row.meta_title : row.meta_title,
+  title: locale === 'en' ? row.title_en ?? (fallbackToRu ? row.title : null) : row.title,
+  content: locale === 'en' ? row.content_en ?? (fallbackToRu ? row.content : null) : row.content,
+  contentHtml: locale === 'en' ? row.content_html_en ?? (fallbackToRu ? row.content_html : null) : row.content_html,
+  metaTitle: locale === 'en' ? row.meta_title_en ?? (fallbackToRu ? row.meta_title : null) : row.meta_title,
   metaDescription:
-    locale === 'en' ? row.meta_description_en ?? row.meta_description : row.meta_description,
+    locale === 'en'
+      ? row.meta_description_en ?? (fallbackToRu ? row.meta_description : null)
+      : row.meta_description,
   isPublished: row.is_published ?? false,
   fontSize:
     locale === 'en'
       ? ((row as Record<string, unknown>).font_size_en as string | null) ??
-        ((row as Record<string, unknown>).font_size as string | null) ??
-        null
+        (fallbackToRu ? (((row as Record<string, unknown>).font_size as string | null) ?? null) : null)
       : ((row as Record<string, unknown>).font_size as string | null) ?? null,
   createdAt: row.created_at ?? '',
   updatedAt: row.updated_at ?? '',
@@ -59,6 +60,41 @@ const mapFromDB = (row: SiteContentRow, locale: Locale = 'ru'): SiteContent => (
       (hasText(row.font_size) && !hasText(row.font_size_en))),
 });
 
+export async function loadSiteContent(
+  key: string,
+  locale: Locale = 'ru',
+  fallbackToRu = true
+): Promise<SiteContent | null> {
+  const { data, error } = await supabase
+    .from('site_content')
+    .select('*')
+    .eq('key', key)
+    .single();
+
+  if (error) {
+    if (error.code === 'PGRST116') return null;
+    throw new Error(error.message);
+  }
+  return mapFromDB(data as SiteContentRow, locale, fallbackToRu);
+}
+
+export async function saveSiteContent(
+  key: string,
+  input: SiteContentInput,
+  locale: Locale = 'ru',
+  fallbackToRu = true
+): Promise<SiteContent> {
+  const { data, error } = await supabase
+    .from('site_content')
+    .upsert({ key, ...mapToDB(input, locale) })
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error('Content was not returned after upsert');
+  return mapFromDB(data as SiteContentRow, locale, fallbackToRu);
+}
+
 const mapToDB = (input: SiteContentInput, locale: Locale = 'ru'): Record<string, unknown> => {
   const result: Record<string, unknown> = {};
   if (input.title !== undefined) result[locale === 'en' ? 'title_en' : 'title'] = input.title;
@@ -70,33 +106,3 @@ const mapToDB = (input: SiteContentInput, locale: Locale = 'ru'): Record<string,
   if (input.fontSize !== undefined) result[locale === 'en' ? 'font_size_en' : 'font_size'] = input.fontSize;
   return result;
 };
-
-export async function loadSiteContent(key: string, locale: Locale = 'ru'): Promise<SiteContent | null> {
-  const { data, error } = await supabase
-    .from('site_content')
-    .select('*')
-    .eq('key', key)
-    .single();
-
-  if (error) {
-    if (error.code === 'PGRST116') return null;
-    throw new Error(error.message);
-  }
-  return mapFromDB(data as SiteContentRow, locale);
-}
-
-export async function saveSiteContent(
-  key: string,
-  input: SiteContentInput,
-  locale: Locale = 'ru'
-): Promise<SiteContent> {
-  const { data, error } = await supabase
-    .from('site_content')
-    .upsert({ key, ...mapToDB(input, locale) })
-    .select()
-    .single();
-
-  if (error) throw new Error(error.message);
-  if (!data) throw new Error('Content was not returned after upsert');
-  return mapFromDB(data as SiteContentRow, locale);
-}

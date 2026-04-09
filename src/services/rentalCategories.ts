@@ -45,27 +45,34 @@ const hasRuFallback = (ruValue: Json, enValue: Json): boolean => {
 const pickLocalizedObject = (
   ruValue: Json,
   enValue: Json,
-  locale: Locale
+  locale: Locale,
+  fallbackToRu = true
 ): Record<string, unknown> => {
   const ruObj = (ruValue as Record<string, unknown>) || {};
   const enObj = (enValue as Record<string, unknown>) || {};
   if (locale === 'en' && isNonEmptyObject(enObj)) {
-    return { ...ruObj, ...enObj };
+    return fallbackToRu ? { ...ruObj, ...enObj } : enObj;
+  }
+  if (locale === 'en') {
+    return fallbackToRu ? ruObj : {};
   }
   return ruObj;
 };
 
-const pickLocalizedArray = <T>(ruValue: Json, enValue: Json, locale: Locale): T[] => {
+const pickLocalizedArray = <T>(ruValue: Json, enValue: Json, locale: Locale, fallbackToRu = true): T[] => {
   const ruArr = (ruValue as T[]) || [];
   const enArr = (enValue as T[]) || [];
   if (locale === 'en' && isNonEmptyArray(enArr)) {
     return enArr;
   }
+  if (locale === 'en') {
+    return fallbackToRu ? ruArr : [];
+  }
   return ruArr;
 };
 
-const mapFromDB = (row: RentalCategoryRow, locale: Locale): RentalCategory => {
-  const hero = pickLocalizedObject(row.hero, row.hero_en, locale);
+const mapFromDB = (row: RentalCategoryRow, locale: Locale, fallbackToRu = true): RentalCategory => {
+  const hero = pickLocalizedObject(row.hero, row.hero_en, locale, fallbackToRu);
 
   // Keep blur-title toggle shared across locales.
   const ruHero = (row.hero as Record<string, unknown>) || {};
@@ -76,37 +83,40 @@ const mapFromDB = (row: RentalCategoryRow, locale: Locale): RentalCategory => {
   return {
     id: row.id,
     slug: row.slug,
-    name: locale === 'en' && row.name_en ? row.name_en : row.name,
-    shortName: locale === 'en' && row.short_name_en ? row.short_name_en : row.short_name,
+    name: locale === 'en' ? row.name_en ?? (fallbackToRu ? row.name : '') : row.name,
+    shortName: locale === 'en' ? row.short_name_en ?? (fallbackToRu ? row.short_name : '') : row.short_name,
     isPublished: row.is_published,
     sortOrder: row.sort_order,
-    seo: pickLocalizedObject(row.seo, row.seo_en, locale),
+    seo: pickLocalizedObject(row.seo, row.seo_en, locale, fallbackToRu),
     hero,
-    about: pickLocalizedObject(row.about, row.about_en, locale),
+    about: pickLocalizedObject(row.about, row.about_en, locale, fallbackToRu),
     useCases: pickLocalizedArray<Array<{ title: string; description: string }>[number]>(
       row.use_cases,
       row.use_cases_en,
-      locale
+      locale,
+      fallbackToRu
     ),
     serviceIncludes: pickLocalizedObject(
       row.service_includes,
       row.service_includes_en,
-      locale
+      locale,
+      fallbackToRu
     ) as { title: string; items: string[] },
-    benefits: pickLocalizedObject(row.benefits, row.benefits_en, locale) as {
+    benefits: pickLocalizedObject(row.benefits, row.benefits_en, locale, fallbackToRu) as {
       title: string;
       items: Array<{ title: string; description: string }>;
     },
     gallery: pickLocalizedArray<Array<{ image: string; alt: string; caption: string }>[number]>(
       row.gallery,
       row.gallery_en,
-      locale
+      locale,
+      fallbackToRu
     ),
-    faq: pickLocalizedObject(row.faq, row.faq_en, locale) as {
+    faq: pickLocalizedObject(row.faq, row.faq_en, locale, fallbackToRu) as {
       title: string;
       items: Array<{ question: string; answer: string }>;
     },
-    bottomCta: pickLocalizedObject(row.bottom_cta, row.bottom_cta_en, locale),
+    bottomCta: pickLocalizedObject(row.bottom_cta, row.bottom_cta_en, locale, fallbackToRu),
     isFallbackFromRu:
       locale === 'en' &&
       ((hasText(row.name) && !hasText(row.name_en)) ||
@@ -159,19 +169,23 @@ const mapToDB = (cat: Partial<RentalCategory>, locale: Locale) => {
   return result;
 };
 
-export const loadRentalCategories = async (locale: Locale = 'ru'): Promise<RentalCategory[]> => {
+export const loadRentalCategories = async (
+  locale: Locale = 'ru',
+  fallbackToRu = true
+): Promise<RentalCategory[]> => {
   const { data, error } = await supabase
     .from('rental_categories')
     .select('*')
     .eq('is_published', true)
     .order('sort_order');
   if (error) throw new Error(error.message);
-  return (data ?? []).map((row) => mapFromDB(row as RentalCategoryRow, locale));
+  return (data ?? []).map((row) => mapFromDB(row as RentalCategoryRow, locale, fallbackToRu));
 };
 
 export const loadRentalCategoryBySlug = async (
   slug: string,
-  locale: Locale = 'ru'
+  locale: Locale = 'ru',
+  fallbackToRu = true
 ): Promise<RentalCategory | null> => {
   const { data, error } = await supabase
     .from('rental_categories')
@@ -182,7 +196,7 @@ export const loadRentalCategoryBySlug = async (
     if (error.code === 'PGRST116') return null;
     throw new Error(error.message);
   }
-  return mapFromDB(data as RentalCategoryRow, locale);
+  return mapFromDB(data as RentalCategoryRow, locale, fallbackToRu);
 };
 
 export const upsertRentalCategory = async (
@@ -239,7 +253,7 @@ export const toggleRentalCategoryBlurTitle = async (id: number, showBlurTitle: b
   if (error) throw new Error(error.message);
 };
 
-export const useRentalCategories = (locale: Locale = 'ru') => {
+export const useRentalCategories = (locale: Locale = 'ru', fallbackToRu = true) => {
   const [items, setItems] = useState<RentalCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -248,14 +262,14 @@ export const useRentalCategories = (locale: Locale = 'ru') => {
     setLoading(true);
     setError(null);
     try {
-      const data = await loadRentalCategories(locale);
+      const data = await loadRentalCategories(locale, fallbackToRu);
       setItems(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setLoading(false);
     }
-  }, [locale]);
+  }, [fallbackToRu, locale]);
 
   useEffect(() => {
     void load();
@@ -264,7 +278,7 @@ export const useRentalCategories = (locale: Locale = 'ru') => {
   return { items, loading, error, reload: load };
 };
 
-export const useRentalCategory = (slug: string, locale: Locale = 'ru') => {
+export const useRentalCategory = (slug: string, locale: Locale = 'ru', fallbackToRu = true) => {
   const [item, setItem] = useState<RentalCategory | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -274,14 +288,14 @@ export const useRentalCategory = (slug: string, locale: Locale = 'ru') => {
     setLoading(true);
     setError(null);
     try {
-      const data = await loadRentalCategoryBySlug(slug, locale);
+      const data = await loadRentalCategoryBySlug(slug, locale, fallbackToRu);
       setItem(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setLoading(false);
     }
-  }, [slug, locale]);
+  }, [fallbackToRu, slug, locale]);
 
   useEffect(() => {
     void load();

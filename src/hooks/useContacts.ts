@@ -8,6 +8,7 @@ export const useContacts = (locale: Locale = 'ru') => {
   const resetMutation = useResetContactsMutation();
 
   const contacts = contactsRaw ? mapContactsFromDB(contactsRaw, locale) : null;
+  const editorContacts = contactsRaw ? mapContactsFromDB(contactsRaw, locale, false) : null;
   const row = contactsRaw?.[0];
   const hasText = (value: string | null | undefined): boolean => typeof value === 'string' && value.trim().length > 0;
   const fallbackUsed =
@@ -41,6 +42,7 @@ export const useContacts = (locale: Locale = 'ru') => {
 
   return {
     contacts,
+    editorContacts,
     fallbackUsed,
     loading: isLoading,
     error: error?.message ?? null,

@@ -19,16 +19,16 @@ type ContactRow = Database['public']['Tables']['contacts']['Row'];
 /**
  * Преобразовать кейс из БД в формат приложения.
  */
-export function mapCaseFromDB(row: CaseRow, locale: Locale = 'ru'): CaseItem {
+export function mapCaseFromDB(row: CaseRow, locale: Locale = 'ru', fallbackToRu = true): CaseItem {
   return {
     slug: row.slug,
-    title: locale === 'en' && row.title_en ? row.title_en : row.title,
-    city: locale === 'en' && row.city_en ? row.city_en : row.city ?? '',
-    date: locale === 'en' && row.date_en ? row.date_en : row.date ?? '',
-    format: locale === 'en' && row.format_en ? row.format_en : row.format ?? '',
+    title: locale === 'en' ? (row.title_en ?? (fallbackToRu ? row.title : '')) : row.title,
+    city: locale === 'en' ? (row.city_en ?? (fallbackToRu ? row.city : '') ?? '') : row.city ?? '',
+    date: locale === 'en' ? (row.date_en ?? (fallbackToRu ? row.date : '') ?? '') : row.date ?? '',
+    format: locale === 'en' ? (row.format_en ?? (fallbackToRu ? row.format : '') ?? '') : row.format ?? '',
     services: (row.services ?? []) as CaseItem['services'],
-    summary: locale === 'en' && row.summary_en ? row.summary_en : row.summary ?? '',
-    metrics: (locale === 'en' && row.metrics_en ? row.metrics_en : row.metrics) ?? undefined,
+    summary: locale === 'en' ? (row.summary_en ?? (fallbackToRu ? row.summary : '') ?? '') : row.summary ?? '',
+    metrics: (locale === 'en' ? row.metrics_en ?? (fallbackToRu ? row.metrics : undefined) : row.metrics) ?? undefined,
     images: row.images ?? undefined,
     videos: row.videos ?? undefined,
   };
@@ -82,15 +82,18 @@ export function mapCaseToDB(
 /**
  * Преобразовать категорию из БД в формат приложения.
  */
-export function mapCategoryFromDB(row: CategoryRow, locale: Locale = 'ru'): Category {
+export function mapCategoryFromDB(row: CategoryRow, locale: Locale = 'ru', fallbackToRu = true): Category {
   return {
     id: row.id,
-    title: locale === 'en' && row.title_en ? row.title_en : row.title,
+    title: locale === 'en' ? (row.title_en ?? (fallbackToRu ? row.title : '')) : row.title,
     shortDescription:
-      locale === 'en' && row.short_description_en
-        ? row.short_description_en
+      locale === 'en'
+        ? (row.short_description_en ?? (fallbackToRu ? row.short_description : '') ?? '')
         : row.short_description ?? '',
-    bullets: (locale === 'en' && row.bullets_en?.length ? row.bullets_en : row.bullets) ?? [],
+    bullets:
+      locale === 'en'
+        ? ((row.bullets_en?.length ? row.bullets_en : fallbackToRu ? row.bullets : []) ?? [])
+        : row.bullets ?? [],
     pagePath: row.page_path ?? '',
   };
 }
@@ -127,16 +130,24 @@ export function mapCategoryToDB(cat: Category, locale: Locale = 'ru', forInsert 
 /**
  * Преобразовать пакет из БД в формат приложения.
  */
-export function mapPackageFromDB(row: PackageRow, locale: Locale = 'ru'): Package {
+export function mapPackageFromDB(row: PackageRow, locale: Locale = 'ru', fallbackToRu = true): Package {
   return {
     id: row.id,
-    name: locale === 'en' && row.name_en ? row.name_en : row.name,
-    forFormats: (locale === 'en' && row.for_formats_en?.length ? row.for_formats_en : row.for_formats) ?? [],
-    includes: (locale === 'en' && row.includes_en?.length ? row.includes_en : row.includes) ?? [],
+    name: locale === 'en' ? (row.name_en ?? (fallbackToRu ? row.name : '')) : row.name,
+    forFormats:
+      locale === 'en'
+        ? ((row.for_formats_en?.length ? row.for_formats_en : fallbackToRu ? row.for_formats : []) ?? [])
+        : row.for_formats ?? [],
+    includes:
+      locale === 'en'
+        ? ((row.includes_en?.length ? row.includes_en : fallbackToRu ? row.includes : []) ?? [])
+        : row.includes ?? [],
     options:
-      (locale === 'en' && row.options_en?.length ? row.options_en : row.options) ?? undefined,
+      locale === 'en'
+        ? ((row.options_en?.length ? row.options_en : fallbackToRu ? row.options : undefined) ?? undefined)
+        : row.options ?? undefined,
     priceHint:
-      (locale === 'en' && row.price_hint_en ? row.price_hint_en : row.price_hint) ?? undefined,
+      (locale === 'en' ? row.price_hint_en ?? (fallbackToRu ? row.price_hint : undefined) : row.price_hint) ?? undefined,
   };
 }
 
@@ -206,7 +217,11 @@ export function mapLeadFromDB(row: LeadRow): LeadLog {
 /**
  * Преобразовать контакты из БД в формат приложения.
  */
-export function mapContactsFromDB(rows: ContactRow[], locale: Locale = 'ru'): { phones: string[]; emails: string[]; address: string; workingHours: string; id?: number } {
+export function mapContactsFromDB(
+  rows: ContactRow[],
+  locale: Locale = 'ru',
+  fallbackToRu = true
+): { phones: string[]; emails: string[]; address: string; workingHours: string; id?: number } {
   if (rows.length === 0) {
     return { phones: [], emails: [], address: '', workingHours: '' };
   }
@@ -215,9 +230,11 @@ export function mapContactsFromDB(rows: ContactRow[], locale: Locale = 'ru'): { 
     id: row.id,
     phones: row.phones ?? [],
     emails: row.emails ?? [],
-    address: locale === 'en' && row.address_en ? row.address_en : row.address ?? '',
+    address: locale === 'en' ? (row.address_en ?? (fallbackToRu ? row.address : '') ?? '') : row.address ?? '',
     workingHours:
-      locale === 'en' && row.working_hours_en ? row.working_hours_en : row.working_hours ?? '',
+      locale === 'en'
+        ? (row.working_hours_en ?? (fallbackToRu ? row.working_hours : '') ?? '')
+        : row.working_hours ?? '',
   };
 }
 

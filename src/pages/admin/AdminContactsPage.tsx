@@ -37,7 +37,7 @@ const splitLines = (value: string) =>
 const AdminContactsPage = () => {
   const { adminLocale, adminContentLocale, setAdminContentLocale } = useI18n();
   const adminContactsPageContent = getAdminContactsPageContent(adminLocale);
-  const { contacts, fallbackUsed, loading, update, resetToDefault } = useContacts(adminContentLocale);
+  const { contacts, editorContacts, fallbackUsed, loading, update, resetToDefault } = useContacts(adminContentLocale);
   const [resetModalOpen, setResetModalOpen] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
 
@@ -69,18 +69,18 @@ const AdminContactsPage = () => {
   }, [adminContentLocale, reset]);
 
   useEffect(() => {
-    if (!isHydrated || loading || !contacts) return;
+    if (!isHydrated || loading || !editorContacts) return;
     if (hasContactsDraft) return;
     if (isInitialized) return;
 
     reset({
-      phonesText: contacts.phones.join('\n'),
-      emailsText: contacts.emails.join('\n'),
-      address: contacts.address,
-      workingHours: contacts.workingHours,
+      phonesText: editorContacts.phones.join('\n'),
+      emailsText: editorContacts.emails.join('\n'),
+      address: editorContacts.address,
+      workingHours: editorContacts.workingHours,
     });
     setIsInitialized(true);
-  }, [contacts, hasContactsDraft, isHydrated, loading, reset, isInitialized]);
+  }, [editorContacts, hasContactsDraft, isHydrated, loading, reset, isInitialized]);
 
   const onSubmit = async (values: FormValues) => {
     const ok = await update({

@@ -166,7 +166,7 @@ const AdminRentalCategoryEditPage = () => {
       setLoading(true);
       setFallbackUsed(false);
       try {
-        const all = await loadRentalCategories(adminContentLocale);
+        const all = await loadRentalCategories(adminContentLocale, false);
         const cat = all.find((c) => c.id === Number(id));
         if (!cat) {
           toast.error(adminRentalCategoryEditContent.toasts.notFound);

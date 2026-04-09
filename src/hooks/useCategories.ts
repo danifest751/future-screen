@@ -26,6 +26,11 @@ export const useCategories = (locale: Locale = 'ru') => {
   const resetMutation = useResetCategoriesMutation();
 
   const categories: Category[] = categoriesRaw?.map((row) => mapCategoryFromDB(row, locale)) ?? [];
+  const getEditorCategory = (id: Category['id']): Category | null => {
+    const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
+    const row = categoriesRaw?.find((item) => item.id === numericId);
+    return row ? mapCategoryFromDB(row, locale, false) : null;
+  };
   const fallbackById = Object.fromEntries(
     (categoriesRaw ?? []).map((row) => [String(row.id), isCategoryFallbackFromRu(row, locale)])
   ) as Record<string, boolean>;
@@ -61,6 +66,7 @@ export const useCategories = (locale: Locale = 'ru') => {
 
   return {
     categories,
+    getEditorCategory,
     fallbackById,
     loading: isLoading,
     error: error?.message ?? null,

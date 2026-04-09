@@ -44,7 +44,7 @@ const splitList = (value: string) =>
 const AdminCategoriesPage = () => {
   const { adminLocale, adminContentLocale, setAdminContentLocale } = useI18n();
   const adminCategoriesPageContent = getAdminCategoriesPageContent(adminLocale);
-  const { categories, fallbackById, upsert, remove, resetToDefault } = useCategories(adminContentLocale);
+  const { categories, getEditorCategory, fallbackById, upsert, remove, resetToDefault } = useCategories(adminContentLocale);
   const [editingId, setEditingId] = useState<Category['id'] | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
   const [resetModalOpen, setResetModalOpen] = useState(false);
@@ -74,7 +74,7 @@ const AdminCategoriesPage = () => {
   React.useEffect(() => {
     if (editingId === null) return;
 
-    const currentItem = categories.find((item) => item.id === editingId);
+    const currentItem = getEditorCategory(editingId);
     if (!currentItem) return;
 
     reset({
@@ -84,7 +84,7 @@ const AdminCategoriesPage = () => {
       bulletsText: currentItem.bullets.join('\n'),
       pagePath: currentItem.pagePath,
     });
-  }, [categories, editingId, reset]);
+  }, [editingId, getEditorCategory, reset]);
 
   const onSubmit = async (values: FormValues) => {
     const payload: Category = {
@@ -108,13 +108,14 @@ const AdminCategoriesPage = () => {
   };
 
   const startEdit = (item: Category) => {
+    const editorItem = getEditorCategory(item.id) ?? item;
     setEditingId(item.id);
     reset({
-      id: item.id,
-      title: item.title,
-      shortDescription: item.shortDescription,
-      bulletsText: item.bullets.join('\n'),
-      pagePath: item.pagePath,
+      id: editorItem.id,
+      title: editorItem.title,
+      shortDescription: editorItem.shortDescription,
+      bulletsText: editorItem.bullets.join('\n'),
+      pagePath: editorItem.pagePath,
     });
   };
 

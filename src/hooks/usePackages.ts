@@ -28,6 +28,11 @@ export const usePackages = (locale: Locale = 'ru') => {
   const resetMutation = useResetPackagesMutation();
 
   const packages: Package[] = packagesRaw?.map((row) => mapPackageFromDB(row, locale)) ?? [];
+  const getEditorPackage = (id: Package['id']): Package | null => {
+    const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
+    const row = packagesRaw?.find((item) => item.id === numericId);
+    return row ? mapPackageFromDB(row, locale, false) : null;
+  };
   const fallbackById = Object.fromEntries(
     (packagesRaw ?? []).map((row) => [String(row.id), isPackageFallbackFromRu(row, locale)])
   ) as Record<string, boolean>;
@@ -63,6 +68,7 @@ export const usePackages = (locale: Locale = 'ru') => {
 
   return {
     packages,
+    getEditorPackage,
     fallbackById,
     loading: isLoading,
     error: error?.message ?? null,
