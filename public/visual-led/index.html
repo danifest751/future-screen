@@ -1497,13 +1497,17 @@ async function addBackground(src, name) {
   }
 }
 
-function addVideo(src, name) {
+async function addVideo(src, name) {
   const video = document.createElement("video");
+  video.src = src;
   video.muted = true;
   video.loop = true;
   video.playsInline = true;
   video.preload = "auto";
-  video.src = src;
+  await new Promise((resolve) => {
+    video.onloadedmetadata = resolve;
+    video.onerror = resolve;
+  });
   video.play().catch(() => {});
   state.videos.push({ id: uid("vid"), name, src, videoEl: video });
 }
@@ -1535,11 +1539,11 @@ async function importBackgroundFiles(files) {
   }
 }
 
-function importVideoFiles(files) {
+async function importVideoFiles(files) {
   const videoFiles = Array.from(files || []).filter((f) => f.type.startsWith("video/"));
   for (const file of videoFiles) {
     const src = URL.createObjectURL(file);
-    addVideo(src, file.name);
+    await addVideo(src, file.name);
   }
   if (videoFiles.length) {
     refreshVideoList();
@@ -1980,12 +1984,28 @@ function animationTick() {
   requestAnimationFrame(animationTick);
 }
 
+async function loadPresetVideos() {
+  const presets = [
+    "assets/test/videos/demo_neon_bars.mp4",
+    "assets/test/videos/demo_wave_grid.mp4",
+    "assets/test/videos/demo_pulse_rings.mp4",
+  ];
+  for (const p of presets) {
+    try {
+      await addVideo(p, p.split("/").at(-1));
+    } catch (_err) {
+      // ignore absent preset files
+    }
+  }
+}
+
 (async function init() {
   ui.toggleCabinetGrid.checked = true;
   updateToolStatus("ожидание");
   updateScaleStatus();
   updateScreensCount();
   updateSelectionInfo();
+  await loadPresetVideos();
   refreshBackgroundThumbs();
   refreshVideoList();
   render();
