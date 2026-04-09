@@ -7,7 +7,6 @@ import AdminLayout from '../../components/admin/AdminLayout';
 import { Button, EmptyState, FallbackDot, Field, Input, Textarea } from '../../components/admin/ui';
 import { FileText } from 'lucide-react';
 import { usePrivacyPolicy } from '../../hooks/usePrivacyPolicy';
-import { useFormDraftPersistence } from '../../hooks/useFormDraftPersistence';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 import Markdown from 'markdown-to-jsx';
 import { sanitizeMarkdown } from '../../lib/sanitize';
@@ -56,23 +55,28 @@ const AdminPrivacyPolicyPage = () => {
   const currentFontSize = watch('fontSize') || '1rem';
   const fontSizeIndex = fontSizes.indexOf(currentFontSize) >= 0 ? fontSizes.indexOf(currentFontSize) : 1;
 
-  const { clearDraft: clearFormDraft, hasDraft: hasFormDraft, isHydrated } = useFormDraftPersistence<FormValues>({
-    enabled: true,
-    storageKey: `admin-privacy-policy-draft-v2-${adminContentLocale}`,
-    reset,
-    watch,
-  });
-
   useUnsavedChangesGuard(isDirty);
 
   useEffect(() => {
     setLastSaved(null);
-    void clearFormDraft();
     reset(defaultValues);
-  }, [adminContentLocale, clearFormDraft, reset]);
+  }, [adminContentLocale, reset]);
 
   useEffect(() => {
-    if (!isHydrated || !content) return;
+    // Clear legacy draft keys so locale switch always reflects current DB locale values.
+    localStorage.removeItem('admin-privacy-policy-draft-ru');
+    localStorage.removeItem('admin-privacy-policy-draft-en');
+    localStorage.removeItem('admin-privacy-policy-draft-v2-ru');
+    localStorage.removeItem('admin-privacy-policy-draft-v2-en');
+    localStorage.removeItem('admin-privacy-policy-draft-v3-ru');
+    localStorage.removeItem('admin-privacy-policy-draft-v3-en');
+  }, []);
+
+  useEffect(() => {
+    if (!content) {
+      reset(defaultValues);
+      return;
+    }
 
     reset({
       title: content.title || '',
@@ -85,7 +89,13 @@ const AdminPrivacyPolicyPage = () => {
     if (content.updatedAt) {
       setLastSaved(new Date(content.updatedAt).toLocaleString(localeTag));
     }
-  }, [content, isHydrated, localeTag, reset]);
+  }, [content, localeTag, reset]);
+
+  const sourceLabel = adminContentLocale === 'en'
+    ? fallbackUsed
+      ? 'Source: RU fallback'
+      : 'Source: EN locale'
+    : 'Source: RU locale';
 
   const onSubmit = async (values: FormValues) => {
     const ok = await save({
@@ -98,7 +108,6 @@ const AdminPrivacyPolicyPage = () => {
 
     if (ok) {
       toast.success(adminPrivacyPolicyContent.toasts.saveSuccess);
-      clearFormDraft();
       setLastSaved(new Date().toLocaleString(localeTag));
     } else {
       toast.error(adminPrivacyPolicyContent.toasts.saveError);
@@ -134,11 +143,9 @@ const AdminPrivacyPolicyPage = () => {
               <h2 className="text-xl font-semibold text-white">{adminPrivacyPolicyContent.editor.title}</h2>
               <FallbackDot visible={adminContentLocale === 'en' && fallbackUsed} locale={adminContentLocale} />
             </div>
-            {isHydrated && hasFormDraft && (
-              <span className="rounded-full border border-brand-500/40 bg-brand-500/10 px-2 py-0.5 text-xs text-brand-100">
-                {adminPrivacyPolicyContent.editor.restoredDraft}
-              </span>
-            )}
+            <span className="rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-xs text-slate-300">
+              {sourceLabel}
+            </span>
             {isDirty && (
               <span className="rounded-full border border-amber-400/40 bg-amber-500/10 px-2 py-0.5 text-xs text-amber-200">
                 {adminPrivacyPolicyContent.editor.unsavedChanges}
