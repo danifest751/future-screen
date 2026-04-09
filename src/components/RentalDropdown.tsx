@@ -61,7 +61,7 @@ interface RentalDropdownProps {
 export const RentalDropdown = ({ isOpen, onClose }: RentalDropdownProps) => {
   const { siteLocale } = useI18n();
   const rentalDropdownContent = getRentalDropdownContent(siteLocale);
-  const { items, loading } = useRentalCategories(siteLocale);
+  const { items, loading } = useRentalCategories(siteLocale, false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

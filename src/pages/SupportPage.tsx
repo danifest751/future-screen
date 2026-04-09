@@ -8,7 +8,7 @@ import { usePackages } from '../hooks/usePackages';
 
 const SupportPage = () => {
   const { siteLocale } = useI18n();
-  const { packages, loading } = usePackages(siteLocale);
+  const { packages, loading } = usePackages(siteLocale, false);
   const supportPageContent = getSupportPageContent(siteLocale);
 
   return (

@@ -9,7 +9,7 @@ import { getRentPageContent } from '../content/pages/rent';
 
 const RentPage = () => {
   const { siteLocale } = useI18n();
-  const { items, loading, error } = useRentalCategories(siteLocale);
+  const { items, loading, error } = useRentalCategories(siteLocale, false);
   const rentPageContent = getRentPageContent(siteLocale);
   const { seo, hero, checklist, form } = rentPageContent;
 

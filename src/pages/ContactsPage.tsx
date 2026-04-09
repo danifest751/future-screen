@@ -35,7 +35,7 @@ const ClockIcon = () => (
 const ContactsPage = () => {
   const { siteLocale } = useI18n();
   const contactsPageContent = getContactsPageContent(siteLocale);
-  const { contacts, loading, error } = useContacts(siteLocale);
+  const { contacts, loading, error } = useContacts(siteLocale, false);
 
   return (
     <div className="space-y-2">

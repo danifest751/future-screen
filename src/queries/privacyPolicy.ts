@@ -31,12 +31,12 @@ export function usePrivacyPolicyQuery(locale: Locale = 'ru') {
 
       return {
         ...row,
-        title: row.title_en ?? row.title,
-        content: row.content_en ?? row.content,
-        content_html: row.content_html_en ?? row.content_html,
-        meta_title: row.meta_title_en ?? row.meta_title,
-        meta_description: row.meta_description_en ?? row.meta_description,
-        font_size: row.font_size_en ?? row.font_size,
+        title: row.title_en,
+        content: row.content_en,
+        content_html: row.content_html_en,
+        meta_title: row.meta_title_en,
+        meta_description: row.meta_description_en,
+        font_size: row.font_size_en,
       } as SiteContentRow;
     },
   });

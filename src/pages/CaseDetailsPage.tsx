@@ -12,7 +12,7 @@ import { getCasesPageContent } from '../content/pages/cases';
 const CaseDetailsPage = () => {
   const { siteLocale } = useI18n();
   const { slug } = useParams();
-  const { cases } = useCases(siteLocale);
+  const { cases } = useCases(siteLocale, false);
   const item = cases.find((c) => c.slug === slug);
   const casesPageContent = getCasesPageContent(siteLocale);
   const { details } = casesPageContent;

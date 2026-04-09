@@ -19,13 +19,13 @@ const isCategoryFallbackFromRu = (row: CategoryRow, locale: Locale): boolean => 
   );
 };
 
-export const useCategories = (locale: Locale = 'ru') => {
+export const useCategories = (locale: Locale = 'ru', fallbackToRu = true) => {
   const { data: categoriesRaw, isLoading, error } = useCategoriesQuery(locale);
   const upsertMutation = useUpsertCategoryMutation(locale);
   const deleteMutation = useDeleteCategoryMutation();
   const resetMutation = useResetCategoriesMutation();
 
-  const categories: Category[] = categoriesRaw?.map((row) => mapCategoryFromDB(row, locale)) ?? [];
+  const categories: Category[] = categoriesRaw?.map((row) => mapCategoryFromDB(row, locale, fallbackToRu)) ?? [];
   const getEditorCategory = (id: Category['id']): Category | null => {
     const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
     const row = categoriesRaw?.find((item) => item.id === numericId);

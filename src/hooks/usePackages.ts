@@ -21,13 +21,13 @@ const isPackageFallbackFromRu = (row: PackageRow, locale: Locale): boolean => {
   );
 };
 
-export const usePackages = (locale: Locale = 'ru') => {
+export const usePackages = (locale: Locale = 'ru', fallbackToRu = true) => {
   const { data: packagesRaw, isLoading, error } = usePackagesQuery(locale);
   const upsertMutation = useUpsertPackageMutation(locale);
   const deleteMutation = useDeletePackageMutation();
   const resetMutation = useResetPackagesMutation();
 
-  const packages: Package[] = packagesRaw?.map((row) => mapPackageFromDB(row, locale)) ?? [];
+  const packages: Package[] = packagesRaw?.map((row) => mapPackageFromDB(row, locale, fallbackToRu)) ?? [];
   const getEditorPackage = (id: Package['id']): Package | null => {
     const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
     const row = packagesRaw?.find((item) => item.id === numericId);

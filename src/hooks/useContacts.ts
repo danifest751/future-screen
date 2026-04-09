@@ -2,12 +2,12 @@ import { useContactsQuery, useUpdateContactsMutation, useResetContactsMutation }
 import { mapContactsFromDB, mapContactsToDB } from '../lib/mappers';
 import type { Locale } from '../i18n/types';
 
-export const useContacts = (locale: Locale = 'ru') => {
+export const useContacts = (locale: Locale = 'ru', fallbackToRu = true) => {
   const { data: contactsRaw, isLoading, error } = useContactsQuery(locale);
   const updateMutation = useUpdateContactsMutation(locale);
   const resetMutation = useResetContactsMutation();
 
-  const contacts = contactsRaw ? mapContactsFromDB(contactsRaw, locale) : null;
+  const contacts = contactsRaw ? mapContactsFromDB(contactsRaw, locale, fallbackToRu) : null;
   const editorContacts = contactsRaw ? mapContactsFromDB(contactsRaw, locale, false) : null;
   const row = contactsRaw?.[0];
   const hasText = (value: string | null | undefined): boolean => typeof value === 'string' && value.trim().length > 0;

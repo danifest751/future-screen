@@ -21,14 +21,14 @@ const isCaseFallbackFromRu = (row: CaseRow, locale: Locale): boolean => {
   );
 };
 
-export const useCases = (locale: Locale = 'ru') => {
+export const useCases = (locale: Locale = 'ru', fallbackToRu = true) => {
   const { data: casesRaw, isLoading, error } = useCasesQuery(locale);
   const createMutation = useCreateCaseMutation(locale);
   const updateMutation = useUpdateCaseMutation(locale);
   const deleteMutation = useDeleteCaseMutation();
   const resetMutation = useResetCasesMutation();
 
-  const cases: CaseItem[] = casesRaw?.map((row) => mapCaseFromDB(row, locale)) ?? [];
+  const cases: CaseItem[] = casesRaw?.map((row) => mapCaseFromDB(row, locale, fallbackToRu)) ?? [];
   const getEditorCase = (slug: string): CaseItem | null => {
     const row = casesRaw?.find((item) => item.slug === slug);
     return row ? mapCaseFromDB(row, locale, false) : null;

@@ -16,7 +16,7 @@ import { getRentalCategoryPageContent } from '../content/pages/rentalCategory';
 const RentalCategoryPage = () => {
   const { siteLocale } = useI18n();
   const { slug } = useParams<{ slug: string }>();
-  const { item: category, loading, error } = useRentalCategory(slug ?? '', siteLocale);
+  const { item: category, loading, error } = useRentalCategory(slug ?? '', siteLocale, false);
   const rentalCategoryPageContent = getRentalCategoryPageContent(siteLocale);
 
   // Scroll to top on mount
