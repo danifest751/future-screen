@@ -71,12 +71,20 @@ const AdminPackagesPage = () => {
   useUnsavedChangesGuard(isDirty);
 
   React.useEffect(() => {
-    setEditingId(null);
-    setDeleteTarget(null);
-    setResetModalOpen(false);
-    setSearch('');
-    reset(defaultValues);
-  }, [adminContentLocale, reset]);
+    if (editingId === null) return;
+
+    const currentItem = packages.find((item) => item.id === editingId);
+    if (!currentItem) return;
+
+    reset({
+      id: currentItem.id,
+      name: currentItem.name,
+      forFormatsText: currentItem.forFormats.join('\n'),
+      includesText: currentItem.includes.join('\n'),
+      optionsText: (currentItem.options ?? []).join('\n'),
+      priceHint: currentItem.priceHint ?? '',
+    });
+  }, [editingId, packages, reset]);
 
   const onSubmit = async (values: FormValues) => {
     const payload: Package = {

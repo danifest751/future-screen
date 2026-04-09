@@ -72,12 +72,19 @@ const AdminCategoriesPage = () => {
   useUnsavedChangesGuard(isDirty);
 
   React.useEffect(() => {
-    setEditingId(null);
-    setDeleteTarget(null);
-    setResetModalOpen(false);
-    setSearch('');
-    reset(defaultValues);
-  }, [adminContentLocale, reset]);
+    if (editingId === null) return;
+
+    const currentItem = categories.find((item) => item.id === editingId);
+    if (!currentItem) return;
+
+    reset({
+      id: currentItem.id,
+      title: currentItem.title,
+      shortDescription: currentItem.shortDescription,
+      bulletsText: currentItem.bullets.join('\n'),
+      pagePath: currentItem.pagePath,
+    });
+  }, [categories, editingId, reset]);
 
   const onSubmit = async (values: FormValues) => {
     const payload: Category = {

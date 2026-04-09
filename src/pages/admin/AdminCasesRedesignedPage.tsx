@@ -135,15 +135,22 @@ const AdminCasesRedesignedPage = () => {
   useUnsavedChangesGuard(isDirty);
 
   useEffect(() => {
-    setCaseEditing(null);
-    setEditingCaseId(null);
-    setSelectedMedia([]);
-    setDeleteTarget(null);
-    setResetModalOpen(false);
-    setAutoSlug(true);
-    setSearchQuery('');
-    reset(defaultValues);
-  }, [adminContentLocale, reset]);
+    if (!caseEditing) return;
+
+    const currentCase = cases.find((item) => item.slug === caseEditing);
+    if (!currentCase) return;
+
+    reset({
+      slug: currentCase.slug,
+      title: currentCase.title,
+      city: currentCase.city,
+      date: currentCase.date,
+      format: currentCase.format,
+      summary: currentCase.summary,
+      metrics: currentCase.metrics ?? '',
+      servicesText: currentCase.services.join(', '),
+    });
+  }, [caseEditing, cases, reset]);
 
   useEffect(() => {
     if (caseMediaLinks && caseMediaLinks.length > 0) {
