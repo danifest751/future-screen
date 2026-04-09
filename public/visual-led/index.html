@@ -4,7 +4,394 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Future Screen - Perspective Planner</title>
-  <link rel="stylesheet" href="./app.css" />
+  <style>
+﻿:root {
+  --bg: #edf2f8;
+  --surface: #ffffff;
+  --ink: #1b2434;
+  --muted: #5f6880;
+  --line: #d8dfec;
+  --accent: #0b7a70;
+  --accent-soft: #e9f8f4;
+  --danger: #b23b3b;
+  --ring: rgba(11, 122, 112, 0.28);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", "Tahoma", sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 10% 0%, #dde8fb 0, transparent 40%),
+    radial-gradient(circle at 90% 100%, #e4f6f1 0, transparent 35%),
+    var(--bg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.app-shell {
+  height: 100vh;
+  display: grid;
+  grid-template-columns: 292px 1fr 258px;
+  gap: 10px;
+  padding: 10px;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+}
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-shadow: 0 1px 0 rgba(17, 24, 39, 0.02), 0 6px 20px rgba(17, 24, 39, 0.04);
+}
+
+.panel h2 {
+  margin: 0 0 7px;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.i {
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+.helper {
+  margin: 0 0 7px;
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 6px;
+  font-size: 12px;
+}
+
+.inline-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 6px;
+}
+
+.inline-row .grow {
+  margin-bottom: 0;
+}
+
+.action.compact {
+  width: auto;
+  min-width: 82px;
+  white-space: nowrap;
+}
+
+.check-row {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  margin-bottom: 0;
+  font-size: 12px;
+}
+
+.check-row input[type="checkbox"] {
+  margin: 0;
+  width: 14px;
+  height: 14px;
+}
+
+input[type="number"],
+select {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 7px;
+  font-size: 12px;
+  background: #fff;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+input[type="number"]:focus,
+select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--ring);
+  outline: none;
+}
+
+.upload-btn,
+.action {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 7px 8px;
+  background: #fff;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  transition: border-color 120ms ease, background-color 120ms ease, box-shadow 120ms ease, transform 80ms ease;
+}
+
+.upload-btn:hover,
+.action:hover {
+  border-color: #bfcbe2;
+  background: #fcfdff;
+}
+
+.upload-btn:active,
+.action:active {
+  transform: translateY(1px);
+}
+
+.upload-btn:focus-visible,
+.action:focus-visible,
+.screen-item:focus-visible,
+.thumb:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--ring);
+}
+
+.upload-btn input {
+  display: none;
+}
+
+.secondary {
+  margin-top: 6px;
+  background: #f6f8fc;
+}
+
+.danger {
+  background: #fff3f3;
+  border-color: #f1cccc;
+  color: var(--danger);
+}
+
+.status {
+  margin-top: 7px;
+  padding: 8px;
+  border: 1px dashed #c9d3e7;
+  border-radius: 8px;
+  font-size: 11px;
+  color: var(--muted);
+  background: #f8faff;
+  line-height: 1.35;
+}
+
+.screen-list {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 120px;
+  overflow: auto;
+}
+
+.screen-item {
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 7px;
+  padding: 6px 7px;
+  font-size: 11px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+.screen-item.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.screen-item small {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  margin-top: 2px;
+}
+
+.split-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.mini {
+  padding: 6px;
+  font-size: 11px;
+}
+
+.thumb-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  max-height: calc(100vh - 220px);
+  overflow: auto;
+  padding-right: 2px;
+}
+
+#backgroundPanel.drag-over,
+#canvasWrap.drag-over {
+  outline: 2px dashed var(--accent);
+  outline-offset: -3px;
+  background: #edf9f5;
+}
+
+.thumb {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f9fbff;
+  cursor: pointer;
+  display: grid;
+  grid-template-columns: 58px 1fr;
+  align-items: center;
+  gap: 6px;
+  padding: 4px;
+  text-align: left;
+  transition: border-color 120ms ease, background-color 120ms ease, box-shadow 120ms ease;
+}
+
+.thumb.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(11, 122, 112, 0.18);
+  background: var(--accent-soft);
+}
+
+.thumb img {
+  width: 58px;
+  height: 36px;
+  object-fit: cover;
+  display: block;
+  border-radius: 6px;
+  border: 1px solid #dbe4f6;
+}
+
+.thumb .name {
+  font-size: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stage-area {
+  min-width: 0;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 1px 0 rgba(17, 24, 39, 0.02), 0 6px 20px rgba(17, 24, 39, 0.04);
+}
+
+.stage-header {
+  border-bottom: 1px solid var(--line);
+  padding: 9px 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.stage-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.zoom-tools {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.zoom-tools .action.mini {
+  width: auto;
+  min-width: 34px;
+  padding: 5px 8px;
+}
+
+.title {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.tool-status {
+  font-size: 11px;
+  color: var(--muted);
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: #f4f7ff;
+  border: 1px solid #dbe4f8;
+}
+
+.canvas-wrap {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  overflow: auto;
+  background-image:
+    linear-gradient(180deg, rgba(23, 38, 66, 0.03), rgba(23, 38, 66, 0.01)),
+    radial-gradient(circle at 20% 0, rgba(23, 38, 66, 0.04), transparent 35%);
+}
+
+#editorCanvas {
+  border: 1px solid #c7d0e4;
+  background: #f1f4fa;
+  max-width: 100%;
+  max-height: 100%;
+  box-shadow: 0 8px 28px rgba(20, 33, 61, 0.08);
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: #c9d3e4;
+  border-radius: 10px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: #b5c2da;
+}
+
+@media (max-width: 1260px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .canvas-wrap {
+    min-height: 420px;
+  }
+}
+
+</style>
 </head>
 <body>
   <div class="app-shell">
@@ -148,6 +535,1505 @@
     </aside>
   </div>
 
-  <script src="./app.js"></script>
+  <script>
+﻿const canvas = document.getElementById("editorCanvas");
+const ctx = canvas.getContext("2d");
+
+const ui = {
+  backgroundUpload: document.getElementById("backgroundUpload"),
+  backgroundThumbs: document.getElementById("backgroundThumbs"),
+  backgroundPanel: document.getElementById("backgroundPanel"),
+  canvasWrap: document.getElementById("canvasWrap"),
+  videoUpload: document.getElementById("videoUpload"),
+  videoList: document.getElementById("videoList"),
+  clearScreenVideoBtn: document.getElementById("clearScreenVideoBtn"),
+  knownLengthMeters: document.getElementById("knownLengthMeters"),
+  startScaleBtn: document.getElementById("startScaleBtn"),
+  startAddScreenBtn: document.getElementById("startAddScreenBtn"),
+  cancelToolBtn: document.getElementById("cancelToolBtn"),
+  exportReportBtn: document.getElementById("exportReportBtn"),
+  copySceneBtn: document.getElementById("copySceneBtn"),
+  clipboardStatus: document.getElementById("clipboardStatus"),
+  deleteSelectedBtn: document.getElementById("deleteSelectedBtn"),
+  screenWidthMeters: document.getElementById("screenWidthMeters"),
+  screenHeightMeters: document.getElementById("screenHeightMeters"),
+  applyScreenSizeBtn: document.getElementById("applyScreenSizeBtn"),
+  pixelPitchSelect: document.getElementById("pixelPitchSelect"),
+  fitScreenToCabinetsBtn: document.getElementById("fitScreenToCabinetsBtn"),
+  toggleCabinetGrid: document.getElementById("toggleCabinetGrid"),
+  cabinetAutoFillBtn: document.getElementById("cabinetAutoFillBtn"),
+  cabinetAddColBtn: document.getElementById("cabinetAddColBtn"),
+  cabinetRemoveColBtn: document.getElementById("cabinetRemoveColBtn"),
+  cabinetAddRowBtn: document.getElementById("cabinetAddRowBtn"),
+  cabinetRemoveRowBtn: document.getElementById("cabinetRemoveRowBtn"),
+  cabinetClearBtn: document.getElementById("cabinetClearBtn"),
+  cabinetStatus: document.getElementById("cabinetStatus"),
+  cabinetCountInfo: document.getElementById("cabinetCountInfo"),
+  cabinetResolutionInfo: document.getElementById("cabinetResolutionInfo"),
+  zoomOutBtn: document.getElementById("zoomOutBtn"),
+  zoomResetBtn: document.getElementById("zoomResetBtn"),
+  zoomInBtn: document.getElementById("zoomInBtn"),
+  scaleStatus: document.getElementById("scaleStatus"),
+  screensCount: document.getElementById("screensCount"),
+  screensList: document.getElementById("screensList"),
+  selectionInfo: document.getElementById("selectionInfo"),
+  toolStatus: document.getElementById("toolStatus"),
+};
+
+const state = {
+  backgrounds: [],
+  videos: [],
+  activeBackgroundId: null,
+  elements: [],
+  selectedElementId: null,
+  drag: null,
+  scaleCalib: null,
+  tool: null,
+  showCabinetGrid: true,
+  view: {
+    scale: 1,
+    minScale: 0.35,
+    maxScale: 6,
+    offsetX: 0,
+    offsetY: 0,
+  },
+  keys: {
+    spaceDown: false,
+  },
+  showStatsOverlay: true,
+};
+
+function uid(prefix = "id") {
+  return `${prefix}_${Date.now()}_${Math.random().toString(16).slice(2, 8)}`;
+}
+
+function createImage(src) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = reject;
+    image.src = src;
+  });
+}
+
+function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function activeBackground() {
+  return state.backgrounds.find((it) => it.id === state.activeBackgroundId) || null;
+}
+
+function getVideoById(id) {
+  return state.videos.find((v) => v.id === id) || null;
+}
+
+function selectedElement() {
+  return state.elements.find((it) => it.id === state.selectedElementId) || null;
+}
+
+function setCanvasFromImage(img) {
+  const maxW = 1600;
+  const maxH = 900;
+  const s = Math.min(maxW / img.naturalWidth, maxH / img.naturalHeight, 1);
+  canvas.width = Math.max(640, Math.round(img.naturalWidth * s));
+  canvas.height = Math.max(360, Math.round(img.naturalHeight * s));
+  resetView();
+}
+
+function distance(a, b) {
+  return Math.hypot(a.x - b.x, a.y - b.y);
+}
+
+function pointInTriangle(p, a, b, c) {
+  const sign = (p1, p2, p3) => (p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y);
+  const d1 = sign(p, a, b);
+  const d2 = sign(p, b, c);
+  const d3 = sign(p, c, a);
+  const hasNeg = d1 < 0 || d2 < 0 || d3 < 0;
+  const hasPos = d1 > 0 || d2 > 0 || d3 > 0;
+  return !(hasNeg && hasPos);
+}
+
+function pointInQuad(p, corners) {
+  return pointInTriangle(p, corners[0], corners[1], corners[2]) || pointInTriangle(p, corners[0], corners[2], corners[3]);
+}
+
+function getPointer(event) {
+  const rect = canvas.getBoundingClientRect();
+  const sx = ((event.clientX - rect.left) * canvas.width) / rect.width;
+  const sy = ((event.clientY - rect.top) * canvas.height) / rect.height;
+  return {
+    x: (sx - state.view.offsetX) / state.view.scale,
+    y: (sy - state.view.offsetY) / state.view.scale,
+  };
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function resetView() {
+  state.view.scale = 1;
+  state.view.offsetX = 0;
+  state.view.offsetY = 0;
+}
+
+function zoomAt(canvasX, canvasY, factor) {
+  const prevScale = state.view.scale;
+  const nextScale = clamp(prevScale * factor, state.view.minScale, state.view.maxScale);
+  if (Math.abs(nextScale - prevScale) < 1e-6) {
+    return;
+  }
+  const wx = (canvasX - state.view.offsetX) / prevScale;
+  const wy = (canvasY - state.view.offsetY) / prevScale;
+  state.view.scale = nextScale;
+  state.view.offsetX = canvasX - wx * nextScale;
+  state.view.offsetY = canvasY - wy * nextScale;
+}
+
+function getPixelsPerCabinetSide() {
+  const pitch = ui.pixelPitchSelect?.value || "2.6";
+  if (pitch === "1.9") {
+    return 256; // Absen NT1.9 V2, panel 500x500
+  }
+  return 192; // Absen NT2.6 V2, panel 500x500
+}
+
+function findCornerHit(element, p, radius = 10) {
+  const r = radius / state.view.scale;
+  for (let i = 0; i < 4; i += 1) {
+    if (distance(element.corners[i], p) <= r) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+function orderQuadPoints(points) {
+  const center = points.reduce((acc, p) => ({ x: acc.x + p.x / 4, y: acc.y + p.y / 4 }), { x: 0, y: 0 });
+  const sorted = [...points].sort((p1, p2) => Math.atan2(p1.y - center.y, p1.x - center.x) - Math.atan2(p2.y - center.y, p2.x - center.x));
+  let idx = 0;
+  let best = Number.POSITIVE_INFINITY;
+  for (let i = 0; i < 4; i += 1) {
+    const score = sorted[i].x + sorted[i].y;
+    if (score < best) {
+      best = score;
+      idx = i;
+    }
+  }
+  const r = [sorted[idx], sorted[(idx + 1) % 4], sorted[(idx + 2) % 4], sorted[(idx + 3) % 4]];
+  const cross = (r[1].x - r[0].x) * (r[2].y - r[1].y) - (r[1].y - r[0].y) * (r[2].x - r[1].x);
+  return cross < 0 ? [r[0], r[3], r[2], r[1]] : r;
+}
+
+function quadPoint(corners, u, v) {
+  const tl = corners[0];
+  const tr = corners[1];
+  const br = corners[2];
+  const bl = corners[3];
+  return {
+    x: (1 - u) * (1 - v) * tl.x + u * (1 - v) * tr.x + u * v * br.x + (1 - u) * v * bl.x,
+    y: (1 - u) * (1 - v) * tl.y + u * (1 - v) * tr.y + u * v * br.y + (1 - u) * v * bl.y,
+  };
+}
+
+function applyAffineForTriangle(sx0, sy0, sx1, sy1, sx2, sy2, dx0, dy0, dx1, dy1, dx2, dy2) {
+  const den = sx0 * (sy1 - sy2) + sx1 * (sy2 - sy0) + sx2 * (sy0 - sy1);
+  if (Math.abs(den) < 1e-6) {
+    return;
+  }
+  const a = (dx0 * (sy1 - sy2) + dx1 * (sy2 - sy0) + dx2 * (sy0 - sy1)) / den;
+  const b = (dy0 * (sy1 - sy2) + dy1 * (sy2 - sy0) + dy2 * (sy0 - sy1)) / den;
+  const c = (dx0 * (sx2 - sx1) + dx1 * (sx0 - sx2) + dx2 * (sx1 - sx0)) / den;
+  const d = (dy0 * (sx2 - sx1) + dy1 * (sx0 - sx2) + dy2 * (sx1 - sx0)) / den;
+  const e =
+    (dx0 * (sx1 * sy2 - sx2 * sy1) + dx1 * (sx2 * sy0 - sx0 * sy2) + dx2 * (sx0 * sy1 - sx1 * sy0)) /
+    den;
+  const f =
+    (dy0 * (sx1 * sy2 - sx2 * sy1) + dy1 * (sx2 * sy0 - sx0 * sy2) + dy2 * (sx0 * sy1 - sx1 * sy0)) /
+    den;
+  ctx.transform(a, b, c, d, e, f);
+}
+
+function drawSourceTriangle(source, s0, s1, s2, d0, d1, d2) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(d0.x, d0.y);
+  ctx.lineTo(d1.x, d1.y);
+  ctx.lineTo(d2.x, d2.y);
+  ctx.closePath();
+  ctx.clip();
+  applyAffineForTriangle(s0.x, s0.y, s1.x, s1.y, s2.x, s2.y, d0.x, d0.y, d1.x, d1.y, d2.x, d2.y);
+  ctx.drawImage(source, 0, 0);
+  ctx.restore();
+}
+
+function drawWarpedSource(source, corners) {
+  const w = source.videoWidth || source.naturalWidth || source.width;
+  const h = source.videoHeight || source.naturalHeight || source.height;
+  if (!w || !h) {
+    return;
+  }
+  const cols = 10;
+  const rows = 10;
+  for (let y = 0; y < rows; y += 1) {
+    for (let x = 0; x < cols; x += 1) {
+      const u0 = x / cols;
+      const v0 = y / rows;
+      const u1 = (x + 1) / cols;
+      const v1 = (y + 1) / rows;
+
+      const s00 = { x: u0 * w, y: v0 * h };
+      const s10 = { x: u1 * w, y: v0 * h };
+      const s11 = { x: u1 * w, y: v1 * h };
+      const s01 = { x: u0 * w, y: v1 * h };
+
+      const d00 = quadPoint(corners, u0, v0);
+      const d10 = quadPoint(corners, u1, v0);
+      const d11 = quadPoint(corners, u1, v1);
+      const d01 = quadPoint(corners, u0, v1);
+
+      drawSourceTriangle(source, s00, s10, s11, d00, d10, d11);
+      drawSourceTriangle(source, s00, s11, s01, d00, d11, d01);
+    }
+  }
+}
+
+function getElementSizeMeters(element) {
+  if (!element || !state.scaleCalib?.pxPerMeter) {
+    return null;
+  }
+  const top = distance(element.corners[0], element.corners[1]);
+  const bottom = distance(element.corners[3], element.corners[2]);
+  const left = distance(element.corners[0], element.corners[3]);
+  const right = distance(element.corners[1], element.corners[2]);
+  return {
+    width: ((top + bottom) / 2) / state.scaleCalib.pxPerMeter,
+    height: ((left + right) / 2) / state.scaleCalib.pxPerMeter,
+  };
+}
+
+function getCabinetStats(element) {
+  if (!element?.cabinetPlan) {
+    return null;
+  }
+  const size = getElementSizeMeters(element);
+  if (!size) {
+    return null;
+  }
+  const moduleMeters = element.cabinetPlan.moduleMeters;
+  const cols = element.cabinetPlan.cols;
+  const rows = element.cabinetPlan.rows;
+  const usedWidth = cols * moduleMeters;
+  const usedHeight = rows * moduleMeters;
+  const moduleArea = moduleMeters * moduleMeters;
+  const totalCount = cols * rows;
+  const tolMeters = 0.015;
+  const fitCols = Math.max(0, Math.floor((size.width + tolMeters) / moduleMeters));
+  const fitRows = Math.max(0, Math.floor((size.height + tolMeters) / moduleMeters));
+  const inBoundsCount = Math.min(cols, fitCols) * Math.min(rows, fitRows);
+
+  return {
+    size,
+    moduleMeters,
+    cols,
+    rows,
+    usedWidth,
+    usedHeight,
+    moduleArea,
+    totalCount,
+    inBoundsCount,
+    overflowCount: Math.max(0, totalCount - inBoundsCount),
+    overflowWidth: Math.max(0, usedWidth - size.width),
+    overflowHeight: Math.max(0, usedHeight - size.height),
+  };
+}
+
+function drawScreenFace(element) {
+  const p0 = element.corners[0];
+  const p1 = element.corners[1];
+  const p2 = element.corners[2];
+  const p3 = element.corners[3];
+
+  ctx.beginPath();
+  ctx.moveTo(p0.x, p0.y);
+  ctx.lineTo(p1.x, p1.y);
+  ctx.lineTo(p2.x, p2.y);
+  ctx.lineTo(p3.x, p3.y);
+  ctx.closePath();
+  ctx.fillStyle = "#0b1016";
+  ctx.fill();
+
+  if (element.videoId) {
+    const media = getVideoById(element.videoId);
+    if (media?.videoEl && media.videoEl.readyState >= 2) {
+      drawWarpedSource(media.videoEl, element.corners);
+    }
+  }
+}
+
+function drawCabinetGrid(element) {
+  const stats = getCabinetStats(element);
+  if (!stats) {
+    return;
+  }
+  const stepU = stats.moduleMeters / stats.size.width;
+  const stepV = stats.moduleMeters / stats.size.height;
+  if (!Number.isFinite(stepU) || !Number.isFinite(stepV) || stepU <= 0 || stepV <= 0) {
+    return;
+  }
+
+  const eps = Math.min(stepU, stepV) * 0.03;
+  const uvTolerance = 0.01;
+  ctx.save();
+
+  for (let row = 0; row < stats.rows; row += 1) {
+    for (let col = 0; col < stats.cols; col += 1) {
+      const u0 = col * stepU;
+      const u1 = (col + 1) * stepU;
+      const v0 = row * stepV;
+      const v1 = (row + 1) * stepV;
+      const overflow = u1 > 1 + uvTolerance || v1 > 1 + uvTolerance;
+
+      const p0 = quadPoint(element.corners, u0 - eps, v0 - eps);
+      const p1 = quadPoint(element.corners, u1 + eps, v0 - eps);
+      const p2 = quadPoint(element.corners, u1 + eps, v1 + eps);
+      const p3 = quadPoint(element.corners, u0 - eps, v1 + eps);
+
+      if (overflow) {
+        ctx.fillStyle = "rgba(219, 65, 65, 0.24)";
+        ctx.beginPath();
+        ctx.moveTo(p0.x, p0.y);
+        ctx.lineTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.lineTo(p3.x, p3.y);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      if (state.showCabinetGrid) {
+        ctx.strokeStyle = overflow ? "rgba(219, 65, 65, 0.95)" : "rgba(42, 231, 207, 0.85)";
+        ctx.lineWidth = overflow ? 1.2 : 0.95;
+        ctx.beginPath();
+        ctx.moveTo(p0.x, p0.y);
+        ctx.lineTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.lineTo(p3.x, p3.y);
+        ctx.closePath();
+        ctx.stroke();
+      }
+    }
+  }
+
+  ctx.restore();
+}
+
+function drawSelection() {
+  const el = selectedElement();
+  if (!el) {
+    return;
+  }
+  ctx.save();
+  ctx.strokeStyle = "#0b7a70";
+  ctx.lineWidth = 2 / state.view.scale;
+  ctx.beginPath();
+  ctx.moveTo(el.corners[0].x, el.corners[0].y);
+  for (let i = 1; i < 4; i += 1) {
+    ctx.lineTo(el.corners[i].x, el.corners[i].y);
+  }
+  ctx.closePath();
+  ctx.stroke();
+  for (const p of el.corners) {
+    ctx.fillStyle = "#0b7a70";
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 6 / state.view.scale, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#fff";
+    ctx.lineWidth = 2 / state.view.scale;
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawToolOverlay() {
+  if (!state.tool?.points?.length) {
+    return;
+  }
+  ctx.save();
+  ctx.strokeStyle = "#f28400";
+  ctx.fillStyle = "#f28400";
+  ctx.lineWidth = 2 / state.view.scale;
+  const pts = state.tool.points;
+
+  for (let i = 0; i < pts.length; i += 1) {
+    if (i > 0) {
+      ctx.beginPath();
+      ctx.moveTo(pts[i - 1].x, pts[i - 1].y);
+      ctx.lineTo(pts[i].x, pts[i].y);
+      ctx.stroke();
+    }
+    ctx.beginPath();
+    ctx.arc(pts[i].x, pts[i].y, 5 / state.view.scale, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  if (state.tool.mode === "place4" && pts.length === 4) {
+    ctx.beginPath();
+    ctx.moveTo(pts[3].x, pts[3].y);
+    ctx.lineTo(pts[0].x, pts[0].y);
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
+function formatDistanceLabel(pxDistance) {
+  if (state.scaleCalib?.pxPerMeter) {
+    return `${(pxDistance / state.scaleCalib.pxPerMeter).toFixed(2)} м`;
+  }
+  return `${pxDistance.toFixed(1)} px`;
+}
+
+function drawCanvasStatsOverlay() {
+  if (!state.showStatsOverlay) {
+    return;
+  }
+  const el = selectedElement();
+  if (!el) {
+    return;
+  }
+
+  const sideTop = distance(el.corners[0], el.corners[1]);
+  const sideRight = distance(el.corners[1], el.corners[2]);
+  const sideBottom = distance(el.corners[2], el.corners[3]);
+  const sideLeft = distance(el.corners[3], el.corners[0]);
+  const diag1 = distance(el.corners[0], el.corners[2]);
+  const diag2 = distance(el.corners[1], el.corners[3]);
+  const size = getElementSizeMeters(el);
+  const stats = getCabinetStats(el);
+  const pxPerCab = getPixelsPerCabinetSide();
+
+  const lines = [];
+  lines.push(`Экран: ${el.name}`);
+  if (stats) {
+    const totalArea = stats.totalCount * stats.moduleArea;
+    lines.push(`Кабинеты: ${stats.totalCount} (${stats.cols}x${stats.rows})`);
+    lines.push(`Площадь кабинетов: ${totalArea.toFixed(2)} м²`);
+    lines.push(`Разрешение: ${stats.cols * pxPerCab} x ${stats.rows * pxPerCab} px`);
+  } else if (el.cabinetPlan) {
+    const c = el.cabinetPlan.cols * el.cabinetPlan.rows;
+    lines.push(`Кабинеты: ${c} (${el.cabinetPlan.cols}x${el.cabinetPlan.rows})`);
+    lines.push(`Площадь кабинетов: ${(c * 0.25).toFixed(2)} м²`);
+    lines.push(`Разрешение: ${el.cabinetPlan.cols * pxPerCab} x ${el.cabinetPlan.rows * pxPerCab} px`);
+  } else if (size) {
+    lines.push(`Площадь экрана: ${(size.width * size.height).toFixed(2)} м²`);
+  }
+
+  lines.push(`AB: ${formatDistanceLabel(sideTop)} | BC: ${formatDistanceLabel(sideRight)}`);
+  lines.push(`CD: ${formatDistanceLabel(sideBottom)} | DA: ${formatDistanceLabel(sideLeft)}`);
+  lines.push(`AC: ${formatDistanceLabel(diag1)} | BD: ${formatDistanceLabel(diag2)}`);
+
+  const padding = 10;
+  const lineH = 16;
+  const panelX = 14;
+  const panelY = 14;
+  const panelW = 360;
+  const panelH = padding * 2 + lines.length * lineH;
+
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = "rgba(7, 12, 19, 0.62)";
+  ctx.strokeStyle = "rgba(160, 201, 255, 0.38)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.roundRect(panelX, panelY, panelW, panelH, 10);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = "#e8f2ff";
+  ctx.font = "12px Segoe UI";
+  for (let i = 0; i < lines.length; i += 1) {
+    ctx.fillText(lines[i], panelX + padding, panelY + padding + 12 + i * lineH);
+  }
+  ctx.restore();
+}
+
+function render() {
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.save();
+  ctx.setTransform(state.view.scale, 0, 0, state.view.scale, state.view.offsetX, state.view.offsetY);
+  const bg = activeBackground();
+  if (bg) {
+    ctx.drawImage(bg.image, 0, 0, canvas.width, canvas.height);
+  } else {
+    ctx.fillStyle = "#eef2f9";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+
+  for (const element of state.elements) {
+    drawScreenFace(element);
+    drawCabinetGrid(element);
+  }
+  drawSelection();
+  drawToolOverlay();
+  ctx.restore();
+  drawCanvasStatsOverlay();
+}
+
+function refreshBackgroundThumbs() {
+  ui.backgroundThumbs.innerHTML = "";
+  for (const item of state.backgrounds) {
+    const btn = document.createElement("button");
+    btn.className = `thumb${item.id === state.activeBackgroundId ? " active" : ""}`;
+    btn.type = "button";
+    btn.innerHTML = `<img src="${item.src}" alt="${item.name}" /><div class="name">${item.name}</div>`;
+    btn.addEventListener("click", () => {
+      state.activeBackgroundId = item.id;
+      setCanvasFromImage(item.image);
+      refreshBackgroundThumbs();
+      render();
+    });
+    ui.backgroundThumbs.appendChild(btn);
+  }
+}
+
+function refreshScreensList() {
+  ui.screensList.innerHTML = "";
+  if (!state.elements.length) {
+    return;
+  }
+  for (let i = 0; i < state.elements.length; i += 1) {
+    const el = state.elements[i];
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = `screen-item${el.id === state.selectedElementId ? " active" : ""}`;
+    const video = el.videoId ? getVideoById(el.videoId) : null;
+    btn.innerHTML = `${el.name}${video ? `<small>Видео: ${video.name}</small>` : "<small>Видео: нет</small>"}`;
+    btn.addEventListener("click", () => {
+      state.selectedElementId = el.id;
+      updateSelectionInfo();
+      refreshScreensList();
+      render();
+    });
+    ui.screensList.appendChild(btn);
+  }
+}
+
+function refreshVideoList() {
+  ui.videoList.innerHTML = "";
+  if (!state.videos.length) {
+    const empty = document.createElement("div");
+    empty.className = "status";
+    empty.textContent = "Видео не загружены";
+    ui.videoList.appendChild(empty);
+    return;
+  }
+  const selected = selectedElement();
+  for (const item of state.videos) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    const isActive = selected && selected.videoId === item.id;
+    btn.className = `screen-item${isActive ? " active" : ""}`;
+    btn.innerHTML = `${item.name}<small>${Math.round(item.videoEl.duration || 0)}s loop</small>`;
+    btn.addEventListener("click", () => {
+      const el = selectedElement();
+      if (!el) {
+        alert("Сначала выбери экран.");
+        return;
+      }
+      el.videoId = item.id;
+      item.videoEl.play().catch(() => {});
+      refreshScreensList();
+      refreshVideoList();
+      render();
+    });
+    ui.videoList.appendChild(btn);
+  }
+}
+
+function updateToolStatus(text) {
+  ui.toolStatus.textContent = `Режим: ${text}`;
+}
+
+function escapeHtml(text) {
+  return String(text)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function collectScreenMetric(el, idx) {
+  const size = getElementSizeMeters(el);
+  const stats = getCabinetStats(el);
+  const pitch = ui.pixelPitchSelect?.value || "2.6";
+  const pxPerCab = getPixelsPerCabinetSide();
+  const top = distance(el.corners[0], el.corners[1]);
+  const right = distance(el.corners[1], el.corners[2]);
+  const bottom = distance(el.corners[2], el.corners[3]);
+  const left = distance(el.corners[3], el.corners[0]);
+  const d1 = distance(el.corners[0], el.corners[2]);
+  const d2 = distance(el.corners[1], el.corners[3]);
+
+  const rows = el.cabinetPlan?.rows || 0;
+  const cols = el.cabinetPlan?.cols || 0;
+  const totalCab = rows * cols;
+  const reportResolution = totalCab ? `${cols * pxPerCab} x ${rows * pxPerCab}` : "-";
+
+  return {
+    screen: el.name || `Экран ${idx + 1}`,
+    pitch: `P${pitch}`,
+    sizeW: size ? size.width.toFixed(2) : "-",
+    sizeH: size ? size.height.toFixed(2) : "-",
+    area: size ? (size.width * size.height).toFixed(2) : "-",
+    cabCols: cols || "-",
+    cabRows: rows || "-",
+    cabTotal: totalCab || "-",
+    cabArea: totalCab ? (totalCab * 0.25).toFixed(2) : "-",
+    inBounds: stats ? stats.inBoundsCount : "-",
+    overflow: stats ? stats.overflowCount : "-",
+    resolution: reportResolution,
+    ab: formatDistanceLabel(top),
+    bc: formatDistanceLabel(right),
+    cd: formatDistanceLabel(bottom),
+    da: formatDistanceLabel(left),
+    ac: formatDistanceLabel(d1),
+    bd: formatDistanceLabel(d2),
+  };
+}
+
+function downloadTextFile(filename, content, mime) {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function downloadDataUrl(filename, dataUrl) {
+  const a = document.createElement("a");
+  a.href = dataUrl;
+  a.download = filename;
+  a.click();
+}
+
+function buildReportHtml(imageDataUrl, rows) {
+  const date = new Date().toLocaleString();
+  const totalScreens = rows.length;
+  const totalCabinets = rows.reduce((sum, r) => sum + (Number(r.cabTotal) || 0), 0);
+  const totalArea = rows.reduce((sum, r) => sum + (Number(r.area) || 0), 0);
+
+  const detailCards = rows
+    .map(
+      (r, idx) => `<section class="card">
+  <h3>${idx + 1}. ${escapeHtml(r.screen)}</h3>
+  <div class="kv"><span>Pixel pitch:</span><b>${escapeHtml(r.pitch)}</b></div>
+  <div class="kv"><span>Размер экрана:</span><b>${escapeHtml(r.sizeW)} м x ${escapeHtml(r.sizeH)} м</b></div>
+  <div class="kv"><span>Площадь экрана:</span><b>${escapeHtml(r.area)} м²</b></div>
+  <div class="kv"><span>Кабинеты:</span><b>${escapeHtml(String(r.cabCols))} x ${escapeHtml(String(r.cabRows))} = ${escapeHtml(String(r.cabTotal))}</b></div>
+  <div class="kv"><span>Площадь кабинетов:</span><b>${escapeHtml(String(r.cabArea))} м²</b></div>
+  <div class="kv"><span>Внутри / Вне:</span><b>${escapeHtml(String(r.inBounds))} / ${escapeHtml(String(r.overflow))}</b></div>
+  <div class="kv"><span>Разрешение экрана:</span><b>${escapeHtml(r.resolution)} px</b></div>
+  <div class="kv"><span>Расстояния AB, BC, CD, DA:</span><b>${escapeHtml(r.ab)} | ${escapeHtml(r.bc)} | ${escapeHtml(r.cd)} | ${escapeHtml(r.da)}</b></div>
+  <div class="kv"><span>Диагонали AC, BD:</span><b>${escapeHtml(r.ac)} | ${escapeHtml(r.bd)}</b></div>
+</section>`
+    )
+    .join("\n");
+
+  return `<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <title>FS Report</title>
+  <style>
+    body { font-family: Segoe UI, Arial, sans-serif; margin: 20px; color: #1f2a3d; }
+    h1 { margin: 0 0 6px; }
+    h3 { margin: 0 0 10px; }
+    .meta { color: #5b647a; margin-bottom: 14px; }
+    .shot { max-width: 100%; border: 1px solid #d4ddec; border-radius: 8px; display: block; }
+    .summary { margin-top: 14px; padding: 10px 12px; background: #f6f9ff; border: 1px solid #d8dfec; border-radius: 8px; font-size: 13px; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 10px; margin-top: 14px; }
+    .card { border: 1px solid #d8dfec; border-radius: 8px; padding: 10px 12px; background: #fff; }
+    .kv { display: grid; grid-template-columns: 190px 1fr; gap: 8px; margin: 4px 0; font-size: 13px; }
+    .kv span { color: #5b647a; }
+  </style>
+</head>
+<body>
+  <h1>Отчет по экрану(ам)</h1>
+  <div class="meta">Сформирован: ${escapeHtml(date)}</div>
+  <img class="shot" src="${imageDataUrl}" alt="Scene snapshot" />
+  <div class="summary">
+    Экранов: <b>${totalScreens}</b> |
+    Кабинетов всего: <b>${totalCabinets}</b> |
+    Суммарная площадь экранов: <b>${totalArea.toFixed(2)} м²</b>
+  </div>
+  <div class="cards">
+    ${detailCards || "<div class='card'>Нет данных по экранам</div>"}
+  </div>
+</body>
+</html>`;
+}
+
+function exportReport() {
+  const prevSelected = state.selectedElementId;
+  const prevTool = state.tool;
+  const prevView = { ...state.view };
+  const prevHud = state.showStatsOverlay;
+  state.tool = null;
+  state.selectedElementId = null;
+  state.showStatsOverlay = false;
+  resetView();
+  render();
+  const imageData = canvas.toDataURL("image/png");
+  const imageJpeg = canvas.toDataURL("image/jpeg", 0.92);
+
+  const rows = state.elements.map((el, i) => collectScreenMetric(el, i));
+  const html = buildReportHtml(imageData, rows);
+  const now = new Date();
+  const stamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}_${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}`;
+  downloadTextFile(`fs_report_${stamp}.html`, html, "text/html;charset=utf-8");
+  downloadDataUrl(`fs_scene_${stamp}.jpg`, imageJpeg);
+
+  state.selectedElementId = prevSelected;
+  state.tool = prevTool;
+  state.view = prevView;
+  state.showStatsOverlay = prevHud;
+  render();
+}
+
+function collectScenePayload(snapshotPng, snapshotJpeg) {
+  const screens = state.elements.map((el, i) => {
+    const metric = collectScreenMetric(el, i);
+    return {
+      ...metric,
+      corners: el.corners.map((p) => ({ x: Number(p.x.toFixed(2)), y: Number(p.y.toFixed(2)) })),
+      cabinetPlan: el.cabinetPlan
+        ? {
+            moduleMeters: el.cabinetPlan.moduleMeters,
+            cols: el.cabinetPlan.cols,
+            rows: el.cabinetPlan.rows,
+          }
+        : null,
+      videoId: el.videoId || null,
+    };
+  });
+  return {
+    generatedAt: new Date().toISOString(),
+    pixelPitch: `P${ui.pixelPitchSelect?.value || "2.6"}`,
+    scalePxPerMeter: state.scaleCalib?.pxPerMeter || null,
+    canvas: { width: canvas.width, height: canvas.height },
+    background: activeBackground()
+      ? { id: activeBackground().id, name: activeBackground().name }
+      : null,
+    screens,
+    snapshotPng,
+    snapshotJpeg,
+  };
+}
+
+function buildCopyOverlayLines() {
+  const lines = [];
+  lines.push(`Отчет сцены: ${new Date().toLocaleString()}`);
+  lines.push(`Pitch: P${ui.pixelPitchSelect?.value || "2.6"} | Масштаб: ${state.scaleCalib?.pxPerMeter ? `${state.scaleCalib.pxPerMeter.toFixed(2)} px/м` : "не задан"}`);
+  lines.push(`Экранов: ${state.elements.length}`);
+
+  state.elements.forEach((el, idx) => {
+    const m = collectScreenMetric(el, idx);
+    lines.push(`${idx + 1}) ${m.screen}: ${m.sizeW}x${m.sizeH}м, S=${m.area}м², каб=${m.cabTotal}, res=${m.resolution}px`);
+  });
+  return lines;
+}
+
+function buildJpegWithDataOverlay() {
+  const exportCanvas = document.createElement("canvas");
+  exportCanvas.width = canvas.width;
+  exportCanvas.height = canvas.height;
+  const ex = exportCanvas.getContext("2d");
+  ex.drawImage(canvas, 0, 0);
+
+  const lines = buildCopyOverlayLines();
+  const pad = 10;
+  const lineH = 16;
+  const panelW = Math.min(exportCanvas.width - 20, 620);
+  const panelH = Math.min(exportCanvas.height - 20, pad * 2 + lines.length * lineH);
+
+  ex.fillStyle = "rgba(8, 14, 23, 0.66)";
+  ex.strokeStyle = "rgba(165, 210, 255, 0.42)";
+  ex.lineWidth = 1;
+  ex.beginPath();
+  if (typeof ex.roundRect === "function") {
+    ex.roundRect(10, 10, panelW, panelH, 10);
+  } else {
+    ex.rect(10, 10, panelW, panelH);
+  }
+  ex.fill();
+  ex.stroke();
+
+  ex.fillStyle = "#e7f2ff";
+  ex.font = "12px Segoe UI";
+  for (let i = 0; i < lines.length; i += 1) {
+    const y = 10 + pad + 12 + i * lineH;
+    if (y > 10 + panelH - 6) {
+      break;
+    }
+    ex.fillText(lines[i], 10 + pad, y, panelW - pad * 2);
+  }
+  return exportCanvas.toDataURL("image/jpeg", 0.92);
+}
+
+async function copySceneToClipboard() {
+  ui.clipboardStatus.textContent = "Буфер: копирование...";
+  ui.clipboardStatus.style.color = "#5f6880";
+  render();
+  const prevHud = state.showStatsOverlay;
+  state.showStatsOverlay = false;
+  render();
+  let jpg = "";
+  try {
+    jpg = buildJpegWithDataOverlay();
+    const blob = await (await fetch(jpg)).blob();
+    if (!blob) {
+      throw new Error("No JPEG blob");
+    }
+    if (navigator.clipboard && window.ClipboardItem && window.isSecureContext) {
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          "image/jpeg": blob,
+        }),
+      ]);
+      ui.clipboardStatus.textContent = "Буфер: JPG с данными скопирован";
+      ui.clipboardStatus.style.color = "#0b7a70";
+    } else if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(jpg);
+      ui.clipboardStatus.textContent = "Буфер: скопирован JPG DataURL с данными";
+      ui.clipboardStatus.style.color = "#0b7a70";
+    } else {
+      downloadDataUrl("fs_scene_clipboard_fallback.jpg", jpg);
+      ui.clipboardStatus.textContent = "Буфер недоступен: JPG с данными скачан";
+      ui.clipboardStatus.style.color = "#8a6b00";
+    }
+  } catch (_err) {
+    if (jpg) {
+      downloadDataUrl("fs_scene_clipboard_fallback.jpg", jpg);
+    }
+    ui.clipboardStatus.textContent = "Не скопировалось: JPG с данными скачан";
+    ui.clipboardStatus.style.color = "#8a6b00";
+  } finally {
+    state.showStatsOverlay = prevHud;
+    render();
+  }
+}
+
+function updateScaleStatus() {
+  if (!state.scaleCalib) {
+    ui.scaleStatus.textContent = "Масштаб не задан";
+    return;
+  }
+  ui.scaleStatus.textContent = `Масштаб: ${state.scaleCalib.pxPerMeter.toFixed(2)} px/м`;
+}
+
+function updateScreensCount() {
+  ui.screensCount.textContent = `Экранов: ${state.elements.length}`;
+  refreshScreensList();
+}
+
+function updateCabinetStatus() {
+  const el = selectedElement();
+  if (!el || !el.cabinetPlan) {
+    ui.cabinetStatus.textContent = "Кабинеты не заданы";
+    ui.cabinetCountInfo.textContent = "Количество: 0 | Площадь: 0 м²";
+    ui.cabinetResolutionInfo.textContent = "Разрешение: -";
+    return;
+  }
+  const stats = getCabinetStats(el);
+  const count = el.cabinetPlan.cols * el.cabinetPlan.rows;
+  const pxPerCab = getPixelsPerCabinetSide();
+  const totalResW = el.cabinetPlan.cols * pxPerCab;
+  const totalResH = el.cabinetPlan.rows * pxPerCab;
+  if (!stats) {
+    const area = count * 0.25;
+    ui.cabinetStatus.textContent = `Кабинеты: ${el.cabinetPlan.cols} x ${el.cabinetPlan.rows} (нужен масштаб)`;
+    ui.cabinetCountInfo.textContent = `Количество: ${count} | Площадь: ${area.toFixed(2)} м²`;
+    ui.cabinetResolutionInfo.textContent = `Разрешение: ${totalResW} x ${totalResH} px`;
+    return;
+  }
+
+  const overflowText =
+    stats.overflowWidth > 0 || stats.overflowHeight > 0
+      ? ` | Выход: +${stats.overflowWidth.toFixed(2)}м, +${stats.overflowHeight.toFixed(2)}м`
+      : " | В пределах экрана";
+
+  ui.cabinetStatus.textContent = `Кабинеты: ${stats.cols} x ${stats.rows}${overflowText}`;
+  const totalArea = stats.totalCount * stats.moduleArea;
+  ui.cabinetCountInfo.textContent = `Количество: ${stats.totalCount} | Площадь: ${totalArea.toFixed(2)} м² | Внутри: ${stats.inBoundsCount} | Вне: ${stats.overflowCount}`;
+  ui.cabinetResolutionInfo.textContent = `Разрешение: ${totalResW} x ${totalResH} px`;
+}
+
+function updateSelectionInfo() {
+  const el = selectedElement();
+  refreshScreensList();
+  refreshVideoList();
+  if (!el) {
+    ui.selectionInfo.textContent = "Не выбран";
+    ui.screenWidthMeters.value = "";
+    ui.screenHeightMeters.value = "";
+    updateCabinetStatus();
+    return;
+  }
+  const size = getElementSizeMeters(el);
+  if (!size) {
+    ui.selectionInfo.textContent = `${el.name} (без масштаба)`;
+    ui.screenWidthMeters.value = "";
+    ui.screenHeightMeters.value = "";
+    updateCabinetStatus();
+    return;
+  }
+  ui.selectionInfo.textContent = `${el.name}: ${size.width.toFixed(2)}м x ${size.height.toFixed(2)}м | Площадь: ${(size.width * size.height).toFixed(2)} м²`;
+  ui.screenWidthMeters.value = size.width.toFixed(2);
+  ui.screenHeightMeters.value = size.height.toFixed(2);
+  updateCabinetStatus();
+}
+
+async function addBackground(src, name) {
+  const image = await createImage(src);
+  const id = uid("bg");
+  state.backgrounds.push({ id, src, image, name });
+  if (!state.activeBackgroundId) {
+    state.activeBackgroundId = id;
+    setCanvasFromImage(image);
+  }
+}
+
+async function addVideo(src, name) {
+  const video = document.createElement("video");
+  video.src = src;
+  video.muted = true;
+  video.loop = true;
+  video.playsInline = true;
+  video.preload = "auto";
+  await new Promise((resolve) => {
+    video.onloadedmetadata = resolve;
+    video.onerror = resolve;
+  });
+  video.play().catch(() => {});
+  state.videos.push({
+    id: uid("vid"),
+    name,
+    src,
+    videoEl: video,
+  });
+}
+
+function addElementByCorners(corners) {
+  const index = state.elements.length + 1;
+  state.elements.push({
+    id: uid("el"),
+    name: `Экран ${index}`,
+    corners,
+    cabinetPlan: null,
+    videoId: null,
+  });
+  state.selectedElementId = state.elements[state.elements.length - 1].id;
+  updateScreensCount();
+  updateSelectionInfo();
+  render();
+}
+
+async function importBackgroundFiles(files) {
+  const imageFiles = Array.from(files || []).filter((f) => f.type.startsWith("image/"));
+  for (const file of imageFiles) {
+    const src = await fileToDataUrl(file);
+    await addBackground(src, file.name);
+  }
+  if (imageFiles.length) {
+    refreshBackgroundThumbs();
+    render();
+  }
+}
+
+async function importVideoFiles(files) {
+  const videoFiles = Array.from(files || []).filter((f) => f.type.startsWith("video/"));
+  for (const file of videoFiles) {
+    const src = await fileToDataUrl(file);
+    await addVideo(src, file.name);
+  }
+  if (videoFiles.length) {
+    refreshVideoList();
+    render();
+  }
+}
+
+function ensureSelectedForCabinets() {
+  const el = selectedElement();
+  if (!el) {
+    alert("Сначала выбери экран.");
+    return null;
+  }
+  return el;
+}
+
+function autoFillCabinets() {
+  const el = ensureSelectedForCabinets();
+  if (!el) {
+    return;
+  }
+  const size = getElementSizeMeters(el);
+  if (!size) {
+    alert("Сначала задай масштаб по 2 точкам.");
+    return;
+  }
+  const moduleMeters = 0.5;
+  el.cabinetPlan = {
+    moduleMeters,
+    cols: Math.max(1, Math.round(size.width / moduleMeters)),
+    rows: Math.max(1, Math.round(size.height / moduleMeters)),
+  };
+  updateCabinetStatus();
+  render();
+}
+
+function tweakCabinets(type, delta) {
+  const el = ensureSelectedForCabinets();
+  if (!el) {
+    return;
+  }
+  if (!el.cabinetPlan) {
+    autoFillCabinets();
+    if (!el.cabinetPlan) {
+      return;
+    }
+  }
+  if (type === "cols") {
+    el.cabinetPlan.cols = Math.max(1, el.cabinetPlan.cols + delta);
+  } else {
+    el.cabinetPlan.rows = Math.max(1, el.cabinetPlan.rows + delta);
+  }
+  updateCabinetStatus();
+  render();
+}
+
+function applyScreenSizeMeters() {
+  const el = selectedElement();
+  if (!el) {
+    alert("Сначала выбери экран.");
+    return;
+  }
+  const current = getElementSizeMeters(el);
+  if (!current) {
+    alert("Сначала задай масштаб по 2 точкам.");
+    return;
+  }
+
+  const targetW = Number(ui.screenWidthMeters.value);
+  const targetH = Number(ui.screenHeightMeters.value);
+  if (!Number.isFinite(targetW) || !Number.isFinite(targetH) || targetW <= 0 || targetH <= 0) {
+    alert("Укажи корректные размеры экрана в метрах.");
+    return;
+  }
+
+  const sx = targetW / current.width;
+  const sy = targetH / current.height;
+
+  const c = {
+    x: (el.corners[0].x + el.corners[1].x + el.corners[2].x + el.corners[3].x) / 4,
+    y: (el.corners[0].y + el.corners[1].y + el.corners[2].y + el.corners[3].y) / 4,
+  };
+
+  const mt = { x: (el.corners[0].x + el.corners[1].x) / 2, y: (el.corners[0].y + el.corners[1].y) / 2 };
+  const mb = { x: (el.corners[3].x + el.corners[2].x) / 2, y: (el.corners[3].y + el.corners[2].y) / 2 };
+  const ml = { x: (el.corners[0].x + el.corners[3].x) / 2, y: (el.corners[0].y + el.corners[3].y) / 2 };
+  const mr = { x: (el.corners[1].x + el.corners[2].x) / 2, y: (el.corners[1].y + el.corners[2].y) / 2 };
+
+  let wv = { x: mr.x - ml.x, y: mr.y - ml.y };
+  let hv = { x: mb.x - mt.x, y: mb.y - mt.y };
+  const wLen = Math.hypot(wv.x, wv.y) || 1;
+  const hLen = Math.hypot(hv.x, hv.y) || 1;
+  wv = { x: wv.x / wLen, y: wv.y / wLen };
+  hv = { x: hv.x / hLen, y: hv.y / hLen };
+
+  el.corners = el.corners.map((p) => {
+    const vx = p.x - c.x;
+    const vy = p.y - c.y;
+    const a = vx * wv.x + vy * wv.y;
+    const b = vx * hv.x + vy * hv.y;
+    const rx = vx - a * wv.x - b * hv.x;
+    const ry = vy - a * wv.y - b * hv.y;
+    return {
+      x: c.x + sx * a * wv.x + sy * b * hv.x + rx,
+      y: c.y + sx * a * wv.y + sy * b * hv.y + ry,
+    };
+  });
+
+  updateSelectionInfo();
+  render();
+}
+
+function fitScreenToCabinets() {
+  const el = ensureSelectedForCabinets();
+  if (!el) {
+    return;
+  }
+  if (!el.cabinetPlan) {
+    alert("Сначала задай кабинеты для экрана.");
+    return;
+  }
+  if (!state.scaleCalib?.pxPerMeter) {
+    alert("Сначала задай масштаб по 2 точкам.");
+    return;
+  }
+  const targetW = el.cabinetPlan.cols * el.cabinetPlan.moduleMeters;
+  const targetH = el.cabinetPlan.rows * el.cabinetPlan.moduleMeters;
+  ui.screenWidthMeters.value = targetW.toFixed(2);
+  ui.screenHeightMeters.value = targetH.toFixed(2);
+  applyScreenSizeMeters();
+}
+
+canvas.addEventListener("mousedown", (event) => {
+  if (event.button === 2 || event.button === 1 || (event.button === 0 && state.keys.spaceDown)) {
+    state.drag = { type: "pan", lastClientX: event.clientX, lastClientY: event.clientY };
+    canvas.style.cursor = "grabbing";
+    event.preventDefault();
+    return;
+  }
+  if (event.button !== 0) {
+    return;
+  }
+
+  const p = getPointer(event);
+
+  if (state.tool) {
+    state.tool.points.push(p);
+
+    if (state.tool.mode === "scale2" && state.tool.points.length === 2) {
+      const real = Number(ui.knownLengthMeters.value);
+      const px = distance(state.tool.points[0], state.tool.points[1]);
+      if (Number.isFinite(real) && real > 0 && px > 1) {
+        state.scaleCalib = { realLength: real, pxLength: px, pxPerMeter: px / real };
+      } else {
+        alert("Некорректная длина или точки.");
+      }
+      state.tool = null;
+      updateScaleStatus();
+      updateToolStatus("ожидание");
+    } else if (state.tool.mode === "place4" && state.tool.points.length === 4) {
+      addElementByCorners(orderQuadPoints(state.tool.points));
+      state.tool = null;
+      updateToolStatus("ожидание");
+    } else if (state.tool.mode === "scale2") {
+      updateToolStatus(`масштаб: ${state.tool.points.length}/2`);
+    } else if (state.tool.mode === "place4") {
+      updateToolStatus(`добавление экрана: ${state.tool.points.length}/4`);
+    }
+
+    updateSelectionInfo();
+    render();
+    return;
+  }
+
+  const selected = selectedElement();
+  if (selected) {
+    const cornerHit = findCornerHit(selected, p);
+    if (cornerHit >= 0) {
+      state.drag = { type: "corner", id: selected.id, corner: cornerHit };
+      return;
+    }
+    if (pointInQuad(p, selected.corners)) {
+      state.drag = { type: "move", id: selected.id, lastX: p.x, lastY: p.y };
+      return;
+    }
+  }
+
+  let picked = null;
+  for (let i = state.elements.length - 1; i >= 0; i -= 1) {
+    if (pointInQuad(p, state.elements[i].corners)) {
+      picked = state.elements[i];
+      break;
+    }
+  }
+  state.selectedElementId = picked ? picked.id : null;
+  updateSelectionInfo();
+  render();
+
+  if (picked) {
+    state.drag = { type: "move", id: picked.id, lastX: p.x, lastY: p.y };
+  }
+});
+
+window.addEventListener("mousemove", (event) => {
+  if (!state.drag) {
+    return;
+  }
+  if (state.drag.type === "pan") {
+    const dx = event.clientX - state.drag.lastClientX;
+    const dy = event.clientY - state.drag.lastClientY;
+    state.view.offsetX += dx;
+    state.view.offsetY += dy;
+    state.drag.lastClientX = event.clientX;
+    state.drag.lastClientY = event.clientY;
+    render();
+    return;
+  }
+  const p = getPointer(event);
+  const el = state.elements.find((it) => it.id === state.drag.id);
+  if (!el) {
+    return;
+  }
+
+  if (state.drag.type === "corner") {
+    el.corners[state.drag.corner] = { x: p.x, y: p.y };
+  } else {
+    const dx = p.x - state.drag.lastX;
+    const dy = p.y - state.drag.lastY;
+    el.corners = el.corners.map((c) => ({ x: c.x + dx, y: c.y + dy }));
+    state.drag.lastX = p.x;
+    state.drag.lastY = p.y;
+  }
+
+  updateSelectionInfo();
+  render();
+});
+
+window.addEventListener("mouseup", () => {
+  state.drag = null;
+  canvas.style.cursor = "default";
+});
+
+canvas.addEventListener("contextmenu", (event) => {
+  event.preventDefault();
+});
+
+canvas.addEventListener("mouseenter", () => {
+  canvas.style.cursor = "default";
+});
+
+canvas.addEventListener(
+  "wheel",
+  (event) => {
+    event.preventDefault();
+    const rect = canvas.getBoundingClientRect();
+    const x = ((event.clientX - rect.left) * canvas.width) / rect.width;
+    const y = ((event.clientY - rect.top) * canvas.height) / rect.height;
+    const factor = event.deltaY < 0 ? 1.1 : 1 / 1.1;
+    zoomAt(x, y, factor);
+    render();
+  },
+  { passive: false }
+);
+
+ui.backgroundUpload.addEventListener("change", async (event) => {
+  await importBackgroundFiles(event.target.files || []);
+  event.target.value = "";
+});
+
+ui.videoUpload.addEventListener("change", async (event) => {
+  await importVideoFiles(event.target.files || []);
+  event.target.value = "";
+});
+
+for (const target of [ui.backgroundPanel, ui.canvasWrap]) {
+  target.addEventListener("dragover", (event) => {
+    event.preventDefault();
+    target.classList.add("drag-over");
+  });
+  target.addEventListener("dragleave", () => {
+    target.classList.remove("drag-over");
+  });
+  target.addEventListener("drop", async (event) => {
+    event.preventDefault();
+    target.classList.remove("drag-over");
+    await importBackgroundFiles(event.dataTransfer?.files || []);
+  });
+}
+
+ui.startScaleBtn.addEventListener("click", () => {
+  state.tool = { mode: "scale2", points: [] };
+  updateToolStatus("масштаб: 0/2");
+  render();
+});
+
+ui.startAddScreenBtn.addEventListener("click", () => {
+  state.tool = { mode: "place4", points: [] };
+  updateToolStatus("добавление экрана: 0/4");
+  render();
+});
+
+ui.exportReportBtn.addEventListener("click", () => {
+  exportReport();
+});
+
+ui.copySceneBtn.addEventListener("click", async () => {
+  await copySceneToClipboard();
+});
+
+ui.cancelToolBtn.addEventListener("click", () => {
+  state.tool = null;
+  updateToolStatus("ожидание");
+  render();
+});
+
+ui.deleteSelectedBtn.addEventListener("click", () => {
+  if (!state.selectedElementId) {
+    return;
+  }
+  state.elements = state.elements.filter((el) => el.id !== state.selectedElementId);
+  state.selectedElementId = null;
+  updateScreensCount();
+  updateSelectionInfo();
+  refreshVideoList();
+  render();
+});
+
+ui.applyScreenSizeBtn.addEventListener("click", () => {
+  applyScreenSizeMeters();
+});
+
+ui.zoomInBtn.addEventListener("click", () => {
+  zoomAt(canvas.width / 2, canvas.height / 2, 1.15);
+  render();
+});
+
+ui.zoomOutBtn.addEventListener("click", () => {
+  zoomAt(canvas.width / 2, canvas.height / 2, 1 / 1.15);
+  render();
+});
+
+ui.zoomResetBtn.addEventListener("click", () => {
+  resetView();
+  render();
+});
+
+ui.fitScreenToCabinetsBtn.addEventListener("click", () => {
+  fitScreenToCabinets();
+});
+
+ui.clearScreenVideoBtn.addEventListener("click", () => {
+  const el = selectedElement();
+  if (!el) {
+    return;
+  }
+  el.videoId = null;
+  refreshScreensList();
+  refreshVideoList();
+  render();
+});
+
+ui.toggleCabinetGrid.addEventListener("change", () => {
+  state.showCabinetGrid = !!ui.toggleCabinetGrid.checked;
+  render();
+});
+
+ui.pixelPitchSelect.addEventListener("change", () => {
+  updateCabinetStatus();
+});
+
+ui.cabinetAutoFillBtn.addEventListener("click", () => {
+  autoFillCabinets();
+});
+
+ui.cabinetAddColBtn.addEventListener("click", () => {
+  tweakCabinets("cols", 1);
+});
+
+ui.cabinetRemoveColBtn.addEventListener("click", () => {
+  tweakCabinets("cols", -1);
+});
+
+ui.cabinetAddRowBtn.addEventListener("click", () => {
+  tweakCabinets("rows", 1);
+});
+
+ui.cabinetRemoveRowBtn.addEventListener("click", () => {
+  tweakCabinets("rows", -1);
+});
+
+ui.cabinetClearBtn.addEventListener("click", () => {
+  const el = ensureSelectedForCabinets();
+  if (!el) {
+    return;
+  }
+  el.cabinetPlan = null;
+  updateCabinetStatus();
+  render();
+});
+
+window.addEventListener("keydown", (event) => {
+  if (event.code === "Space") {
+    state.keys.spaceDown = true;
+    if (!state.drag) {
+      canvas.style.cursor = "grab";
+    }
+  }
+  if ((event.key === "Delete" || event.key === "Backspace") && state.selectedElementId) {
+    const tag = (document.activeElement?.tagName || "").toLowerCase();
+    if (tag === "input" || tag === "textarea") {
+      return;
+    }
+    state.elements = state.elements.filter((el) => el.id !== state.selectedElementId);
+    state.selectedElementId = null;
+    updateScreensCount();
+    updateSelectionInfo();
+    render();
+  }
+});
+
+window.addEventListener("keyup", (event) => {
+  if (event.code === "Space") {
+    state.keys.spaceDown = false;
+    if (!state.drag) {
+      canvas.style.cursor = "default";
+    }
+  }
+});
+
+function hasAssignedPlayingVideo() {
+  return state.elements.some((el) => !!el.videoId && !!getVideoById(el.videoId));
+}
+
+function animationTick() {
+  if (hasAssignedPlayingVideo()) {
+    render();
+  }
+  requestAnimationFrame(animationTick);
+}
+
+async function loadPresetVideos() {
+  const presets = [
+    "assets/test/videos/demo_neon_bars.mp4",
+    "assets/test/videos/demo_wave_grid.mp4",
+    "assets/test/videos/demo_pulse_rings.mp4",
+  ];
+  for (const p of presets) {
+    try {
+      await addVideo(p, p.split("/").at(-1));
+    } catch (_err) {
+      // Ignore absent preset files
+    }
+  }
+}
+
+(async function init() {
+  ui.toggleCabinetGrid.checked = true;
+  updateToolStatus("ожидание");
+  updateScaleStatus();
+  updateScreensCount();
+  updateSelectionInfo();
+  await loadPresetVideos();
+  refreshBackgroundThumbs();
+  refreshVideoList();
+  render();
+  animationTick();
+})();
+
+</script>
 </body>
 </html>
