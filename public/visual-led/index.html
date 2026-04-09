@@ -1547,7 +1547,7 @@ async function importBackgroundFiles(files) {
 async function importVideoFiles(files) {
   const videoFiles = Array.from(files || []).filter((f) => f.type.startsWith("video/"));
   for (const file of videoFiles) {
-    const src = await fileToDataUrl(file);
+    const src = URL.createObjectURL(file);
     await addVideo(src, file.name);
   }
   if (videoFiles.length) {

@@ -144,7 +144,7 @@ const VisualLedEditorPage = () => {
           border: 'none',
           display: 'block',
         }}
-        allow="clipboard-write"
+        allow="clipboard-write; autoplay"
       />
     </div>
   );
