@@ -1989,28 +1989,12 @@ function animationTick() {
   requestAnimationFrame(animationTick);
 }
 
-async function loadPresetVideos() {
-  const presets = [
-    "assets/test/videos/demo_neon_bars.mp4",
-    "assets/test/videos/demo_wave_grid.mp4",
-    "assets/test/videos/demo_pulse_rings.mp4",
-  ];
-  for (const p of presets) {
-    try {
-      await addVideo(p, p.split("/").at(-1));
-    } catch (_err) {
-      // Ignore absent preset files
-    }
-  }
-}
-
 (async function init() {
   ui.toggleCabinetGrid.checked = true;
   updateToolStatus("ожидание");
   updateScaleStatus();
   updateScreensCount();
   updateSelectionInfo();
-  await loadPresetVideos();
   refreshBackgroundThumbs();
   refreshVideoList();
   render();
