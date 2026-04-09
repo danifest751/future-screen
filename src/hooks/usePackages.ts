@@ -1,3 +1,4 @@
+import { useCallback, useMemo } from 'react';
 import { usePackagesQuery, useUpsertPackageMutation, useDeletePackageMutation, useResetPackagesMutation } from '../queries';
 import { mapPackageFromDB, mapPackageToDB } from '../lib/mappers';
 import type { Database } from '../lib/database.types';
@@ -27,15 +28,25 @@ export const usePackages = (locale: Locale = 'ru', fallbackToRu = true) => {
   const deleteMutation = useDeletePackageMutation();
   const resetMutation = useResetPackagesMutation();
 
-  const packages: Package[] = packagesRaw?.map((row) => mapPackageFromDB(row, locale, fallbackToRu)) ?? [];
-  const getEditorPackage = (id: Package['id']): Package | null => {
+  const packages: Package[] = useMemo(
+    () => packagesRaw?.map((row) => mapPackageFromDB(row, locale, fallbackToRu)) ?? [],
+    [fallbackToRu, locale, packagesRaw]
+  );
+
+  const getEditorPackage = useCallback((id: Package['id']): Package | null => {
     const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
     const row = packagesRaw?.find((item) => item.id === numericId);
     return row ? mapPackageFromDB(row, locale, false) : null;
-  };
-  const fallbackById = Object.fromEntries(
-    (packagesRaw ?? []).map((row) => [String(row.id), isPackageFallbackFromRu(row, locale)])
-  ) as Record<string, boolean>;
+  }, [locale, packagesRaw]);
+
+  const fallbackById = useMemo(
+    () =>
+      Object.fromEntries((packagesRaw ?? []).map((row) => [String(row.id), isPackageFallbackFromRu(row, locale)])) as Record<
+        string,
+        boolean
+      >,
+    [locale, packagesRaw]
+  );
 
   const upsert = async (payload: Package) => {
     try {

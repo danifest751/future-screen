@@ -1,3 +1,4 @@
+import { useCallback, useMemo } from 'react';
 import { useCategoriesQuery, useUpsertCategoryMutation, useDeleteCategoryMutation, useResetCategoriesMutation } from '../queries';
 import { mapCategoryFromDB, mapCategoryToDB } from '../lib/mappers';
 import type { Database } from '../lib/database.types';
@@ -25,15 +26,25 @@ export const useCategories = (locale: Locale = 'ru', fallbackToRu = true) => {
   const deleteMutation = useDeleteCategoryMutation();
   const resetMutation = useResetCategoriesMutation();
 
-  const categories: Category[] = categoriesRaw?.map((row) => mapCategoryFromDB(row, locale, fallbackToRu)) ?? [];
-  const getEditorCategory = (id: Category['id']): Category | null => {
+  const categories: Category[] = useMemo(
+    () => categoriesRaw?.map((row) => mapCategoryFromDB(row, locale, fallbackToRu)) ?? [],
+    [categoriesRaw, fallbackToRu, locale]
+  );
+
+  const getEditorCategory = useCallback((id: Category['id']): Category | null => {
     const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
     const row = categoriesRaw?.find((item) => item.id === numericId);
     return row ? mapCategoryFromDB(row, locale, false) : null;
-  };
-  const fallbackById = Object.fromEntries(
-    (categoriesRaw ?? []).map((row) => [String(row.id), isCategoryFallbackFromRu(row, locale)])
-  ) as Record<string, boolean>;
+  }, [categoriesRaw, locale]);
+
+  const fallbackById = useMemo(
+    () =>
+      Object.fromEntries((categoriesRaw ?? []).map((row) => [String(row.id), isCategoryFallbackFromRu(row, locale)])) as Record<
+        string,
+        boolean
+      >,
+    [categoriesRaw, locale]
+  );
 
   const upsert = async (payload: Category) => {
     try {

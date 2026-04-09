@@ -1,3 +1,4 @@
+import { useCallback, useMemo } from 'react';
 import { useCasesQuery, useCreateCaseMutation, useUpdateCaseMutation, useDeleteCaseMutation, useResetCasesMutation } from '../queries';
 import { mapCaseFromDB, mapCaseToDB } from '../lib/mappers';
 import type { Database } from '../lib/database.types';
@@ -28,14 +29,20 @@ export const useCases = (locale: Locale = 'ru', fallbackToRu = true) => {
   const deleteMutation = useDeleteCaseMutation();
   const resetMutation = useResetCasesMutation();
 
-  const cases: CaseItem[] = casesRaw?.map((row) => mapCaseFromDB(row, locale, fallbackToRu)) ?? [];
-  const getEditorCase = (slug: string): CaseItem | null => {
+  const cases: CaseItem[] = useMemo(
+    () => casesRaw?.map((row) => mapCaseFromDB(row, locale, fallbackToRu)) ?? [],
+    [casesRaw, fallbackToRu, locale]
+  );
+
+  const getEditorCase = useCallback((slug: string): CaseItem | null => {
     const row = casesRaw?.find((item) => item.slug === slug);
     return row ? mapCaseFromDB(row, locale, false) : null;
-  };
-  const fallbackBySlug = Object.fromEntries(
-    (casesRaw ?? []).map((row) => [row.slug, isCaseFallbackFromRu(row, locale)])
-  ) as Record<string, boolean>;
+  }, [casesRaw, locale]);
+
+  const fallbackBySlug = useMemo(
+    () => Object.fromEntries((casesRaw ?? []).map((row) => [row.slug, isCaseFallbackFromRu(row, locale)])) as Record<string, boolean>,
+    [casesRaw, locale]
+  );
 
   const addCase = async (payload: Omit<CaseItem, 'services'> & { services: string[] }) => {
     try {
