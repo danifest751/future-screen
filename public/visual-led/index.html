@@ -518,6 +518,9 @@ select option { background: rgb(15, 23, 42); color: #f1f5f9; }
     </aside>
   </div>
 
+  <!-- Hidden container to keep video elements in DOM so browsers buffer them -->
+  <div id="videoContainer" aria-hidden="true" style="position:absolute;opacity:0;pointer-events:none;overflow:hidden;width:1px;height:1px;top:-9999px;left:-9999px;"></div>
+
   <script>
 ﻿const canvas = document.getElementById("editorCanvas");
 const ctx = canvas.getContext("2d");
@@ -1504,19 +1507,11 @@ async function addVideo(src, name) {
   video.loop = true;
   video.playsInline = true;
   video.preload = "auto";
-  video.load();
-  // Wait for readyState >= 2 (first frame decoded), not just metadata
+  // Attach to DOM so the browser actually buffers video data
+  document.getElementById("videoContainer").appendChild(video);
   await new Promise((resolve) => {
-    if (video.readyState >= 2) { resolve(); return; }
-    const cleanup = () => {
-      video.removeEventListener("loadeddata", cleanup);
-      video.removeEventListener("error", cleanup);
-      clearTimeout(timer);
-      resolve();
-    };
-    const timer = setTimeout(cleanup, 10000);
-    video.addEventListener("loadeddata", cleanup);
-    video.addEventListener("error", cleanup);
+    video.onloadedmetadata = resolve;
+    video.onerror = resolve;
   });
   video.play().catch(() => {});
   state.videos.push({
