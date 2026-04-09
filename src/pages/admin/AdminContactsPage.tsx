@@ -104,6 +104,19 @@ const AdminContactsPage = () => {
     clearContactsDraft();
   };
 
+  const sourceLabel =
+    adminLocale === 'ru'
+      ? adminContentLocale === 'en'
+        ? fallbackUsed
+          ? 'Источник: RU fallback'
+          : 'Источник: EN локаль'
+        : 'Источник: RU локаль'
+      : adminContentLocale === 'en'
+        ? fallbackUsed
+          ? 'Source: RU fallback'
+          : 'Source: EN locale'
+        : 'Source: RU locale';
+
   if (loading) {
     return (
       <AdminLayout
@@ -160,25 +173,30 @@ const AdminContactsPage = () => {
             <div className="flex items-center gap-2">
               <h2 className="text-xl font-semibold text-white">{adminContactsPageContent.form.title}</h2>
               <FallbackDot visible={adminContentLocale === 'en' && fallbackUsed} locale={adminContentLocale} />
+              <span className="rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-xs text-slate-300">
+                {sourceLabel}
+              </span>
             </div>
-            {isHydrated && hasContactsDraft && (
-              <span className="rounded-full border border-brand-500/40 bg-brand-500/10 px-2 py-0.5 text-xs text-brand-100">
-                {adminContactsPageContent.form.restoredDraft}
-              </span>
-            )}
-            {isDirty && (
-              <span className="rounded-full border border-amber-400/40 bg-amber-500/10 px-2 py-0.5 text-xs text-amber-200">
-                {adminContactsPageContent.form.unsavedChanges}
-              </span>
-            )}
-            <button
-              type="button"
-              onClick={() => setResetModalOpen(true)}
-              disabled={isSubmitting}
-              className="text-sm text-slate-300 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {adminContactsPageContent.form.resetToDefault}
-            </button>
+            <div className="flex items-center gap-2">
+              {isHydrated && hasContactsDraft && (
+                <span className="rounded-full border border-brand-500/40 bg-brand-500/10 px-2 py-0.5 text-xs text-brand-100">
+                  {adminContactsPageContent.form.restoredDraft}
+                </span>
+              )}
+              {isDirty && (
+                <span className="rounded-full border border-amber-400/40 bg-amber-500/10 px-2 py-0.5 text-xs text-amber-200">
+                  {adminContactsPageContent.form.unsavedChanges}
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={() => setResetModalOpen(true)}
+                disabled={isSubmitting}
+                className="text-sm text-slate-300 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {adminContactsPageContent.form.resetToDefault}
+              </button>
+            </div>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">

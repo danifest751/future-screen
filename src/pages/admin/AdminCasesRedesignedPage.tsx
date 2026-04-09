@@ -400,6 +400,20 @@ const AdminCasesRedesignedPage = () => {
     return sorted;
   }, [cases, searchQuery]);
 
+  const editingFallbackUsed = adminContentLocale === 'en' && !!(caseEditing && fallbackBySlug[caseEditing]);
+  const sourceLabel =
+    adminLocale === 'ru'
+      ? adminContentLocale === 'en'
+        ? editingFallbackUsed
+          ? 'Источник: RU fallback'
+          : 'Источник: EN локаль'
+        : 'Источник: RU локаль'
+      : adminContentLocale === 'en'
+        ? editingFallbackUsed
+          ? 'Source: RU fallback'
+          : 'Source: EN locale'
+        : 'Source: RU locale';
+
   const getCaseMediaCount = (caseItem: CaseItem) => {
     const imageCount = caseItem.images?.length || 0;
     const videoCount = (caseItem as CaseItem & { videos?: string[] }).videos?.length || 0;
@@ -472,19 +486,27 @@ const AdminCasesRedesignedPage = () => {
         <div className="grid gap-6 lg:grid-cols-2">
           <div className="rounded-xl border border-white/10 bg-slate-800 p-6">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-white">
-                {caseEditing ? adminCasesRedesignedContent.form.editTitle : adminCasesRedesignedContent.form.newTitle}
-              </h2>
-              {isDirty && (
-                <span className="rounded-full border border-amber-400/40 bg-amber-500/10 px-2 py-0.5 text-xs text-amber-200">
-                  {adminCasesRedesignedContent.form.unsavedChanges}
+              <div className="flex items-center gap-2">
+                <h2 className="text-xl font-semibold text-white">
+                  {caseEditing ? adminCasesRedesignedContent.form.editTitle : adminCasesRedesignedContent.form.newTitle}
+                </h2>
+                <FallbackDot visible={editingFallbackUsed} locale={adminContentLocale} />
+                <span className="rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-xs text-slate-300">
+                  {sourceLabel}
                 </span>
-              )}
-              {caseEditing && (
-                <button type="button" onClick={cancelEdit} className="text-sm text-slate-300 hover:text-white">
-                  {adminCasesRedesignedContent.form.cancel}
-                </button>
-              )}
+              </div>
+              <div className="flex items-center gap-2">
+                {isDirty && (
+                  <span className="rounded-full border border-amber-400/40 bg-amber-500/10 px-2 py-0.5 text-xs text-amber-200">
+                    {adminCasesRedesignedContent.form.unsavedChanges}
+                  </span>
+                )}
+                {caseEditing && (
+                  <button type="button" onClick={cancelEdit} className="text-sm text-slate-300 hover:text-white">
+                    {adminCasesRedesignedContent.form.cancel}
+                  </button>
+                )}
+              </div>
             </div>
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

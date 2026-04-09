@@ -156,6 +156,19 @@ const AdminRentalCategoryEditPage = () => {
   const [loading, setLoading] = useState(!isNew);
   const [fallbackUsed, setFallbackUsed] = useState(false);
 
+  const sourceLabel =
+    adminLocale === 'ru'
+      ? adminContentLocale === 'en'
+        ? !isNew && fallbackUsed
+          ? 'Источник: RU fallback'
+          : 'Источник: EN локаль'
+        : 'Источник: RU локаль'
+      : adminContentLocale === 'en'
+        ? !isNew && fallbackUsed
+          ? 'Source: RU fallback'
+          : 'Source: EN locale'
+        : 'Source: RU locale';
+
   useEffect(() => {
     if (isNew) {
       setFallbackUsed(false);
@@ -346,6 +359,9 @@ const AdminRentalCategoryEditPage = () => {
               <ArrowLeft size={16} /> {adminRentalCategoryEditContent.topBar.back}
             </button>
             <FallbackDot visible={!isNew && adminContentLocale === 'en' && fallbackUsed} locale={adminContentLocale} />
+            <span className="rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-xs text-slate-300">
+              {sourceLabel}
+            </span>
             {isDirty && (
               <span className="rounded-full border border-amber-400/40 bg-amber-500/10 px-2 py-0.5 text-xs text-amber-200">
                 {adminRentalCategoryEditContent.topBar.unsaved}

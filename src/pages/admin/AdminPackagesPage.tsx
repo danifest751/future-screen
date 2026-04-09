@@ -190,6 +190,20 @@ const AdminPackagesPage = () => {
     });
   }, [packages, search]);
 
+  const editingFallbackUsed = adminContentLocale === 'en' && editingId !== null && !!fallbackById[String(editingId)];
+  const sourceLabel =
+    adminLocale === 'ru'
+      ? adminContentLocale === 'en'
+        ? editingFallbackUsed
+          ? 'Источник: RU fallback'
+          : 'Источник: EN локаль'
+        : 'Источник: RU локаль'
+      : adminContentLocale === 'en'
+        ? editingFallbackUsed
+          ? 'Source: RU fallback'
+          : 'Source: EN locale'
+        : 'Source: RU locale';
+
   return (
     <AdminLayout
       title={adminPackagesPageContent.layout.title}
@@ -232,11 +246,14 @@ const AdminPackagesPage = () => {
                   ? adminPackagesPageContent.form.editDescription(editingId)
                   : adminPackagesPageContent.form.createDescription}
               </p>
-              {isHydrated && hasPackageDraft && !editingId && (
+                {isHydrated && hasPackageDraft && !editingId && (
                 <p className="mt-2 text-xs text-amber-200">{adminPackagesPageContent.form.restoredDraft}</p>
               )}
             </div>
             <div className="flex flex-col items-end gap-2">
+              <span className="rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-xs text-slate-300">
+                {sourceLabel}
+              </span>
               {editingId && (
                 <span className="rounded-full border border-brand-500/40 bg-brand-500/10 px-2 py-0.5 text-xs text-brand-100">
                   {adminPackagesPageContent.form.editMode}
