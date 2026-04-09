@@ -377,6 +377,7 @@ select option { background: rgb(15, 23, 42); color: #f1f5f9; }
 </style>
 </head>
 <body>
+  <div id="video-sink" style="position:absolute;width:0;height:0;overflow:hidden;pointer-events:none;" aria-hidden="true"></div>
   <div class="app-shell">
     <aside class="sidebar">
       <div class="panel">
@@ -1499,13 +1500,15 @@ async function addBackground(src, name) {
 
 async function addVideo(src, name) {
   const video = document.createElement("video");
-  video.src = src;
   video.muted = true;
   video.loop = true;
   video.playsInline = true;
   video.preload = "auto";
+  // Attach to DOM so browsers buffer data for off-screen video elements
+  document.getElementById("video-sink").appendChild(video);
+  video.src = src;
   await new Promise((resolve) => {
-    video.onloadedmetadata = resolve;
+    video.onloadeddata = resolve;
     video.onerror = resolve;
   });
   video.play().catch(() => {});
@@ -1984,18 +1987,80 @@ function animationTick() {
   requestAnimationFrame(animationTick);
 }
 
-async function loadPresetVideos() {
-  const presets = [
-    "assets/test/videos/demo_neon_bars.mp4",
-    "assets/test/videos/demo_wave_grid.mp4",
-    "assets/test/videos/demo_pulse_rings.mp4",
-  ];
-  for (const p of presets) {
-    try {
-      await addVideo(p, p.split("/").at(-1));
-    } catch (_err) {
-      // ignore absent preset files
+function generateDemoBlob(drawFn, durationMs) {
+  return new Promise((resolve, reject) => {
+    const oc = document.createElement("canvas");
+    oc.width = 320; oc.height = 160;
+    const ctx = oc.getContext("2d");
+    const mimeType =
+      MediaRecorder.isTypeSupported("video/webm;codecs=vp9") ? "video/webm;codecs=vp9" :
+      MediaRecorder.isTypeSupported("video/webm") ? "video/webm" : null;
+    if (!mimeType) { reject(new Error("no MediaRecorder")); return; }
+    const stream = oc.captureStream(30);
+    const rec = new MediaRecorder(stream, { mimeType });
+    const chunks = [];
+    rec.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+    rec.onstop = () => resolve(URL.createObjectURL(new Blob(chunks, { type: "video/webm" })));
+    rec.onerror = reject;
+    let t0 = null;
+    function frame(ts) {
+      if (!t0) t0 = ts;
+      const elapsed = ts - t0;
+      ctx.clearRect(0, 0, 320, 160);
+      drawFn(ctx, elapsed, 320, 160);
+      elapsed < durationMs ? requestAnimationFrame(frame) : rec.stop();
     }
+    rec.start(100);
+    requestAnimationFrame(frame);
+  });
+}
+
+async function loadPresetVideos() {
+  try {
+    const neonUrl = await generateDemoBlob((ctx, t, w, h) => {
+      ctx.fillStyle = "#050816"; ctx.fillRect(0, 0, w, h);
+      for (let i = 0; i < 10; i++) {
+        const bw = w / 10;
+        const bh = (0.25 + 0.7 * Math.abs(Math.sin(t / 600 + i * 0.7))) * h;
+        const hue = 240 + i * 12;
+        ctx.save();
+        ctx.shadowColor = `hsl(${hue},100%,65%)`; ctx.shadowBlur = 18;
+        ctx.fillStyle = `hsl(${hue},85%,55%)`;
+        ctx.fillRect(i * bw + 1, h - bh, bw - 2, bh);
+        ctx.restore();
+      }
+    }, 3000);
+    await addVideo(neonUrl, "demo_neon_bars");
+
+    const waveUrl = await generateDemoBlob((ctx, t, w, h) => {
+      ctx.fillStyle = "#030a18"; ctx.fillRect(0, 0, w, h);
+      const cols = 16, rows = 8, cw = w / cols, ch = h / rows;
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const a = 0.2 + 0.8 * (Math.sin(t / 400 + c * 0.5 + r * 0.8) * 0.5 + 0.5);
+          ctx.fillStyle = `hsla(${200 + c * 8 + r * 5},90%,60%,${a})`;
+          ctx.fillRect(c * cw + 2, r * ch + 2, cw - 4, ch - 4);
+        }
+      }
+    }, 3000);
+    await addVideo(waveUrl, "demo_wave_grid");
+
+    const pulseUrl = await generateDemoBlob((ctx, t, w, h) => {
+      ctx.fillStyle = "#08001a"; ctx.fillRect(0, 0, w, h);
+      const cx = w / 2, cy = h / 2, maxR = Math.min(w, h) * 0.48;
+      for (let i = 0; i < 5; i++) {
+        const phase = (t / 800 + i / 5) % 1;
+        ctx.beginPath();
+        ctx.arc(cx, cy, phase * maxR, 0, Math.PI * 2);
+        ctx.strokeStyle = `hsla(${280 + i * 20},100%,65%,${(1 - phase) * 0.85})`;
+        ctx.lineWidth = 3;
+        ctx.shadowColor = `hsl(${280 + i * 20},100%,65%)`; ctx.shadowBlur = 12;
+        ctx.stroke();
+      }
+    }, 3000);
+    await addVideo(pulseUrl, "demo_pulse_rings");
+  } catch (_err) {
+    // MediaRecorder unavailable — skip presets silently
   }
 }
 
