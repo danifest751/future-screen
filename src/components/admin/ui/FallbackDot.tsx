@@ -1,15 +1,16 @@
 import type { Locale } from '../../../i18n/types';
+import { getFallbackDotContent } from '../../../content/components/fallbackDot';
 
 type FallbackDotProps = {
   visible: boolean;
-  locale: Locale;
+  adminLocale: Locale;
   className?: string;
 };
 
-const FallbackDot = ({ visible, locale, className = '' }: FallbackDotProps) => {
+const FallbackDot = ({ visible, adminLocale, className = '' }: FallbackDotProps) => {
   if (!visible) return null;
 
-  const title = locale === 'ru' ? 'Используется fallback из русской версии' : 'Using RU fallback';
+  const title = getFallbackDotContent(adminLocale).title;
 
   return (
     <span
@@ -23,3 +24,4 @@ const FallbackDot = ({ visible, locale, className = '' }: FallbackDotProps) => {
 };
 
 export default FallbackDot;
+

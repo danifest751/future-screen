@@ -8,22 +8,24 @@ import { Package as PackageIcon } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout';
 import { Button, ConfirmModal, EmptyState, FallbackDot, Field, Input, Textarea } from '../../components/admin/ui';
 import { useI18n } from '../../context/I18nContext';
-import { adminPackagesPageContent as adminPackagesPageContentStatic, getAdminPackagesPageContent } from '../../content/pages/adminPackages';
+import { getAdminPackagesPageContent } from '../../content/pages/adminPackages';
 import type { Package } from '../../data/packages';
 import { useFormDraftPersistence } from '../../hooks/useFormDraftPersistence';
 import { usePackages } from '../../hooks/usePackages';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
+import { getAdminSourceLabel } from '../../lib/i18n/adminSourceLabel';
 
-const schema = z.object({
-  id: z.coerce.number().int().positive(adminPackagesPageContentStatic.validation.idPositive),
-  name: z.string().min(2, adminPackagesPageContentStatic.validation.nameRequired),
-  forFormatsText: z.string().min(1, adminPackagesPageContentStatic.validation.forFormatsRequired),
-  includesText: z.string().min(1, adminPackagesPageContentStatic.validation.includesRequired),
-  optionsText: z.string().optional(),
-  priceHint: z.string().optional(),
-});
+const createSchema = (content: ReturnType<typeof getAdminPackagesPageContent>) =>
+  z.object({
+    id: z.coerce.number().int().positive(content.validation.idPositive),
+    name: z.string().min(2, content.validation.nameRequired),
+    forFormatsText: z.string().min(1, content.validation.forFormatsRequired),
+    includesText: z.string().min(1, content.validation.includesRequired),
+    optionsText: z.string().optional(),
+    priceHint: z.string().optional(),
+  });
 
-type FormValues = z.infer<typeof schema>;
+type FormValues = z.infer<ReturnType<typeof createSchema>>;
 
 const defaultValues: FormValues = {
   id: 0,
@@ -43,6 +45,7 @@ const splitList = (value: string) =>
 const AdminPackagesPage = () => {
   const { adminLocale, adminContentLocale, setAdminContentLocale } = useI18n();
   const adminPackagesPageContent = getAdminPackagesPageContent(adminLocale);
+  const schema = useMemo(() => createSchema(adminPackagesPageContent), [adminPackagesPageContent]);
   const { packages, getEditorPackage, fallbackById, upsert, remove, resetToDefault } = usePackages(adminContentLocale);
   const [editingId, setEditingId] = useState<Package['id'] | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Package | null>(null);
@@ -191,18 +194,11 @@ const AdminPackagesPage = () => {
   }, [packages, search]);
 
   const editingFallbackUsed = adminContentLocale === 'en' && editingId !== null && !!fallbackById[String(editingId)];
-  const sourceLabel =
-    adminLocale === 'ru'
-      ? adminContentLocale === 'en'
-        ? editingFallbackUsed
-          ? 'Источник: RU fallback'
-          : 'Источник: EN локаль'
-        : 'Источник: RU локаль'
-      : adminContentLocale === 'en'
-        ? editingFallbackUsed
-          ? 'Source: RU fallback'
-          : 'Source: EN locale'
-        : 'Source: RU locale';
+  const sourceLabel = getAdminSourceLabel({
+    adminLocale,
+    contentLocale: adminContentLocale,
+    fallbackUsed: editingFallbackUsed,
+  });
 
   return (
     <AdminLayout
@@ -356,7 +352,7 @@ const AdminPackagesPage = () => {
                   <div>
                     <div className="flex items-center gap-2 font-semibold text-white">
                       <span>{item.name}</span>
-                      <FallbackDot visible={adminContentLocale === 'en' && !!fallbackById[String(item.id)]} locale={adminContentLocale} />
+                      <FallbackDot visible={adminContentLocale === 'en' && !!fallbackById[String(item.id)]} adminLocale={adminLocale} />
                     </div>
                     <div className="text-xs text-slate-400">ID: {item.id}</div>
                     <div className="mt-1 text-xs text-slate-300">

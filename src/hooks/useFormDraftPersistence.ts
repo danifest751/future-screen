@@ -20,6 +20,7 @@ export const useFormDraftPersistence = <TValues extends FieldValues>({
   const hydratedRef = useRef(false);
   const suppressNextWriteRef = useRef(false);
   const isWritingRef = useRef(false);
+  const previousStorageKeyRef = useRef<string | null>(null);
 
   const clearDraft = useCallback(async () => {
     if (typeof window === 'undefined' || !isStorageAvailable()) return;
@@ -35,6 +36,13 @@ export const useFormDraftPersistence = <TValues extends FieldValues>({
       setIsHydrated(true);
       return;
     }
+
+    const previousStorageKey = previousStorageKeyRef.current;
+    if (previousStorageKey && previousStorageKey !== storageKey) {
+      void asyncRemoveItem(previousStorageKey);
+      setHasDraft(false);
+    }
+    previousStorageKeyRef.current = storageKey;
 
     let cancelled = false;
 

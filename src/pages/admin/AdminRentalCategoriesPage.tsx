@@ -83,7 +83,7 @@ const AdminRentalCategoriesPage = () => {
                     <td className="px-4 py-3 font-medium text-white">
                       <span className="inline-flex items-center gap-2">
                         <span>{cat.name}</span>
-                        <FallbackDot visible={adminContentLocale === 'en' && !!cat.isFallbackFromRu} locale={adminContentLocale} />
+                        <FallbackDot visible={adminContentLocale === 'en' && !!cat.isFallbackFromRu} adminLocale={adminLocale} />
                       </span>
                     </td>
                     <td className="px-4 py-3 font-mono text-xs text-slate-400">/rent/{cat.slug}</td>

@@ -11,6 +11,7 @@ import { adminContactsPageContent as adminContactsPageContentStatic, getAdminCon
 import { useContacts } from '../../hooks/useContacts';
 import { useFormDraftPersistence } from '../../hooks/useFormDraftPersistence';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
+import { getAdminSourceLabel } from '../../lib/i18n/adminSourceLabel';
 
 const schema = z.object({
   phonesText: z.string().min(3, adminContactsPageContentStatic.validation.phonesRequired),
@@ -104,18 +105,11 @@ const AdminContactsPage = () => {
     clearContactsDraft();
   };
 
-  const sourceLabel =
-    adminLocale === 'ru'
-      ? adminContentLocale === 'en'
-        ? fallbackUsed
-          ? 'Источник: RU fallback'
-          : 'Источник: EN локаль'
-        : 'Источник: RU локаль'
-      : adminContentLocale === 'en'
-        ? fallbackUsed
-          ? 'Source: RU fallback'
-          : 'Source: EN locale'
-        : 'Source: RU locale';
+  const sourceLabel = getAdminSourceLabel({
+    adminLocale,
+    contentLocale: adminContentLocale,
+    fallbackUsed: adminContentLocale === 'en' && fallbackUsed,
+  });
 
   if (loading) {
     return (
@@ -172,7 +166,7 @@ const AdminContactsPage = () => {
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <h2 className="text-xl font-semibold text-white">{adminContactsPageContent.form.title}</h2>
-              <FallbackDot visible={adminContentLocale === 'en' && fallbackUsed} locale={adminContentLocale} />
+              <FallbackDot visible={adminContentLocale === 'en' && fallbackUsed} adminLocale={adminLocale} />
               <span className="rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-xs text-slate-300">
                 {sourceLabel}
               </span>

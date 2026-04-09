@@ -8,24 +8,23 @@ import toast from 'react-hot-toast';
 import AdminLayout from '../../components/admin/AdminLayout';
 import { Button, ConfirmModal, EmptyState, FallbackDot, Field, Input, Textarea } from '../../components/admin/ui';
 import { useI18n } from '../../context/I18nContext';
-import { adminCategoriesPageContent as adminCategoriesPageContentStatic, getAdminCategoriesPageContent } from '../../content/pages/adminCategories';
+import { getAdminCategoriesPageContent } from '../../content/pages/adminCategories';
 import type { Category } from '../../data/categories';
 import { useCategories } from '../../hooks/useCategories';
 import { useFormDraftPersistence } from '../../hooks/useFormDraftPersistence';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
+import { getAdminSourceLabel } from '../../lib/i18n/adminSourceLabel';
 
-const schema = z.object({
-  id: z.coerce.number().int().positive(adminCategoriesPageContentStatic.validation.idPositive),
-  title: z.string().min(2, adminCategoriesPageContentStatic.validation.titleRequired),
-  shortDescription: z.string().min(5, adminCategoriesPageContentStatic.validation.shortDescriptionRequired),
-  bulletsText: z.string().min(2, adminCategoriesPageContentStatic.validation.bulletsRequired),
-  pagePath: z
-    .string()
-    .min(2, adminCategoriesPageContentStatic.validation.pagePathRequired)
-    .regex(/^\//, adminCategoriesPageContentStatic.validation.pagePathPrefix),
-});
+const createSchema = (content: ReturnType<typeof getAdminCategoriesPageContent>) =>
+  z.object({
+    id: z.coerce.number().int().positive(content.validation.idPositive),
+    title: z.string().min(2, content.validation.titleRequired),
+    shortDescription: z.string().min(5, content.validation.shortDescriptionRequired),
+    bulletsText: z.string().min(2, content.validation.bulletsRequired),
+    pagePath: z.string().min(2, content.validation.pagePathRequired).regex(/^\//, content.validation.pagePathPrefix),
+  });
 
-type FormValues = z.infer<typeof schema>;
+type FormValues = z.infer<ReturnType<typeof createSchema>>;
 
 const defaultValues: FormValues = {
   id: 0,
@@ -44,6 +43,7 @@ const splitList = (value: string) =>
 const AdminCategoriesPage = () => {
   const { adminLocale, adminContentLocale, setAdminContentLocale } = useI18n();
   const adminCategoriesPageContent = getAdminCategoriesPageContent(adminLocale);
+  const schema = useMemo(() => createSchema(adminCategoriesPageContent), [adminCategoriesPageContent]);
   const { categories, getEditorCategory, fallbackById, upsert, remove, resetToDefault } = useCategories(adminContentLocale);
   const [editingId, setEditingId] = useState<Category['id'] | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
@@ -180,18 +180,11 @@ const AdminCategoriesPage = () => {
   }, [categories, search]);
 
   const editingFallbackUsed = adminContentLocale === 'en' && editingId !== null && !!fallbackById[String(editingId)];
-  const sourceLabel =
-    adminLocale === 'ru'
-      ? adminContentLocale === 'en'
-        ? editingFallbackUsed
-          ? 'Источник: RU fallback'
-          : 'Источник: EN локаль'
-        : 'Источник: RU локаль'
-      : adminContentLocale === 'en'
-        ? editingFallbackUsed
-          ? 'Source: RU fallback'
-          : 'Source: EN locale'
-        : 'Source: RU locale';
+  const sourceLabel = getAdminSourceLabel({
+    adminLocale,
+    contentLocale: adminContentLocale,
+    fallbackUsed: editingFallbackUsed,
+  });
 
   return (
     <AdminLayout
@@ -340,7 +333,7 @@ const AdminCategoriesPage = () => {
                   <div>
                     <div className="flex items-center gap-2 font-semibold text-white">
                       <span>{item.title}</span>
-                      <FallbackDot visible={adminContentLocale === 'en' && !!fallbackById[String(item.id)]} locale={adminContentLocale} />
+                      <FallbackDot visible={adminContentLocale === 'en' && !!fallbackById[String(item.id)]} adminLocale={adminLocale} />
                     </div>
                     <div className="text-xs text-slate-400">ID: {item.id}</div>
                     <div className="mt-1 text-xs text-slate-300">{item.shortDescription}</div>

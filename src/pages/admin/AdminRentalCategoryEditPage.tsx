@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -9,44 +9,46 @@ import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 import { upsertRentalCategory, loadRentalCategories, type RentalCategory } from '../../services/rentalCategories';
 import { ChevronDown, ChevronUp, ArrowLeft } from 'lucide-react';
 import { useI18n } from '../../context/I18nContext';
-import { adminRentalCategoryEditContent as adminRentalCategoryEditContentStatic, getAdminRentalCategoryEditContent } from '../../content/pages/adminRentalCategoryEdit';
+import { getAdminRentalCategoryEditContent } from '../../content/pages/adminRentalCategoryEdit';
 import { FallbackDot } from '../../components/admin/ui';
+import { getAdminSourceLabel } from '../../lib/i18n/adminSourceLabel';
 
-const schema = z.object({
-  name: z.string().min(2, adminRentalCategoryEditContentStatic.validation.nameRequired),
-  shortName: z.string().min(2, adminRentalCategoryEditContentStatic.validation.shortNameRequired),
-  slug: z
-    .string()
-    .min(2, adminRentalCategoryEditContentStatic.validation.slugRequired)
-    .regex(/^[a-z0-9-]+$/, adminRentalCategoryEditContentStatic.validation.slugFormat),
-  isPublished: z.boolean().default(false),
-  sortOrder: z.coerce.number().default(0),
-  seoTitle: z.string().default(''),
-  seoDescription: z.string().default(''),
-  heroTitle: z.string().default(''),
-  heroSubtitle: z.string().default(''),
-  heroCtaPrimary: z.string().default(''),
-  heroCtaSecondary: z.string().default(''),
-  heroHighlightsText: z.string().default(''),
-  aboutTitle: z.string().default(''),
-  aboutText: z.string().default(''),
-  aboutItemsText: z.string().default(''),
-  useCasesTitle: z.string().default(''),
-  useCasesText: z.string().default(''),
-  serviceIncludesTitle: z.string().default(''),
-  serviceIncludesText: z.string().default(''),
-  benefitsTitle: z.string().default(''),
-  benefitsText: z.string().default(''),
-  galleryText: z.string().default(''),
-  faqTitle: z.string().default(''),
-  faqText: z.string().default(''),
-  bottomCtaTitle: z.string().default(''),
-  bottomCtaText: z.string().default(''),
-  bottomCtaPrimary: z.string().default(''),
-  bottomCtaSecondary: z.string().default(''),
-});
+const createSchema = (content: ReturnType<typeof getAdminRentalCategoryEditContent>) =>
+  z.object({
+    name: z.string().min(2, content.validation.nameRequired),
+    shortName: z.string().min(2, content.validation.shortNameRequired),
+    slug: z
+      .string()
+      .min(2, content.validation.slugRequired)
+      .regex(/^[a-z0-9-]+$/, content.validation.slugFormat),
+    isPublished: z.boolean().default(false),
+    sortOrder: z.coerce.number().default(0),
+    seoTitle: z.string().default(''),
+    seoDescription: z.string().default(''),
+    heroTitle: z.string().default(''),
+    heroSubtitle: z.string().default(''),
+    heroCtaPrimary: z.string().default(''),
+    heroCtaSecondary: z.string().default(''),
+    heroHighlightsText: z.string().default(''),
+    aboutTitle: z.string().default(''),
+    aboutText: z.string().default(''),
+    aboutItemsText: z.string().default(''),
+    useCasesTitle: z.string().default(''),
+    useCasesText: z.string().default(''),
+    serviceIncludesTitle: z.string().default(''),
+    serviceIncludesText: z.string().default(''),
+    benefitsTitle: z.string().default(''),
+    benefitsText: z.string().default(''),
+    galleryText: z.string().default(''),
+    faqTitle: z.string().default(''),
+    faqText: z.string().default(''),
+    bottomCtaTitle: z.string().default(''),
+    bottomCtaText: z.string().default(''),
+    bottomCtaPrimary: z.string().default(''),
+    bottomCtaSecondary: z.string().default(''),
+  });
 
-type FormValues = z.infer<typeof schema>;
+type FormValues = z.infer<ReturnType<typeof createSchema>>;
 
 const defaultValues: FormValues = {
   name: '',
@@ -136,6 +138,7 @@ const textareaClass = `${inputClass} resize-y`;
 const AdminRentalCategoryEditPage = () => {
   const { adminLocale, adminContentLocale, setAdminContentLocale } = useI18n();
   const adminRentalCategoryEditContent = getAdminRentalCategoryEditContent(adminLocale);
+  const schema = useMemo(() => createSchema(adminRentalCategoryEditContent), [adminRentalCategoryEditContent]);
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const isNew = id === 'new' || id === undefined;
@@ -156,18 +159,11 @@ const AdminRentalCategoryEditPage = () => {
   const [loading, setLoading] = useState(!isNew);
   const [fallbackUsed, setFallbackUsed] = useState(false);
 
-  const sourceLabel =
-    adminLocale === 'ru'
-      ? adminContentLocale === 'en'
-        ? !isNew && fallbackUsed
-          ? 'Источник: RU fallback'
-          : 'Источник: EN локаль'
-        : 'Источник: RU локаль'
-      : adminContentLocale === 'en'
-        ? !isNew && fallbackUsed
-          ? 'Source: RU fallback'
-          : 'Source: EN locale'
-        : 'Source: RU locale';
+  const sourceLabel = getAdminSourceLabel({
+    adminLocale,
+    contentLocale: adminContentLocale,
+    fallbackUsed: !isNew && adminContentLocale === 'en' && fallbackUsed,
+  });
 
   useEffect(() => {
     if (isNew) {
@@ -358,7 +354,7 @@ const AdminRentalCategoryEditPage = () => {
             >
               <ArrowLeft size={16} /> {adminRentalCategoryEditContent.topBar.back}
             </button>
-            <FallbackDot visible={!isNew && adminContentLocale === 'en' && fallbackUsed} locale={adminContentLocale} />
+            <FallbackDot visible={!isNew && adminContentLocale === 'en' && fallbackUsed} adminLocale={adminLocale} />
             <span className="rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-xs text-slate-300">
               {sourceLabel}
             </span>

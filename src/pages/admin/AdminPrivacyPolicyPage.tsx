@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -11,17 +11,19 @@ import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 import Markdown from 'markdown-to-jsx';
 import { sanitizeMarkdown } from '../../lib/sanitize';
 import { useI18n } from '../../context/I18nContext';
-import { adminPrivacyPolicyContent as adminPrivacyPolicyContentStatic, getAdminPrivacyPolicyContent } from '../../content/pages/adminPrivacyPolicy';
+import { getAdminPrivacyPolicyContent } from '../../content/pages/adminPrivacyPolicy';
+import { getAdminSourceLabel } from '../../lib/i18n/adminSourceLabel';
 
-const schema = z.object({
-  title: z.string().min(1, adminPrivacyPolicyContentStatic.validation.titleRequired),
-  content: z.string().min(1, adminPrivacyPolicyContentStatic.validation.contentRequired),
-  metaTitle: z.string().optional(),
-  metaDescription: z.string().optional(),
-  fontSize: z.string().optional(),
-});
+const createSchema = (content: ReturnType<typeof getAdminPrivacyPolicyContent>) =>
+  z.object({
+    title: z.string().min(1, content.validation.titleRequired),
+    content: z.string().min(1, content.validation.contentRequired),
+    metaTitle: z.string().optional(),
+    metaDescription: z.string().optional(),
+    fontSize: z.string().optional(),
+  });
 
-type FormValues = z.infer<typeof schema>;
+type FormValues = z.infer<ReturnType<typeof createSchema>>;
 
 const defaultValues: FormValues = {
   title: '',
@@ -36,6 +38,7 @@ const fontSizes = ['0.875rem', '1rem', '1.125rem', '1.5rem'];
 const AdminPrivacyPolicyPage = () => {
   const { adminLocale, adminContentLocale, setAdminContentLocale } = useI18n();
   const adminPrivacyPolicyContent = getAdminPrivacyPolicyContent(adminLocale);
+  const schema = useMemo(() => createSchema(adminPrivacyPolicyContent), [adminPrivacyPolicyContent]);
   const localeTag = adminLocale === 'ru' ? 'ru-RU' : 'en-US';
   const { content, fallbackUsed, loading, saving, save } = usePrivacyPolicy(adminContentLocale, false);
   const [lastSaved, setLastSaved] = useState<string | null>(null);
@@ -91,11 +94,11 @@ const AdminPrivacyPolicyPage = () => {
     }
   }, [content, localeTag, reset]);
 
-  const sourceLabel = adminContentLocale === 'en'
-    ? fallbackUsed
-      ? 'Source: RU fallback'
-      : 'Source: EN locale'
-    : 'Source: RU locale';
+  const sourceLabel = getAdminSourceLabel({
+    adminLocale,
+    contentLocale: adminContentLocale,
+    fallbackUsed: adminContentLocale === 'en' && fallbackUsed,
+  });
 
   const onSubmit = async (values: FormValues) => {
     const ok = await save({
@@ -141,7 +144,7 @@ const AdminPrivacyPolicyPage = () => {
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <h2 className="text-xl font-semibold text-white">{adminPrivacyPolicyContent.editor.title}</h2>
-              <FallbackDot visible={adminContentLocale === 'en' && fallbackUsed} locale={adminContentLocale} />
+              <FallbackDot visible={adminContentLocale === 'en' && fallbackUsed} adminLocale={adminLocale} />
             </div>
             <span className="rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-xs text-slate-300">
               {sourceLabel}

@@ -25,25 +25,27 @@ import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 import { useCaseMediaQuery, useLinkMediaToCaseMutation, useUnlinkMediaFromCaseMutation } from '../../queries/mediaLibrary';
 import { supabase } from '../../lib/supabase';
 import { useI18n } from '../../context/I18nContext';
-import { adminCasesRedesignedContent as adminCasesRedesignedContentStatic, getAdminCasesRedesignedContent } from '../../content/pages/adminCasesRedesigned';
+import { getAdminCasesRedesignedContent } from '../../content/pages/adminCasesRedesigned';
 import type { CaseItem } from '../../data/cases';
 import type { MediaItem } from '../../types/media';
+import { getAdminSourceLabel } from '../../lib/i18n/adminSourceLabel';
 
-const caseSchema = z.object({
-  slug: z
-    .string()
-    .min(2, adminCasesRedesignedContentStatic.validation.slugRequired)
-    .regex(/^[a-z0-9-]+$/, adminCasesRedesignedContentStatic.validation.slugPattern),
-  title: z.string().min(2, adminCasesRedesignedContentStatic.validation.titleRequired),
-  city: z.string().default(''),
-  date: z.string().default(''),
-  format: z.string().default(''),
-  summary: z.string().min(3, adminCasesRedesignedContentStatic.validation.summaryRequired),
-  metrics: z.string().default(''),
-  servicesText: z.string().default(''),
-});
+const createCaseSchema = (content: ReturnType<typeof getAdminCasesRedesignedContent>) =>
+  z.object({
+    slug: z
+      .string()
+      .min(2, content.validation.slugRequired)
+      .regex(/^[a-z0-9-]+$/, content.validation.slugPattern),
+    title: z.string().min(2, content.validation.titleRequired),
+    city: z.string().default(''),
+    date: z.string().default(''),
+    format: z.string().default(''),
+    summary: z.string().min(3, content.validation.summaryRequired),
+    metrics: z.string().default(''),
+    servicesText: z.string().default(''),
+  });
 
-type CaseFormValues = z.infer<typeof caseSchema>;
+type CaseFormValues = z.infer<ReturnType<typeof createCaseSchema>>;
 
 const defaultValues: CaseFormValues = {
   slug: '',
@@ -55,8 +57,6 @@ const defaultValues: CaseFormValues = {
   metrics: '',
   servicesText: '',
 };
-
-const FORMAT_OPTIONS = adminCasesRedesignedContentStatic.formatOptions;
 
 const normalizeSlug = (value: string) =>
   value
@@ -105,6 +105,7 @@ const getCaseIdBySlug = async (slug: string): Promise<number | null> => {
 const AdminCasesRedesignedPage = () => {
   const { adminLocale, adminContentLocale, setAdminContentLocale } = useI18n();
   const adminCasesRedesignedContent = getAdminCasesRedesignedContent(adminLocale);
+  const caseSchema = useMemo(() => createCaseSchema(adminCasesRedesignedContent), [adminCasesRedesignedContent]);
   const { cases, getEditorCase, fallbackBySlug, addCase, updateCase, deleteCase, resetToDefault } = useCases(adminContentLocale);
   const [activeTab, setActiveTab] = useState<'cases' | 'media'>('cases');
   const [caseEditing, setCaseEditing] = useState<string | null>(null);
@@ -237,7 +238,7 @@ const AdminCasesRedesignedPage = () => {
   const onSubmit = async (values: CaseFormValues) => {
     const services = values.servicesText
       .split(',')
-      .map((s) => s.trim().toLowerCase())
+      .map((s: string) => s.trim().toLowerCase())
       .filter(Boolean);
 
     const images = selectedMedia
@@ -401,18 +402,11 @@ const AdminCasesRedesignedPage = () => {
   }, [cases, searchQuery]);
 
   const editingFallbackUsed = adminContentLocale === 'en' && !!(caseEditing && fallbackBySlug[caseEditing]);
-  const sourceLabel =
-    adminLocale === 'ru'
-      ? adminContentLocale === 'en'
-        ? editingFallbackUsed
-          ? 'Источник: RU fallback'
-          : 'Источник: EN локаль'
-        : 'Источник: RU локаль'
-      : adminContentLocale === 'en'
-        ? editingFallbackUsed
-          ? 'Source: RU fallback'
-          : 'Source: EN locale'
-        : 'Source: RU locale';
+  const sourceLabel = getAdminSourceLabel({
+    adminLocale,
+    contentLocale: adminContentLocale,
+    fallbackUsed: editingFallbackUsed,
+  });
 
   const getCaseMediaCount = (caseItem: CaseItem) => {
     const imageCount = caseItem.images?.length || 0;
@@ -490,7 +484,7 @@ const AdminCasesRedesignedPage = () => {
                 <h2 className="text-xl font-semibold text-white">
                   {caseEditing ? adminCasesRedesignedContent.form.editTitle : adminCasesRedesignedContent.form.newTitle}
                 </h2>
-                <FallbackDot visible={editingFallbackUsed} locale={adminContentLocale} />
+                <FallbackDot visible={editingFallbackUsed} adminLocale={adminLocale} />
                 <span className="rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-xs text-slate-300">
                   {sourceLabel}
                 </span>
@@ -566,7 +560,7 @@ const AdminCasesRedesignedPage = () => {
                   {...register('format')}
                 >
                   <option value="">{adminCasesRedesignedContent.form.formatPlaceholder}</option>
-                  {FORMAT_OPTIONS.map((format) => (
+                  {adminCasesRedesignedContent.formatOptions.map((format) => (
                     <option key={format} value={format}>
                       {format}
                     </option>
@@ -665,7 +659,7 @@ const AdminCasesRedesignedPage = () => {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           <h3 className="truncate font-semibold text-white">{c.title}</h3>
-                          <FallbackDot visible={adminContentLocale === 'en' && !!fallbackBySlug[c.slug]} locale={adminContentLocale} />
+                          <FallbackDot visible={adminContentLocale === 'en' && !!fallbackBySlug[c.slug]} adminLocale={adminLocale} />
                           <span className="text-xs text-slate-500">({c.slug})</span>
                         </div>
                         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400">
