@@ -1502,16 +1502,17 @@ async function addBackground(src, name) {
 
 async function addVideo(src, name) {
   const video = document.createElement("video");
-  video.src = src;
   video.muted = true;
   video.loop = true;
   video.playsInline = true;
   video.preload = "auto";
-  // Attach to DOM so the browser actually buffers video data
-  document.getElementById("videoContainer").appendChild(video);
+  // Set handler BEFORE src so we don't miss the event
   await new Promise((resolve) => {
     video.onloadedmetadata = resolve;
     video.onerror = resolve;
+    video.src = src;
+    // Attach to DOM after handler — browser buffers data for DOM elements
+    document.getElementById("videoContainer").appendChild(video);
   });
   video.play().catch(() => {});
   state.videos.push({
