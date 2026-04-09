@@ -1500,20 +1500,14 @@ async function addBackground(src, name) {
   }
 }
 
-async function addVideo(src, name) {
+function addVideo(src, name) {
   const video = document.createElement("video");
   video.muted = true;
   video.loop = true;
   video.playsInline = true;
   video.preload = "auto";
-  // Set handler BEFORE src so we don't miss the event
-  await new Promise((resolve) => {
-    video.onloadedmetadata = resolve;
-    video.onerror = resolve;
-    video.src = src;
-    // Attach to DOM after handler — browser buffers data for DOM elements
-    document.getElementById("videoContainer").appendChild(video);
-  });
+  video.src = src;
+  document.getElementById("videoContainer").appendChild(video);
   video.play().catch(() => {});
   state.videos.push({
     id: uid("vid"),
@@ -1550,11 +1544,11 @@ async function importBackgroundFiles(files) {
   }
 }
 
-async function importVideoFiles(files) {
+function importVideoFiles(files) {
   const videoFiles = Array.from(files || []).filter((f) => f.type.startsWith("video/"));
   for (const file of videoFiles) {
     const src = URL.createObjectURL(file);
-    await addVideo(src, file.name);
+    addVideo(src, file.name);
   }
   if (videoFiles.length) {
     refreshVideoList();
