@@ -1132,10 +1132,10 @@ function refreshVideoList() {
         return;
       }
       el.videoId = item.id;
-      item.videoEl.play().catch(() => {});
+      item.videoEl.currentTime = 0;
+      item.videoEl.play().then(() => render()).catch(() => render());
       refreshScreensList();
       refreshVideoList();
-      render();
     });
     ui.videoList.appendChild(btn);
   }
@@ -1504,9 +1504,19 @@ async function addVideo(src, name) {
   video.loop = true;
   video.playsInline = true;
   video.preload = "auto";
+  video.load();
+  // Wait for readyState >= 2 (first frame decoded), not just metadata
   await new Promise((resolve) => {
-    video.onloadedmetadata = resolve;
-    video.onerror = resolve;
+    if (video.readyState >= 2) { resolve(); return; }
+    const cleanup = () => {
+      video.removeEventListener("loadeddata", cleanup);
+      video.removeEventListener("error", cleanup);
+      clearTimeout(timer);
+      resolve();
+    };
+    const timer = setTimeout(cleanup, 10000);
+    video.addEventListener("loadeddata", cleanup);
+    video.addEventListener("error", cleanup);
   });
   video.play().catch(() => {});
   state.videos.push({
