@@ -23,11 +23,14 @@ import { useI18n } from '../../context/I18nContext';
 import { getAdminLayoutContent } from '../../content/components/adminLayout';
 import LocaleSwitch from '../LocaleSwitch';
 import { supabase } from '../../lib/supabase';
+import type { Locale } from '../../i18n/types';
 
 interface Props {
   title: string;
   subtitle?: string;
   children: ReactNode;
+  contentLocale?: Locale;
+  onContentLocaleChange?: (locale: Locale) => void;
 }
 
 type BreadcrumbItem = {
@@ -54,7 +57,7 @@ const createDefaultNavItems = (content: ReturnType<typeof getAdminLayoutContent>
   { to: '/admin/content', label: content.nav.settings, Icon: Settings },
 ];
 
-const AdminLayout = ({ title, subtitle, children }: Props) => {
+const AdminLayout = ({ title, subtitle, children, contentLocale, onContentLocaleChange }: Props) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { logout } = useAuth();
@@ -311,11 +314,44 @@ const AdminLayout = ({ title, subtitle, children }: Props) => {
                     })}
                   </div>
                 </div>
-                <LocaleSwitch
-                  value={adminLocale}
-                  onChange={setAdminLocale}
-                  ariaLabel={adminLayoutContent.locale.label}
-                />
+                <div className="hidden items-end gap-3 md:flex">
+                  <div className="flex flex-col items-end gap-1">
+                    <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                      {adminLayoutContent.locale.adminLabel}
+                    </span>
+                    <LocaleSwitch
+                      value={adminLocale}
+                      onChange={setAdminLocale}
+                      ariaLabel={adminLayoutContent.locale.adminLabel}
+                    />
+                  </div>
+                  {contentLocale && onContentLocaleChange ? (
+                    <div className="flex flex-col items-end gap-1">
+                      <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                        {adminLayoutContent.locale.contentLabel}
+                      </span>
+                      <LocaleSwitch
+                        value={contentLocale}
+                        onChange={onContentLocaleChange}
+                        ariaLabel={adminLayoutContent.locale.contentLabel}
+                      />
+                    </div>
+                  ) : null}
+                </div>
+                <div className="flex items-center gap-2 md:hidden">
+                  <LocaleSwitch
+                    value={adminLocale}
+                    onChange={setAdminLocale}
+                    ariaLabel={adminLayoutContent.locale.adminLabel}
+                  />
+                  {contentLocale && onContentLocaleChange ? (
+                    <LocaleSwitch
+                      value={contentLocale}
+                      onChange={onContentLocaleChange}
+                      ariaLabel={adminLayoutContent.locale.contentLabel}
+                    />
+                  ) : null}
+                </div>
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-500 text-sm font-bold text-white">
                   A
                 </div>

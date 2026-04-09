@@ -1,5 +1,6 @@
 ﻿import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import * as React from 'react';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Tag } from 'lucide-react';
@@ -41,9 +42,9 @@ const splitList = (value: string) =>
     .filter(Boolean);
 
 const AdminCategoriesPage = () => {
-  const { adminLocale } = useI18n();
+  const { adminLocale, adminContentLocale, setAdminContentLocale } = useI18n();
   const adminCategoriesPageContent = getAdminCategoriesPageContent(adminLocale);
-  const { categories, fallbackById, upsert, remove, resetToDefault } = useCategories(adminLocale);
+  const { categories, fallbackById, upsert, remove, resetToDefault } = useCategories(adminContentLocale);
   const [editingId, setEditingId] = useState<Category['id'] | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
   const [resetModalOpen, setResetModalOpen] = useState(false);
@@ -63,12 +64,20 @@ const AdminCategoriesPage = () => {
   const { clearDraft: clearCategoryDraft, hasDraft: hasCategoryDraft, isHydrated } =
     useFormDraftPersistence<FormValues>({
       enabled: true,
-      storageKey: 'admin-category-draft',
+      storageKey: `admin-category-draft-${adminContentLocale}`,
       reset,
       watch,
     });
 
   useUnsavedChangesGuard(isDirty);
+
+  React.useEffect(() => {
+    setEditingId(null);
+    setDeleteTarget(null);
+    setResetModalOpen(false);
+    setSearch('');
+    reset(defaultValues);
+  }, [adminContentLocale, reset]);
 
   const onSubmit = async (values: FormValues) => {
     const payload: Category = {
@@ -141,6 +150,8 @@ const AdminCategoriesPage = () => {
     <AdminLayout
       title={adminCategoriesPageContent.layout.title}
       subtitle={adminCategoriesPageContent.layout.subtitle}
+      contentLocale={adminContentLocale}
+      onContentLocaleChange={setAdminContentLocale}
     >
       <ConfirmModal
         open={Boolean(deleteTarget)}
@@ -279,7 +290,7 @@ const AdminCategoriesPage = () => {
                   <div>
                     <div className="flex items-center gap-2 font-semibold text-white">
                       <span>{item.title}</span>
-                      <FallbackDot visible={adminLocale === 'en' && !!fallbackById[String(item.id)]} locale={adminLocale} />
+                      <FallbackDot visible={adminContentLocale === 'en' && !!fallbackById[String(item.id)]} locale={adminContentLocale} />
                     </div>
                     <div className="text-xs text-slate-400">ID: {item.id}</div>
                     <div className="mt-1 text-xs text-slate-300">{item.shortDescription}</div>

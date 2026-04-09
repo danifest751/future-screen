@@ -33,7 +33,8 @@ type AdminLayoutContent = {
     role: string;
   };
   locale: {
-    label: string;
+    adminLabel: string;
+    contentLabel: string;
   };
 };
 
@@ -70,7 +71,8 @@ const ru: AdminLayoutContent = {
     role: 'Admin',
   },
   locale: {
-    label: 'Язык админки',
+    adminLabel: 'Язык админки',
+    contentLabel: 'Локаль контента',
   },
 };
 
@@ -107,7 +109,8 @@ const en: AdminLayoutContent = {
     role: 'Admin',
   },
   locale: {
-    label: 'Admin language',
+    adminLabel: 'Admin language',
+    contentLabel: 'Content locale',
   },
 };
 

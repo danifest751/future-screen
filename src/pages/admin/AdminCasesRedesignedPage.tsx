@@ -103,9 +103,9 @@ const getCaseIdBySlug = async (slug: string): Promise<number | null> => {
 };
 
 const AdminCasesRedesignedPage = () => {
-  const { adminLocale } = useI18n();
+  const { adminLocale, adminContentLocale, setAdminContentLocale } = useI18n();
   const adminCasesRedesignedContent = getAdminCasesRedesignedContent(adminLocale);
-  const { cases, fallbackBySlug, addCase, updateCase, deleteCase, resetToDefault } = useCases(adminLocale);
+  const { cases, fallbackBySlug, addCase, updateCase, deleteCase, resetToDefault } = useCases(adminContentLocale);
   const [activeTab, setActiveTab] = useState<'cases' | 'media'>('cases');
   const [caseEditing, setCaseEditing] = useState<string | null>(null);
   const [editingCaseId, setEditingCaseId] = useState<number | null>(null);
@@ -133,6 +133,17 @@ const AdminCasesRedesignedPage = () => {
   });
 
   useUnsavedChangesGuard(isDirty);
+
+  useEffect(() => {
+    setCaseEditing(null);
+    setEditingCaseId(null);
+    setSelectedMedia([]);
+    setDeleteTarget(null);
+    setResetModalOpen(false);
+    setAutoSlug(true);
+    setSearchQuery('');
+    reset(defaultValues);
+  }, [adminContentLocale, reset]);
 
   useEffect(() => {
     if (caseMediaLinks && caseMediaLinks.length > 0) {
@@ -356,6 +367,8 @@ const AdminCasesRedesignedPage = () => {
     <AdminLayout
       title={adminCasesRedesignedContent.layout.title}
       subtitle={adminCasesRedesignedContent.layout.subtitle}
+      contentLocale={adminContentLocale}
+      onContentLocaleChange={setAdminContentLocale}
     >
       <div className="mb-6 flex justify-end gap-2">
         <button
@@ -588,7 +601,7 @@ const AdminCasesRedesignedPage = () => {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           <h3 className="truncate font-semibold text-white">{c.title}</h3>
-                          <FallbackDot visible={adminLocale === 'en' && !!fallbackBySlug[c.slug]} locale={adminLocale} />
+                          <FallbackDot visible={adminContentLocale === 'en' && !!fallbackBySlug[c.slug]} locale={adminContentLocale} />
                           <span className="text-xs text-slate-500">({c.slug})</span>
                         </div>
                         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400">

@@ -35,9 +35,9 @@ const splitLines = (value: string) =>
     .filter(Boolean);
 
 const AdminContactsPage = () => {
-  const { adminLocale } = useI18n();
+  const { adminLocale, adminContentLocale, setAdminContentLocale } = useI18n();
   const adminContactsPageContent = getAdminContactsPageContent(adminLocale);
-  const { contacts, fallbackUsed, loading, update, resetToDefault } = useContacts(adminLocale);
+  const { contacts, fallbackUsed, loading, update, resetToDefault } = useContacts(adminContentLocale);
   const [resetModalOpen, setResetModalOpen] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
 
@@ -55,12 +55,18 @@ const AdminContactsPage = () => {
   const { clearDraft: clearContactsDraft, hasDraft: hasContactsDraft, isHydrated } =
     useFormDraftPersistence<FormValues>({
       enabled: true,
-      storageKey: 'admin-contacts-draft',
+      storageKey: `admin-contacts-draft-${adminContentLocale}`,
       reset,
       watch,
     });
 
   useUnsavedChangesGuard(isDirty);
+
+  useEffect(() => {
+    setResetModalOpen(false);
+    setIsInitialized(false);
+    reset(defaultValues);
+  }, [adminContentLocale, reset]);
 
   useEffect(() => {
     if (!isHydrated || loading || !contacts) return;
@@ -103,6 +109,8 @@ const AdminContactsPage = () => {
       <AdminLayout
         title={adminContactsPageContent.layout.title}
         subtitle={adminContactsPageContent.layout.loadingSubtitle}
+        contentLocale={adminContentLocale}
+        onContentLocaleChange={setAdminContentLocale}
       >
         <div className="flex h-64 items-center justify-center">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />
@@ -116,6 +124,8 @@ const AdminContactsPage = () => {
       <AdminLayout
         title={adminContactsPageContent.layout.title}
         subtitle={adminContactsPageContent.layout.loadErrorSubtitle}
+        contentLocale={adminContentLocale}
+        onContentLocaleChange={setAdminContentLocale}
       >
         <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-6 text-center text-red-300">
           <p className="text-lg font-medium">{adminContactsPageContent.states.notLoadedTitle}</p>
@@ -129,6 +139,8 @@ const AdminContactsPage = () => {
     <AdminLayout
       title={adminContactsPageContent.layout.title}
       subtitle={adminContactsPageContent.layout.subtitle}
+      contentLocale={adminContentLocale}
+      onContentLocaleChange={setAdminContentLocale}
     >
       <ConfirmModal
         open={resetModalOpen}
@@ -147,7 +159,7 @@ const AdminContactsPage = () => {
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <h2 className="text-xl font-semibold text-white">{adminContactsPageContent.form.title}</h2>
-              <FallbackDot visible={adminLocale === 'en' && fallbackUsed} locale={adminLocale} />
+              <FallbackDot visible={adminContentLocale === 'en' && fallbackUsed} locale={adminContentLocale} />
             </div>
             {isHydrated && hasContactsDraft && (
               <span className="rounded-full border border-brand-500/40 bg-brand-500/10 px-2 py-0.5 text-xs text-brand-100">

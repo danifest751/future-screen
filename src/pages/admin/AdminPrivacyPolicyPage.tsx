@@ -35,10 +35,10 @@ const defaultValues: FormValues = {
 const fontSizes = ['0.875rem', '1rem', '1.125rem', '1.5rem'];
 
 const AdminPrivacyPolicyPage = () => {
-  const { adminLocale } = useI18n();
+  const { adminLocale, adminContentLocale, setAdminContentLocale } = useI18n();
   const adminPrivacyPolicyContent = getAdminPrivacyPolicyContent(adminLocale);
   const localeTag = adminLocale === 'ru' ? 'ru-RU' : 'en-US';
-  const { content, fallbackUsed, loading, saving, save } = usePrivacyPolicy(adminLocale);
+  const { content, fallbackUsed, loading, saving, save } = usePrivacyPolicy(adminContentLocale);
   const [lastSaved, setLastSaved] = useState<string | null>(null);
 
   const {
@@ -58,7 +58,7 @@ const AdminPrivacyPolicyPage = () => {
 
   const { clearDraft: clearFormDraft, hasDraft: hasFormDraft, isHydrated } = useFormDraftPersistence<FormValues>({
     enabled: true,
-    storageKey: 'admin-privacy-policy-draft',
+    storageKey: `admin-privacy-policy-draft-${adminContentLocale}`,
     reset,
     watch,
   });
@@ -79,7 +79,7 @@ const AdminPrivacyPolicyPage = () => {
     if (content.updatedAt) {
       setLastSaved(new Date(content.updatedAt).toLocaleString(localeTag));
     }
-  }, [content, hasFormDraft, isHydrated, reset]);
+  }, [content, hasFormDraft, isHydrated, localeTag, reset]);
 
   const onSubmit = async (values: FormValues) => {
     const ok = await save({
@@ -104,6 +104,8 @@ const AdminPrivacyPolicyPage = () => {
       <AdminLayout
         title={adminPrivacyPolicyContent.layout.title}
         subtitle={adminPrivacyPolicyContent.layout.loadingSubtitle}
+        contentLocale={adminContentLocale}
+        onContentLocaleChange={setAdminContentLocale}
       >
         <div className="flex h-64 items-center justify-center">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />
@@ -116,13 +118,15 @@ const AdminPrivacyPolicyPage = () => {
     <AdminLayout
       title={adminPrivacyPolicyContent.layout.title}
       subtitle={lastSaved ? adminPrivacyPolicyContent.layout.lastSaved(lastSaved) : undefined}
+      contentLocale={adminContentLocale}
+      onContentLocaleChange={setAdminContentLocale}
     >
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="rounded-xl border border-white/10 bg-slate-800 p-6">
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <h2 className="text-xl font-semibold text-white">{adminPrivacyPolicyContent.editor.title}</h2>
-              <FallbackDot visible={adminLocale === 'en' && fallbackUsed} locale={adminLocale} />
+              <FallbackDot visible={adminContentLocale === 'en' && fallbackUsed} locale={adminContentLocale} />
             </div>
             {isHydrated && hasFormDraft && (
               <span className="rounded-full border border-brand-500/40 bg-brand-500/10 px-2 py-0.5 text-xs text-brand-100">

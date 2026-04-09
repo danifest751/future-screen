@@ -1,5 +1,6 @@
 ﻿import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import * as React from 'react';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import toast from 'react-hot-toast';
@@ -40,9 +41,9 @@ const splitList = (value: string) =>
     .filter(Boolean);
 
 const AdminPackagesPage = () => {
-  const { adminLocale } = useI18n();
+  const { adminLocale, adminContentLocale, setAdminContentLocale } = useI18n();
   const adminPackagesPageContent = getAdminPackagesPageContent(adminLocale);
-  const { packages, fallbackById, upsert, remove, resetToDefault } = usePackages(adminLocale);
+  const { packages, fallbackById, upsert, remove, resetToDefault } = usePackages(adminContentLocale);
   const [editingId, setEditingId] = useState<Package['id'] | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Package | null>(null);
   const [resetModalOpen, setResetModalOpen] = useState(false);
@@ -62,12 +63,20 @@ const AdminPackagesPage = () => {
   const { clearDraft: clearPackageDraft, hasDraft: hasPackageDraft, isHydrated } =
     useFormDraftPersistence<FormValues>({
       enabled: true,
-      storageKey: 'admin-package-draft',
+      storageKey: `admin-package-draft-${adminContentLocale}`,
       reset,
       watch,
     });
 
   useUnsavedChangesGuard(isDirty);
+
+  React.useEffect(() => {
+    setEditingId(null);
+    setDeleteTarget(null);
+    setResetModalOpen(false);
+    setSearch('');
+    reset(defaultValues);
+  }, [adminContentLocale, reset]);
 
   const onSubmit = async (values: FormValues) => {
     const payload: Package = {
@@ -150,6 +159,8 @@ const AdminPackagesPage = () => {
     <AdminLayout
       title={adminPackagesPageContent.layout.title}
       subtitle={adminPackagesPageContent.layout.subtitle}
+      contentLocale={adminContentLocale}
+      onContentLocaleChange={setAdminContentLocale}
     >
       <ConfirmModal
         open={Boolean(deleteTarget)}
@@ -293,7 +304,7 @@ const AdminPackagesPage = () => {
                   <div>
                     <div className="flex items-center gap-2 font-semibold text-white">
                       <span>{item.name}</span>
-                      <FallbackDot visible={adminLocale === 'en' && !!fallbackById[String(item.id)]} locale={adminLocale} />
+                      <FallbackDot visible={adminContentLocale === 'en' && !!fallbackById[String(item.id)]} locale={adminContentLocale} />
                     </div>
                     <div className="text-xs text-slate-400">ID: {item.id}</div>
                     <div className="mt-1 text-xs text-slate-300">

@@ -134,7 +134,7 @@ const inputClass =
 const textareaClass = `${inputClass} resize-y`;
 
 const AdminRentalCategoryEditPage = () => {
-  const { adminLocale } = useI18n();
+  const { adminLocale, adminContentLocale, setAdminContentLocale } = useI18n();
   const adminRentalCategoryEditContent = getAdminRentalCategoryEditContent(adminLocale);
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -166,7 +166,7 @@ const AdminRentalCategoryEditPage = () => {
       setLoading(true);
       setFallbackUsed(false);
       try {
-        const all = await loadRentalCategories(adminLocale);
+        const all = await loadRentalCategories(adminContentLocale);
         const cat = all.find((c) => c.id === Number(id));
         if (!cat) {
           toast.error(adminRentalCategoryEditContent.toasts.notFound);
@@ -230,7 +230,7 @@ const AdminRentalCategoryEditPage = () => {
     return () => {
       cancelled = true;
     };
-  }, [id, isNew, navigate, reset, adminLocale, adminRentalCategoryEditContent.toasts.loadError, adminRentalCategoryEditContent.toasts.notFound]);
+  }, [id, isNew, navigate, reset, adminContentLocale, adminRentalCategoryEditContent.toasts.loadError, adminRentalCategoryEditContent.toasts.notFound]);
 
   const onSubmit = async (values: FormValues) => {
     const highlights = parseLines(values.heroHighlightsText || '').map((text) => ({ text }));
@@ -297,7 +297,7 @@ const AdminRentalCategoryEditPage = () => {
     };
 
     try {
-      await upsertRentalCategory(cat, adminLocale);
+      await upsertRentalCategory(cat, adminContentLocale);
       toast.success(isNew ? adminRentalCategoryEditContent.toasts.createSuccess : adminRentalCategoryEditContent.toasts.updateSuccess);
       navigate('/admin/rental-categories');
     } catch {
@@ -307,7 +307,12 @@ const AdminRentalCategoryEditPage = () => {
 
   if (loading) {
     return (
-      <AdminLayout title={adminRentalCategoryEditContent.loading.title} subtitle="">
+      <AdminLayout
+        title={adminRentalCategoryEditContent.loading.title}
+        subtitle=""
+        contentLocale={adminContentLocale}
+        onContentLocaleChange={setAdminContentLocale}
+      >
         <div className="text-sm text-slate-400">{adminRentalCategoryEditContent.loading.description}</div>
       </AdminLayout>
     );
@@ -327,6 +332,8 @@ const AdminRentalCategoryEditPage = () => {
           ? adminRentalCategoryEditContent.layout.createSubtitle
           : adminRentalCategoryEditContent.layout.editSubtitle
       }
+      contentLocale={adminContentLocale}
+      onContentLocaleChange={setAdminContentLocale}
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div className="flex items-center justify-between">
@@ -338,7 +345,7 @@ const AdminRentalCategoryEditPage = () => {
             >
               <ArrowLeft size={16} /> {adminRentalCategoryEditContent.topBar.back}
             </button>
-            <FallbackDot visible={!isNew && adminLocale === 'en' && fallbackUsed} locale={adminLocale} />
+            <FallbackDot visible={!isNew && adminContentLocale === 'en' && fallbackUsed} locale={adminContentLocale} />
             {isDirty && (
               <span className="rounded-full border border-amber-400/40 bg-amber-500/10 px-2 py-0.5 text-xs text-amber-200">
                 {adminRentalCategoryEditContent.topBar.unsaved}

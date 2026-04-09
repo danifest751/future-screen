@@ -9,9 +9,9 @@ import { getAdminRentalCategoriesContent } from '../../content/pages/adminRental
 import { FallbackDot } from '../../components/admin/ui';
 
 const AdminRentalCategoriesPage = () => {
-  const { adminLocale } = useI18n();
+  const { adminLocale, adminContentLocale, setAdminContentLocale } = useI18n();
   const adminRentalCategoriesContent = getAdminRentalCategoriesContent(adminLocale);
-  const { items, loading, error, reload } = useRentalCategories(adminLocale);
+  const { items, loading, error, reload } = useRentalCategories(adminContentLocale);
   const [togglingId, setTogglingId] = useState<number | null>(null);
 
   const handleToggleBlurTitle = async (id: number, currentValue: boolean) => {
@@ -31,6 +31,8 @@ const AdminRentalCategoriesPage = () => {
     <AdminLayout
       title={adminRentalCategoriesContent.layout.title}
       subtitle={adminRentalCategoriesContent.layout.subtitle}
+      contentLocale={adminContentLocale}
+      onContentLocaleChange={setAdminContentLocale}
     >
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -81,7 +83,7 @@ const AdminRentalCategoriesPage = () => {
                     <td className="px-4 py-3 font-medium text-white">
                       <span className="inline-flex items-center gap-2">
                         <span>{cat.name}</span>
-                        <FallbackDot visible={adminLocale === 'en' && !!cat.isFallbackFromRu} locale={adminLocale} />
+                        <FallbackDot visible={adminContentLocale === 'en' && !!cat.isFallbackFromRu} locale={adminContentLocale} />
                       </span>
                     </td>
                     <td className="px-4 py-3 font-mono text-xs text-slate-400">/rent/{cat.slug}</td>
