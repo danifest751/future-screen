@@ -65,4 +65,16 @@ target/
 # Virtual environments
 .venv/
 venv/
-```
+
+# MemPalace local storage
+.mempalace/
+mempalace.yaml
+entities.json
+
+# Local SEO working docs
+docs/future-screen-seo-dev-spec.md
+docs/future-screen-seo-plan.md
+docs/future-screen-seo-structure-semantic-plan.md
+docs/future-screen-seo-url-title-map.md
+docs/future-screen-seo-review-2026-04-09.md
+docs/future-screen-seo-review-2026-04-09-ru.md

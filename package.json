@@ -17,7 +17,19 @@
     "test:all": "npm run test && npm run test:e2e",
     "server": "node server/index.js",
     "dev:all": "concurrently \"npm:server\" \"npm:dev\"",
-    "gen:types": "node scripts/generate-supabase-types.mjs"
+    "gen:types": "node scripts/generate-supabase-types.mjs",
+    "memory:init": "powershell -NoProfile -Command \"'' | py -X utf8 -m mempalace --palace ./.mempalace/palace init . --yes\"",
+    "memory:save": "py -X utf8 scripts/memory_save.py --project . --palace ./.mempalace/palace --agent codex",
+    "memory:save:full": "py -X utf8 -m mempalace --palace ./.mempalace/palace mine . --wing future_screen --agent codex",
+    "memory:wakeup": "py -X utf8 -m mempalace --palace ./.mempalace/palace wake-up --wing future_screen",
+    "memory:status": "py -X utf8 -m mempalace --palace ./.mempalace/palace status",
+    "memory:search": "py -X utf8 -m mempalace --palace ./.mempalace/palace search",
+    "memory:session": "py -X utf8 scripts/memory_session.py --mode start",
+    "memory:session:save": "py -X utf8 scripts/memory_session.py --mode save",
+    "memory:session:sync": "py -X utf8 scripts/memory_session.py --mode sync",
+    "work:start": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/start-work.ps1",
+    "work:end": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/end-work.ps1",
+    "check:prepush": "npm run lint && npm run build && npm run work:end"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.4",
