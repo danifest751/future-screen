@@ -531,7 +531,6 @@ const AdminCasesRedesignedPage = () => {
                 <label className="text-sm text-slate-200">
                   {adminCasesRedesignedContent.form.dateLabel}
                   <input
-                    type="date"
                     className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-slate-200"
                     {...register('date')}
                   />
