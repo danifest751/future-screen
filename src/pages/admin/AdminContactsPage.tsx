@@ -65,12 +65,12 @@ const AdminContactsPage = () => {
   useEffect(() => {
     setResetModalOpen(false);
     setIsInitialized(false);
+    void clearContactsDraft();
     reset(defaultValues);
-  }, [adminContentLocale, reset]);
+  }, [adminContentLocale, clearContactsDraft, reset]);
 
   useEffect(() => {
     if (!isHydrated || loading || !editorContacts) return;
-    if (hasContactsDraft) return;
     if (isInitialized) return;
 
     reset({
@@ -80,7 +80,7 @@ const AdminContactsPage = () => {
       workingHours: editorContacts.workingHours,
     });
     setIsInitialized(true);
-  }, [editorContacts, hasContactsDraft, isHydrated, loading, reset, isInitialized]);
+  }, [editorContacts, isHydrated, loading, reset, isInitialized]);
 
   const onSubmit = async (values: FormValues) => {
     const ok = await update({

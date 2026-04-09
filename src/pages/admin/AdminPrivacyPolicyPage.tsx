@@ -67,11 +67,12 @@ const AdminPrivacyPolicyPage = () => {
 
   useEffect(() => {
     setLastSaved(null);
+    void clearFormDraft();
     reset(defaultValues);
-  }, [adminContentLocale, reset]);
+  }, [adminContentLocale, clearFormDraft, reset]);
 
   useEffect(() => {
-    if (!isHydrated || hasFormDraft || !content) return;
+    if (!isHydrated || !content) return;
 
     reset({
       title: content.title || '',
@@ -84,7 +85,7 @@ const AdminPrivacyPolicyPage = () => {
     if (content.updatedAt) {
       setLastSaved(new Date(content.updatedAt).toLocaleString(localeTag));
     }
-  }, [content, hasFormDraft, isHydrated, localeTag, reset]);
+  }, [content, isHydrated, localeTag, reset]);
 
   const onSubmit = async (values: FormValues) => {
     const ok = await save({
