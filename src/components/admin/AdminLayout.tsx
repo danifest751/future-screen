@@ -111,6 +111,10 @@ const AdminLayout = ({ title, subtitle, children, contentLocale, onContentLocale
   }, [location.pathname]);
 
   useEffect(() => {
+    setSidebarOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
     let mounted = true;
 
     const loadLeadCount = async () => {
@@ -198,7 +202,6 @@ const AdminLayout = ({ title, subtitle, children, contentLocale, onContentLocale
         className={`fixed left-0 top-0 z-40 h-full w-64 transform border-r border-white/10 bg-slate-800 transition-transform duration-300 lg:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
-        aria-hidden={!sidebarOpen}
       >
         <div className="flex h-full flex-col">
           <div className="flex h-16 items-center border-b border-white/10 px-6">

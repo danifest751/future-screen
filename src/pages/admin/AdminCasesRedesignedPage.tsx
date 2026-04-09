@@ -135,6 +135,41 @@ const AdminCasesRedesignedPage = () => {
   useUnsavedChangesGuard(isDirty);
 
   useEffect(() => {
+    setDeleteTarget(null);
+    setResetModalOpen(false);
+    setSearchQuery('');
+    setActiveTab('cases');
+
+    if (!caseEditing) {
+      setEditingCaseId(null);
+      setSelectedMedia([]);
+      setAutoSlug(true);
+      reset(defaultValues);
+      return;
+    }
+
+    const currentCase = getEditorCase(caseEditing);
+    if (!currentCase) {
+      setEditingCaseId(null);
+      setSelectedMedia([]);
+      setAutoSlug(true);
+      reset(defaultValues);
+      return;
+    }
+
+    reset({
+      slug: currentCase.slug,
+      title: currentCase.title,
+      city: currentCase.city,
+      date: currentCase.date,
+      format: currentCase.format,
+      summary: currentCase.summary,
+      metrics: currentCase.metrics ?? '',
+      servicesText: currentCase.services.join(', '),
+    });
+  }, [adminContentLocale, caseEditing, getEditorCase, reset]);
+
+  useEffect(() => {
     if (!caseEditing) return;
 
     const currentCase = getEditorCase(caseEditing);

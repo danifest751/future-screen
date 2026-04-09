@@ -55,7 +55,7 @@ const AdminContactsPage = () => {
   const { clearDraft: clearContactsDraft, hasDraft: hasContactsDraft, isHydrated } =
     useFormDraftPersistence<FormValues>({
       enabled: true,
-      storageKey: `admin-contacts-draft-${adminContentLocale}`,
+      storageKey: `admin-contacts-draft-v2-${adminContentLocale}`,
       reset,
       watch,
     });

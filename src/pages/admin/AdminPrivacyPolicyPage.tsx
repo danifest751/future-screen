@@ -58,12 +58,17 @@ const AdminPrivacyPolicyPage = () => {
 
   const { clearDraft: clearFormDraft, hasDraft: hasFormDraft, isHydrated } = useFormDraftPersistence<FormValues>({
     enabled: true,
-    storageKey: `admin-privacy-policy-draft-${adminContentLocale}`,
+    storageKey: `admin-privacy-policy-draft-v2-${adminContentLocale}`,
     reset,
     watch,
   });
 
   useUnsavedChangesGuard(isDirty);
+
+  useEffect(() => {
+    setLastSaved(null);
+    reset(defaultValues);
+  }, [adminContentLocale, reset]);
 
   useEffect(() => {
     if (!isHydrated || hasFormDraft || !content) return;

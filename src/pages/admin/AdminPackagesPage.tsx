@@ -63,12 +63,38 @@ const AdminPackagesPage = () => {
   const { clearDraft: clearPackageDraft, hasDraft: hasPackageDraft, isHydrated } =
     useFormDraftPersistence<FormValues>({
       enabled: true,
-      storageKey: `admin-package-draft-${adminContentLocale}`,
+      storageKey: `admin-package-draft-v2-${adminContentLocale}`,
       reset,
       watch,
     });
 
   useUnsavedChangesGuard(isDirty);
+
+  React.useEffect(() => {
+    setDeleteTarget(null);
+    setResetModalOpen(false);
+    setSearch('');
+
+    if (editingId === null) {
+      reset(defaultValues);
+      return;
+    }
+
+    const currentItem = getEditorPackage(editingId);
+    if (!currentItem) {
+      reset(defaultValues);
+      return;
+    }
+
+    reset({
+      id: currentItem.id,
+      name: currentItem.name,
+      forFormatsText: currentItem.forFormats.join('\n'),
+      includesText: currentItem.includes.join('\n'),
+      optionsText: (currentItem.options ?? []).join('\n'),
+      priceHint: currentItem.priceHint ?? '',
+    });
+  }, [adminContentLocale, editingId, getEditorPackage, reset]);
 
   React.useEffect(() => {
     if (editingId === null) return;

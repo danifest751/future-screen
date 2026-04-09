@@ -64,12 +64,37 @@ const AdminCategoriesPage = () => {
   const { clearDraft: clearCategoryDraft, hasDraft: hasCategoryDraft, isHydrated } =
     useFormDraftPersistence<FormValues>({
       enabled: true,
-      storageKey: `admin-category-draft-${adminContentLocale}`,
+      storageKey: `admin-category-draft-v2-${adminContentLocale}`,
       reset,
       watch,
     });
 
   useUnsavedChangesGuard(isDirty);
+
+  React.useEffect(() => {
+    setDeleteTarget(null);
+    setResetModalOpen(false);
+    setSearch('');
+
+    if (editingId === null) {
+      reset(defaultValues);
+      return;
+    }
+
+    const currentItem = getEditorCategory(editingId);
+    if (!currentItem) {
+      reset(defaultValues);
+      return;
+    }
+
+    reset({
+      id: currentItem.id,
+      title: currentItem.title,
+      shortDescription: currentItem.shortDescription,
+      bulletsText: currentItem.bullets.join('\n'),
+      pagePath: currentItem.pagePath,
+    });
+  }, [adminContentLocale, editingId, getEditorCategory, reset]);
 
   React.useEffect(() => {
     if (editingId === null) return;
