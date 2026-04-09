@@ -32,6 +32,7 @@ const AdminRentalCategoriesPage = lazy(() => import('./pages/admin/AdminRentalCa
 const AdminRentalCategoryEditPage = lazy(() => import('./pages/admin/AdminRentalCategoryEditPage'));
 const AdminPrivacyPolicyPage = lazy(() => import('./pages/admin/AdminPrivacyPolicyPage'));
 const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'));
+const VisualLedEditorPage = lazy(() => import('./pages/VisualLedEditorPage'));
 
 const PageLoader = () => (
   <div
@@ -100,10 +101,16 @@ const App = () => {
     { path: '/admin/rental/:id', element: <ProtectedRoute><AdminRentalCategoryEditPage /></ProtectedRoute> },
     { path: '/admin/privacy-policy', element: <ProtectedRoute><AdminPrivacyPolicyPage /></ProtectedRoute> },
     { path: '/admin', element: <ProtectedRoute><AdminDashboard /></ProtectedRoute> },
+    { path: '/visual-led', element: <VisualLedEditorPage /> },
     { path: '*', element: <NotFoundPage /> },
   ];
 
   const element = useRoutes(routes);
+  const isFullscreenTool = location.pathname.startsWith('/visual-led');
+
+  if (isFullscreenTool) {
+    return <Suspense fallback={<PageLoader />}>{element}</Suspense>;
+  }
 
   return (
     <Layout>

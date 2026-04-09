@@ -1,0 +1,153 @@
+﻿<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Future Screen - Perspective Planner</title>
+  <link rel="stylesheet" href="./app.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="panel">
+        <h2><span class="i">📏</span> Масштаб</h2>
+        <p class="helper">2 клика по известной дистанции на фото.</p>
+        <div class="inline-row">
+          <label class="grow" title="Реальная длина между 2 точками на фото в метрах">
+            Длина, м
+            <input id="knownLengthMeters" type="number" min="0.1" step="0.1" value="2" />
+          </label>
+          <button id="startScaleBtn" class="action compact" title="Запускает режим выбора двух точек масштаба">
+            <span class="i">◎</span> Старт
+          </button>
+        </div>
+        <div id="scaleStatus" class="status">Масштаб не задан</div>
+      </div>
+
+      <div class="panel">
+        <h2><span class="i">▦</span> Экраны</h2>
+        <p class="helper">4 клика по углам будущего экрана.</p>
+        <div class="inline-row">
+          <button id="startAddScreenBtn" class="action" title="Запускает режим добавления экрана по 4 точкам">
+            <span class="i">＋</span> Добавить экран
+          </button>
+          <button id="cancelToolBtn" class="action secondary compact" title="Выход из активного режима кликов">
+            <span class="i">✕</span> Сброс
+          </button>
+        </div>
+        <div class="inline-row">
+          <button id="exportReportBtn" class="action secondary" title="Экспортирует отчет со снимком сцены и метриками">
+            <span class="i">🧾</span> Экспорт отчета
+          </button>
+          <button id="copySceneBtn" class="action secondary compact" title="Копирует в буфер сцену со снимком и метриками">
+            <span class="i">📋</span> Копировать
+          </button>
+        </div>
+        <div id="clipboardStatus" class="status">Буфер: ожидание</div>
+        <div id="screensCount" class="status">Экранов: 0</div>
+        <div id="screensList" class="screen-list"></div>
+      </div>
+
+      <div class="panel">
+        <h2><span class="i">◻</span> Выбранный</h2>
+        <div id="selectionInfo" class="status">Не выбран</div>
+        <div class="inline-row">
+          <label class="grow" title="Реальная ширина выбранной области экрана">
+            Ширина, м
+            <input id="screenWidthMeters" type="number" min="0.1" step="0.1" />
+          </label>
+          <label class="grow" title="Реальная высота выбранной области экрана">
+            Высота, м
+            <input id="screenHeightMeters" type="number" min="0.1" step="0.1" />
+          </label>
+        </div>
+        <button id="applyScreenSizeBtn" class="action" title="Пересчитывает геометрию экрана под указанные метры">
+          <span class="i">↔</span> Применить размер
+        </button>
+        <button id="deleteSelectedBtn" class="action danger" title="Удаляет выбранный экран">
+          <span class="i">🗑</span> Удалить
+        </button>
+      </div>
+
+      <div class="panel">
+        <h2><span class="i">▤</span> Кабинеты 0.5 x 0.5</h2>
+        <p class="helper">Красным подсвечивается выход за границу.</p>
+        <label title="Пиксельный шаг кабинета для расчета итогового разрешения">
+          Pixel pitch
+          <select id="pixelPitchSelect">
+            <option value="2.6" selected>P2.6 (192x192 px/кабинет)</option>
+            <option value="1.9">P1.9 (256x256 px/кабинет)</option>
+          </select>
+        </label>
+        <button id="cabinetAutoFillBtn" class="action" title="Автозаполнение выбранного экрана модулями 0.5x0.5м">
+          <span class="i">▧</span> Автозаполнение
+        </button>
+        <button id="fitScreenToCabinetsBtn" class="action secondary" title="Подгоняет размер области экрана под текущее количество кабинетов">
+          <span class="i">⤢</span> Подогнать экран под кабинеты
+        </button>
+        <div class="split-actions">
+          <button id="cabinetAddColBtn" class="action mini" title="Добавить колонку кабинетов">+ колонка</button>
+          <button id="cabinetRemoveColBtn" class="action mini secondary" title="Убрать колонку кабинетов">- колонка</button>
+        </div>
+        <div class="split-actions">
+          <button id="cabinetAddRowBtn" class="action mini" title="Добавить ряд кабинетов">+ ряд</button>
+          <button id="cabinetRemoveRowBtn" class="action mini secondary" title="Убрать ряд кабинетов">- ряд</button>
+        </div>
+        <button id="cabinetClearBtn" class="action secondary" title="Очистить раскладку кабинетов">
+          <span class="i">⌫</span> Убрать кабинеты
+        </button>
+        <label class="check-row" title="Показывать или скрывать линии сетки кабинетов">
+          <input id="toggleCabinetGrid" type="checkbox" checked />
+          <span>Показать сетку кабинетов</span>
+        </label>
+        <div id="cabinetStatus" class="status">Кабинеты не заданы</div>
+        <div id="cabinetCountInfo" class="status">Количество: 0</div>
+        <div id="cabinetResolutionInfo" class="status">Разрешение: -</div>
+      </div>
+    </aside>
+
+    <main class="stage-area">
+      <header class="stage-header">
+        <div class="title">Future Screen Perspective Planner</div>
+        <div class="stage-header-right">
+          <div class="zoom-tools">
+            <button id="zoomOutBtn" class="action mini" title="Уменьшить масштаб">−</button>
+            <button id="zoomResetBtn" class="action mini" title="Сбросить масштаб">100%</button>
+            <button id="zoomInBtn" class="action mini" title="Увеличить масштаб">+</button>
+          </div>
+          <div id="toolStatus" class="tool-status">Режим: ожидание</div>
+        </div>
+      </header>
+      <div id="canvasWrap" class="canvas-wrap">
+        <canvas id="editorCanvas" width="1280" height="720"></canvas>
+      </div>
+    </main>
+
+    <aside class="sidebar right">
+      <div id="backgroundPanel" class="panel">
+        <h2><span class="i">🖼</span> Фоны</h2>
+        <label class="upload-btn" title="Добавить фоны в библиотеку">
+          <span class="i">⤴</span> Загрузить
+          <input id="backgroundUpload" type="file" accept="image/*" multiple />
+        </label>
+        <p class="helper">Перетащи файлы сюда или на canvas.</p>
+        <div id="backgroundThumbs" class="thumb-list"></div>
+      </div>
+      <div class="panel">
+        <h2><span class="i">🎬</span> Видео</h2>
+        <label class="upload-btn" title="Добавить видео в библиотеку">
+          <span class="i">⤴</span> Загрузить
+          <input id="videoUpload" type="file" accept="video/mp4,video/webm" multiple />
+        </label>
+        <p class="helper">Клик по ролику назначает его выбранному экрану.</p>
+        <div class="inline-row">
+          <button id="clearScreenVideoBtn" class="action secondary compact" title="Снять видео с выбранного экрана">Снять видео</button>
+        </div>
+        <div id="videoList" class="screen-list"></div>
+      </div>
+    </aside>
+  </div>
+
+  <script src="./app.js"></script>
+</body>
+</html>

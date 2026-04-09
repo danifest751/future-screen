@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  Monitor,
   Package,
   Palette,
   Phone,
@@ -55,6 +56,7 @@ const createDefaultNavItems = (content: ReturnType<typeof getAdminLayoutContent>
   { to: '/admin/rental-categories', label: content.nav.rentalCategories, Icon: ShoppingCart },
   { to: '/admin/contacts', label: content.nav.contacts, Icon: Phone },
   { to: '/admin/content', label: content.nav.settings, Icon: Settings },
+  { to: '/visual-led', label: content.nav.visualLed, Icon: Monitor },
 ];
 
 const AdminLayout = ({ title, subtitle, children, contentLocale, onContentLocaleChange }: Props) => {

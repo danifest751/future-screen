@@ -11,6 +11,7 @@ type AdminLayoutContent = {
     rentalCategories: string;
     contacts: string;
     settings: string;
+    visualLed: string;
   };
   breadcrumbs: {
     admin: string;
@@ -49,6 +50,7 @@ const ru: AdminLayoutContent = {
     rentalCategories: 'Аренда',
     contacts: 'Контакты',
     settings: 'Настройки',
+    visualLed: 'Визуализатор экрана',
   },
   breadcrumbs: {
     admin: 'Админ',
@@ -87,6 +89,7 @@ const en: AdminLayoutContent = {
     rentalCategories: 'Rental',
     contacts: 'Contacts',
     settings: 'Settings',
+    visualLed: 'Screen visualizer',
   },
   breadcrumbs: {
     admin: 'Admin',
