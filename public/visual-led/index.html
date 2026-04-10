@@ -225,6 +225,32 @@ select option { background: rgb(15, 23, 42); color: #f1f5f9; }
   color: #94a3b8;
   transition: border-color 120ms ease, background-color 120ms ease;
 }
+.screen-item .screen-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.screen-item .screen-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.screen-item .screen-edit-btn {
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.04);
+  color: #94a3b8;
+  border-radius: 6px;
+  padding: 1px 6px;
+  font-size: 10px;
+  line-height: 1.4;
+  cursor: pointer;
+}
+.screen-item .screen-edit-btn:hover {
+  color: #e2e8f0;
+  border-color: rgba(255,255,255,0.24);
+}
 .screen-item.active {
   border-color: var(--accent);
   background: var(--accent-soft);
@@ -493,8 +519,11 @@ select option { background: rgb(15, 23, 42); color: #f1f5f9; }
           </button>
         </div>
         <div class="inline-row">
-          <button id="exportReportBtn" class="action secondary" title="Экспортирует отчет по выбранной области (активная/все сцены)">
+          <button id="exportReportBtn" class="action secondary compact" title="Скачать HTML-отчет по выбранной области (активная/все сцены)">
             <span class="i">🧾</span> Экспорт отчета
+          </button>
+          <button id="openReportBtn" class="action secondary compact" title="Открыть HTML-отчет в новом окне">
+            <span class="i">🔗</span> Отчет
           </button>
           <button id="copySceneBtn" class="action secondary compact" title="Копирует в буфер сцену со снимком и метриками">
             <span class="i">📋</span> Копировать
@@ -643,6 +672,7 @@ const ui = {
   startAddScreenBtn: document.getElementById("startAddScreenBtn"),
   cancelToolBtn: document.getElementById("cancelToolBtn"),
   exportReportBtn: document.getElementById("exportReportBtn"),
+  openReportBtn: document.getElementById("openReportBtn"),
   exportScopeSelect: document.getElementById("exportScopeSelect"),
   copySceneBtn: document.getElementById("copySceneBtn"),
   clipboardStatus: document.getElementById("clipboardStatus"),
@@ -903,6 +933,21 @@ function renameActiveScene() {
   renameScene(activeScene());
 }
 
+function renameScreen(element) {
+  const raw = prompt("Название экрана", element?.name || "");
+  if (raw === null) {
+    return;
+  }
+  const name = raw.trim();
+  if (!name) {
+    return;
+  }
+  element.name = name;
+  refreshScreensList();
+  updateSelectionInfo();
+  render();
+}
+
 function refreshSceneTabs() {
   ui.sceneTabs.innerHTML = "";
   for (const scene of state.scenes) {
@@ -933,12 +978,15 @@ function zoomAt(canvasX, canvasY, factor) {
   state.view.offsetY = canvasY - wy * nextScale;
 }
 
-function getPixelsPerCabinetSide() {
-  const pitch = ui.pixelPitchSelect?.value || "2.6";
+function getPixelsPerCabinetSide(pitch = "2.6") {
   if (pitch === "1.9") {
     return 256; // Absen NT1.9 V2, panel 500x500
   }
   return 192; // Absen NT2.6 V2, panel 500x500
+}
+
+function getElementPixelPitch(element) {
+  return element?.pixelPitch === "1.9" ? "1.9" : "2.6";
 }
 
 function findCornerHit(element, p, radius = 10) {
@@ -1265,10 +1313,12 @@ function drawCanvasStatsOverlay() {
   const distances = getElementDistanceLabels(el);
   const size = getElementSizeMeters(el);
   const stats = getCabinetStats(el);
-  const pxPerCab = getPixelsPerCabinetSide();
+  const pitch = getElementPixelPitch(el);
+  const pxPerCab = getPixelsPerCabinetSide(pitch);
 
   const lines = [];
   lines.push(`Экран: ${el.name}`);
+  lines.push(`Pixel pitch: P${pitch}`);
   if (stats) {
     const totalArea = stats.totalCount * stats.moduleArea;
     lines.push(`Кабинеты: ${stats.totalCount} (${stats.cols}x${stats.rows})`);
@@ -1362,14 +1412,24 @@ function refreshScreensList() {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = `screen-item${el.id === state.selectedElementId ? " active" : ""}`;
+    const pitch = getElementPixelPitch(el);
     const video = el.videoId ? getVideoById(el.videoId) : null;
-    btn.innerHTML = `${el.name}${video ? `<small>Видео: ${video.name}</small>` : "<small>Видео: нет</small>"}`;
+    btn.innerHTML = `<div class="screen-row"><span class="screen-name">${escapeHtml(el.name)}</span><button type="button" class="screen-edit-btn" title="Переименовать экран">✎</button></div><small>P${pitch}${video ? ` · Видео: ${escapeHtml(video.name)}` : " · Видео: нет"}</small>`;
     btn.addEventListener("click", () => {
       state.selectedElementId = el.id;
       updateSelectionInfo();
       refreshScreensList();
       render();
     });
+    const editBtn = btn.querySelector(".screen-edit-btn");
+    if (editBtn) {
+      editBtn.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        state.selectedElementId = el.id;
+        renameScreen(el);
+      });
+    }
     ui.screensList.appendChild(btn);
   }
 }
@@ -1422,8 +1482,8 @@ function escapeHtml(text) {
 function collectScreenMetric(el, idx) {
   const size = getElementSizeMeters(el);
   const stats = getCabinetStats(el);
-  const pitch = ui.pixelPitchSelect?.value || "2.6";
-  const pxPerCab = getPixelsPerCabinetSide();
+  const pitch = getElementPixelPitch(el);
+  const pxPerCab = getPixelsPerCabinetSide(pitch);
   const distances = getElementDistanceLabels(el);
 
   const rows = el.cabinetPlan?.rows || 0;
@@ -1550,58 +1610,98 @@ function buildReportHtml(sceneReports) {
 </html>`;
 }
 
-function exportReport() {
+function generateReportBundle() {
   const prevSceneId = state.activeSceneId;
   const prevTool = state.tool;
   const prevHud = state.showStatsOverlay;
   const sceneReports = [];
   const exportScope = ui.exportScopeSelect?.value === "all" ? "all" : "active";
   const scenesToExport = exportScope === "all" ? state.scenes : [activeScene()];
+  try {
+    state.showStatsOverlay = false;
+    state.tool = null;
 
-  state.showStatsOverlay = false;
-  state.tool = null;
+    for (const scene of scenesToExport) {
+      state.activeSceneId = scene.id;
+      applySceneCanvas(scene);
 
-  for (const scene of scenesToExport) {
-    state.activeSceneId = scene.id;
-    applySceneCanvas(scene);
+      const scenePrevSelected = state.selectedElementId;
+      const scenePrevView = { ...state.view };
 
-    const scenePrevSelected = state.selectedElementId;
-    const scenePrevView = { ...state.view };
+      state.selectedElementId = null;
+      resetView();
+      render();
 
-    state.selectedElementId = null;
-    resetView();
+      const snapshotPng = canvas.toDataURL("image/png");
+      const rows = state.elements.map((el, i) => collectScreenMetric(el, i));
+      sceneReports.push({
+        name: scene.name || "scene",
+        snapshotPng,
+        rows,
+      });
+
+      state.selectedElementId = scenePrevSelected;
+      state.view = scenePrevView;
+    }
+
+    const html = buildReportHtml(sceneReports);
+    const now = new Date();
+    const stamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}_${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}`;
+    const suffix = exportScope === "all" ? "all" : "active";
+    return { html, suffix, stamp };
+  } finally {
+    state.activeSceneId = prevSceneId;
+    applySceneCanvas(activeScene());
+    state.tool = prevTool;
+    state.showStatsOverlay = prevHud;
+    refreshSceneTabs();
+    refreshBackgroundThumbs();
+    refreshScreensList();
+    refreshVideoList();
+    updateScreensCount();
+    updateScaleStatus();
+    updateSelectionInfo();
     render();
-
-    const snapshotPng = canvas.toDataURL("image/png");
-    const rows = state.elements.map((el, i) => collectScreenMetric(el, i));
-    sceneReports.push({
-      name: scene.name || "scene",
-      snapshotPng,
-      rows,
-    });
-
-    state.selectedElementId = scenePrevSelected;
-    state.view = scenePrevView;
   }
+}
 
-  const html = buildReportHtml(sceneReports);
-  const now = new Date();
-  const stamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}_${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}`;
-  const suffix = exportScope === "all" ? "all" : "active";
+function exportReport() {
+  const { html, suffix, stamp } = generateReportBundle();
   downloadTextFile(`fs_report_${suffix}_${stamp}.html`, html, "text/html;charset=utf-8");
+}
 
-  state.activeSceneId = prevSceneId;
-  applySceneCanvas(activeScene());
-  state.tool = prevTool;
-  state.showStatsOverlay = prevHud;
-  refreshSceneTabs();
-  refreshBackgroundThumbs();
-  refreshScreensList();
-  refreshVideoList();
-  updateScreensCount();
-  updateScaleStatus();
-  updateSelectionInfo();
-  render();
+async function openReportInNewWindow() {
+  const { html } = generateReportBundle();
+  ui.clipboardStatus.textContent = "Отчет: сохраняем ссылку...";
+  ui.clipboardStatus.style.color = "#5f6880";
+  try {
+    const response = await fetch("/api/report-share", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ html }),
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    const payload = await response.json();
+    const url = String(payload?.url || "");
+    if (!url) {
+      throw new Error("Empty report URL");
+    }
+    const popup = window.open(url, "_blank", "noopener,noreferrer");
+    if (!popup) {
+      ui.clipboardStatus.textContent = "Отчет сохранен, но pop-up заблокирован";
+      ui.clipboardStatus.style.color = "#8a6b00";
+      alert(`Ссылка на отчет: ${url}`);
+      return;
+    }
+    ui.clipboardStatus.textContent = "Отчет сохранен и открыт в новой вкладке";
+    ui.clipboardStatus.style.color = "#0b7a70";
+  } catch (_error) {
+    ui.clipboardStatus.textContent = "Не удалось сохранить отчет на сервер";
+    ui.clipboardStatus.style.color = "#9f1239";
+    alert("Не удалось сохранить отчет на сервер. Проверь API /api/report-share.");
+  }
 }
 
 function collectScenePayload(snapshotPng, snapshotJpeg) {
@@ -1622,7 +1722,7 @@ function collectScenePayload(snapshotPng, snapshotJpeg) {
   });
   return {
     generatedAt: new Date().toISOString(),
-    pixelPitch: `P${ui.pixelPitchSelect?.value || "2.6"}`,
+    pixelPitch: "per-screen",
     scalePxPerMeter: state.scaleCalib?.pxPerMeter || null,
     canvas: { width: canvas.width, height: canvas.height },
     background: activeBackground()
@@ -1637,7 +1737,7 @@ function collectScenePayload(snapshotPng, snapshotJpeg) {
 function buildCopyOverlayLines() {
   const lines = [];
   lines.push(`Отчет сцены: ${new Date().toLocaleString()}`);
-  lines.push(`Pitch: P${ui.pixelPitchSelect?.value || "2.6"} | Масштаб: ${state.scaleCalib?.pxPerMeter ? `${state.scaleCalib.pxPerMeter.toFixed(2)} px/м` : "не задан"}`);
+  lines.push(`Pitch: индивидуально по экрану | Масштаб: ${state.scaleCalib?.pxPerMeter ? `${state.scaleCalib.pxPerMeter.toFixed(2)} px/м` : "не задан"}`);
   lines.push(`Экранов: ${state.elements.length}`);
 
   state.elements.forEach((el, idx) => {
@@ -1752,12 +1852,13 @@ function updateCabinetStatus() {
   }
   const stats = getCabinetStats(el);
   const count = el.cabinetPlan.cols * el.cabinetPlan.rows;
-  const pxPerCab = getPixelsPerCabinetSide();
+  const pitch = getElementPixelPitch(el);
+  const pxPerCab = getPixelsPerCabinetSide(pitch);
   const totalResW = el.cabinetPlan.cols * pxPerCab;
   const totalResH = el.cabinetPlan.rows * pxPerCab;
   if (!stats) {
     const area = count * 0.25;
-    ui.cabinetStatus.textContent = `Кабинеты: ${el.cabinetPlan.cols} x ${el.cabinetPlan.rows} (нужен масштаб)`;
+    ui.cabinetStatus.textContent = `Кабинеты: ${el.cabinetPlan.cols} x ${el.cabinetPlan.rows} · P${pitch} (нужен масштаб)`;
     ui.cabinetCountInfo.textContent = `Количество: ${count} | Площадь: ${area.toFixed(2)} м²`;
     ui.cabinetResolutionInfo.textContent = `Разрешение: ${totalResW} x ${totalResH} px`;
     return;
@@ -1768,7 +1869,7 @@ function updateCabinetStatus() {
       ? ` | Выход: +${stats.overflowWidth.toFixed(2)}м, +${stats.overflowHeight.toFixed(2)}м`
       : " | В пределах экрана";
 
-  ui.cabinetStatus.textContent = `Кабинеты: ${stats.cols} x ${stats.rows}${overflowText}`;
+  ui.cabinetStatus.textContent = `Кабинеты: ${stats.cols} x ${stats.rows} · P${pitch}${overflowText}`;
   const totalArea = stats.totalCount * stats.moduleArea;
   ui.cabinetCountInfo.textContent = `Количество: ${stats.totalCount} | Площадь: ${totalArea.toFixed(2)} м² | Внутри: ${stats.inBoundsCount} | Вне: ${stats.overflowCount}`;
   ui.cabinetResolutionInfo.textContent = `Разрешение: ${totalResW} x ${totalResH} px`;
@@ -1785,6 +1886,7 @@ function updateSelectionInfo() {
     updateCabinetStatus();
     return;
   }
+  ui.pixelPitchSelect.value = getElementPixelPitch(el);
   const distances = getElementDistanceLabels(el);
   const distancesText = `Стороны: AB(верх) ${distances.top}, BC(право) ${distances.right}, CD(низ) ${distances.bottom}, DA(лево) ${distances.left}`;
   const size = getElementSizeMeters(el);
@@ -1834,6 +1936,7 @@ function addElementByCorners(corners) {
     id: uid("el"),
     name: `Экран ${index}`,
     corners,
+    pixelPitch: ui.pixelPitchSelect?.value === "1.9" ? "1.9" : "2.6",
     cabinetPlan: null,
     videoId: null,
   });
@@ -1887,6 +1990,7 @@ function autoFillCabinets() {
     return;
   }
   const moduleMeters = 0.5;
+  el.pixelPitch = ui.pixelPitchSelect?.value === "1.9" ? "1.9" : "2.6";
   el.cabinetPlan = {
     moduleMeters,
     cols: Math.max(1, Math.round(size.width / moduleMeters)),
@@ -2173,6 +2277,10 @@ ui.exportReportBtn.addEventListener("click", () => {
   exportReport();
 });
 
+ui.openReportBtn.addEventListener("click", () => {
+  openReportInNewWindow();
+});
+
 ui.copySceneBtn.addEventListener("click", async () => {
   await copySceneToClipboard();
 });
@@ -2251,7 +2359,14 @@ ui.toggleCabinetGrid.addEventListener("change", () => {
 });
 
 ui.pixelPitchSelect.addEventListener("change", () => {
+  const el = selectedElement();
+  if (el) {
+    el.pixelPitch = ui.pixelPitchSelect?.value === "1.9" ? "1.9" : "2.6";
+  }
+  refreshScreensList();
   updateCabinetStatus();
+  updateSelectionInfo();
+  render();
 });
 
 ui.cabinetAutoFillBtn.addEventListener("click", () => {

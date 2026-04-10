@@ -20,6 +20,14 @@
       "destination": "/api/telegram-webhook.ts"
     },
     {
+      "source": "/api/report-share",
+      "destination": "/api/report-share.ts"
+    },
+    {
+      "source": "/reports/:slug",
+      "destination": "/api/report-share.ts?slug=:slug"
+    },
+    {
       "source": "/((?!api|assets|visual-led).*)",
       "destination": "/index.html"
     }
