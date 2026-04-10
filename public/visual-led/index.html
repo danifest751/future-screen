@@ -467,13 +467,20 @@ select option { background: rgb(15, 23, 42); color: #f1f5f9; }
           </button>
         </div>
         <div class="inline-row">
-          <button id="exportReportBtn" class="action secondary" title="Экспортирует отчет со снимком сцены и метриками">
+          <button id="exportReportBtn" class="action secondary" title="Экспортирует отчет по всем сценам и метрикам">
             <span class="i">🧾</span> Экспорт отчета
           </button>
           <button id="copySceneBtn" class="action secondary compact" title="Копирует в буфер сцену со снимком и метриками">
             <span class="i">📋</span> Копировать
           </button>
         </div>
+        <label title="Выбери, какие сцены попадут в отчет">
+          Экспорт
+          <select id="exportScopeSelect">
+            <option value="active" selected>Активная сцена</option>
+            <option value="all">Все сцены</option>
+          </select>
+        </label>
         <div id="clipboardStatus" class="status">Буфер: ожидание</div>
         <div id="screensCount" class="status">Экранов: 0</div>
         <div id="screensList" class="screen-list"></div>
@@ -543,6 +550,7 @@ select option { background: rgb(15, 23, 42); color: #f1f5f9; }
           <div class="title">Perspective Planner</div>
           <div class="scene-tabs-wrap">
             <div id="sceneTabs" class="scene-tabs"></div>
+            <button id="renameSceneBtn" class="action mini scene-add-btn" title="Переименовать активную сцену">✎</button>
             <button id="addSceneBtn" class="action mini scene-add-btn" title="Добавить сцену">+</button>
           </div>
         </div>
@@ -602,6 +610,7 @@ const ui = {
   startAddScreenBtn: document.getElementById("startAddScreenBtn"),
   cancelToolBtn: document.getElementById("cancelToolBtn"),
   exportReportBtn: document.getElementById("exportReportBtn"),
+  exportScopeSelect: document.getElementById("exportScopeSelect"),
   copySceneBtn: document.getElementById("copySceneBtn"),
   clipboardStatus: document.getElementById("clipboardStatus"),
   deleteSelectedBtn: document.getElementById("deleteSelectedBtn"),
@@ -627,6 +636,7 @@ const ui = {
   screensCount: document.getElementById("screensCount"),
   screensList: document.getElementById("screensList"),
   sceneTabs: document.getElementById("sceneTabs"),
+  renameSceneBtn: document.getElementById("renameSceneBtn"),
   addSceneBtn: document.getElementById("addSceneBtn"),
   selectionInfo: document.getElementById("selectionInfo"),
   toolStatus: document.getElementById("toolStatus"),
@@ -818,6 +828,10 @@ function createScene() {
   const scene = createSceneData(nextSceneName());
   state.scenes.push(scene);
   switchScene(scene.id);
+}
+
+function renameActiveScene() {
+  renameScene(activeScene());
 }
 
 function refreshSceneTabs() {
@@ -1380,15 +1394,18 @@ function downloadDataUrl(filename, dataUrl) {
   a.click();
 }
 
-function buildReportHtml(imageDataUrl, rows) {
+function buildReportHtml(sceneReports) {
   const date = new Date().toLocaleString();
-  const totalScreens = rows.length;
-  const totalCabinets = rows.reduce((sum, r) => sum + (Number(r.cabTotal) || 0), 0);
-  const totalArea = rows.reduce((sum, r) => sum + (Number(r.area) || 0), 0);
+  const allRows = sceneReports.flatMap((scene) => scene.rows);
+  const totalScreens = allRows.length;
+  const totalCabinets = allRows.reduce((sum, r) => sum + (Number(r.cabTotal) || 0), 0);
+  const totalArea = allRows.reduce((sum, r) => sum + (Number(r.area) || 0), 0);
 
-  const detailCards = rows
-    .map(
-      (r, idx) => `<section class="card">
+  const sceneSections = sceneReports
+    .map((scene, sceneIndex) => {
+      const sceneCards = scene.rows
+        .map(
+          (r, idx) => `<section class="card">
   <h3>${idx + 1}. ${escapeHtml(r.screen)}</h3>
   <div class="kv"><span>Pixel pitch:</span><b>${escapeHtml(r.pitch)}</b></div>
   <div class="kv"><span>Размер экрана:</span><b>${escapeHtml(r.sizeW)} м x ${escapeHtml(r.sizeH)} м</b></div>
@@ -1400,7 +1417,23 @@ function buildReportHtml(imageDataUrl, rows) {
   <div class="kv"><span>Расстояния AB, BC, CD, DA:</span><b>${escapeHtml(r.ab)} | ${escapeHtml(r.bc)} | ${escapeHtml(r.cd)} | ${escapeHtml(r.da)}</b></div>
   <div class="kv"><span>Диагонали AC, BD:</span><b>${escapeHtml(r.ac)} | ${escapeHtml(r.bd)}</b></div>
 </section>`
-    )
+        )
+        .join("\n");
+      const sceneCabinets = scene.rows.reduce((sum, r) => sum + (Number(r.cabTotal) || 0), 0);
+      const sceneArea = scene.rows.reduce((sum, r) => sum + (Number(r.area) || 0), 0);
+      return `<section class="scene-block">
+  <h2>${sceneIndex + 1}. Сцена: ${escapeHtml(scene.name)}</h2>
+  <img class="shot" src="${scene.snapshotPng}" alt="Scene snapshot ${sceneIndex + 1}" />
+  <div class="summary">
+    Экранов: <b>${scene.rows.length}</b> |
+    Кабинетов всего: <b>${sceneCabinets}</b> |
+    Суммарная площадь экранов: <b>${sceneArea.toFixed(2)} м²</b>
+  </div>
+  <div class="cards">
+    ${sceneCards || "<div class='card'>Нет данных по экранам</div>"}
+  </div>
+</section>`;
+    })
     .join("\n");
 
   return `<!doctype html>
@@ -1415,6 +1448,8 @@ function buildReportHtml(imageDataUrl, rows) {
     .meta { color: #5b647a; margin-bottom: 14px; }
     .shot { max-width: 100%; border: 1px solid #d4ddec; border-radius: 8px; display: block; }
     .summary { margin-top: 14px; padding: 10px 12px; background: #f6f9ff; border: 1px solid #d8dfec; border-radius: 8px; font-size: 13px; }
+    .scene-block { margin-top: 24px; }
+    .scene-block h2 { margin: 0 0 10px; font-size: 18px; }
     .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 10px; margin-top: 14px; }
     .card { border: 1px solid #d8dfec; border-radius: 8px; padding: 10px 12px; background: #fff; }
     .kv { display: grid; grid-template-columns: 190px 1fr; gap: 8px; margin: 4px 0; font-size: 13px; }
@@ -1422,45 +1457,70 @@ function buildReportHtml(imageDataUrl, rows) {
   </style>
 </head>
 <body>
-  <h1>Отчет по экрану(ам)</h1>
+  <h1>Отчет по сценам</h1>
   <div class="meta">Сформирован: ${escapeHtml(date)}</div>
-  <img class="shot" src="${imageDataUrl}" alt="Scene snapshot" />
   <div class="summary">
+    Сцен: <b>${sceneReports.length}</b> |
     Экранов: <b>${totalScreens}</b> |
     Кабинетов всего: <b>${totalCabinets}</b> |
     Суммарная площадь экранов: <b>${totalArea.toFixed(2)} м²</b>
   </div>
-  <div class="cards">
-    ${detailCards || "<div class='card'>Нет данных по экранам</div>"}
-  </div>
+  ${sceneSections || "<section class='scene-block'><div class='card'>Нет данных по сценам</div></section>"}
 </body>
 </html>`;
 }
 
 function exportReport() {
-  const prevSelected = state.selectedElementId;
+  const prevSceneId = state.activeSceneId;
   const prevTool = state.tool;
-  const prevView = { ...state.view };
   const prevHud = state.showStatsOverlay;
-  state.tool = null;
-  state.selectedElementId = null;
-  state.showStatsOverlay = false;
-  resetView();
-  render();
-  const imageData = canvas.toDataURL("image/png");
-  const imageJpeg = canvas.toDataURL("image/jpeg", 0.92);
+  const sceneReports = [];
+  const exportScope = ui.exportScopeSelect?.value === "all" ? "all" : "active";
+  const scenesToExport = exportScope === "all" ? state.scenes : [activeScene()];
 
-  const rows = state.elements.map((el, i) => collectScreenMetric(el, i));
-  const html = buildReportHtml(imageData, rows);
+  state.showStatsOverlay = false;
+  state.tool = null;
+
+  for (const scene of scenesToExport) {
+    state.activeSceneId = scene.id;
+    applySceneCanvas(scene);
+
+    const scenePrevSelected = state.selectedElementId;
+    const scenePrevView = { ...state.view };
+
+    state.selectedElementId = null;
+    resetView();
+    render();
+
+    const snapshotPng = canvas.toDataURL("image/png");
+    const rows = state.elements.map((el, i) => collectScreenMetric(el, i));
+    sceneReports.push({
+      name: scene.name || "scene",
+      snapshotPng,
+      rows,
+    });
+
+    state.selectedElementId = scenePrevSelected;
+    state.view = scenePrevView;
+  }
+
+  const html = buildReportHtml(sceneReports);
   const now = new Date();
   const stamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}_${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}`;
-  downloadTextFile(`fs_report_${stamp}.html`, html, "text/html;charset=utf-8");
-  downloadDataUrl(`fs_scene_${stamp}.jpg`, imageJpeg);
+  const suffix = exportScope === "all" ? "all" : "active";
+  downloadTextFile(`fs_report_${suffix}_${stamp}.html`, html, "text/html;charset=utf-8");
 
-  state.selectedElementId = prevSelected;
+  state.activeSceneId = prevSceneId;
+  applySceneCanvas(activeScene());
   state.tool = prevTool;
-  state.view = prevView;
   state.showStatsOverlay = prevHud;
+  refreshSceneTabs();
+  refreshBackgroundThumbs();
+  refreshScreensList();
+  refreshVideoList();
+  updateScreensCount();
+  updateScaleStatus();
+  updateSelectionInfo();
   render();
 }
 
@@ -1992,6 +2052,10 @@ ui.videoUpload.addEventListener("change", async (event) => {
 
 ui.addSceneBtn.addEventListener("click", () => {
   createScene();
+});
+
+ui.renameSceneBtn.addEventListener("click", () => {
+  renameActiveScene();
 });
 
 for (const target of [ui.backgroundPanel, ui.canvasWrap]) {
