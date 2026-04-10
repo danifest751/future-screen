@@ -339,6 +339,32 @@ select option { background: rgb(15, 23, 42); color: #f1f5f9; }
 }
 .zoom-tools .action.mini { width: auto; min-width: 34px; padding: 5px 8px; }
 
+.viewport-tools {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 6px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 999px;
+  background: rgba(0,0,0,0.22);
+}
+.viewport-tools .vp-label {
+  font-size: 10px;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.viewport-tools input {
+  width: 58px;
+  padding: 4px 6px;
+  font-size: 11px;
+}
+.viewport-tools .action.mini {
+  width: auto;
+  min-width: 0;
+  padding: 4px 8px;
+}
+
 .title {
   font-weight: 600;
   font-size: 12px;
@@ -467,7 +493,7 @@ select option { background: rgb(15, 23, 42); color: #f1f5f9; }
           </button>
         </div>
         <div class="inline-row">
-          <button id="exportReportBtn" class="action secondary" title="Экспортирует отчет по всем сценам и метрикам">
+          <button id="exportReportBtn" class="action secondary" title="Экспортирует отчет по выбранной области (активная/все сцены)">
             <span class="i">🧾</span> Экспорт отчета
           </button>
           <button id="copySceneBtn" class="action secondary compact" title="Копирует в буфер сцену со снимком и метриками">
@@ -556,9 +582,16 @@ select option { background: rgb(15, 23, 42); color: #f1f5f9; }
         </div>
         <div class="stage-header-right">
           <div class="zoom-tools">
+            <button id="fitViewBtn" class="action mini secondary" title="Вписать картину в viewport">Вписать</button>
             <button id="zoomOutBtn" class="action mini" title="Уменьшить масштаб">−</button>
             <button id="zoomResetBtn" class="action mini" title="Сбросить масштаб">100%</button>
             <button id="zoomInBtn" class="action mini" title="Увеличить масштаб">+</button>
+          </div>
+          <div class="viewport-tools">
+            <span class="vp-label">Viewport</span>
+            <input id="viewportWidthInput" type="number" min="320" step="10" value="1280" title="Ширина viewport, px" />
+            <input id="viewportHeightInput" type="number" min="240" step="10" value="720" title="Высота viewport, px" />
+            <button id="applyViewportBtn" class="action mini secondary" title="Применить размер viewport">OK</button>
           </div>
           <div id="toolStatus" class="tool-status">Режим: ожидание</div>
         </div>
@@ -629,9 +662,13 @@ const ui = {
   cabinetStatus: document.getElementById("cabinetStatus"),
   cabinetCountInfo: document.getElementById("cabinetCountInfo"),
   cabinetResolutionInfo: document.getElementById("cabinetResolutionInfo"),
+  fitViewBtn: document.getElementById("fitViewBtn"),
   zoomOutBtn: document.getElementById("zoomOutBtn"),
   zoomResetBtn: document.getElementById("zoomResetBtn"),
   zoomInBtn: document.getElementById("zoomInBtn"),
+  viewportWidthInput: document.getElementById("viewportWidthInput"),
+  viewportHeightInput: document.getElementById("viewportHeightInput"),
+  applyViewportBtn: document.getElementById("applyViewportBtn"),
   scaleStatus: document.getElementById("scaleStatus"),
   screensCount: document.getElementById("screensCount"),
   screensList: document.getElementById("screensList"),
@@ -737,12 +774,23 @@ function setCanvasFromImage(img) {
   const scene = activeScene();
   scene.canvasWidth = canvas.width;
   scene.canvasHeight = canvas.height;
+  syncViewportInputs();
   resetView();
 }
 
 function applySceneCanvas(scene) {
   canvas.width = scene.canvasWidth || 1280;
   canvas.height = scene.canvasHeight || 720;
+  syncViewportInputs();
+}
+
+function syncViewportInputs() {
+  if (ui.viewportWidthInput) {
+    ui.viewportWidthInput.value = String(canvas.width);
+  }
+  if (ui.viewportHeightInput) {
+    ui.viewportHeightInput.value = String(canvas.height);
+  }
 }
 
 function distance(a, b) {
@@ -781,6 +829,27 @@ function resetView() {
   state.view.scale = 1;
   state.view.offsetX = 0;
   state.view.offsetY = 0;
+}
+
+function fitViewToViewport() {
+  resetView();
+  render();
+}
+
+function applyViewportSize() {
+  const width = Number(ui.viewportWidthInput?.value);
+  const height = Number(ui.viewportHeightInput?.value);
+  if (!Number.isFinite(width) || !Number.isFinite(height) || width < 320 || height < 240) {
+    alert("Укажи корректный размер viewport (минимум 320x240).");
+    syncViewportInputs();
+    return;
+  }
+  canvas.width = Math.round(width);
+  canvas.height = Math.round(height);
+  const scene = activeScene();
+  scene.canvasWidth = canvas.width;
+  scene.canvasHeight = canvas.height;
+  fitViewToViewport();
 }
 
 function nextSceneName() {
@@ -1167,6 +1236,23 @@ function formatDistanceLabel(pxDistance) {
   return `${pxDistance.toFixed(1)} px`;
 }
 
+function getElementDistanceLabels(element) {
+  const top = distance(element.corners[0], element.corners[1]);
+  const right = distance(element.corners[1], element.corners[2]);
+  const bottom = distance(element.corners[2], element.corners[3]);
+  const left = distance(element.corners[3], element.corners[0]);
+  const diagMain = distance(element.corners[0], element.corners[2]);
+  const diagCross = distance(element.corners[1], element.corners[3]);
+  return {
+    top: formatDistanceLabel(top),
+    right: formatDistanceLabel(right),
+    bottom: formatDistanceLabel(bottom),
+    left: formatDistanceLabel(left),
+    diagMain: formatDistanceLabel(diagMain),
+    diagCross: formatDistanceLabel(diagCross),
+  };
+}
+
 function drawCanvasStatsOverlay() {
   if (!state.showStatsOverlay) {
     return;
@@ -1176,12 +1262,7 @@ function drawCanvasStatsOverlay() {
     return;
   }
 
-  const sideTop = distance(el.corners[0], el.corners[1]);
-  const sideRight = distance(el.corners[1], el.corners[2]);
-  const sideBottom = distance(el.corners[2], el.corners[3]);
-  const sideLeft = distance(el.corners[3], el.corners[0]);
-  const diag1 = distance(el.corners[0], el.corners[2]);
-  const diag2 = distance(el.corners[1], el.corners[3]);
+  const distances = getElementDistanceLabels(el);
   const size = getElementSizeMeters(el);
   const stats = getCabinetStats(el);
   const pxPerCab = getPixelsPerCabinetSide();
@@ -1202,9 +1283,9 @@ function drawCanvasStatsOverlay() {
     lines.push(`Площадь экрана: ${(size.width * size.height).toFixed(2)} м²`);
   }
 
-  lines.push(`AB: ${formatDistanceLabel(sideTop)} | BC: ${formatDistanceLabel(sideRight)}`);
-  lines.push(`CD: ${formatDistanceLabel(sideBottom)} | DA: ${formatDistanceLabel(sideLeft)}`);
-  lines.push(`AC: ${formatDistanceLabel(diag1)} | BD: ${formatDistanceLabel(diag2)}`);
+  lines.push(`Стороны: верх AB ${distances.top} | право BC ${distances.right}`);
+  lines.push(`Стороны: низ CD ${distances.bottom} | лево DA ${distances.left}`);
+  lines.push(`Диагонали: AC ${distances.diagMain} | BD ${distances.diagCross}`);
 
   const padding = 10;
   const lineH = 16;
@@ -1343,12 +1424,7 @@ function collectScreenMetric(el, idx) {
   const stats = getCabinetStats(el);
   const pitch = ui.pixelPitchSelect?.value || "2.6";
   const pxPerCab = getPixelsPerCabinetSide();
-  const top = distance(el.corners[0], el.corners[1]);
-  const right = distance(el.corners[1], el.corners[2]);
-  const bottom = distance(el.corners[2], el.corners[3]);
-  const left = distance(el.corners[3], el.corners[0]);
-  const d1 = distance(el.corners[0], el.corners[2]);
-  const d2 = distance(el.corners[1], el.corners[3]);
+  const distances = getElementDistanceLabels(el);
 
   const rows = el.cabinetPlan?.rows || 0;
   const cols = el.cabinetPlan?.cols || 0;
@@ -1368,12 +1444,12 @@ function collectScreenMetric(el, idx) {
     inBounds: stats ? stats.inBoundsCount : "-",
     overflow: stats ? stats.overflowCount : "-",
     resolution: reportResolution,
-    ab: formatDistanceLabel(top),
-    bc: formatDistanceLabel(right),
-    cd: formatDistanceLabel(bottom),
-    da: formatDistanceLabel(left),
-    ac: formatDistanceLabel(d1),
-    bd: formatDistanceLabel(d2),
+    topEdge: distances.top,
+    rightEdge: distances.right,
+    bottomEdge: distances.bottom,
+    leftEdge: distances.left,
+    diagMain: distances.diagMain,
+    diagCross: distances.diagCross,
   };
 }
 
@@ -1414,8 +1490,12 @@ function buildReportHtml(sceneReports) {
   <div class="kv"><span>Площадь кабинетов:</span><b>${escapeHtml(String(r.cabArea))} м²</b></div>
   <div class="kv"><span>Внутри / Вне:</span><b>${escapeHtml(String(r.inBounds))} / ${escapeHtml(String(r.overflow))}</b></div>
   <div class="kv"><span>Разрешение экрана:</span><b>${escapeHtml(r.resolution)} px</b></div>
-  <div class="kv"><span>Расстояния AB, BC, CD, DA:</span><b>${escapeHtml(r.ab)} | ${escapeHtml(r.bc)} | ${escapeHtml(r.cd)} | ${escapeHtml(r.da)}</b></div>
-  <div class="kv"><span>Диагонали AC, BD:</span><b>${escapeHtml(r.ac)} | ${escapeHtml(r.bd)}</b></div>
+  <div class="kv"><span>Сторона AB (верх):</span><b>${escapeHtml(r.topEdge)}</b></div>
+  <div class="kv"><span>Сторона BC (право):</span><b>${escapeHtml(r.rightEdge)}</b></div>
+  <div class="kv"><span>Сторона CD (низ):</span><b>${escapeHtml(r.bottomEdge)}</b></div>
+  <div class="kv"><span>Сторона DA (лево):</span><b>${escapeHtml(r.leftEdge)}</b></div>
+  <div class="kv"><span>Диагональ AC:</span><b>${escapeHtml(r.diagMain)}</b></div>
+  <div class="kv"><span>Диагональ BD:</span><b>${escapeHtml(r.diagCross)}</b></div>
 </section>`
         )
         .join("\n");
@@ -1563,6 +1643,8 @@ function buildCopyOverlayLines() {
   state.elements.forEach((el, idx) => {
     const m = collectScreenMetric(el, idx);
     lines.push(`${idx + 1}) ${m.screen}: ${m.sizeW}x${m.sizeH}м, S=${m.area}м², каб=${m.cabTotal}, res=${m.resolution}px`);
+    lines.push(`   Стороны: AB(верх) ${m.topEdge}, BC(право) ${m.rightEdge}, CD(низ) ${m.bottomEdge}, DA(лево) ${m.leftEdge}`);
+    lines.push(`   Диагонали: AC ${m.diagMain}, BD ${m.diagCross}`);
   });
   return lines;
 }
@@ -1703,15 +1785,17 @@ function updateSelectionInfo() {
     updateCabinetStatus();
     return;
   }
+  const distances = getElementDistanceLabels(el);
+  const distancesText = `Стороны: AB(верх) ${distances.top}, BC(право) ${distances.right}, CD(низ) ${distances.bottom}, DA(лево) ${distances.left}`;
   const size = getElementSizeMeters(el);
   if (!size) {
-    ui.selectionInfo.textContent = `${el.name} (без масштаба)`;
+    ui.selectionInfo.textContent = `${el.name} (без масштаба) | ${distancesText}`;
     ui.screenWidthMeters.value = "";
     ui.screenHeightMeters.value = "";
     updateCabinetStatus();
     return;
   }
-  ui.selectionInfo.textContent = `${el.name}: ${size.width.toFixed(2)}м x ${size.height.toFixed(2)}м | Площадь: ${(size.width * size.height).toFixed(2)} м²`;
+  ui.selectionInfo.textContent = `${el.name}: ${size.width.toFixed(2)}м x ${size.height.toFixed(2)}м | Площадь: ${(size.width * size.height).toFixed(2)} м² | ${distancesText}`;
   ui.screenWidthMeters.value = size.width.toFixed(2);
   ui.screenHeightMeters.value = size.height.toFixed(2);
   updateCabinetStatus();
@@ -2120,6 +2204,10 @@ ui.zoomInBtn.addEventListener("click", () => {
   render();
 });
 
+ui.fitViewBtn.addEventListener("click", () => {
+  fitViewToViewport();
+});
+
 ui.zoomOutBtn.addEventListener("click", () => {
   zoomAt(canvas.width / 2, canvas.height / 2, 1 / 1.15);
   render();
@@ -2129,6 +2217,18 @@ ui.zoomResetBtn.addEventListener("click", () => {
   resetView();
   render();
 });
+
+ui.applyViewportBtn.addEventListener("click", () => {
+  applyViewportSize();
+});
+
+for (const input of [ui.viewportWidthInput, ui.viewportHeightInput]) {
+  input.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      applyViewportSize();
+    }
+  });
+}
 
 ui.fitScreenToCabinetsBtn.addEventListener("click", () => {
   fitScreenToCabinets();
