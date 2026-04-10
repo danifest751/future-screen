@@ -6,8 +6,8 @@
   <title>Future Screen - Perspective Planner</title>
   <style>
 :root {
-  --bg: #0a0a0a;
-  --surface: rgba(15, 23, 42, 0.75);
+  --bg: #020617;
+  --surface: rgba(15, 23, 42, 0.78);
   --ink: #f1f5f9;
   --muted: #94a3b8;
   --line: rgba(255, 255, 255, 0.08);
@@ -18,6 +18,12 @@
 }
 
 * { box-sizing: border-box; }
+
+html,
+body {
+  height: 100%;
+  background: var(--bg);
+}
 
 body {
   margin: 0;
@@ -32,7 +38,7 @@ body {
 }
 
 .app-shell {
-  height: 100vh;
+  min-height: 100vh;
   display: grid;
   grid-template-columns: 292px 1fr 258px;
   gap: 8px;
@@ -47,7 +53,7 @@ body {
 }
 
 .panel {
-  background: rgba(15, 23, 42, 0.7);
+  background: rgba(15, 23, 42, 0.72);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
   padding: 10px;
@@ -292,7 +298,7 @@ select option { background: rgb(15, 23, 42); color: #f1f5f9; }
 
 .stage-area {
   min-width: 0;
-  background: rgba(15, 23, 42, 0.5);
+  background: rgba(15, 23, 42, 0.6);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
   display: flex;
@@ -351,12 +357,12 @@ select option { background: rgb(15, 23, 42); color: #f1f5f9; }
   justify-content: center;
   padding: 10px;
   overflow: auto;
-  background-image: radial-gradient(circle at 20% 0, rgba(102,126,234,0.04), transparent 40%);
+  background-image: radial-gradient(circle at 20% 0, rgba(102,126,234,0.12), transparent 42%);
 }
 
 #editorCanvas {
   border: 1px solid rgba(255,255,255,0.1);
-  background: #0f172a;
+  background: #0b1220;
   max-width: 100%;
   max-height: 100%;
   box-shadow: 0 8px 40px rgba(0,0,0,0.5);
