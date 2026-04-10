@@ -1563,7 +1563,7 @@ function buildReportHtml(sceneReports) {
       const sceneArea = scene.rows.reduce((sum, r) => sum + (Number(r.area) || 0), 0);
       return `<section class="scene-block">
   <h2>${sceneIndex + 1}. Сцена: ${escapeHtml(scene.name)}</h2>
-  <img class="shot" src="${scene.snapshotPng}" alt="Scene snapshot ${sceneIndex + 1}" />
+  <img class="shot" src="${scene.snapshotImage}" alt="Scene snapshot ${sceneIndex + 1}" />
   <div class="summary">
     Экранов: <b>${scene.rows.length}</b> |
     Кабинетов всего: <b>${sceneCabinets}</b> |
@@ -1632,11 +1632,11 @@ function generateReportBundle() {
       resetView();
       render();
 
-      const snapshotPng = canvas.toDataURL("image/png");
+      const snapshotImage = canvas.toDataURL("image/jpeg", 0.82);
       const rows = state.elements.map((el, i) => collectScreenMetric(el, i));
       sceneReports.push({
         name: scene.name || "scene",
-        snapshotPng,
+        snapshotImage,
         rows,
       });
 
@@ -1681,7 +1681,14 @@ async function openReportInNewWindow() {
       body: JSON.stringify({ html }),
     });
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
+      let details = "";
+      try {
+        const payload = await response.json();
+        details = payload?.error || payload?.message || "";
+      } catch {
+        details = await response.text();
+      }
+      throw new Error(`HTTP ${response.status}${details ? `: ${details}` : ""}`);
     }
     const payload = await response.json();
     const url = String(payload?.url || "");
@@ -1697,10 +1704,11 @@ async function openReportInNewWindow() {
     }
     ui.clipboardStatus.textContent = "Отчет сохранен и открыт в новой вкладке";
     ui.clipboardStatus.style.color = "#0b7a70";
-  } catch (_error) {
+  } catch (error) {
     ui.clipboardStatus.textContent = "Не удалось сохранить отчет на сервер";
     ui.clipboardStatus.style.color = "#9f1239";
-    alert("Не удалось сохранить отчет на сервер. Проверь API /api/report-share.");
+    const message = error instanceof Error ? error.message : "unknown error";
+    alert(`Не удалось сохранить отчет на сервер. ${message}`);
   }
 }
 

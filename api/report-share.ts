@@ -11,7 +11,7 @@ const allowedOrigins = (
   .filter(Boolean);
 
 const SHARE_TABLE = 'shared_reports';
-const MAX_HTML_LENGTH = 1_500_000;
+const MAX_HTML_LENGTH = 4_000_000;
 
 let supabaseAdmin: SupabaseClient | null = null;
 
