@@ -319,6 +319,13 @@ select option { background: rgb(15, 23, 42); color: #f1f5f9; }
   border-radius: 12px 12px 0 0;
 }
 
+.stage-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
 .stage-header-right {
   display: flex;
   align-items: center;
@@ -338,6 +345,53 @@ select option { background: rgb(15, 23, 42); color: #f1f5f9; }
   color: #64748b;
   letter-spacing: 0.06em;
   text-transform: uppercase;
+}
+
+.scene-tabs-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.scene-tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.scene-tab {
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.03);
+  color: #94a3b8;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 120ms ease, background-color 120ms ease, color 120ms ease;
+}
+
+.scene-tab:hover {
+  border-color: rgba(255,255,255,0.22);
+  color: #dbeafe;
+}
+
+.scene-tab.active {
+  border-color: rgba(102,126,234,0.8);
+  background: rgba(102,126,234,0.16);
+  color: #eef2ff;
+}
+
+.scene-add-btn {
+  width: auto;
+  min-width: 30px;
+  padding: 5px 9px;
+  border-radius: 999px;
 }
 
 .tool-status {
@@ -485,7 +539,13 @@ select option { background: rgb(15, 23, 42); color: #f1f5f9; }
 
     <main class="stage-area">
       <header class="stage-header">
-        <div class="title">Perspective Planner</div>
+        <div class="stage-header-left">
+          <div class="title">Perspective Planner</div>
+          <div class="scene-tabs-wrap">
+            <div id="sceneTabs" class="scene-tabs"></div>
+            <button id="addSceneBtn" class="action mini scene-add-btn" title="Добавить сцену">+</button>
+          </div>
+        </div>
         <div class="stage-header-right">
           <div class="zoom-tools">
             <button id="zoomOutBtn" class="action mini" title="Уменьшить масштаб">−</button>
@@ -566,32 +626,63 @@ const ui = {
   scaleStatus: document.getElementById("scaleStatus"),
   screensCount: document.getElementById("screensCount"),
   screensList: document.getElementById("screensList"),
+  sceneTabs: document.getElementById("sceneTabs"),
+  addSceneBtn: document.getElementById("addSceneBtn"),
   selectionInfo: document.getElementById("selectionInfo"),
   toolStatus: document.getElementById("toolStatus"),
 };
 
+function createSceneData(name = "default") {
+  return {
+    id: uid("scene"),
+    name,
+    backgrounds: [],
+    activeBackgroundId: null,
+    elements: [],
+    selectedElementId: null,
+    scaleCalib: null,
+    view: {
+      scale: 1,
+      minScale: 0.35,
+      maxScale: 6,
+      offsetX: 0,
+      offsetY: 0,
+    },
+    canvasWidth: 1280,
+    canvasHeight: 720,
+  };
+}
+
 const state = {
-  backgrounds: [],
+  scenes: [createSceneData("default")],
+  activeSceneId: null,
   videos: [],
-  activeBackgroundId: null,
-  elements: [],
-  selectedElementId: null,
   drag: null,
-  scaleCalib: null,
   tool: null,
   showCabinetGrid: true,
-  view: {
-    scale: 1,
-    minScale: 0.35,
-    maxScale: 6,
-    offsetX: 0,
-    offsetY: 0,
-  },
   keys: {
     spaceDown: false,
   },
   showStatsOverlay: true,
 };
+state.activeSceneId = state.scenes[0].id;
+
+function activeScene() {
+  return state.scenes.find((scene) => scene.id === state.activeSceneId) || state.scenes[0];
+}
+
+const sceneScopedKeys = ["backgrounds", "activeBackgroundId", "elements", "selectedElementId", "scaleCalib", "view"];
+for (const key of sceneScopedKeys) {
+  Object.defineProperty(state, key, {
+    get() {
+      return activeScene()[key];
+    },
+    set(value) {
+      activeScene()[key] = value;
+    },
+    configurable: true,
+  });
+}
 
 function uid(prefix = "id") {
   return `${prefix}_${Date.now()}_${Math.random().toString(16).slice(2, 8)}`;
@@ -633,7 +724,15 @@ function setCanvasFromImage(img) {
   const s = Math.min(maxW / img.naturalWidth, maxH / img.naturalHeight, 1);
   canvas.width = Math.max(640, Math.round(img.naturalWidth * s));
   canvas.height = Math.max(360, Math.round(img.naturalHeight * s));
+  const scene = activeScene();
+  scene.canvasWidth = canvas.width;
+  scene.canvasHeight = canvas.height;
   resetView();
+}
+
+function applySceneCanvas(scene) {
+  canvas.width = scene.canvasWidth || 1280;
+  canvas.height = scene.canvasHeight || 720;
 }
 
 function distance(a, b) {
@@ -672,6 +771,70 @@ function resetView() {
   state.view.scale = 1;
   state.view.offsetX = 0;
   state.view.offsetY = 0;
+}
+
+function nextSceneName() {
+  const used = new Set(state.scenes.map((scene) => scene.name.toLowerCase()));
+  let idx = state.scenes.length + 1;
+  while (used.has(`scene ${idx}`)) {
+    idx += 1;
+  }
+  return `scene ${idx}`;
+}
+
+function renameScene(scene) {
+  const raw = prompt("Название сцены", scene.name);
+  if (raw === null) {
+    return;
+  }
+  const name = raw.trim();
+  if (!name) {
+    return;
+  }
+  scene.name = name;
+  refreshSceneTabs();
+}
+
+function switchScene(sceneId) {
+  if (sceneId === state.activeSceneId) {
+    return;
+  }
+  state.activeSceneId = sceneId;
+  state.drag = null;
+  state.tool = null;
+  updateToolStatus("ожидание");
+  applySceneCanvas(activeScene());
+  refreshSceneTabs();
+  refreshBackgroundThumbs();
+  refreshScreensList();
+  refreshVideoList();
+  updateScreensCount();
+  updateScaleStatus();
+  updateSelectionInfo();
+  render();
+}
+
+function createScene() {
+  const scene = createSceneData(nextSceneName());
+  state.scenes.push(scene);
+  switchScene(scene.id);
+}
+
+function refreshSceneTabs() {
+  ui.sceneTabs.innerHTML = "";
+  for (const scene of state.scenes) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `scene-tab${scene.id === state.activeSceneId ? " active" : ""}`;
+    button.textContent = scene.name;
+    button.title = "Клик — переключить, двойной клик — переименовать";
+    button.addEventListener("click", () => switchScene(scene.id));
+    button.addEventListener("dblclick", (event) => {
+      event.preventDefault();
+      renameScene(scene);
+    });
+    ui.sceneTabs.appendChild(button);
+  }
 }
 
 function zoomAt(canvasX, canvasY, factor) {
@@ -1063,7 +1226,7 @@ function render() {
   if (bg) {
     ctx.drawImage(bg.image, 0, 0, canvas.width, canvas.height);
   } else {
-    ctx.fillStyle = "#eef2f9";
+    ctx.fillStyle = "#0b1220";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   }
 
@@ -1827,6 +1990,10 @@ ui.videoUpload.addEventListener("change", async (event) => {
   event.target.value = "";
 });
 
+ui.addSceneBtn.addEventListener("click", () => {
+  createScene();
+});
+
 for (const target of [ui.backgroundPanel, ui.canvasWrap]) {
   target.addEventListener("dragover", (event) => {
     event.preventDefault();
@@ -2072,6 +2239,8 @@ async function loadPresetVideos() {
 
 (async function init() {
   ui.toggleCabinetGrid.checked = true;
+  applySceneCanvas(activeScene());
+  refreshSceneTabs();
   updateToolStatus("ожидание");
   updateScaleStatus();
   updateScreensCount();
