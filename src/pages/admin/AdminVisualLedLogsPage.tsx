@@ -227,9 +227,11 @@ const AdminVisualLedLogsPage = () => {
     const duration = asNumber(summary.duration_sec ?? selectedSession?.duration_sec);
 
     const assistAppliedCount = events.filter((event) => event.event_type === 'assist_applied').length;
-    const screenCreatedCount = events.filter((event) => event.event_type === 'screen_created').length;
+    const screenCreatedByEvent = events.filter((event) => event.event_type === 'screen_created').length;
     const screenUpdatedCount = events.filter((event) => event.event_type === 'screen_updated').length;
-    const backgroundUploadedCount = events.filter((event) => event.event_type === 'background_uploaded').length;
+    const backgroundUploadedByEvent = events.filter((event) => event.event_type === 'background_uploaded').length;
+    const summaryScreens = asNumber(summary.screens);
+    const summaryBackgrounds = asNumber(summary.backgrounds);
 
     const lastReportExport = [...events]
       .reverse()
@@ -243,9 +245,9 @@ const AdminVisualLedLogsPage = () => {
       scenes,
       duration,
       assistAppliedCount,
-      screenCreatedCount,
+      screenCreatedCount: Math.max(screenCreatedByEvent, summaryScreens ?? 0),
       screenUpdatedCount,
-      backgroundUploadedCount,
+      backgroundUploadedCount: Math.max(backgroundUploadedByEvent, summaryBackgrounds ?? 0),
       reportScope: asString(lastReportExport?.payload?.scope) || asString(lastReportShared?.payload?.export_scope) || asString(summary.report_export_scope),
       reportUrl: asString(lastReportShared?.payload?.url) || asString(summary.report_url),
       reportSharedAt: lastReportShared?.ts || null,
