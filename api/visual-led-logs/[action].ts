@@ -382,11 +382,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .order('created_at', { ascending: false });
       if (assetsError) throw assetsError;
 
+      const assetsWithPreview = await Promise.all(
+        (assets ?? []).map(async (asset) => {
+          try {
+            const { data: signedData } = await supabase.storage
+              .from(asset.storage_bucket)
+              .createSignedUrl(asset.storage_path, 60 * 60);
+
+            return {
+              ...asset,
+              preview_url: signedData?.signedUrl || null,
+            };
+          } catch {
+            return {
+              ...asset,
+              preview_url: null,
+            };
+          }
+        }),
+      );
+
       return res.status(200).json({
         ok: true,
         session,
         events: events ?? [],
-        assets: assets ?? [],
+        assets: assetsWithPreview,
       });
     }
 
