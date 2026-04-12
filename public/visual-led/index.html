@@ -771,6 +771,12 @@ const state = {
     spaceDown: false,
   },
   showStatsOverlay: true,
+  analytics: {
+    sessionKey: null,
+    startedAt: null,
+    queue: [],
+    flushTimer: null,
+  },
 };
 state.activeSceneId = state.scenes[0].id;
 
@@ -924,6 +930,7 @@ function nextSceneName() {
 }
 
 function renameScene(scene) {
+  const previousName = scene.name;
   const raw = prompt("Название сцены", scene.name);
   if (raw === null) {
     return;
@@ -933,6 +940,11 @@ function renameScene(scene) {
     return;
   }
   scene.name = name;
+  queueVisualLedEvent("scene_renamed", {
+    scene_id: scene.id,
+    previous_name: previousName,
+    next_name: name,
+  });
   refreshSceneTabs();
 }
 
@@ -940,6 +952,7 @@ function switchScene(sceneId) {
   if (sceneId === state.activeSceneId) {
     return;
   }
+  const previousSceneId = state.activeSceneId;
   state.activeSceneId = sceneId;
   state.drag = null;
   state.tool = null;
@@ -953,12 +966,20 @@ function switchScene(sceneId) {
   updateScaleStatus();
   updateAssistStatus();
   updateSelectionInfo();
+  queueVisualLedEvent("scene_switched", {
+    previous_scene_id: previousSceneId,
+    next_scene_id: sceneId,
+  });
   render();
 }
 
 function createScene() {
   const scene = createSceneData(nextSceneName());
   state.scenes.push(scene);
+  queueVisualLedEvent("scene_created", {
+    scene_id: scene.id,
+    scene_name: scene.name,
+  });
   switchScene(scene.id);
 }
 
@@ -967,6 +988,7 @@ function renameActiveScene() {
 }
 
 function renameScreen(element) {
+  const previousName = element?.name || "";
   const raw = prompt("Название экрана", element?.name || "");
   if (raw === null) {
     return;
@@ -976,6 +998,11 @@ function renameScreen(element) {
     return;
   }
   element.name = name;
+  queueVisualLedEvent("screen_renamed", {
+    screen_id: element.id,
+    previous_name: previousName,
+    next_name: name,
+  });
   refreshScreensList();
   updateSelectionInfo();
   render();
@@ -1326,6 +1353,10 @@ async function analyzeAssist() {
     alert("Сначала выбери экран, который нужно перестроить.");
     return;
   }
+  queueVisualLedEvent("assist_analyze_started", {
+    screen_id: target.id,
+    screen_name: target.name,
+  });
 
   ui.assistStatus.textContent = "Assist: анализ...";
   ui.assistStatus.style.color = "#5f6880";
@@ -1362,6 +1393,13 @@ async function analyzeAssist() {
       analyzedAt: Date.now(),
     };
     updateAssistStatus();
+    queueVisualLedEvent("assist_analyze_result", {
+      screen_id: target.id,
+      source: "auto",
+      method: "edge-snap",
+      confidence: state.assist.confidence,
+      score: state.assist.score,
+    });
     render();
     const shouldApplySnap = confirm(
       `Перестроить экран "${target.name}"?\nИсточник: auto (edge-snap)\nConfidence: ${state.assist.confidence}\n${state.assist.confidenceReason}`,
@@ -1369,6 +1407,11 @@ async function analyzeAssist() {
     if (shouldApplySnap) {
       applyAssistProposal();
     } else {
+      queueVisualLedEvent("assist_rejected", {
+        screen_id: target.id,
+        source: "auto",
+        method: "edge-snap",
+      });
       clearAssist();
     }
     return;
@@ -1389,6 +1432,12 @@ async function analyzeAssist() {
     };
     updateAssistStatus();
     render();
+    queueVisualLedEvent("assist_analyze_result", {
+      screen_id: target.id,
+      source: "fallback",
+      reason: "low_line_signal",
+      confidence: "low",
+    });
     alert(`Assist не нашел уверенный контур для "${target.name}". Попробуй изменить рамку вручную чуть ближе к реальным граням и снова нажать "Анализ".`);
     clearAssist();
     return;
@@ -1412,6 +1461,12 @@ async function analyzeAssist() {
     };
     updateAssistStatus();
     render();
+    queueVisualLedEvent("assist_analyze_result", {
+      screen_id: target.id,
+      source: "fallback",
+      reason: "unstable_edges",
+      confidence: "low",
+    });
     alert(`Assist не смог стабильно перестроить "${target.name}". Попробуй выбрать более контрастный фон/ракурс.`);
     clearAssist();
     return;
@@ -1454,6 +1509,12 @@ async function analyzeAssist() {
   };
 
   updateAssistStatus();
+  queueVisualLedEvent("assist_analyze_result", {
+    screen_id: target.id,
+    source: state.assist.source,
+    confidence: state.assist.confidence,
+    score: state.assist.score,
+  });
   render();
   const shouldApply = confirm(
     `Перестроить экран "${target.name}"?\nИсточник: ${state.assist.source}\nConfidence: ${state.assist.confidence}\n${state.assist.confidenceReason}`,
@@ -1461,6 +1522,10 @@ async function analyzeAssist() {
   if (shouldApply) {
     applyAssistProposal();
   } else {
+    queueVisualLedEvent("assist_rejected", {
+      screen_id: target.id,
+      source: state.assist.source,
+    });
     clearAssist();
   }
 }
@@ -1487,11 +1552,25 @@ function applyAssistProposal() {
     target.corners = ordered;
     target.placementSource = state.assist.source === "auto" ? "assist:auto-update" : "assist:fallback-update";
     state.selectedElementId = target.id;
+    queueVisualLedEvent("assist_applied", {
+      screen_id: target.id,
+      mode: "update",
+      source: state.assist.source,
+      confidence: state.assist.confidence,
+      score: state.assist.score,
+      corners: ordered.map((point) => ({ x: Number(point.x.toFixed(1)), y: Number(point.y.toFixed(1)) })),
+    });
     updateSelectionInfo();
     refreshScreensList();
     clearAssist();
     return;
   }
+  queueVisualLedEvent("assist_applied", {
+    mode: "new",
+    source: state.assist.source,
+    confidence: state.assist.confidence,
+    score: state.assist.score,
+  });
   addElementByCorners(ordered, state.assist.source === "auto" ? "assist:auto" : "assist:fallback");
   clearAssist();
 }
@@ -1921,6 +2000,12 @@ function refreshBackgroundThumbs() {
       setCanvasFromImage(item.image);
       state.assist = null;
       updateAssistStatus();
+      queueVisualLedEvent("background_selected", {
+        background_id: item.id,
+        background_name: item.name,
+        storage_path: item.storagePath || null,
+        storage_bucket: item.storageBucket || null,
+      });
       refreshBackgroundThumbs();
       render();
     });
@@ -2197,10 +2282,17 @@ function generateReportBundle() {
 function exportReport() {
   const { html, suffix, stamp } = generateReportBundle();
   downloadTextFile(`fs_report_${suffix}_${stamp}.html`, html, "text/html;charset=utf-8");
+  queueVisualLedEvent("report_exported", {
+    scope: ui.exportScopeSelect?.value || "active",
+    scenes: suffix,
+  });
 }
 
 async function openReportInNewWindow() {
   const { html } = generateReportBundle();
+  queueVisualLedEvent("report_open_requested", {
+    scope: ui.exportScopeSelect?.value || "active",
+  });
   ui.clipboardStatus.textContent = "Отчет: сохраняем ссылку...";
   ui.clipboardStatus.style.color = "#5f6880";
   try {
@@ -2233,10 +2325,18 @@ async function openReportInNewWindow() {
     }
     ui.clipboardStatus.textContent = "Отчет сохранен и открыт в новой вкладке";
     ui.clipboardStatus.style.color = "#0b7a70";
+    queueVisualLedEvent("report_shared", {
+      status: "success",
+      url,
+    });
   } catch (error) {
     ui.clipboardStatus.textContent = "Не удалось сохранить отчет на сервер";
     ui.clipboardStatus.style.color = "#9f1239";
     const message = error instanceof Error ? error.message : "unknown error";
+    queueVisualLedEvent("report_shared", {
+      status: "error",
+      message,
+    });
     alert(`Не удалось сохранить отчет на сервер. ${message}`);
   }
 }
@@ -2353,14 +2453,17 @@ async function copySceneToClipboard() {
       ]);
       ui.clipboardStatus.textContent = "Буфер: JPG с данными скопирован";
       ui.clipboardStatus.style.color = "#0b7a70";
+      queueVisualLedEvent("scene_copied_to_clipboard", { mode: "image/jpeg" });
     } else if (navigator.clipboard && window.isSecureContext) {
       await navigator.clipboard.writeText(jpg);
       ui.clipboardStatus.textContent = "Буфер: скопирован JPG DataURL с данными";
       ui.clipboardStatus.style.color = "#0b7a70";
+      queueVisualLedEvent("scene_copied_to_clipboard", { mode: "data_url" });
     } else {
       downloadDataUrl("fs_scene_clipboard_fallback.jpg", jpg);
       ui.clipboardStatus.textContent = "Буфер недоступен: JPG с данными скачан";
       ui.clipboardStatus.style.color = "#8a6b00";
+      queueVisualLedEvent("scene_copied_to_clipboard", { mode: "download_fallback" });
     }
   } catch (_err) {
     if (jpg) {
@@ -2368,6 +2471,7 @@ async function copySceneToClipboard() {
     }
     ui.clipboardStatus.textContent = "Не скопировалось: JPG с данными скачан";
     ui.clipboardStatus.style.color = "#8a6b00";
+    queueVisualLedEvent("scene_copied_to_clipboard", { mode: "error_fallback" });
   } finally {
     state.showStatsOverlay = prevHud;
     render();
@@ -2474,10 +2578,17 @@ function updateSelectionInfo() {
   updateCabinetStatus();
 }
 
-async function addBackground(src, name) {
+async function addBackground(src, name, meta = {}) {
   const image = await createImage(src);
   const id = uid("bg");
-  state.backgrounds.push({ id, src, image, name });
+  state.backgrounds.push({
+    id,
+    src,
+    image,
+    name,
+    storagePath: meta.storagePath || null,
+    storageBucket: meta.storageBucket || null,
+  });
   if (!state.activeBackgroundId) {
     state.activeBackgroundId = id;
     setCanvasFromImage(image);
@@ -2503,7 +2614,7 @@ async function addVideo(src, name) {
 
 function addElementByCorners(corners, placementSource = "manual") {
   const index = state.elements.length + 1;
-  state.elements.push({
+  const created = {
     id: uid("el"),
     name: `Экран ${index}`,
     corners,
@@ -2511,8 +2622,15 @@ function addElementByCorners(corners, placementSource = "manual") {
     pixelPitch: ui.pixelPitchSelect?.value === "1.9" ? "1.9" : "2.6",
     cabinetPlan: null,
     videoId: null,
+  };
+  state.elements.push(created);
+  state.selectedElementId = created.id;
+  queueVisualLedEvent("screen_created", {
+    screen_id: created.id,
+    placement_source: placementSource,
+    pixel_pitch: created.pixelPitch,
+    corners: created.corners.map((point) => ({ x: Number(point.x.toFixed(1)), y: Number(point.y.toFixed(1)) })),
   });
-  state.selectedElementId = state.elements[state.elements.length - 1].id;
   updateScreensCount();
   updateSelectionInfo();
   render();
@@ -2522,7 +2640,18 @@ async function importBackgroundFiles(files) {
   const imageFiles = Array.from(files || []).filter((f) => f.type.startsWith("image/"));
   for (const file of imageFiles) {
     const src = await fileToDataUrl(file);
-    await addBackground(src, file.name);
+    const uploaded = await uploadBackgroundToStorage(file, src);
+    await addBackground(src, file.name, {
+      storagePath: uploaded.storagePath,
+      storageBucket: uploaded.bucket,
+    });
+    queueVisualLedEvent("background_uploaded", {
+      file_name: file.name,
+      size_bytes: file.size || null,
+      mime_type: file.type || null,
+      storage_path: uploaded.storagePath,
+      storage_bucket: uploaded.bucket,
+    });
   }
   if (imageFiles.length) {
     refreshBackgroundThumbs();
@@ -2644,6 +2773,12 @@ function applyScreenSizeMeters() {
     };
   });
 
+  queueVisualLedEvent("screen_updated", {
+    screen_id: el.id,
+    action: "apply_size_meters",
+    target_width_m: targetW,
+    target_height_m: targetH,
+  });
   updateSelectionInfo();
   render();
 }
@@ -2689,6 +2824,11 @@ canvas.addEventListener("mousedown", (event) => {
       const px = distance(state.tool.points[0], state.tool.points[1]);
       if (Number.isFinite(real) && real > 0 && px > 1) {
         state.scaleCalib = { realLength: real, pxLength: px, pxPerMeter: px / real };
+        queueVisualLedEvent("scale_set", {
+          real_length_m: real,
+          px_length: Number(px.toFixed(2)),
+          px_per_meter: Number((px / real).toFixed(4)),
+        });
       } else {
         alert("Некорректная длина или точки.");
       }
@@ -2879,8 +3019,13 @@ ui.deleteSelectedBtn.addEventListener("click", () => {
   if (!state.selectedElementId) {
     return;
   }
+  const deletedId = state.selectedElementId;
   state.elements = state.elements.filter((el) => el.id !== state.selectedElementId);
   state.selectedElementId = null;
+  queueVisualLedEvent("screen_deleted", {
+    screen_id: deletedId,
+    source: "button",
+  });
   updateScreensCount();
   updateSelectionInfo();
   refreshVideoList();
@@ -2920,6 +3065,194 @@ for (const input of [ui.viewportWidthInput, ui.viewportHeightInput]) {
       applyViewportSize();
     }
   });
+}
+
+function ensureVisualLedSessionKey() {
+  if (state.analytics.sessionKey) {
+    return state.analytics.sessionKey;
+  }
+  let stored = null;
+  try {
+    stored = localStorage.getItem("visualLedSessionKey");
+  } catch (_error) {
+    stored = null;
+  }
+  if (stored && stored.length > 8) {
+    state.analytics.sessionKey = stored;
+    return stored;
+  }
+  const key = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+  state.analytics.sessionKey = key;
+  try {
+    localStorage.setItem("visualLedSessionKey", key);
+  } catch (_error) {
+    // ignore
+  }
+  return key;
+}
+
+function getVisualLedClientSnapshot() {
+  return {
+    page_url: window.location.href,
+    referrer: document.referrer || null,
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || null,
+    viewport: {
+      width: window.innerWidth,
+      height: window.innerHeight,
+    },
+    screen: {
+      width: window.screen?.width || null,
+      height: window.screen?.height || null,
+      pixelRatio: window.devicePixelRatio || 1,
+    },
+    device: {
+      platform: navigator.platform || null,
+      userAgent: navigator.userAgent || null,
+      language: navigator.language || null,
+    },
+    utm: (() => {
+      const params = new URLSearchParams(window.location.search);
+      const keys = ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content"];
+      const result = {};
+      for (const key of keys) {
+        const value = params.get(key);
+        if (value) result[key] = value;
+      }
+      return result;
+    })(),
+  };
+}
+
+async function visualLedApiPost(path, payload, options = {}) {
+  const response = await fetch(`/api/visual-led-logs/${path}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    },
+    body: JSON.stringify(payload),
+    keepalive: !!options.keepalive,
+  });
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}`);
+  }
+  return response.json().catch(() => ({}));
+}
+
+function queueVisualLedEvent(eventType, payload = {}, meta = {}) {
+  const sessionKey = ensureVisualLedSessionKey();
+  state.analytics.queue.push({
+    event_type: eventType,
+    ts: new Date().toISOString(),
+    scene_id: activeScene()?.id || null,
+    screen_id: state.selectedElementId || null,
+    payload: {
+      ...payload,
+      meta,
+    },
+  });
+  if (state.analytics.queue.length >= 20) {
+    void flushVisualLedEvents("max");
+    return;
+  }
+  if (state.analytics.flushTimer) {
+    clearTimeout(state.analytics.flushTimer);
+  }
+  state.analytics.flushTimer = setTimeout(() => {
+    void flushVisualLedEvents("timer");
+  }, 2500);
+  return sessionKey;
+}
+
+async function flushVisualLedEvents(reason = "manual") {
+  if (!state.analytics.queue.length) {
+    return;
+  }
+  const sessionKey = ensureVisualLedSessionKey();
+  const events = state.analytics.queue.splice(0, state.analytics.queue.length);
+  if (state.analytics.flushTimer) {
+    clearTimeout(state.analytics.flushTimer);
+    state.analytics.flushTimer = null;
+  }
+  try {
+    await visualLedApiPost("event-batch", {
+      session_key: sessionKey,
+      events,
+      reason,
+    });
+  } catch (_error) {
+    state.analytics.queue.unshift(...events.slice(-60));
+  }
+}
+
+async function startVisualLedSession() {
+  if (state.analytics.startedAt) {
+    return;
+  }
+  state.analytics.startedAt = Date.now();
+  const sessionKey = ensureVisualLedSessionKey();
+  const snapshot = getVisualLedClientSnapshot();
+  try {
+    await visualLedApiPost("start", {
+      session_key: sessionKey,
+      ...snapshot,
+      is_admin: window.location.pathname.startsWith("/admin"),
+    });
+  } catch (_error) {
+    // silent
+  }
+  queueVisualLedEvent("session_started", {
+    canvas: { width: canvas.width, height: canvas.height },
+    scenes: state.scenes.length,
+  });
+}
+
+async function endVisualLedSession(reason = "manual") {
+  const sessionKey = ensureVisualLedSessionKey();
+  queueVisualLedEvent("session_ended", { reason });
+  await flushVisualLedEvents("session_end");
+  try {
+    await visualLedApiPost(
+      "end",
+      {
+        session_key: sessionKey,
+        summary: {
+          reason,
+          scenes: state.scenes.length,
+          screens: state.elements.length,
+          duration_sec: state.analytics.startedAt ? Math.round((Date.now() - state.analytics.startedAt) / 1000) : null,
+        },
+      },
+      { keepalive: true },
+    );
+  } catch (_error) {
+    // silent
+  }
+}
+
+async function uploadBackgroundToStorage(file, dataUrl) {
+  const sessionKey = ensureVisualLedSessionKey();
+  try {
+    const result = await visualLedApiPost("background-upload", {
+      session_key: sessionKey,
+      file_name: file.name,
+      mime_type: file.type || "image/jpeg",
+      data_url: dataUrl,
+      size_bytes: file.size || null,
+      meta: {
+        source: "visual-led-upload",
+      },
+    });
+    return {
+      storagePath: result.storage_path || null,
+      bucket: result.bucket || null,
+    };
+  } catch (_error) {
+    return {
+      storagePath: null,
+      bucket: null,
+    };
+  }
 }
 
 ui.fitScreenToCabinetsBtn.addEventListener("click", () => {
@@ -3000,8 +3333,13 @@ window.addEventListener("keydown", (event) => {
     if (tag === "input" || tag === "textarea") {
       return;
     }
+    const deletedId = state.selectedElementId;
     state.elements = state.elements.filter((el) => el.id !== state.selectedElementId);
     state.selectedElementId = null;
+    queueVisualLedEvent("screen_deleted", {
+      screen_id: deletedId,
+      source: "keyboard",
+    });
     updateScreensCount();
     updateSelectionInfo();
     render();
@@ -3108,6 +3446,7 @@ async function loadPresetVideos() {
 (async function init() {
   ui.toggleCabinetGrid.checked = true;
   ui.toggleAssistGuides.checked = true;
+  await startVisualLedSession();
   applySceneCanvas(activeScene());
   refreshSceneTabs();
   updateToolStatus("ожидание");
@@ -3121,6 +3460,14 @@ async function loadPresetVideos() {
   render();
   animationTick();
 })();
+
+window.addEventListener("pagehide", () => {
+  void endVisualLedSession("pagehide");
+});
+
+window.addEventListener("beforeunload", () => {
+  void endVisualLedSession("beforeunload");
+});
 
 </script>
 </body>

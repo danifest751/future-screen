@@ -12,6 +12,7 @@ type AdminLayoutContent = {
     contacts: string;
     settings: string;
     visualLed: string;
+    visualLedLogs: string;
   };
   breadcrumbs: {
     admin: string;
@@ -51,6 +52,7 @@ const ru: AdminLayoutContent = {
     contacts: 'Контакты',
     settings: 'Настройки',
     visualLed: 'Визуализатор экрана',
+    visualLedLogs: 'Логи visual-led',
   },
   breadcrumbs: {
     admin: 'Админ',
@@ -90,6 +92,7 @@ const en: AdminLayoutContent = {
     contacts: 'Contacts',
     settings: 'Settings',
     visualLed: 'Screen visualizer',
+    visualLedLogs: 'Visual LED logs',
   },
   breadcrumbs: {
     admin: 'Admin',

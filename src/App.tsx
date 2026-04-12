@@ -31,6 +31,7 @@ const AdminBackgroundsPage = lazy(() => import('./pages/admin/AdminBackgroundsPa
 const AdminRentalCategoriesPage = lazy(() => import('./pages/admin/AdminRentalCategoriesPage'));
 const AdminRentalCategoryEditPage = lazy(() => import('./pages/admin/AdminRentalCategoryEditPage'));
 const AdminPrivacyPolicyPage = lazy(() => import('./pages/admin/AdminPrivacyPolicyPage'));
+const AdminVisualLedLogsPage = lazy(() => import('./pages/admin/AdminVisualLedLogsPage'));
 const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'));
 const VisualLedEditorPage = lazy(() => import('./pages/VisualLedEditorPage'));
 
@@ -100,6 +101,7 @@ const App = () => {
     { path: '/admin/rental-categories', element: <ProtectedRoute><AdminRentalCategoriesPage /></ProtectedRoute> },
     { path: '/admin/rental/:id', element: <ProtectedRoute><AdminRentalCategoryEditPage /></ProtectedRoute> },
     { path: '/admin/privacy-policy', element: <ProtectedRoute><AdminPrivacyPolicyPage /></ProtectedRoute> },
+    { path: '/admin/visual-led-logs', element: <ProtectedRoute requiredRole="admin"><AdminVisualLedLogsPage /></ProtectedRoute> },
     { path: '/admin', element: <ProtectedRoute><AdminDashboard /></ProtectedRoute> },
     { path: '/visual-led', element: <VisualLedEditorPage /> },
     { path: '*', element: <NotFoundPage /> },

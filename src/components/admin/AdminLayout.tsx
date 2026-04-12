@@ -2,6 +2,7 @@
 import { Toaster } from 'react-hot-toast';
 import {
   ChevronRight,
+  ClipboardList,
   FolderOpen,
   Inbox,
   LayoutDashboard,
@@ -57,6 +58,7 @@ const createDefaultNavItems = (content: ReturnType<typeof getAdminLayoutContent>
   { to: '/admin/contacts', label: content.nav.contacts, Icon: Phone },
   { to: '/admin/content', label: content.nav.settings, Icon: Settings },
   { to: '/visual-led', label: content.nav.visualLed, Icon: Monitor },
+  { to: '/admin/visual-led-logs', label: content.nav.visualLedLogs, Icon: ClipboardList },
 ];
 
 const AdminLayout = ({ title, subtitle, children, contentLocale, onContentLocaleChange }: Props) => {
