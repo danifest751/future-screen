@@ -508,6 +508,29 @@ select option { background: rgb(15, 23, 42); color: #f1f5f9; }
       </div>
 
       <div class="panel">
+        <h2><span class="i">🧭</span> Assist</h2>
+        <p class="helper">Полуавтоматический подбор контура с ручной проверкой.</p>
+        <div class="inline-row">
+          <button id="runAssistBtn" class="action compact" title="Проанализировать фон и предложить контур">
+            <span class="i">◈</span> Анализ
+          </button>
+          <button id="applyAssistBtn" class="action compact secondary" title="Добавить экран по предложенному контуру">
+            <span class="i">✓</span> Применить
+          </button>
+        </div>
+        <div class="inline-row">
+          <button id="clearAssistBtn" class="action compact secondary" title="Скрыть подсказки assist">
+            <span class="i">⌫</span> Очистить
+          </button>
+        </div>
+        <label class="check-row" title="Показывать направляющие полуавтоматического анализа">
+          <input id="toggleAssistGuides" type="checkbox" checked />
+          <span>Показать направляющие</span>
+        </label>
+        <div id="assistStatus" class="status">Assist: ожидание</div>
+      </div>
+
+      <div class="panel">
         <h2><span class="i">▦</span> Экраны</h2>
         <p class="helper">4 клика по углам будущего экрана.</p>
         <div class="inline-row">
@@ -669,6 +692,11 @@ const ui = {
   clearScreenVideoBtn: document.getElementById("clearScreenVideoBtn"),
   knownLengthMeters: document.getElementById("knownLengthMeters"),
   startScaleBtn: document.getElementById("startScaleBtn"),
+  runAssistBtn: document.getElementById("runAssistBtn"),
+  applyAssistBtn: document.getElementById("applyAssistBtn"),
+  clearAssistBtn: document.getElementById("clearAssistBtn"),
+  toggleAssistGuides: document.getElementById("toggleAssistGuides"),
+  assistStatus: document.getElementById("assistStatus"),
   startAddScreenBtn: document.getElementById("startAddScreenBtn"),
   cancelToolBtn: document.getElementById("cancelToolBtn"),
   exportReportBtn: document.getElementById("exportReportBtn"),
@@ -718,6 +746,7 @@ function createSceneData(name = "default") {
     elements: [],
     selectedElementId: null,
     scaleCalib: null,
+    assist: null,
     view: {
       scale: 1,
       minScale: 0.35,
@@ -737,6 +766,7 @@ const state = {
   drag: null,
   tool: null,
   showCabinetGrid: true,
+  showAssistGuides: true,
   keys: {
     spaceDown: false,
   },
@@ -748,7 +778,7 @@ function activeScene() {
   return state.scenes.find((scene) => scene.id === state.activeSceneId) || state.scenes[0];
 }
 
-const sceneScopedKeys = ["backgrounds", "activeBackgroundId", "elements", "selectedElementId", "scaleCalib", "view"];
+const sceneScopedKeys = ["backgrounds", "activeBackgroundId", "elements", "selectedElementId", "scaleCalib", "assist", "view"];
 for (const key of sceneScopedKeys) {
   Object.defineProperty(state, key, {
     get() {
@@ -804,8 +834,10 @@ function setCanvasFromImage(img) {
   const scene = activeScene();
   scene.canvasWidth = canvas.width;
   scene.canvasHeight = canvas.height;
+  scene.assist = null;
   syncViewportInputs();
   resetView();
+  updateAssistStatus();
 }
 
 function applySceneCanvas(scene) {
@@ -919,6 +951,7 @@ function switchScene(sceneId) {
   refreshVideoList();
   updateScreensCount();
   updateScaleStatus();
+  updateAssistStatus();
   updateSelectionInfo();
   render();
 }
@@ -1014,6 +1047,321 @@ function orderQuadPoints(points) {
   const r = [sorted[idx], sorted[(idx + 1) % 4], sorted[(idx + 2) % 4], sorted[(idx + 3) % 4]];
   const cross = (r[1].x - r[0].x) * (r[2].y - r[1].y) - (r[1].y - r[0].y) * (r[2].x - r[1].x);
   return cross < 0 ? [r[0], r[3], r[2], r[1]] : r;
+}
+
+function fallbackAssistCorners(width, height) {
+  return [
+    { x: width * 0.32, y: height * 0.33 },
+    { x: width * 0.68, y: height * 0.36 },
+    { x: width * 0.72, y: height * 0.72 },
+    { x: width * 0.28, y: height * 0.7 },
+  ];
+}
+
+function lineIntersection(lineA, lineB) {
+  const det = lineA.nx * lineB.ny - lineB.nx * lineA.ny;
+  if (Math.abs(det) < 1e-6) {
+    return null;
+  }
+  return {
+    x: (lineA.d * lineB.ny - lineB.d * lineA.ny) / det,
+    y: (lineA.nx * lineB.d - lineB.nx * lineA.d) / det,
+  };
+}
+
+function lineClipToCanvas(line) {
+  const points = [];
+  const eps = 1e-6;
+  if (Math.abs(line.ny) > eps) {
+    const yLeft = (line.d - line.nx * 0) / line.ny;
+    const yRight = (line.d - line.nx * canvas.width) / line.ny;
+    if (yLeft >= 0 && yLeft <= canvas.height) points.push({ x: 0, y: yLeft });
+    if (yRight >= 0 && yRight <= canvas.height) points.push({ x: canvas.width, y: yRight });
+  }
+  if (Math.abs(line.nx) > eps) {
+    const xTop = (line.d - line.ny * 0) / line.nx;
+    const xBottom = (line.d - line.ny * canvas.height) / line.nx;
+    if (xTop >= 0 && xTop <= canvas.width) points.push({ x: xTop, y: 0 });
+    if (xBottom >= 0 && xBottom <= canvas.width) points.push({ x: xBottom, y: canvas.height });
+  }
+  const unique = [];
+  for (const point of points) {
+    if (!unique.some((u) => Math.hypot(u.x - point.x, u.y - point.y) < 0.5)) {
+      unique.push(point);
+    }
+  }
+  return unique.length >= 2 ? [unique[0], unique[1]] : null;
+}
+
+function getLumaAt(data, width, x, y) {
+  const i = (y * width + x) * 4;
+  const r = data[i] || 0;
+  const g = data[i + 1] || 0;
+  const b = data[i + 2] || 0;
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function angleDistance(a, b) {
+  const normalize = (value) => {
+    let result = value % Math.PI;
+    if (result < 0) {
+      result += Math.PI;
+    }
+    return result;
+  };
+  const delta = Math.abs(normalize(a) - normalize(b));
+  return Math.min(delta, Math.PI - delta);
+}
+
+function percentile(values, p) {
+  if (!values.length) {
+    return 0;
+  }
+  const sorted = [...values].sort((a, b) => a - b);
+  const idx = clamp(Math.round((sorted.length - 1) * p), 0, sorted.length - 1);
+  return sorted[idx];
+}
+
+function collectAssistSamples(imageData) {
+  const samples = [];
+  const width = imageData.width;
+  const height = imageData.height;
+  const data = imageData.data;
+  const threshold = 42;
+  for (let y = 1; y < height - 1; y += 2) {
+    for (let x = 1; x < width - 1; x += 2) {
+      const gx = getLumaAt(data, width, x + 1, y) - getLumaAt(data, width, x - 1, y);
+      const gy = getLumaAt(data, width, x, y + 1) - getLumaAt(data, width, x, y - 1);
+      const mag = Math.hypot(gx, gy);
+      if (mag < threshold) continue;
+      const angle = ((Math.atan2(gy, gx) + Math.PI / 2) % Math.PI + Math.PI) % Math.PI;
+      samples.push({ x, y, angle, mag });
+    }
+  }
+  return samples;
+}
+
+function dominantAssistAngles(samples) {
+  if (samples.length < 80) {
+    return null;
+  }
+  const bins = 36;
+  const hist = new Array(bins).fill(0);
+  for (const sample of samples) {
+    const idx = Math.floor((sample.angle / Math.PI) * bins) % bins;
+    hist[idx] += sample.mag;
+  }
+
+  let first = -1;
+  let firstValue = -1;
+  for (let i = 0; i < bins; i += 1) {
+    if (hist[i] > firstValue) {
+      firstValue = hist[i];
+      first = i;
+    }
+  }
+  if (first < 0) {
+    return null;
+  }
+  const firstAngle = (first / bins) * Math.PI;
+
+  let second = -1;
+  let secondValue = -1;
+  for (let i = 0; i < bins; i += 1) {
+    const angle = (i / bins) * Math.PI;
+    if (angleDistance(angle, firstAngle) < (20 * Math.PI) / 180) {
+      continue;
+    }
+    if (hist[i] > secondValue) {
+      second = i;
+      secondValue = hist[i];
+    }
+  }
+  if (second < 0 || secondValue <= 0) {
+    return null;
+  }
+  return [firstAngle, (second / bins) * Math.PI];
+}
+
+function linesForAssistAngle(samples, angle) {
+  const tolerance = (12 * Math.PI) / 180;
+  const oriented = samples.filter((sample) => angleDistance(sample.angle, angle) <= tolerance);
+  if (oriented.length < 40) {
+    return null;
+  }
+  const nx = -Math.sin(angle);
+  const ny = Math.cos(angle);
+  const projections = oriented.map((sample) => nx * sample.x + ny * sample.y);
+  const dMin = percentile(projections, 0.1);
+  const dMax = percentile(projections, 0.9);
+  return [
+    { nx, ny, d: dMin },
+    { nx, ny, d: dMax },
+  ];
+}
+
+function isAssistQuadUsable(corners) {
+  if (!corners || corners.length !== 4) {
+    return false;
+  }
+  let area2 = 0;
+  for (let i = 0; i < 4; i += 1) {
+    const p1 = corners[i];
+    const p2 = corners[(i + 1) % 4];
+    area2 += p1.x * p2.y - p2.x * p1.y;
+  }
+  const area = Math.abs(area2) / 2;
+  const imageArea = canvas.width * canvas.height;
+  if (area < imageArea * 0.01 || area > imageArea * 0.9) {
+    return false;
+  }
+  return corners.every((p) => p.x >= -canvas.width * 0.1 && p.x <= canvas.width * 1.1 && p.y >= -canvas.height * 0.1 && p.y <= canvas.height * 1.1);
+}
+
+async function analyzeAssist() {
+  const bg = activeBackground();
+  if (!bg) {
+    alert("Сначала выбери фон.");
+    return;
+  }
+
+  ui.assistStatus.textContent = "Assist: анализ...";
+  ui.assistStatus.style.color = "#5f6880";
+
+  const probe = document.createElement("canvas");
+  probe.width = canvas.width;
+  probe.height = canvas.height;
+  const probeCtx = probe.getContext("2d", { willReadFrequently: true });
+  probeCtx.drawImage(bg.image, 0, 0, canvas.width, canvas.height);
+  const imageData = probeCtx.getImageData(0, 0, probe.width, probe.height);
+
+  const samples = collectAssistSamples(imageData);
+  const dominant = dominantAssistAngles(samples);
+
+  if (!dominant) {
+    state.assist = {
+      source: "fallback",
+      confidence: "low",
+      score: 0.2,
+      confidenceReason: "Недостаточно выраженных линий, использован fallback",
+      dominantAnglesDeg: null,
+      guides: [],
+      proposalCorners: fallbackAssistCorners(canvas.width, canvas.height),
+      analyzedAt: Date.now(),
+    };
+    updateAssistStatus();
+    render();
+    return;
+  }
+
+  const familyA = linesForAssistAngle(samples, dominant[0]);
+  const familyB = linesForAssistAngle(samples, dominant[1]);
+
+  if (!familyA || !familyB) {
+    state.assist = {
+      source: "fallback",
+      confidence: "low",
+      score: 0.3,
+      confidenceReason: "Границы нестабильны, использован fallback",
+      dominantAnglesDeg: [dominant[0] * (180 / Math.PI), dominant[1] * (180 / Math.PI)],
+      guides: [],
+      proposalCorners: fallbackAssistCorners(canvas.width, canvas.height),
+      analyzedAt: Date.now(),
+    };
+    updateAssistStatus();
+    render();
+    return;
+  }
+
+  const p00 = lineIntersection(familyA[0], familyB[0]);
+  const p10 = lineIntersection(familyA[1], familyB[0]);
+  const p11 = lineIntersection(familyA[1], familyB[1]);
+  const p01 = lineIntersection(familyA[0], familyB[1]);
+
+  const candidate = p00 && p10 && p11 && p01 ? orderQuadPoints([p00, p10, p11, p01]) : null;
+  const usable = isAssistQuadUsable(candidate || []);
+  const corners = usable ? candidate : fallbackAssistCorners(canvas.width, canvas.height);
+
+  const edgeScore = clamp(samples.length / 2800, 0, 1);
+  const ortho = 1 - Math.min(Math.abs(angleDistance(dominant[0], dominant[1]) - Math.PI / 2) / (Math.PI / 2), 1);
+  const score = 0.55 * edgeScore + 0.45 * ortho;
+  const confidence = score >= 0.78 ? "high" : score >= 0.52 ? "medium" : "low";
+
+  state.assist = {
+    source: usable ? "auto" : "fallback",
+    confidence: usable ? confidence : "low",
+    score: Number((usable ? score : 0.35).toFixed(3)),
+    confidenceReason: usable
+      ? confidence === "high"
+        ? "Выраженные линии и стабильная геометрия"
+        : "Проверь контур и при необходимости подкорректируй"
+      : "Автоконтур нестабилен, использован fallback",
+    dominantAnglesDeg: [dominant[0] * (180 / Math.PI), dominant[1] * (180 / Math.PI)],
+    guides: [...familyA, ...familyB],
+    proposalCorners: corners,
+    analyzedAt: Date.now(),
+  };
+
+  updateAssistStatus();
+  render();
+}
+
+function clearAssist() {
+  state.assist = null;
+  updateAssistStatus();
+  render();
+}
+
+function applyAssistProposal() {
+  if (!state.assist?.proposalCorners) {
+    alert("Сначала запусти анализ Assist.");
+    return;
+  }
+  addElementByCorners(orderQuadPoints(state.assist.proposalCorners), state.assist.source === "auto" ? "assist:auto" : "assist:fallback");
+  updateAssistStatus();
+}
+
+function drawAssistOverlay() {
+  if (!state.showAssistGuides || !state.assist) {
+    return;
+  }
+  const proposal = state.assist.proposalCorners;
+  if (!proposal || proposal.length !== 4) {
+    return;
+  }
+
+  ctx.save();
+  ctx.lineWidth = 1.5 / state.view.scale;
+
+  if (state.assist.guides?.length) {
+    ctx.strokeStyle = "rgba(88, 170, 255, 0.8)";
+    for (const line of state.assist.guides) {
+      const clip = lineClipToCanvas(line);
+      if (!clip) continue;
+      ctx.beginPath();
+      ctx.moveTo(clip[0].x, clip[0].y);
+      ctx.lineTo(clip[1].x, clip[1].y);
+      ctx.stroke();
+    }
+  }
+
+  ctx.strokeStyle = state.assist.source === "auto" ? "rgba(46, 197, 151, 0.95)" : "rgba(242, 132, 0, 0.95)";
+  ctx.fillStyle = state.assist.source === "auto" ? "rgba(46, 197, 151, 0.18)" : "rgba(242, 132, 0, 0.18)";
+  ctx.beginPath();
+  ctx.moveTo(proposal[0].x, proposal[0].y);
+  for (let i = 1; i < 4; i += 1) {
+    ctx.lineTo(proposal[i].x, proposal[i].y);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  for (const point of proposal) {
+    ctx.beginPath();
+    ctx.arc(point.x, point.y, 4 / state.view.scale, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
 }
 
 function quadPoint(corners, u, v) {
@@ -1379,6 +1727,7 @@ function render() {
     drawScreenFace(element);
     drawCabinetGrid(element);
   }
+  drawAssistOverlay();
   drawSelection();
   drawToolOverlay();
   ctx.restore();
@@ -1395,6 +1744,8 @@ function refreshBackgroundThumbs() {
     btn.addEventListener("click", () => {
       state.activeBackgroundId = item.id;
       setCanvasFromImage(item.image);
+      state.assist = null;
+      updateAssistStatus();
       refreshBackgroundThumbs();
       render();
     });
@@ -1414,7 +1765,8 @@ function refreshScreensList() {
     btn.className = `screen-item${el.id === state.selectedElementId ? " active" : ""}`;
     const pitch = getElementPixelPitch(el);
     const video = el.videoId ? getVideoById(el.videoId) : null;
-    btn.innerHTML = `<div class="screen-row"><span class="screen-name">${escapeHtml(el.name)}</span><button type="button" class="screen-edit-btn" title="Переименовать экран">✎</button></div><small>P${pitch}${video ? ` · Видео: ${escapeHtml(video.name)}` : " · Видео: нет"}</small>`;
+    const source = el.placementSource || "manual";
+    btn.innerHTML = `<div class="screen-row"><span class="screen-name">${escapeHtml(el.name)}</span><button type="button" class="screen-edit-btn" title="Переименовать экран">✎</button></div><small>P${pitch}${video ? ` · Видео: ${escapeHtml(video.name)}` : " · Видео: нет"} · Источник: ${escapeHtml(source)}</small>`;
     btn.addEventListener("click", () => {
       state.selectedElementId = el.id;
       updateSelectionInfo();
@@ -1493,6 +1845,7 @@ function collectScreenMetric(el, idx) {
 
   return {
     screen: el.name || `Экран ${idx + 1}`,
+    source: el.placementSource || "manual",
     pitch: `P${pitch}`,
     sizeW: size ? size.width.toFixed(2) : "-",
     sizeH: size ? size.height.toFixed(2) : "-",
@@ -1543,6 +1896,7 @@ function buildReportHtml(sceneReports) {
         .map(
           (r, idx) => `<section class="card">
   <h3>${idx + 1}. ${escapeHtml(r.screen)}</h3>
+  <div class="kv"><span>Источник:</span><b>${escapeHtml(r.source || "manual")}</b></div>
   <div class="kv"><span>Pixel pitch:</span><b>${escapeHtml(r.pitch)}</b></div>
   <div class="kv"><span>Размер экрана:</span><b>${escapeHtml(r.sizeW)} м x ${escapeHtml(r.sizeH)} м</b></div>
   <div class="kv"><span>Площадь экрана:</span><b>${escapeHtml(r.area)} м²</b></div>
@@ -1732,6 +2086,14 @@ function collectScenePayload(snapshotPng, snapshotJpeg) {
     generatedAt: new Date().toISOString(),
     pixelPitch: "per-screen",
     scalePxPerMeter: state.scaleCalib?.pxPerMeter || null,
+    assist: state.assist
+      ? {
+          source: state.assist.source,
+          confidence: state.assist.confidence,
+          score: state.assist.score,
+          reason: state.assist.confidenceReason,
+        }
+      : null,
     canvas: { width: canvas.width, height: canvas.height },
     background: activeBackground()
       ? { id: activeBackground().id, name: activeBackground().name }
@@ -1750,7 +2112,7 @@ function buildCopyOverlayLines() {
 
   state.elements.forEach((el, idx) => {
     const m = collectScreenMetric(el, idx);
-    lines.push(`${idx + 1}) ${m.screen}: ${m.sizeW}x${m.sizeH}м, S=${m.area}м², каб=${m.cabTotal}, res=${m.resolution}px`);
+    lines.push(`${idx + 1}) ${m.screen}: ${m.sizeW}x${m.sizeH}м, S=${m.area}м², каб=${m.cabTotal}, res=${m.resolution}px, src=${m.source}`);
     lines.push(`   Стороны: AB(верх) ${m.topEdge}, BC(право) ${m.rightEdge}, CD(низ) ${m.bottomEdge}, DA(лево) ${m.leftEdge}`);
     lines.push(`   Диагонали: AC ${m.diagMain}, BD ${m.diagCross}`);
   });
@@ -1843,6 +2205,31 @@ function updateScaleStatus() {
     return;
   }
   ui.scaleStatus.textContent = `Масштаб: ${state.scaleCalib.pxPerMeter.toFixed(2)} px/м`;
+}
+
+function updateAssistStatus() {
+  if (!ui.assistStatus) {
+    return;
+  }
+  if (!state.assist) {
+    ui.assistStatus.textContent = "Assist: ожидание";
+    ui.assistStatus.style.color = "#475569";
+    return;
+  }
+  const confidenceLabel =
+    state.assist.confidence === "high"
+      ? "high"
+      : state.assist.confidence === "medium"
+        ? "medium"
+        : "low";
+  const sourceLabel = state.assist.source === "auto" ? "auto" : "fallback";
+  ui.assistStatus.textContent = `Assist: ${sourceLabel} | confidence ${confidenceLabel} | ${state.assist.confidenceReason}`;
+  ui.assistStatus.style.color =
+    state.assist.confidence === "high"
+      ? "#0b7a70"
+      : state.assist.confidence === "medium"
+        ? "#8a6b00"
+        : "#9f1239";
 }
 
 function updateScreensCount() {
@@ -1938,12 +2325,13 @@ async function addVideo(src, name) {
   state.videos.push({ id: uid("vid"), name, src, videoEl: video });
 }
 
-function addElementByCorners(corners) {
+function addElementByCorners(corners, placementSource = "manual") {
   const index = state.elements.length + 1;
   state.elements.push({
     id: uid("el"),
     name: `Экран ${index}`,
     corners,
+    placementSource,
     pixelPitch: ui.pixelPitchSelect?.value === "1.9" ? "1.9" : "2.6",
     cabinetPlan: null,
     videoId: null,
@@ -2275,6 +2663,18 @@ ui.startScaleBtn.addEventListener("click", () => {
   render();
 });
 
+ui.runAssistBtn.addEventListener("click", async () => {
+  await analyzeAssist();
+});
+
+ui.applyAssistBtn.addEventListener("click", () => {
+  applyAssistProposal();
+});
+
+ui.clearAssistBtn.addEventListener("click", () => {
+  clearAssist();
+});
+
 ui.startAddScreenBtn.addEventListener("click", () => {
   state.tool = { mode: "place4", points: [] };
   updateToolStatus("добавление экрана: 0/4");
@@ -2363,6 +2763,11 @@ ui.clearScreenVideoBtn.addEventListener("click", () => {
 
 ui.toggleCabinetGrid.addEventListener("change", () => {
   state.showCabinetGrid = !!ui.toggleCabinetGrid.checked;
+  render();
+});
+
+ui.toggleAssistGuides.addEventListener("change", () => {
+  state.showAssistGuides = !!ui.toggleAssistGuides.checked;
   render();
 });
 
@@ -2526,10 +2931,12 @@ async function loadPresetVideos() {
 
 (async function init() {
   ui.toggleCabinetGrid.checked = true;
+  ui.toggleAssistGuides.checked = true;
   applySceneCanvas(activeScene());
   refreshSceneTabs();
   updateToolStatus("ожидание");
   updateScaleStatus();
+  updateAssistStatus();
   updateScreensCount();
   updateSelectionInfo();
   await loadPresetVideos();

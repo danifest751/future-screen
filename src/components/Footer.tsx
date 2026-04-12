@@ -141,9 +141,19 @@ const Footer = () => {
         style={{ borderColor: 'rgba(255,255,255,0.07)' }}
       >
         <div>{footerContent.copyright}</div>
-        <Link to="/privacy" className="transition-colors hover:text-gray-400">
-          {footerContent.privacyPolicy}
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link to="/privacy" className="transition-colors hover:text-gray-400">
+            {footerContent.privacyPolicy}
+          </Link>
+          <a
+            href="https://github.com/danifest751/visual-led"
+            target="_blank"
+            rel="noreferrer"
+            className="opacity-70 transition-colors hover:text-gray-400 hover:opacity-100"
+          >
+            {footerContent.visualLedLink}
+          </a>
+        </div>
       </div>
     </div>
   </footer>

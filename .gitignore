@@ -1,4 +1,3 @@
-```
 # Dependencies
 node_modules/
 
@@ -84,3 +83,4 @@ docs/i18n-report.md
 
 # Audit reports (working docs)
 docs/audit.md
+.vercel

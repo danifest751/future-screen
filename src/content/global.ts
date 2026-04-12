@@ -34,6 +34,7 @@ type GlobalContent = {
     supportHours: string;
     copyright: string;
     privacyPolicy: string;
+    visualLedLink: string;
   };
   requestFormContent: {
     defaults: { title: string; ctaText: string };
@@ -145,6 +146,7 @@ const ru: GlobalContent = {
     supportHours: 'Техподдержка: 24/7',
     copyright: '© 2007–2026 Фьючер Скрин. Все права защищены.',
     privacyPolicy: 'Политика конфиденциальности',
+    visualLedLink: 'visual-led',
   },
   requestFormContent: {
     defaults: {
@@ -263,6 +265,7 @@ const en: GlobalContent = {
     supportHours: 'Tech support: 24/7',
     copyright: '© 2007–2026 Future Screen. All rights reserved.',
     privacyPolicy: 'Privacy policy',
+    visualLedLink: 'visual-led',
   },
   requestFormContent: {
     defaults: {
