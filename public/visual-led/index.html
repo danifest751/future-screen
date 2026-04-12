@@ -2329,6 +2329,7 @@ async function openReportInNewWindow() {
       status: "success",
       url,
     });
+    await flushVisualLedEvents("report_shared_success");
   } catch (error) {
     ui.clipboardStatus.textContent = "Не удалось сохранить отчет на сервер";
     ui.clipboardStatus.style.color = "#9f1239";
@@ -2337,6 +2338,7 @@ async function openReportInNewWindow() {
       status: "error",
       message,
     });
+    await flushVisualLedEvents("report_shared_error");
     alert(`Не удалось сохранить отчет на сервер. ${message}`);
   }
 }
