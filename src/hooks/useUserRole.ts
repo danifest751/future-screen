@@ -42,6 +42,25 @@ export function useUserRole() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const hydrateUserFromSession = useCallback(async (sessionUser: User) => {
+    let role = resolveRole(sessionUser);
+
+    // Access token refresh can contain stale/partial claims.
+    // Re-read canonical user when role resolves to viewer.
+    if (role === 'viewer') {
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (!userError && userData.user) {
+        role = resolveRole(userData.user);
+      }
+    }
+
+    setUser({
+      id: sessionUser.id,
+      email: sessionUser.email,
+      role,
+    });
+  }, []);
+
   const loadUser = useCallback(async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -52,28 +71,14 @@ export function useUserRole() {
         return;
       }
 
-      let role = resolveRole(session.user);
-
-      // If the cached session has stale claims, fetch the canonical user once.
-      if (role === 'viewer') {
-        const { data: userData, error: userError } = await supabase.auth.getUser();
-        if (!userError && userData.user) {
-          role = resolveRole(userData.user);
-        }
-      }
-
-      setUser({
-        id: session.user.id,
-        email: session.user.email,
-        role,
-      });
+      await hydrateUserFromSession(session.user);
     } catch (err) {
       console.error('[useUserRole] Error loading user role:', err);
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [hydrateUserFromSession]);
 
   useEffect(() => {
     loadUser();
@@ -86,20 +91,14 @@ export function useUserRole() {
         return;
       }
 
-      const role = resolveRole(session.user);
-
-      setUser({
-        id: session.user.id,
-        email: session.user.email,
-        role,
-      });
-      setLoading(false);
+      setLoading(true);
+      void hydrateUserFromSession(session.user).finally(() => setLoading(false));
     });
 
     return () => {
       subscription.subscription.unsubscribe();
     };
-  }, [loadUser]);
+  }, [hydrateUserFromSession, loadUser]);
 
   const hasRole = useCallback((requiredRole: UserRole): boolean => {
     if (!user) return false;
