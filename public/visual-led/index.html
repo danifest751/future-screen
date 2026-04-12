@@ -2299,7 +2299,10 @@ async function openReportInNewWindow() {
     const response = await fetch("/api/report-share", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ html }),
+      body: JSON.stringify({
+        html,
+        session_key: ensureVisualLedSessionKey(),
+      }),
     });
     if (!response.ok) {
       let details = "";

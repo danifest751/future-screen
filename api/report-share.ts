@@ -17,6 +17,7 @@ let supabaseAdmin: SupabaseClient | null = null;
 
 const bodySchema = z.object({
   html: z.string().min(1).max(MAX_HTML_LENGTH),
+  session_key: z.string().min(8).max(120).optional(),
 });
 
 const isOriginAllowed = (origin?: string): boolean => {
@@ -117,6 +118,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       const host = normalizeOrigin(process.env.PUBLIC_SITE_URL) || origin || 'https://future-screen.vercel.app';
       const url = `${host}/reports/${slug}`;
+
+      const sessionKey = parsed.data.session_key?.trim();
+      if (sessionKey) {
+        try {
+          const { data: sessionData, error: sessionError } = await supabase
+            .from('visual_led_sessions')
+            .select('id')
+            .eq('session_key', sessionKey)
+            .maybeSingle();
+
+          if (!sessionError && sessionData?.id) {
+            await supabase.from('visual_led_events').insert({
+              session_id: sessionData.id,
+              ts: new Date().toISOString(),
+              event_type: 'report_shared',
+              scene_id: null,
+              screen_id: null,
+              payload: {
+                status: 'success',
+                url,
+                source: 'api-report-share',
+              },
+            });
+          }
+        } catch (logError) {
+          console.warn('[report-share] failed to write visual_led_events.report_shared', logError);
+        }
+      }
+
       return res.status(201).json({ ok: true, slug, url });
     }
 
