@@ -54,6 +54,30 @@ const uploadSchema = z.object({
   meta: z.record(z.any()).optional(),
 });
 
+type UserRole = 'admin' | 'editor' | 'viewer';
+
+function parseRole(value: unknown): UserRole | null {
+  if (typeof value !== 'string') return null;
+  const normalized = value.trim().toLowerCase();
+  if (normalized === 'admin' || normalized === 'editor' || normalized === 'viewer') {
+    return normalized;
+  }
+  return null;
+}
+
+function resolveRole(user: User): UserRole {
+  const candidates: unknown[] = [
+    user.user_metadata?.role,
+    user.app_metadata?.role,
+    user.app_metadata?.user_role,
+    (user.app_metadata as { claims?: { role?: unknown } } | null)?.claims?.role,
+  ];
+
+  if (candidates.some((candidate) => parseRole(candidate) === 'admin')) return 'admin';
+  if (candidates.some((candidate) => parseRole(candidate) === 'editor')) return 'editor';
+  return 'viewer';
+}
+
 function applyCors(req: VercelRequest, res: VercelResponse): boolean {
   const origin = String(req.headers.origin || '').replace(/\/$/, '');
   const normalizedAllowed = allowedOrigins.map((item) => item.replace(/\/$/, '').toLowerCase());
@@ -109,7 +133,7 @@ async function ensureAdmin(req: VercelRequest): Promise<User> {
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase.auth.getUser(token);
   if (error || !data.user) throw new Error('Unauthorized: invalid user token');
-  const role = String(data.user.user_metadata?.role || 'viewer');
+  const role = resolveRole(data.user);
   if (role !== 'admin') throw new Error('Forbidden: admin role required');
   return data.user;
 }

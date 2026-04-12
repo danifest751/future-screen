@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
+import type { User } from '@supabase/supabase-js';
 
 export type UserRole = 'admin' | 'editor' | 'viewer';
 
@@ -8,6 +9,29 @@ export type UserWithRole = {
   email: string | undefined;
   role: UserRole;
 };
+
+const ROLE_PRIORITY: UserRole[] = ['admin', 'editor', 'viewer'];
+
+function parseRole(value: unknown): UserRole | null {
+  if (typeof value !== 'string') return null;
+  const normalized = value.trim().toLowerCase();
+  if (normalized === 'admin' || normalized === 'editor' || normalized === 'viewer') {
+    return normalized;
+  }
+  return null;
+}
+
+function resolveRole(user: User): UserRole {
+  for (const candidate of ROLE_PRIORITY) {
+    if (parseRole(user.user_metadata?.role) === candidate) return candidate;
+    if (parseRole(user.app_metadata?.role) === candidate) return candidate;
+    if (parseRole(user.app_metadata?.user_role) === candidate) return candidate;
+    if (parseRole((user.app_metadata as { claims?: { role?: unknown } } | null)?.claims?.role) === candidate) {
+      return candidate;
+    }
+  }
+  return 'viewer';
+}
 
 /**
  * Хук для получения роли пользователя из Supabase.
@@ -28,8 +52,15 @@ export function useUserRole() {
         return;
       }
 
-      const metadata = session.user.user_metadata || {};
-      const role = (metadata.role as UserRole) || 'viewer';
+      let role = resolveRole(session.user);
+
+      // If the cached session has stale claims, fetch the canonical user once.
+      if (role === 'viewer') {
+        const { data: userData, error: userError } = await supabase.auth.getUser();
+        if (!userError && userData.user) {
+          role = resolveRole(userData.user);
+        }
+      }
 
       setUser({
         id: session.user.id,
@@ -55,8 +86,7 @@ export function useUserRole() {
         return;
       }
 
-      const metadata = session.user.user_metadata || {};
-      const role = (metadata.role as UserRole) || 'viewer';
+      const role = resolveRole(session.user);
 
       setUser({
         id: session.user.id,
