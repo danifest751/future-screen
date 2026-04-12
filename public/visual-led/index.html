@@ -1105,6 +1105,21 @@ function lineIntersection(lineA, lineB) {
   };
 }
 
+function lineFromPoints(pointA, pointB) {
+  const dx = pointB.x - pointA.x;
+  const dy = pointB.y - pointA.y;
+  const len = Math.hypot(dx, dy) || 1;
+  const nx = -dy / len;
+  const ny = dx / len;
+  const angle = ((Math.atan2(dy, dx) % Math.PI) + Math.PI) % Math.PI;
+  return {
+    nx,
+    ny,
+    d: nx * pointA.x + ny * pointA.y,
+    angle,
+  };
+}
+
 function lineClipToCanvas(line) {
   const points = [];
   const eps = 1e-6;
@@ -1236,6 +1251,48 @@ function linesForAssistAngle(samples, angle) {
   ];
 }
 
+function refineCornersByEdgeSnap(localCorners, samples) {
+  if (!localCorners || localCorners.length !== 4 || !samples || samples.length < 40) {
+    return null;
+  }
+
+  const tolerance = (18 * Math.PI) / 180;
+  const lines = [];
+
+  for (let i = 0; i < 4; i += 1) {
+    const p1 = localCorners[i];
+    const p2 = localCorners[(i + 1) % 4];
+    const base = lineFromPoints(p1, p2);
+    const oriented = samples.filter((sample) => angleDistance(sample.angle, base.angle) <= tolerance);
+    if (oriented.length < 18) {
+      return null;
+    }
+    const projections = oriented.map((sample) => base.nx * sample.x + base.ny * sample.y);
+    const nearest = [...projections]
+      .sort((a, b) => Math.abs(a - base.d) - Math.abs(b - base.d))
+      .slice(0, Math.min(80, projections.length));
+    const snapped = percentile(nearest, 0.5);
+    const blended = base.d * 0.35 + snapped * 0.65;
+    lines.push({ nx: base.nx, ny: base.ny, d: blended });
+  }
+
+  const c0 = lineIntersection(lines[0], lines[1]);
+  const c1 = lineIntersection(lines[1], lines[2]);
+  const c2 = lineIntersection(lines[2], lines[3]);
+  const c3 = lineIntersection(lines[3], lines[0]);
+  if (!c0 || !c1 || !c2 || !c3) {
+    return null;
+  }
+
+  const corners = orderQuadPoints([c0, c1, c2, c3]);
+  const avgMove =
+    corners.reduce((sum, point, idx) => sum + Math.hypot(point.x - localCorners[idx].x, point.y - localCorners[idx].y), 0) / 4;
+  if (avgMove < 0.75) {
+    return null;
+  }
+  return { corners, lines, avgMove };
+}
+
 function isAssistQuadUsable(corners, roi = null) {
   if (!corners || corners.length !== 4) {
     return false;
@@ -1282,14 +1339,47 @@ async function analyzeAssist() {
   const imageData = probeCtx.getImageData(0, 0, probe.width, probe.height);
 
   const samples = collectAssistSamples(imageData);
+  const localTargetCorners = target.corners.map((point) => ({ x: point.x - roi.x, y: point.y - roi.y }));
+  const snapped = refineCornersByEdgeSnap(localTargetCorners, samples);
   const dominant = dominantAssistAngles(samples);
+
+  if (snapped && isAssistQuadUsable(snapped.corners, roi)) {
+    const globalCorners = snapped.corners.map((point) => ({ x: point.x + roi.x, y: point.y + roi.y }));
+    state.assist = {
+      source: "auto",
+      confidence: snapped.avgMove > 8 ? "high" : "medium",
+      score: Number(clamp(snapped.avgMove / 24, 0.55, 0.9).toFixed(3)),
+      confidenceReason: "Контур перестроен относительно текущего экрана (edge-snap)",
+      dominantAnglesDeg: null,
+      targetElementId: target.id,
+      mode: "update",
+      guides: snapped.lines.map((line) => ({
+        nx: line.nx,
+        ny: line.ny,
+        d: line.d + line.nx * roi.x + line.ny * roi.y,
+      })),
+      proposalCorners: globalCorners,
+      analyzedAt: Date.now(),
+    };
+    updateAssistStatus();
+    render();
+    const shouldApplySnap = confirm(
+      `Перестроить экран "${target.name}"?\nИсточник: auto (edge-snap)\nConfidence: ${state.assist.confidence}\n${state.assist.confidenceReason}`,
+    );
+    if (shouldApplySnap) {
+      applyAssistProposal();
+    } else {
+      clearAssist();
+    }
+    return;
+  }
 
   if (!dominant) {
     state.assist = {
       source: "fallback",
       confidence: "low",
       score: 0.2,
-      confidenceReason: "Недостаточно выраженных линий, использован fallback",
+      confidenceReason: "Недостаточно опорных линий для перестройки выбранного экрана",
       dominantAnglesDeg: null,
       guides: [],
       targetElementId: target.id,
@@ -1299,16 +1389,8 @@ async function analyzeAssist() {
     };
     updateAssistStatus();
     render();
-    const keepFallback = confirm(`Assist не нашел уверенный контур для "${target.name}". Оставить текущий экран без изменений?`);
-    if (!keepFallback) {
-      target.corners = orderQuadPoints(state.assist.proposalCorners);
-      target.placementSource = "assist:fallback-update";
-      updateSelectionInfo();
-      refreshScreensList();
-      render();
-    } else {
-      clearAssist();
-    }
+    alert(`Assist не нашел уверенный контур для "${target.name}". Попробуй изменить рамку вручную чуть ближе к реальным граням и снова нажать "Анализ".`);
+    clearAssist();
     return;
   }
 
@@ -1320,7 +1402,7 @@ async function analyzeAssist() {
       source: "fallback",
       confidence: "low",
       score: 0.3,
-      confidenceReason: "Границы нестабильны, использован fallback",
+      confidenceReason: "Границы нестабильны для надежной перестройки",
       dominantAnglesDeg: [dominant[0] * (180 / Math.PI), dominant[1] * (180 / Math.PI)],
       guides: [],
       targetElementId: target.id,
@@ -1330,10 +1412,8 @@ async function analyzeAssist() {
     };
     updateAssistStatus();
     render();
-    const keepFallback = confirm(`Assist не смог стабильно перестроить "${target.name}". Оставить как есть?`);
-    if (keepFallback) {
-      clearAssist();
-    }
+    alert(`Assist не смог стабильно перестроить "${target.name}". Попробуй выбрать более контрастный фон/ракурс.`);
+    clearAssist();
     return;
   }
 
