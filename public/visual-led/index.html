@@ -509,7 +509,7 @@ select option { background: rgb(15, 23, 42); color: #f1f5f9; }
 
       <div class="panel">
         <h2><span class="i">🧭</span> Assist</h2>
-        <p class="helper">Полуавтоматический подбор контура с ручной проверкой.</p>
+        <p class="helper">Выбери экран и нажми "Анализ" для перестройки с подтверждением.</p>
         <div class="inline-row">
           <button id="runAssistBtn" class="action compact" title="Проанализировать фон и предложить контур">
             <span class="i">◈</span> Анализ
@@ -1049,13 +1049,49 @@ function orderQuadPoints(points) {
   return cross < 0 ? [r[0], r[3], r[2], r[1]] : r;
 }
 
-function fallbackAssistCorners(width, height) {
+function fallbackAssistCorners(width, height, baseCorners = null) {
+  if (Array.isArray(baseCorners) && baseCorners.length === 4) {
+    return baseCorners.map((point) => ({ x: point.x, y: point.y }));
+  }
   return [
     { x: width * 0.32, y: height * 0.33 },
     { x: width * 0.68, y: height * 0.36 },
     { x: width * 0.72, y: height * 0.72 },
     { x: width * 0.28, y: height * 0.7 },
   ];
+}
+
+function getCornersBounds(corners) {
+  const xs = corners.map((point) => point.x);
+  const ys = corners.map((point) => point.y);
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+  return {
+    minX,
+    maxX,
+    minY,
+    maxY,
+    width: Math.max(1, maxX - minX),
+    height: Math.max(1, maxY - minY),
+  };
+}
+
+function getAssistRoi(targetElement) {
+  if (!targetElement?.corners?.length) {
+    return { x: 0, y: 0, width: canvas.width, height: canvas.height };
+  }
+  const bounds = getCornersBounds(targetElement.corners);
+  const padX = Math.max(28, bounds.width * 0.35);
+  const padY = Math.max(28, bounds.height * 0.35);
+  const x = clamp(Math.floor(bounds.minX - padX), 0, canvas.width - 1);
+  const y = clamp(Math.floor(bounds.minY - padY), 0, canvas.height - 1);
+  const maxW = canvas.width - x;
+  const maxH = canvas.height - y;
+  const width = clamp(Math.ceil(bounds.width + padX * 2), 64, maxW);
+  const height = clamp(Math.ceil(bounds.height + padY * 2), 64, maxH);
+  return { x, y, width, height };
 }
 
 function lineIntersection(lineA, lineB) {
@@ -1200,7 +1236,7 @@ function linesForAssistAngle(samples, angle) {
   ];
 }
 
-function isAssistQuadUsable(corners) {
+function isAssistQuadUsable(corners, roi = null) {
   if (!corners || corners.length !== 4) {
     return false;
   }
@@ -1211,9 +1247,13 @@ function isAssistQuadUsable(corners) {
     area2 += p1.x * p2.y - p2.x * p1.y;
   }
   const area = Math.abs(area2) / 2;
-  const imageArea = canvas.width * canvas.height;
+  const areaBase = roi ? roi.width * roi.height : canvas.width * canvas.height;
+  const imageArea = areaBase;
   if (area < imageArea * 0.01 || area > imageArea * 0.9) {
     return false;
+  }
+  if (roi) {
+    return corners.every((p) => p.x >= -roi.width * 0.1 && p.x <= roi.width * 1.1 && p.y >= -roi.height * 0.1 && p.y <= roi.height * 1.1);
   }
   return corners.every((p) => p.x >= -canvas.width * 0.1 && p.x <= canvas.width * 1.1 && p.y >= -canvas.height * 0.1 && p.y <= canvas.height * 1.1);
 }
@@ -1224,15 +1264,21 @@ async function analyzeAssist() {
     alert("Сначала выбери фон.");
     return;
   }
+  const target = selectedElement();
+  if (!target) {
+    alert("Сначала выбери экран, который нужно перестроить.");
+    return;
+  }
 
   ui.assistStatus.textContent = "Assist: анализ...";
   ui.assistStatus.style.color = "#5f6880";
 
+  const roi = getAssistRoi(target);
   const probe = document.createElement("canvas");
-  probe.width = canvas.width;
-  probe.height = canvas.height;
+  probe.width = roi.width;
+  probe.height = roi.height;
   const probeCtx = probe.getContext("2d", { willReadFrequently: true });
-  probeCtx.drawImage(bg.image, 0, 0, canvas.width, canvas.height);
+  probeCtx.drawImage(bg.image, roi.x, roi.y, roi.width, roi.height, 0, 0, roi.width, roi.height);
   const imageData = probeCtx.getImageData(0, 0, probe.width, probe.height);
 
   const samples = collectAssistSamples(imageData);
@@ -1246,11 +1292,23 @@ async function analyzeAssist() {
       confidenceReason: "Недостаточно выраженных линий, использован fallback",
       dominantAnglesDeg: null,
       guides: [],
-      proposalCorners: fallbackAssistCorners(canvas.width, canvas.height),
+      targetElementId: target.id,
+      mode: "update",
+      proposalCorners: fallbackAssistCorners(canvas.width, canvas.height, target.corners),
       analyzedAt: Date.now(),
     };
     updateAssistStatus();
     render();
+    const keepFallback = confirm(`Assist не нашел уверенный контур для "${target.name}". Оставить текущий экран без изменений?`);
+    if (!keepFallback) {
+      target.corners = orderQuadPoints(state.assist.proposalCorners);
+      target.placementSource = "assist:fallback-update";
+      updateSelectionInfo();
+      refreshScreensList();
+      render();
+    } else {
+      clearAssist();
+    }
     return;
   }
 
@@ -1265,11 +1323,17 @@ async function analyzeAssist() {
       confidenceReason: "Границы нестабильны, использован fallback",
       dominantAnglesDeg: [dominant[0] * (180 / Math.PI), dominant[1] * (180 / Math.PI)],
       guides: [],
-      proposalCorners: fallbackAssistCorners(canvas.width, canvas.height),
+      targetElementId: target.id,
+      mode: "update",
+      proposalCorners: fallbackAssistCorners(canvas.width, canvas.height, target.corners),
       analyzedAt: Date.now(),
     };
     updateAssistStatus();
     render();
+    const keepFallback = confirm(`Assist не смог стабильно перестроить "${target.name}". Оставить как есть?`);
+    if (keepFallback) {
+      clearAssist();
+    }
     return;
   }
 
@@ -1279,8 +1343,9 @@ async function analyzeAssist() {
   const p01 = lineIntersection(familyA[0], familyB[1]);
 
   const candidate = p00 && p10 && p11 && p01 ? orderQuadPoints([p00, p10, p11, p01]) : null;
-  const usable = isAssistQuadUsable(candidate || []);
-  const corners = usable ? candidate : fallbackAssistCorners(canvas.width, canvas.height);
+  const usable = isAssistQuadUsable(candidate || [], roi);
+  const roiCorners = usable ? candidate : fallbackAssistCorners(roi.width, roi.height, target.corners.map((point) => ({ x: point.x - roi.x, y: point.y - roi.y })));
+  const corners = roiCorners.map((point) => ({ x: point.x + roi.x, y: point.y + roi.y }));
 
   const edgeScore = clamp(samples.length / 2800, 0, 1);
   const ortho = 1 - Math.min(Math.abs(angleDistance(dominant[0], dominant[1]) - Math.PI / 2) / (Math.PI / 2), 1);
@@ -1297,13 +1362,27 @@ async function analyzeAssist() {
         : "Проверь контур и при необходимости подкорректируй"
       : "Автоконтур нестабилен, использован fallback",
     dominantAnglesDeg: [dominant[0] * (180 / Math.PI), dominant[1] * (180 / Math.PI)],
-    guides: [...familyA, ...familyB],
+    targetElementId: target.id,
+    mode: "update",
+    guides: [...familyA, ...familyB].map((line) => ({
+      nx: line.nx,
+      ny: line.ny,
+      d: line.d + line.nx * roi.x + line.ny * roi.y,
+    })),
     proposalCorners: corners,
     analyzedAt: Date.now(),
   };
 
   updateAssistStatus();
   render();
+  const shouldApply = confirm(
+    `Перестроить экран "${target.name}"?\nИсточник: ${state.assist.source}\nConfidence: ${state.assist.confidence}\n${state.assist.confidenceReason}`,
+  );
+  if (shouldApply) {
+    applyAssistProposal();
+  } else {
+    clearAssist();
+  }
 }
 
 function clearAssist() {
@@ -1317,8 +1396,24 @@ function applyAssistProposal() {
     alert("Сначала запусти анализ Assist.");
     return;
   }
-  addElementByCorners(orderQuadPoints(state.assist.proposalCorners), state.assist.source === "auto" ? "assist:auto" : "assist:fallback");
-  updateAssistStatus();
+  const ordered = orderQuadPoints(state.assist.proposalCorners);
+  const targetId = state.assist.targetElementId || state.selectedElementId;
+  if (state.assist.mode === "update" && targetId) {
+    const target = state.elements.find((element) => element.id === targetId);
+    if (!target) {
+      alert("Выбранный экран не найден.");
+      return;
+    }
+    target.corners = ordered;
+    target.placementSource = state.assist.source === "auto" ? "assist:auto-update" : "assist:fallback-update";
+    state.selectedElementId = target.id;
+    updateSelectionInfo();
+    refreshScreensList();
+    clearAssist();
+    return;
+  }
+  addElementByCorners(ordered, state.assist.source === "auto" ? "assist:auto" : "assist:fallback");
+  clearAssist();
 }
 
 function drawAssistOverlay() {
@@ -2223,7 +2318,8 @@ function updateAssistStatus() {
         ? "medium"
         : "low";
   const sourceLabel = state.assist.source === "auto" ? "auto" : "fallback";
-  ui.assistStatus.textContent = `Assist: ${sourceLabel} | confidence ${confidenceLabel} | ${state.assist.confidenceReason}`;
+  const modeLabel = state.assist.mode === "update" ? "update" : "new";
+  ui.assistStatus.textContent = `Assist: ${modeLabel} | ${sourceLabel} | confidence ${confidenceLabel} | ${state.assist.confidenceReason}`;
   ui.assistStatus.style.color =
     state.assist.confidence === "high"
       ? "#0b7a70"
