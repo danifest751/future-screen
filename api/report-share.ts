@@ -18,6 +18,15 @@ let supabaseAdmin: SupabaseClient | null = null;
 const bodySchema = z.object({
   html: z.string().min(1).max(MAX_HTML_LENGTH),
   session_key: z.string().min(8).max(120).optional(),
+  export_scope: z.enum(['active', 'all']).optional(),
+  metrics: z
+    .object({
+      screens_current: z.number().int().min(0).optional(),
+      scenes_total: z.number().int().min(0).optional(),
+      backgrounds_total: z.number().int().min(0).optional(),
+      has_active_background: z.boolean().optional(),
+    })
+    .optional(),
 });
 
 const isOriginAllowed = (origin?: string): boolean => {
@@ -120,11 +129,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const url = `${host}/reports/${slug}`;
 
       const sessionKey = parsed.data.session_key?.trim();
+      const exportScope = parsed.data.export_scope || null;
+      const metrics = parsed.data.metrics || null;
       if (sessionKey) {
         try {
           const { data: sessionData, error: sessionError } = await supabase
             .from('visual_led_sessions')
-            .select('id')
+            .select('id, summary')
             .eq('session_key', sessionKey)
             .maybeSingle();
 
@@ -138,9 +149,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               payload: {
                 status: 'success',
                 url,
+                export_scope: exportScope,
+                metrics,
                 source: 'api-report-share',
               },
             });
+
+            const prevSummary = (sessionData.summary && typeof sessionData.summary === 'object')
+              ? (sessionData.summary as Record<string, unknown>)
+              : {};
+            const nextSummary: Record<string, unknown> = {
+              ...prevSummary,
+              report_url: url,
+              report_export_scope: exportScope,
+            };
+            if (metrics) {
+              if (typeof metrics.screens_current === 'number') nextSummary.screens = metrics.screens_current;
+              if (typeof metrics.scenes_total === 'number') nextSummary.scenes = metrics.scenes_total;
+              if (typeof metrics.backgrounds_total === 'number') nextSummary.backgrounds = metrics.backgrounds_total;
+              if (typeof metrics.has_active_background === 'boolean') {
+                nextSummary.has_active_background = metrics.has_active_background;
+              }
+            }
+
+            await supabase
+              .from('visual_led_sessions')
+              .update({ summary: nextSummary })
+              .eq('id', sessionData.id);
           }
         } catch (logError) {
           console.warn('[report-share] failed to write visual_led_events.report_shared', logError);

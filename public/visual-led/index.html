@@ -2302,6 +2302,13 @@ async function openReportInNewWindow() {
       body: JSON.stringify({
         html,
         session_key: ensureVisualLedSessionKey(),
+        export_scope: ui.exportScopeSelect?.value || "active",
+        metrics: {
+          screens_current: state.elements.length,
+          scenes_total: state.scenes.length,
+          backgrounds_total: state.backgrounds.length,
+          has_active_background: !!state.activeBackgroundId,
+        },
       }),
     });
     if (!response.ok) {

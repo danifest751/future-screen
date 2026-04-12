@@ -246,8 +246,8 @@ const AdminVisualLedLogsPage = () => {
       screenCreatedCount,
       screenUpdatedCount,
       backgroundUploadedCount,
-      reportScope: asString(lastReportExport?.payload?.scope),
-      reportUrl: asString(lastReportShared?.payload?.url),
+      reportScope: asString(lastReportExport?.payload?.scope) || asString(lastReportShared?.payload?.export_scope) || asString(summary.report_export_scope),
+      reportUrl: asString(lastReportShared?.payload?.url) || asString(summary.report_url),
       reportSharedAt: lastReportShared?.ts || null,
       summary,
     };
