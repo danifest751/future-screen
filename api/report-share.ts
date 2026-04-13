@@ -19,6 +19,7 @@ const bodySchema = z.object({
   html: z.string().min(1).max(MAX_HTML_LENGTH),
   session_key: z.string().min(8).max(120).optional(),
   export_scope: z.enum(['active', 'all']).optional(),
+  preview_image: z.string().max(1_500_000).optional(),
   metrics: z
     .object({
       screens_current: z.number().int().min(0).optional(),
@@ -131,6 +132,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const sessionKey = parsed.data.session_key?.trim();
       const exportScope = parsed.data.export_scope || null;
       const metrics = parsed.data.metrics || null;
+      const previewImage = parsed.data.preview_image || null;
       if (sessionKey) {
         try {
           const { data: sessionData, error: sessionError } = await supabase
@@ -150,6 +152,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 status: 'success',
                 url,
                 export_scope: exportScope,
+                preview_image: previewImage,
                 metrics,
                 source: 'api-report-share',
               },
@@ -163,6 +166,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               report_url: url,
               report_export_scope: exportScope,
             };
+            const prevHistory = Array.isArray(prevSummary.report_history)
+              ? (prevSummary.report_history as unknown[])
+              : [];
+            const newHistoryEntry = {
+              at: new Date().toISOString(),
+              url,
+              scope: exportScope,
+              preview_image: previewImage,
+              metrics,
+            };
+            nextSummary.report_history = [...prevHistory, newHistoryEntry].slice(-20);
             if (metrics) {
               if (typeof metrics.screens_current === 'number') nextSummary.screens = metrics.screens_current;
               if (typeof metrics.scenes_total === 'number') nextSummary.scenes = metrics.scenes_total;

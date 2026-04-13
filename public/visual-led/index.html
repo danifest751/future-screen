@@ -2290,6 +2290,13 @@ function exportReport() {
 
 async function openReportInNewWindow() {
   const { html } = generateReportBundle();
+  const previewImage = (() => {
+    try {
+      return canvas.toDataURL("image/jpeg", 0.55);
+    } catch (_error) {
+      return null;
+    }
+  })();
   queueVisualLedEvent("report_open_requested", {
     scope: ui.exportScopeSelect?.value || "active",
   });
@@ -2303,6 +2310,7 @@ async function openReportInNewWindow() {
         html,
         session_key: ensureVisualLedSessionKey(),
         export_scope: ui.exportScopeSelect?.value || "active",
+        preview_image: previewImage,
         metrics: {
           screens_current: state.elements.length,
           scenes_total: state.scenes.length,
@@ -3085,7 +3093,7 @@ function ensureVisualLedSessionKey() {
   }
   let stored = null;
   try {
-    stored = localStorage.getItem("visualLedSessionKey");
+    stored = sessionStorage.getItem("visualLedSessionKey");
   } catch (_error) {
     stored = null;
   }
@@ -3096,7 +3104,7 @@ function ensureVisualLedSessionKey() {
   const key = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
   state.analytics.sessionKey = key;
   try {
-    localStorage.setItem("visualLedSessionKey", key);
+    sessionStorage.setItem("visualLedSessionKey", key);
   } catch (_error) {
     // ignore
   }

@@ -43,6 +43,17 @@ type VisualLedAsset = {
 
 type TabId = 'overview' | 'results' | 'backgrounds' | 'events';
 
+type ReportShareItem = {
+  id: number;
+  at: string;
+  url: string;
+  scope: string | null;
+  previewImage: string | null;
+  screensCurrent: number | null;
+  scenesTotal: number | null;
+  backgroundsTotal: number | null;
+};
+
 const copy = {
   ru: {
     title: 'Логи Visual LED',
@@ -71,6 +82,8 @@ const copy = {
       reportScope: 'Экспорт',
       reportLink: 'Ссылка отчета',
       reportSharedAt: 'Поделен',
+      sharedReports: 'Ссылки на отчеты',
+      noSharedReports: 'Шеринг отчета в этой сессии не выполнялся',
     },
     noBackgrounds: 'Фоны в этой сессии не загружались',
     noEvents: 'Событий нет',
@@ -103,6 +116,8 @@ const copy = {
       reportScope: 'Export scope',
       reportLink: 'Report link',
       reportSharedAt: 'Shared at',
+      sharedReports: 'Shared report links',
+      noSharedReports: 'No shared report links in this session',
     },
     noBackgrounds: 'No backgrounds were uploaded in this session',
     noEvents: 'No events',
@@ -122,6 +137,12 @@ function asNumber(value: unknown): number | null {
 
 function asString(value: unknown): string | null {
   return typeof value === 'string' && value.trim().length > 0 ? value : null;
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
 }
 
 const AdminVisualLedLogsPage = () => {
@@ -240,17 +261,40 @@ const AdminVisualLedLogsPage = () => {
       .reverse()
       .find((event) => event.event_type === 'report_shared' && event.payload?.status === 'success');
 
+    const reportShares: ReportShareItem[] = events
+      .filter((event) => event.event_type === 'report_shared' && event.payload?.status === 'success')
+      .map((event) => {
+        const metrics = asRecord(event.payload?.metrics);
+        return {
+          id: event.id,
+          at: event.ts,
+          url: asString(event.payload?.url) || '',
+          scope: asString(event.payload?.export_scope),
+          previewImage: asString(event.payload?.preview_image),
+          screensCurrent: asNumber(metrics?.screens_current),
+          scenesTotal: asNumber(metrics?.scenes_total),
+          backgroundsTotal: asNumber(metrics?.backgrounds_total),
+        };
+      })
+      .filter((item) => item.url)
+      .sort((a, b) => b.at.localeCompare(a.at));
+
+    const lastShare = reportShares[0] ?? null;
+    const summaryScreensFromShare = lastShare?.screensCurrent ?? null;
+    const summaryBackgroundsFromShare = lastShare?.backgroundsTotal ?? null;
+
     return {
       screens,
       scenes,
       duration,
       assistAppliedCount,
-      screenCreatedCount: Math.max(screenCreatedByEvent, summaryScreens ?? 0),
+      screenCreatedCount: Math.max(screenCreatedByEvent, summaryScreens ?? 0, summaryScreensFromShare ?? 0),
       screenUpdatedCount,
-      backgroundUploadedCount: Math.max(backgroundUploadedByEvent, summaryBackgrounds ?? 0),
+      backgroundUploadedCount: Math.max(backgroundUploadedByEvent, summaryBackgrounds ?? 0, summaryBackgroundsFromShare ?? 0),
       reportScope: asString(lastReportExport?.payload?.scope) || asString(lastReportShared?.payload?.export_scope) || asString(summary.report_export_scope),
       reportUrl: asString(lastReportShared?.payload?.url) || asString(summary.report_url),
       reportSharedAt: lastReportShared?.ts || null,
+      reportShares,
       summary,
     };
   }, [selectedSession, events]);
@@ -426,6 +470,47 @@ const AdminVisualLedLogsPage = () => {
                         <pre className="max-h-56 overflow-auto rounded-lg border border-white/10 bg-slate-950/70 p-3 text-xs text-slate-200">
                           {JSON.stringify(insights.summary || {}, null, 2)}
                         </pre>
+                      </div>
+
+                      <div className="mt-3">
+                        <div className="mb-2 text-xs uppercase tracking-wide text-slate-500">{ui.cards.sharedReports}</div>
+                        {insights.reportShares.length === 0 ? (
+                          <div className="rounded-lg border border-dashed border-white/15 bg-slate-950/60 p-3 text-xs text-slate-400">
+                            {ui.cards.noSharedReports}
+                          </div>
+                        ) : (
+                          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                            {insights.reportShares.map((share) => (
+                              <div key={share.id} className="rounded-lg border border-white/10 bg-slate-950/60 p-2">
+                                {share.previewImage ? (
+                                  <img
+                                    src={share.previewImage}
+                                    alt="report preview"
+                                    className="h-24 w-full rounded-md border border-white/10 object-cover"
+                                    loading="lazy"
+                                  />
+                                ) : (
+                                  <div className="flex h-24 w-full items-center justify-center rounded-md border border-dashed border-white/15 text-xs text-slate-500">
+                                    preview unavailable
+                                  </div>
+                                )}
+                                <div className="mt-2 space-y-1 text-xs text-slate-300">
+                                  <div>{new Date(share.at).toLocaleString(locale)}</div>
+                                  <div>scope: {share.scope || '-'}</div>
+                                  <div>S: {share.scenesTotal ?? '-'} · LED: {share.screensCurrent ?? '-'} · BG: {share.backgroundsTotal ?? '-'}</div>
+                                </div>
+                                <a
+                                  href={share.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="mt-2 inline-flex rounded-md border border-white/15 bg-white/5 px-2 py-1 text-xs text-slate-200 hover:bg-white/10"
+                                >
+                                  {ui.open}
+                                </a>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
                   ) : null}
