@@ -158,6 +158,17 @@ function formatDurationCompact(seconds: number | null): string {
   return `${secs}s`;
 }
 
+function browserFromUserAgent(userAgent: string | null): string {
+  const ua = (userAgent || '').toLowerCase();
+  if (!ua) return 'Unknown';
+  if (ua.includes('edg/')) return 'Edge';
+  if (ua.includes('opr/') || ua.includes('opera')) return 'Opera';
+  if (ua.includes('chrome/') && !ua.includes('edg/')) return 'Chrome';
+  if (ua.includes('safari/') && !ua.includes('chrome/')) return 'Safari';
+  if (ua.includes('firefox/')) return 'Firefox';
+  return 'Other';
+}
+
 const AdminVisualLedLogsPage = () => {
   const { adminLocale } = useI18n();
   const ui = copy[adminLocale];
@@ -170,6 +181,7 @@ const AdminVisualLedLogsPage = () => {
   const [events, setEvents] = useState<VisualLedEvent[]>([]);
   const [assets, setAssets] = useState<VisualLedAsset[]>([]);
   const [activeTab, setActiveTab] = useState<TabId>('overview');
+  const [expandedEvents, setExpandedEvents] = useState<Record<number, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -192,7 +204,7 @@ const AdminVisualLedLogsPage = () => {
       const payload = await response.json();
       const items = (payload.items || []) as VisualLedSession[];
       setSessions(items);
-      if (items.length && !selectedId) {
+      if (items.length) {
         setSelectedId(items[0].id);
       }
     } catch (err) {
@@ -200,7 +212,7 @@ const AdminVisualLedLogsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [selectedId, ui.unauthorized]);
+  }, [ui.unauthorized]);
 
   const loadSessionDetails = useCallback(async (sessionId: string) => {
     setDetailsLoading(true);
@@ -235,6 +247,7 @@ const AdminVisualLedLogsPage = () => {
   useEffect(() => {
     if (!selectedId) return;
     setActiveTab('overview');
+    setExpandedEvents({});
     void loadSessionDetails(selectedId);
   }, [selectedId, loadSessionDetails]);
 
@@ -318,6 +331,18 @@ const AdminVisualLedLogsPage = () => {
     { id: 'backgrounds', label: ui.tabs.backgrounds, count: assets.length },
     { id: 'events', label: ui.tabs.events, count: events.length },
   ];
+
+  const eventFeed = useMemo(
+    () =>
+      [...events]
+        .sort((a, b) => b.ts.localeCompare(a.ts))
+        .map((event) => ({
+          ...event,
+          scope: asString(event.payload?.scope) || asString(event.payload?.export_scope),
+          url: asString(event.payload?.url),
+        })),
+    [events],
+  );
 
   return (
     <AdminLayout title={ui.title} subtitle={ui.subtitle}>
@@ -406,6 +431,20 @@ const AdminVisualLedLogsPage = () => {
                         <div className="text-sm font-semibold text-white">{insights.assistAppliedCount}</div>
                       </div>
                     </div>
+
+                    {selectedSession ? (
+                      <div className="mb-3 grid gap-2 md:grid-cols-3">
+                        <div className="rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2 text-xs text-slate-300">
+                          IP: <span className="text-white">{selectedSession.client_ip || '-'}</span>
+                        </div>
+                        <div className="rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2 text-xs text-slate-300">
+                          Browser: <span className="text-white">{browserFromUserAgent(selectedSession.user_agent)}</span>
+                        </div>
+                        <div className="rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2 text-xs text-slate-300">
+                          Events: <span className="text-white">{eventFeed.length}</span>
+                        </div>
+                      </div>
+                    ) : null}
 
                     <div className="flex flex-wrap items-center gap-2">
                       {tabButtons.map((tab) => (
@@ -573,21 +612,39 @@ const AdminVisualLedLogsPage = () => {
 
                   {activeTab === 'events' ? (
                     <div className="card p-4">
-                      {events.length === 0 ? (
+                      {eventFeed.length === 0 ? (
                         <EmptyState title={ui.noEvents} />
                       ) : (
                         <div className="max-h-[58vh] space-y-2 overflow-y-auto">
-                          {events.map((entry) => (
-                            <div key={entry.id} className="rounded-lg border border-white/10 bg-slate-950/60 p-2 text-xs">
-                              <div className="flex flex-wrap gap-2 text-slate-400">
-                                <span>{new Date(entry.ts).toLocaleString(locale)}</span>
-                                <span>{entry.scene_id || '-'}</span>
-                                <span>{entry.screen_id || '-'}</span>
-                              </div>
-                              <div className="font-medium text-white">{entry.event_type}</div>
-                              <pre className="mt-1 overflow-auto text-slate-300">{JSON.stringify(entry.payload || {}, null, 2)}</pre>
-                            </div>
-                          ))}
+                          {eventFeed.map((entry) => {
+                            const isExpanded = Boolean(expandedEvents[entry.id]);
+                            return (
+                              <button
+                                key={entry.id}
+                                type="button"
+                                onClick={() =>
+                                  setExpandedEvents((prev) => ({ ...prev, [entry.id]: !isExpanded }))
+                                }
+                                className="w-full rounded-lg border border-white/10 bg-slate-950/60 p-2 text-left text-xs"
+                              >
+                                <div className="flex flex-wrap items-center gap-2 text-slate-400">
+                                  <span>{new Date(entry.ts).toLocaleString(locale)}</span>
+                                  <span>{entry.event_type}</span>
+                                  <span>scene: {entry.scene_id || '-'}</span>
+                                  <span>screen: {entry.screen_id || '-'}</span>
+                                  {entry.scope ? <span>scope: {entry.scope}</span> : null}
+                                </div>
+                                {entry.url ? (
+                                  <div className="mt-1 truncate text-sky-300">{entry.url}</div>
+                                ) : null}
+                                {isExpanded ? (
+                                  <pre className="mt-2 overflow-auto rounded-md border border-white/10 bg-slate-900/60 p-2 text-slate-300">
+                                    {JSON.stringify(entry.payload || {}, null, 2)}
+                                  </pre>
+                                ) : null}
+                              </button>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
