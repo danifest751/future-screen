@@ -575,6 +575,15 @@ const sendHelp = async (chatId: number) => {
   await sendTelegramMessage(chatId, message);
 };
 
+const parseTelegramCommand = (text: string): string | null => {
+  const trimmed = text.trim();
+  if (!trimmed.startsWith('/')) return null;
+
+  const match = trimmed.match(/^\/([a-z0-9_]+)(?:@[a-z0-9_]+)?(?:\s|$)/i);
+  if (!match) return null;
+  return `/${match[1].toLowerCase()}`;
+};
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -647,6 +656,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { message } = update;
     const chatId = message.chat.id;
     const text = message.text || '';
+    const command = parseTelegramCommand(text);
 
     const alreadyProcessed = await isMessageAlreadyProcessed(message.message_id);
     if (alreadyProcessed) {
@@ -682,12 +692,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ ok: true });
     }
 
-    if (text === '/start' || text === '/upload') {
+    if (command === '/start' || command === '/upload') {
       await handleStart(chatId);
       return res.status(200).json({ ok: true });
     }
 
-    if (text === '/help') {
+    if (command === '/help') {
       await sendHelp(chatId);
       return res.status(200).json({ ok: true });
     }
