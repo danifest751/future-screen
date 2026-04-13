@@ -7,10 +7,26 @@ import AdminLayout from '../../components/admin/AdminLayout';
 import { Button, FallbackDot, Field, Input, Textarea } from '../../components/admin/ui';
 import { useI18n } from '../../context/I18nContext';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
-import { useHomeEquipmentSectionHeader } from '../../hooks/useHomeEquipmentSectionHeader';
+import { useHomeEquipmentSection } from '../../hooks/useHomeEquipmentSection';
 import { getAdminSourceLabel } from '../../lib/i18n/adminSourceLabel';
 import { getAdminHomeEquipmentSectionContent } from '../../content/pages/adminHomeEquipmentSection';
-import { getHomePageContent } from '../../content/pages/home';
+import type { HomeEquipmentSectionContent } from '../../lib/content/homeEquipmentSection';
+
+type FormValues = {
+  badge: string;
+  title: string;
+  accentTitle: string;
+  subtitle: string;
+  items: Array<{
+    title: string;
+    desc: string;
+    bullets: string;
+  }>;
+  extraItems: Array<{
+    title: string;
+    desc: string;
+  }>;
+};
 
 const createSchema = (requiredText: string) =>
   z.object({
@@ -18,16 +34,59 @@ const createSchema = (requiredText: string) =>
     title: z.string().trim().min(1, requiredText),
     accentTitle: z.string().trim().min(1, requiredText),
     subtitle: z.string().trim().min(1, requiredText),
+    items: z.array(
+      z.object({
+        title: z.string().trim().min(1, requiredText),
+        desc: z.string().trim().min(1, requiredText),
+        bullets: z.string().trim().min(1, requiredText),
+      }),
+    ),
+    extraItems: z.array(
+      z.object({
+        title: z.string().trim().min(1, requiredText),
+        desc: z.string().trim().min(1, requiredText),
+      }),
+    ),
   });
 
-type FormValues = z.infer<ReturnType<typeof createSchema>>;
+const sectionToForm = (section: HomeEquipmentSectionContent): FormValues => ({
+  badge: section.badge,
+  title: section.title,
+  accentTitle: section.accentTitle,
+  subtitle: section.subtitle,
+  items: section.items.map((item) => ({
+    title: item.title,
+    desc: item.desc,
+    bullets: item.bullets.join('\n'),
+  })),
+  extraItems: section.extraItems.map((item) => ({
+    title: item.title,
+    desc: item.desc,
+  })),
+});
 
-const defaultValues: FormValues = {
-  badge: '',
-  title: '',
-  accentTitle: '',
-  subtitle: '',
-};
+const applyFormToSection = (base: HomeEquipmentSectionContent, values: FormValues): HomeEquipmentSectionContent => ({
+  ...base,
+  badge: values.badge.trim(),
+  title: values.title.trim(),
+  accentTitle: values.accentTitle.trim(),
+  subtitle: values.subtitle.trim(),
+  items: base.items.map((item, index) => ({
+    ...item,
+    title: values.items[index]?.title.trim() ?? item.title,
+    desc: values.items[index]?.desc.trim() ?? item.desc,
+    bullets:
+      values.items[index]?.bullets
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean) ?? item.bullets,
+  })),
+  extraItems: base.extraItems.map((item, index) => ({
+    ...item,
+    title: values.extraItems[index]?.title.trim() ?? item.title,
+    desc: values.extraItems[index]?.desc.trim() ?? item.desc,
+  })),
+});
 
 const AdminHomeEquipmentSectionPage = () => {
   const { adminLocale, adminContentLocale, setAdminContentLocale } = useI18n();
@@ -35,48 +94,37 @@ const AdminHomeEquipmentSectionPage = () => {
   const schema = useMemo(() => createSchema(content.validation.required), [content.validation.required]);
   const localeTag = adminLocale === 'ru' ? 'ru-RU' : 'en-US';
 
-  const { data, fallbackUsed, hasDbRecord, loading, saving, save } = useHomeEquipmentSectionHeader(adminContentLocale, true);
+  const { data, staticSection, fallbackUsed, hasDbRecord, loading, saving, save } = useHomeEquipmentSection(
+    adminContentLocale,
+    true,
+  );
   const [lastSaved, setLastSaved] = useState<string | null>(null);
-  const staticHeader = useMemo(() => {
-    const equipmentSection = getHomePageContent(adminContentLocale).equipmentSection;
-    return {
-      badge: equipmentSection.badge,
-      title: equipmentSection.title,
-      accentTitle: equipmentSection.accentTitle,
-      subtitle: equipmentSection.subtitle,
-    };
-  }, [adminContentLocale]);
+  const [previewSection, setPreviewSection] = useState<HomeEquipmentSectionContent>(staticSection);
 
   const {
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors, isDirty, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues,
+    defaultValues: sectionToForm(staticSection),
   });
 
   useUnsavedChangesGuard(isDirty);
 
   useEffect(() => {
+    const source = data ?? staticSection;
+    setPreviewSection(source);
+    reset(sectionToForm(source));
     setLastSaved(null);
-    reset(defaultValues);
-  }, [adminContentLocale, reset]);
+  }, [adminContentLocale, data, reset, staticSection]);
 
+  const watchValues = watch();
   useEffect(() => {
-    if (!data) {
-      reset(staticHeader);
-      return;
-    }
-
-    reset({
-      badge: data.badge,
-      title: data.title,
-      accentTitle: data.accentTitle,
-      subtitle: data.subtitle,
-    });
-  }, [data, reset, staticHeader]);
+    setPreviewSection(applyFormToSection(data ?? staticSection, watchValues));
+  }, [data, staticSection, watchValues]);
 
   const sourceLabel = hasDbRecord
     ? getAdminSourceLabel({
@@ -87,12 +135,9 @@ const AdminHomeEquipmentSectionPage = () => {
     : content.preview.sourceStatic;
 
   const onSubmit = async (values: FormValues) => {
-    const ok = await save({
-      badge: values.badge.trim(),
-      title: values.title.trim(),
-      accentTitle: values.accentTitle.trim(),
-      subtitle: values.subtitle.trim(),
-    });
+    const base = data ?? staticSection;
+    const payload = applyFormToSection(base, values);
+    const ok = await save(payload);
 
     if (ok) {
       setLastSaved(new Date().toLocaleString(localeTag));
@@ -156,6 +201,56 @@ const AdminHomeEquipmentSectionPage = () => {
               <Textarea rows={4} {...register('subtitle')} />
             </Field>
 
+            <div className="rounded-lg border border-white/10 bg-slate-900/30 p-4">
+              <h3 className="mb-3 text-sm font-semibold text-white">{content.editor.mainCardsTitle}</h3>
+              <div className="space-y-4">
+                {previewSection.items.map((item, index) => (
+                  <div key={`${item.iconKey}-${index}`} className="rounded-md border border-white/10 p-3">
+                    <div className="mb-2 text-xs text-slate-400">{content.editor.cardLabel(index + 1)}</div>
+                    <Field label={content.editor.cardTitleLabel} required error={errors.items?.[index]?.title?.message}>
+                      <Input {...register(`items.${index}.title`)} />
+                    </Field>
+                    <Field label={content.editor.cardDescLabel} required error={errors.items?.[index]?.desc?.message}>
+                      <Textarea rows={3} {...register(`items.${index}.desc`)} />
+                    </Field>
+                    <Field
+                      label={content.editor.cardBulletsLabel}
+                      required
+                      hint={content.editor.cardBulletsHint}
+                      error={errors.items?.[index]?.bullets?.message}
+                    >
+                      <Textarea rows={4} {...register(`items.${index}.bullets`)} />
+                    </Field>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-white/10 bg-slate-900/30 p-4">
+              <h3 className="mb-3 text-sm font-semibold text-white">{content.editor.extraCardsTitle}</h3>
+              <div className="space-y-4">
+                {previewSection.extraItems.map((item, index) => (
+                  <div key={`${item.iconKey}-${index}`} className="rounded-md border border-white/10 p-3">
+                    <div className="mb-2 text-xs text-slate-400">{content.editor.cardLabel(index + 1)}</div>
+                    <Field
+                      label={content.editor.cardTitleLabel}
+                      required
+                      error={errors.extraItems?.[index]?.title?.message}
+                    >
+                      <Input {...register(`extraItems.${index}.title`)} />
+                    </Field>
+                    <Field
+                      label={content.editor.cardDescLabel}
+                      required
+                      error={errors.extraItems?.[index]?.desc?.message}
+                    >
+                      <Textarea rows={2} {...register(`extraItems.${index}.desc`)} />
+                    </Field>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <Button type="submit" loading={isSubmitting || saving} className="w-full">
               {content.editor.save}
             </Button>
@@ -166,13 +261,21 @@ const AdminHomeEquipmentSectionPage = () => {
           <h2 className="mb-4 text-xl font-semibold text-white">{content.preview.title}</h2>
           <div className="space-y-4 rounded-lg border border-white/10 bg-slate-900/50 p-4">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-sm text-gray-400">
-              {data?.badge || staticHeader.badge}
+              {previewSection.badge}
             </div>
             <h3 className="font-display text-3xl font-bold text-white">
-              {data?.title || staticHeader.title}{' '}
-              <span className="gradient-text">{data?.accentTitle || staticHeader.accentTitle}</span>
+              {previewSection.title} <span className="gradient-text">{previewSection.accentTitle}</span>
             </h3>
-            <p className="max-w-2xl text-gray-400">{data?.subtitle || staticHeader.subtitle}</p>
+            <p className="max-w-2xl text-gray-400">{previewSection.subtitle}</p>
+
+            <div className="space-y-2 pt-2">
+              {previewSection.items.map((item, index) => (
+                <div key={`${item.iconKey}-preview-${index}`} className="rounded border border-white/10 p-2">
+                  <div className="text-sm font-semibold text-white">{item.title}</div>
+                  <div className="text-xs text-slate-300">{item.desc}</div>
+                </div>
+              ))}
+            </div>
             <div className="pt-2 text-xs text-slate-400">{sourceLabel}</div>
           </div>
         </div>

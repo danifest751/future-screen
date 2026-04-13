@@ -6,7 +6,7 @@ import { submitForm } from '../lib/submitForm';
 import { ConsentCheckbox } from '../components/ConsentCheckbox';
 import { useI18n } from '../context/I18nContext';
 import { getHomePageContent, type HomeIconKey } from '../content/pages/home';
-import { useHomeEquipmentSectionHeader } from '../hooks/useHomeEquipmentSectionHeader';
+import { useHomeEquipmentSection } from '../hooks/useHomeEquipmentSection';
 
 // Scroll reveal hook
 function useScrollReveal(threshold = 0.15) {
@@ -552,20 +552,12 @@ const CtaForm = ({ ctaForm }: { ctaForm: CtaFormContent }) => {
 const HomePage = () => {
   const { siteLocale } = useI18n();
   const homePageContent = getHomePageContent(siteLocale);
-  const { data: equipmentHeaderOverride } = useHomeEquipmentSectionHeader(siteLocale, true);
+  const { data: equipmentSectionOverride } = useHomeEquipmentSection(siteLocale, true);
   const { seo, hero, works, equipmentSection, eventTypesSection, processSection, ctaSection } =
     homePageContent;
-  const equipmentSectionHeader = equipmentHeaderOverride
-    ? {
-        ...equipmentSection,
-        badge: equipmentHeaderOverride.badge,
-        title: equipmentHeaderOverride.title,
-        accentTitle: equipmentHeaderOverride.accentTitle,
-        subtitle: equipmentHeaderOverride.subtitle,
-      }
-    : equipmentSection;
-  const equipment = equipmentSection.items;
-  const extraEquipment = equipmentSection.extraItems;
+  const effectiveEquipmentSection = equipmentSectionOverride ?? equipmentSection;
+  const equipment = effectiveEquipmentSection.items;
+  const extraEquipment = effectiveEquipmentSection.extraItems;
   const eventTypes = eventTypesSection.items;
   const processSteps = processSection.steps;
   const worksItems = works.items;
@@ -668,14 +660,14 @@ const HomePage = () => {
           <RevealSection>
             <div className="mb-12 text-center">
                 <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-sm text-gray-400">
-                {equipmentSectionHeader.badge}
+                {effectiveEquipmentSection.badge}
               </div>
               <h2 className="font-display mb-4 text-balance text-4xl font-bold text-white md:text-5xl">
-                {equipmentSectionHeader.title}{' '}
-                <span className="gradient-text">{equipmentSectionHeader.accentTitle}</span>
+                {effectiveEquipmentSection.title}{' '}
+                <span className="gradient-text">{effectiveEquipmentSection.accentTitle}</span>
               </h2>
               <p className="mx-auto max-w-2xl text-gray-400">
-                {equipmentSectionHeader.subtitle}
+                {effectiveEquipmentSection.subtitle}
               </p>
             </div>
           </RevealSection>
@@ -701,7 +693,7 @@ const HomePage = () => {
                     className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl text-white"
                     style={{ background: item.gradient }}
                   >
-                    {homeIcons[item.iconKey]}
+                    {homeIcons[item.iconKey as HomeIconKey]}
                   </div>
                   <h3 className="font-display mb-1 text-lg font-semibold text-white group-hover:text-brand-300 transition-colors">{item.title}</h3>
                   <p className="line-clamp-2 text-sm leading-relaxed text-gray-300 mb-3">{item.desc}</p>
@@ -729,7 +721,7 @@ const HomePage = () => {
                 <div className="absolute inset-0 bg-black/65 group-hover:bg-black/55 transition-colors" />
                 <div className="absolute bottom-0 left-0 right-0 z-10 flex items-center gap-3 p-5">
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white group-hover:bg-brand-500/30 transition-colors">
-                    {homeIcons[item.iconKey]}
+                    {homeIcons[item.iconKey as HomeIconKey]}
                   </div>
                   <div>
                     <div className="font-medium text-white group-hover:text-brand-300 transition-colors leading-tight">{item.title}</div>
