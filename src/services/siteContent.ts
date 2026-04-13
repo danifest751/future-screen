@@ -69,12 +69,12 @@ export async function loadSiteContent(
     .from('site_content')
     .select('*')
     .eq('key', key)
-    .single();
+    .maybeSingle();
 
   if (error) {
-    if (error.code === 'PGRST116') return null;
     throw new Error(error.message);
   }
+  if (!data) return null;
   return mapFromDB(data as SiteContentRow, locale, fallbackToRu);
 }
 
