@@ -84,25 +84,39 @@ const AdminContactsPage = () => {
   }, [editorContacts, isHydrated, loading, reset, isInitialized]);
 
   const onSubmit = async (values: FormValues) => {
-    const ok = await update({
-      phones: splitLines(values.phonesText),
-      emails: splitLines(values.emailsText),
+    const sanitizedValues: FormValues = {
+      phonesText: splitLines(values.phonesText).join('\n'),
+      emailsText: splitLines(values.emailsText).join('\n'),
       address: values.address.trim(),
       workingHours: values.workingHours.trim(),
+    };
+
+    const ok = await update({
+      phones: splitLines(sanitizedValues.phonesText),
+      emails: splitLines(sanitizedValues.emailsText),
+      address: sanitizedValues.address,
+      workingHours: sanitizedValues.workingHours,
     });
 
     if (ok) {
       toast.success(adminContactsPageContent.toast.saveSuccess);
-      clearContactsDraft();
+      reset(sanitizedValues);
+      void clearContactsDraft();
     } else {
       toast.error(adminContactsPageContent.toast.saveError);
     }
   };
 
   const handleResetDefaults = async () => {
-    await resetToDefault();
+    const ok = await resetToDefault();
+    if (!ok) {
+      toast.error(adminContactsPageContent.toast.saveError);
+      return;
+    }
+    reset(defaultValues);
+    setIsInitialized(false);
     toast.success(adminContactsPageContent.toast.resetSuccess);
-    clearContactsDraft();
+    void clearContactsDraft();
   };
 
   const sourceLabel = getAdminSourceLabel({
