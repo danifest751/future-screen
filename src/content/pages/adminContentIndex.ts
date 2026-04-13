@@ -33,13 +33,19 @@ const ru = {
     {
       to: '/admin/backgrounds',
       title: 'Фоны',
-      desc: 'Глобальный фон и все параметры анимаций',
+      desc: 'Глобальный фон и параметры анимаций',
       icon: 'palette',
     },
     {
       to: '/admin/privacy-policy',
       title: 'Политика',
       desc: 'Текст политики конфиденциальности',
+      icon: 'fileText',
+    },
+    {
+      to: '/admin/content/home-equipment',
+      title: 'Главная: оборудование',
+      desc: 'Бейдж, заголовок и подзаголовок секции',
       icon: 'fileText',
     },
     {
@@ -91,6 +97,12 @@ const en: typeof ru = {
       to: '/admin/privacy-policy',
       title: 'Privacy Policy',
       desc: 'Privacy policy page content',
+      icon: 'fileText',
+    },
+    {
+      to: '/admin/content/home-equipment',
+      title: 'Home: equipment section',
+      desc: 'Badge, title, and subtitle of the section',
       icon: 'fileText',
     },
     {

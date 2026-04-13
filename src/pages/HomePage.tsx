@@ -6,6 +6,7 @@ import { submitForm } from '../lib/submitForm';
 import { ConsentCheckbox } from '../components/ConsentCheckbox';
 import { useI18n } from '../context/I18nContext';
 import { getHomePageContent, type HomeIconKey } from '../content/pages/home';
+import { useHomeEquipmentSectionHeader } from '../hooks/useHomeEquipmentSectionHeader';
 
 // Scroll reveal hook
 function useScrollReveal(threshold = 0.15) {
@@ -551,8 +552,18 @@ const CtaForm = ({ ctaForm }: { ctaForm: CtaFormContent }) => {
 const HomePage = () => {
   const { siteLocale } = useI18n();
   const homePageContent = getHomePageContent(siteLocale);
+  const { data: equipmentHeaderOverride } = useHomeEquipmentSectionHeader(siteLocale, true);
   const { seo, hero, works, equipmentSection, eventTypesSection, processSection, ctaSection } =
     homePageContent;
+  const equipmentSectionHeader = equipmentHeaderOverride
+    ? {
+        ...equipmentSection,
+        badge: equipmentHeaderOverride.badge,
+        title: equipmentHeaderOverride.title,
+        accentTitle: equipmentHeaderOverride.accentTitle,
+        subtitle: equipmentHeaderOverride.subtitle,
+      }
+    : equipmentSection;
   const equipment = equipmentSection.items;
   const extraEquipment = equipmentSection.extraItems;
   const eventTypes = eventTypesSection.items;
@@ -656,15 +667,15 @@ const HomePage = () => {
         <div className="container-page">
           <RevealSection>
             <div className="mb-12 text-center">
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-sm text-gray-400">
-                {equipmentSection.badge}
+                <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-sm text-gray-400">
+                {equipmentSectionHeader.badge}
               </div>
               <h2 className="font-display mb-4 text-balance text-4xl font-bold text-white md:text-5xl">
-                {equipmentSection.title}{' '}
-                <span className="gradient-text">{equipmentSection.accentTitle}</span>
+                {equipmentSectionHeader.title}{' '}
+                <span className="gradient-text">{equipmentSectionHeader.accentTitle}</span>
               </h2>
               <p className="mx-auto max-w-2xl text-gray-400">
-                {equipmentSection.subtitle}
+                {equipmentSectionHeader.subtitle}
               </p>
             </div>
           </RevealSection>
