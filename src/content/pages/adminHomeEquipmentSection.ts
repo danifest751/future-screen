@@ -25,6 +25,7 @@ const ru = {
   preview: {
     title: 'Предпросмотр',
     sourceLabel: 'Источник данных',
+    sourceStatic: 'Источник: статический контент главной',
   },
 };
 
@@ -53,6 +54,7 @@ const en: typeof ru = {
   preview: {
     title: 'Preview',
     sourceLabel: 'Data source',
+    sourceStatic: 'Source: static homepage content',
   },
 };
 

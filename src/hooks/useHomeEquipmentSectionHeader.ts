@@ -13,6 +13,7 @@ const CONTENT_KEY = 'home_equipment_section_header';
 export function useHomeEquipmentSectionHeader(locale: Locale = 'ru', fallbackToRu = true) {
   const [data, setData] = useState<HomeEquipmentSectionHeader | null>(null);
   const [fallbackUsed, setFallbackUsed] = useState(false);
+  const [hasDbRecord, setHasDbRecord] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -25,10 +26,13 @@ export function useHomeEquipmentSectionHeader(locale: Locale = 'ru', fallbackToR
       if (!row) {
         setData(null);
         setFallbackUsed(false);
+        setHasDbRecord(false);
         return;
       }
-      setData(parseHomeEquipmentSectionHeader(row.content));
+      const parsed = parseHomeEquipmentSectionHeader(row.content);
+      setData(parsed);
       setFallbackUsed(row.fallbackUsed);
+      setHasDbRecord(Boolean(parsed));
     } catch (err) {
       setError(err instanceof Error ? err.message : errorBoundaryContent.loadingError);
     } finally {
@@ -48,6 +52,7 @@ export function useHomeEquipmentSectionHeader(locale: Locale = 'ru', fallbackToR
       );
       setData(parseHomeEquipmentSectionHeader(row.content));
       setFallbackUsed(row.fallbackUsed);
+      setHasDbRecord(true);
       return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : errorBoundaryContent.savingError);
@@ -64,6 +69,7 @@ export function useHomeEquipmentSectionHeader(locale: Locale = 'ru', fallbackToR
   return {
     data,
     fallbackUsed,
+    hasDbRecord,
     loading,
     saving,
     error,

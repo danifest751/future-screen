@@ -10,6 +10,7 @@ import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 import { useHomeEquipmentSectionHeader } from '../../hooks/useHomeEquipmentSectionHeader';
 import { getAdminSourceLabel } from '../../lib/i18n/adminSourceLabel';
 import { getAdminHomeEquipmentSectionContent } from '../../content/pages/adminHomeEquipmentSection';
+import { getHomePageContent } from '../../content/pages/home';
 
 const createSchema = (requiredText: string) =>
   z.object({
@@ -34,8 +35,17 @@ const AdminHomeEquipmentSectionPage = () => {
   const schema = useMemo(() => createSchema(content.validation.required), [content.validation.required]);
   const localeTag = adminLocale === 'ru' ? 'ru-RU' : 'en-US';
 
-  const { data, fallbackUsed, loading, saving, save } = useHomeEquipmentSectionHeader(adminContentLocale, true);
+  const { data, fallbackUsed, hasDbRecord, loading, saving, save } = useHomeEquipmentSectionHeader(adminContentLocale, true);
   const [lastSaved, setLastSaved] = useState<string | null>(null);
+  const staticHeader = useMemo(() => {
+    const equipmentSection = getHomePageContent(adminContentLocale).equipmentSection;
+    return {
+      badge: equipmentSection.badge,
+      title: equipmentSection.title,
+      accentTitle: equipmentSection.accentTitle,
+      subtitle: equipmentSection.subtitle,
+    };
+  }, [adminContentLocale]);
 
   const {
     register,
@@ -56,7 +66,7 @@ const AdminHomeEquipmentSectionPage = () => {
 
   useEffect(() => {
     if (!data) {
-      reset(defaultValues);
+      reset(staticHeader);
       return;
     }
 
@@ -66,13 +76,15 @@ const AdminHomeEquipmentSectionPage = () => {
       accentTitle: data.accentTitle,
       subtitle: data.subtitle,
     });
-  }, [data, reset]);
+  }, [data, reset, staticHeader]);
 
-  const sourceLabel = getAdminSourceLabel({
-    adminLocale,
-    contentLocale: adminContentLocale,
-    fallbackUsed: adminContentLocale === 'en' && fallbackUsed,
-  });
+  const sourceLabel = hasDbRecord
+    ? getAdminSourceLabel({
+        adminLocale,
+        contentLocale: adminContentLocale,
+        fallbackUsed: adminContentLocale === 'en' && fallbackUsed,
+      })
+    : content.preview.sourceStatic;
 
   const onSubmit = async (values: FormValues) => {
     const ok = await save({
@@ -154,16 +166,14 @@ const AdminHomeEquipmentSectionPage = () => {
           <h2 className="mb-4 text-xl font-semibold text-white">{content.preview.title}</h2>
           <div className="space-y-4 rounded-lg border border-white/10 bg-slate-900/50 p-4">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-sm text-gray-400">
-              {data?.badge || defaultValues.badge}
+              {data?.badge || staticHeader.badge}
             </div>
             <h3 className="font-display text-3xl font-bold text-white">
-              {data?.title || defaultValues.title}{' '}
-              <span className="gradient-text">{data?.accentTitle || defaultValues.accentTitle}</span>
+              {data?.title || staticHeader.title}{' '}
+              <span className="gradient-text">{data?.accentTitle || staticHeader.accentTitle}</span>
             </h3>
-            <p className="max-w-2xl text-gray-400">{data?.subtitle || defaultValues.subtitle}</p>
-            <div className="pt-2 text-xs text-slate-400">
-              {content.preview.sourceLabel}: {sourceLabel}
-            </div>
+            <p className="max-w-2xl text-gray-400">{data?.subtitle || staticHeader.subtitle}</p>
+            <div className="pt-2 text-xs text-slate-400">{sourceLabel}</div>
           </div>
         </div>
       </div>
