@@ -395,20 +395,18 @@ const AdminVisualLedLogsPage = () => {
                         }}
                         className="w-full px-3 py-2 text-left"
                       >
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="inline-flex items-center rounded-md border border-white/15 bg-slate-950/70 px-2 py-0.5 text-[11px] font-semibold text-sky-200">
+                        <div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap text-[11px]">
+                          <span className="inline-flex items-center rounded-md border border-white/15 bg-slate-950/70 px-2 py-0.5 font-semibold text-sky-200">
                             #{visualNo}
-                          </div>
-                          <div className="text-[11px] text-slate-400">{new Date(session.started_at).toLocaleString(locale)}</div>
-                        </div>
-                        <div className="mt-1 text-xs text-slate-300">{ui.visualization} #{visualNo}</div>
-                        <div className="mt-1 text-[11px] text-slate-500 truncate">{session.session_key}</div>
-                        <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-slate-300">
-                          <span className="rounded bg-slate-900/70 px-1.5 py-0.5">{session.client_ip || 'IP?'}</span>
-                          <span className="rounded bg-slate-900/70 px-1.5 py-0.5">{browserFromUserAgent(session.user_agent)}</span>
-                          {sessionScenes !== null ? <span>S:{sessionScenes}</span> : null}
-                          {sessionScreens !== null ? <span>LED:{sessionScreens}</span> : null}
-                          {session.duration_sec !== null ? <span>{session.duration_sec}s</span> : null}
+                          </span>
+                          <span className="text-slate-300">{ui.visualization}</span>
+                          <span className="text-slate-400">{new Date(session.started_at).toLocaleString(locale)}</span>
+                          <span className="rounded bg-slate-900/70 px-1.5 py-0.5 text-slate-300">{session.client_ip || 'IP?'}</span>
+                          <span className="rounded bg-slate-900/70 px-1.5 py-0.5 text-slate-300">{browserFromUserAgent(session.user_agent)}</span>
+                          {sessionScenes !== null ? <span className="text-slate-300">S:{sessionScenes}</span> : null}
+                          {sessionScreens !== null ? <span className="text-slate-300">LED:{sessionScreens}</span> : null}
+                          {session.duration_sec !== null ? <span className="text-slate-300">{session.duration_sec}s</span> : null}
+                          <span className="max-w-[260px] truncate text-slate-500">{session.session_key}</span>
                         </div>
                       </button>
 
