@@ -140,10 +140,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             .select('id, summary')
             .eq('session_key', sessionKey)
             .maybeSingle();
+          if (sessionError) {
+            throw sessionError;
+          }
 
-          if (!sessionError && sessionData?.id) {
+          let ensuredSession = sessionData;
+          if (!ensuredSession?.id) {
+            const { data: insertedSession, error: insertSessionError } = await supabase
+              .from('visual_led_sessions')
+              .insert({
+                session_key: sessionKey,
+                started_at: new Date().toISOString(),
+                page_url: `${host}/visual-led`,
+                summary: {
+                  source: 'report-share-fallback-session',
+                },
+              })
+              .select('id, summary')
+              .single();
+            if (insertSessionError) throw insertSessionError;
+            ensuredSession = insertedSession;
+          }
+
+          if (ensuredSession?.id) {
             await supabase.from('visual_led_events').insert({
-              session_id: sessionData.id,
+              session_id: ensuredSession.id,
               ts: new Date().toISOString(),
               event_type: 'report_shared',
               scene_id: null,
@@ -158,8 +179,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               },
             });
 
-            const prevSummary = (sessionData.summary && typeof sessionData.summary === 'object')
-              ? (sessionData.summary as Record<string, unknown>)
+            const prevSummary = (ensuredSession.summary && typeof ensuredSession.summary === 'object')
+              ? (ensuredSession.summary as Record<string, unknown>)
               : {};
             const nextSummary: Record<string, unknown> = {
               ...prevSummary,
@@ -189,7 +210,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             await supabase
               .from('visual_led_sessions')
               .update({ summary: nextSummary })
-              .eq('id', sessionData.id);
+              .eq('id', ensuredSession.id);
           }
         } catch (logError) {
           console.warn('[report-share] failed to write visual_led_events.report_shared', logError);
