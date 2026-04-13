@@ -41,8 +41,6 @@ type VisualLedAsset = {
   preview_url?: string | null;
 };
 
-type TabId = 'overview' | 'results' | 'backgrounds' | 'events';
-
 type ReportShareItem = {
   id: number;
   at: string;
@@ -54,27 +52,30 @@ type ReportShareItem = {
   backgroundsTotal: number | null;
 };
 
+type SessionDetailsState = {
+  session: VisualLedSession | null;
+  events: VisualLedEvent[];
+  assets: VisualLedAsset[];
+  loading: boolean;
+  error: string | null;
+};
+
+type EventFeedItem = VisualLedEvent & { scope: string | null; url: string | null };
+
 const copy = {
   ru: {
     title: 'Логи Visual LED',
-    subtitle: 'Компактный просмотр сессий, фонов и результатов',
+    subtitle: 'Лента визуализаций с раскрытием деталей по клику',
     reload: 'Обновить',
     search: 'Поиск по IP / URL / session key',
-    sessions: 'Сессии',
     feed: 'Лента визуализаций',
-    events: 'События',
-    backgrounds: 'Фоны',
-    client: 'Клиент',
-    summary: 'Сводка',
-    choose: 'Выберите сессию слева',
     noSessions: 'Сессии пока не найдены',
     unauthorized: 'Нет доступа к логам (нужна роль admin)',
-    tabs: {
-      overview: 'Обзор',
-      results: 'Результаты',
-      backgrounds: 'Фоны',
-      events: 'События',
-    },
+    events: 'События',
+    backgrounds: 'Фоны',
+    summary: 'Сводка',
+    open: 'Открыть',
+    visualization: 'Визуализация',
     cards: {
       screens: 'Экранов',
       scenes: 'Сцен',
@@ -88,29 +89,20 @@ const copy = {
     },
     noBackgrounds: 'Фоны в этой сессии не загружались',
     noEvents: 'Событий нет',
-    open: 'Открыть',
-    visualization: 'Визуализация',
   },
   en: {
     title: 'Visual LED logs',
-    subtitle: 'Compact sessions, backgrounds, and results view',
+    subtitle: 'Visualization feed with expandable details',
     reload: 'Reload',
     search: 'Search by IP / URL / session key',
-    sessions: 'Sessions',
     feed: 'Visualizations feed',
-    events: 'Events',
-    backgrounds: 'Backgrounds',
-    client: 'Client',
-    summary: 'Summary',
-    choose: 'Select a session on the left',
     noSessions: 'No sessions yet',
     unauthorized: 'No access to logs (admin role required)',
-    tabs: {
-      overview: 'Overview',
-      results: 'Results',
-      backgrounds: 'Backgrounds',
-      events: 'Events',
-    },
+    events: 'Events',
+    backgrounds: 'Backgrounds',
+    summary: 'Summary',
+    open: 'Open',
+    visualization: 'Visualization',
     cards: {
       screens: 'Screens',
       scenes: 'Scenes',
@@ -124,8 +116,6 @@ const copy = {
     },
     noBackgrounds: 'No backgrounds were uploaded in this session',
     noEvents: 'No events',
-    open: 'Open',
-    visualization: 'Visualization',
   },
 } as const;
 
@@ -183,6 +173,77 @@ function visualizationNumberFromSessionKey(sessionKey: string): string {
   return String(normalized).padStart(6, '0');
 }
 
+function buildEventFeed(events: VisualLedEvent[]): EventFeedItem[] {
+  return [...events]
+    .sort((a, b) => b.ts.localeCompare(a.ts))
+    .map((event) => ({
+      ...event,
+      scope: asString(event.payload?.scope) || asString(event.payload?.export_scope),
+      url: asString(event.payload?.url),
+    }));
+}
+
+function buildInsights(session: VisualLedSession, events: VisualLedEvent[]) {
+  const summary = session.summary || {};
+  const screens = asNumber(summary.screens);
+  const scenes = asNumber(summary.scenes);
+  const duration = asNumber(summary.duration_sec ?? session.duration_sec);
+
+  const assistAppliedCount = events.filter((event) => event.event_type === 'assist_applied').length;
+  const screenCreatedByEvent = events.filter((event) => event.event_type === 'screen_created').length;
+  const screenUpdatedCount = events.filter((event) => event.event_type === 'screen_updated').length;
+  const backgroundUploadedByEvent = events.filter((event) => event.event_type === 'background_uploaded').length;
+  const summaryScreens = asNumber(summary.screens);
+  const summaryBackgrounds = asNumber(summary.backgrounds);
+
+  const lastReportExport = [...events]
+    .reverse()
+    .find((event) => event.event_type === 'report_exported');
+  const lastReportShared = [...events]
+    .reverse()
+    .find((event) => event.event_type === 'report_shared' && event.payload?.status === 'success');
+
+  const reportShares: ReportShareItem[] = events
+    .filter((event) => event.event_type === 'report_shared' && event.payload?.status === 'success')
+    .map((event) => {
+      const metrics = asRecord(event.payload?.metrics);
+      return {
+        id: event.id,
+        at: event.ts,
+        url: asString(event.payload?.url) || '',
+        scope: asString(event.payload?.export_scope),
+        previewImage: asString(event.payload?.preview_image),
+        screensCurrent: asNumber(metrics?.screens_current),
+        scenesTotal: asNumber(metrics?.scenes_total),
+        backgroundsTotal: asNumber(metrics?.backgrounds_total),
+      };
+    })
+    .filter((item) => item.url)
+    .sort((a, b) => b.at.localeCompare(a.at));
+
+  const lastShare = reportShares[0] ?? null;
+  const summaryScreensFromShare = lastShare?.screensCurrent ?? null;
+  const summaryBackgroundsFromShare = lastShare?.backgroundsTotal ?? null;
+
+  return {
+    screens,
+    scenes,
+    duration,
+    assistAppliedCount,
+    screenCreatedCount: Math.max(screenCreatedByEvent, summaryScreens ?? 0, summaryScreensFromShare ?? 0),
+    screenUpdatedCount,
+    backgroundUploadedCount: Math.max(backgroundUploadedByEvent, summaryBackgrounds ?? 0, summaryBackgroundsFromShare ?? 0),
+    reportScope:
+      asString(lastReportExport?.payload?.scope) ||
+      asString(lastReportShared?.payload?.export_scope) ||
+      asString(summary.report_export_scope),
+    reportUrl: asString(lastReportShared?.payload?.url) || asString(summary.report_url),
+    reportSharedAt: lastReportShared?.ts || null,
+    reportShares,
+    summary,
+  };
+}
+
 const AdminVisualLedLogsPage = () => {
   const { adminLocale } = useI18n();
   const ui = copy[adminLocale];
@@ -190,14 +251,10 @@ const AdminVisualLedLogsPage = () => {
 
   const [search, setSearch] = useState('');
   const [sessions, setSessions] = useState<VisualLedSession[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [selectedSession, setSelectedSession] = useState<VisualLedSession | null>(null);
-  const [events, setEvents] = useState<VisualLedEvent[]>([]);
-  const [assets, setAssets] = useState<VisualLedAsset[]>([]);
-  const [activeTab, setActiveTab] = useState<TabId>('overview');
-  const [expandedEvents, setExpandedEvents] = useState<Record<number, boolean>>({});
+  const [expandedSessionId, setExpandedSessionId] = useState<string | null>(null);
+  const [detailsBySessionId, setDetailsBySessionId] = useState<Record<string, SessionDetailsState>>({});
+  const [expandedEvents, setExpandedEvents] = useState<Record<string, Record<number, boolean>>>({});
   const [loading, setLoading] = useState(true);
-  const [detailsLoading, setDetailsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const loadSessions = useCallback(async () => {
@@ -207,20 +264,14 @@ const AdminVisualLedLogsPage = () => {
       const token = await getAccessToken();
       if (!token) throw new Error(ui.unauthorized);
       const response = await fetch('/api/visual-led-logs/sessions?limit=120&offset=0', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
       if (!response.ok) {
         const text = await response.text().catch(() => '');
         throw new Error(text || `HTTP ${response.status}`);
       }
       const payload = await response.json();
-      const items = (payload.items || []) as VisualLedSession[];
-      setSessions(items);
-      if (items.length) {
-        setSelectedId(items[0].id);
-      }
+      setSessions((payload.items || []) as VisualLedSession[]);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load sessions');
     } finally {
@@ -229,28 +280,48 @@ const AdminVisualLedLogsPage = () => {
   }, [ui.unauthorized]);
 
   const loadSessionDetails = useCallback(async (sessionId: string) => {
-    setDetailsLoading(true);
-    setError(null);
+    setDetailsBySessionId((prev) => ({
+      ...prev,
+      [sessionId]: {
+        session: prev[sessionId]?.session || null,
+        events: prev[sessionId]?.events || [],
+        assets: prev[sessionId]?.assets || [],
+        loading: true,
+        error: null,
+      },
+    }));
     try {
       const token = await getAccessToken();
       if (!token) throw new Error(ui.unauthorized);
       const response = await fetch(`/api/visual-led-logs/session?id=${encodeURIComponent(sessionId)}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
       if (!response.ok) {
         const text = await response.text().catch(() => '');
         throw new Error(text || `HTTP ${response.status}`);
       }
       const payload = await response.json();
-      setSelectedSession(payload.session as VisualLedSession);
-      setEvents((payload.events || []) as VisualLedEvent[]);
-      setAssets((payload.assets || []) as VisualLedAsset[]);
+      setDetailsBySessionId((prev) => ({
+        ...prev,
+        [sessionId]: {
+          session: (payload.session as VisualLedSession) || null,
+          events: (payload.events || []) as VisualLedEvent[],
+          assets: (payload.assets || []) as VisualLedAsset[],
+          loading: false,
+          error: null,
+        },
+      }));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load session details');
-    } finally {
-      setDetailsLoading(false);
+      setDetailsBySessionId((prev) => ({
+        ...prev,
+        [sessionId]: {
+          session: prev[sessionId]?.session || null,
+          events: prev[sessionId]?.events || [],
+          assets: prev[sessionId]?.assets || [],
+          loading: false,
+          error: err instanceof Error ? err.message : 'Failed to load session details',
+        },
+      }));
     }
   }, [ui.unauthorized]);
 
@@ -258,105 +329,16 @@ const AdminVisualLedLogsPage = () => {
     void loadSessions();
   }, [loadSessions]);
 
-  useEffect(() => {
-    if (!selectedId) return;
-    setActiveTab('overview');
-    setExpandedEvents({});
-    void loadSessionDetails(selectedId);
-  }, [selectedId, loadSessionDetails]);
-
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return sessions;
     return sessions.filter((item) => {
-      const haystack = [
-        item.session_key,
-        item.client_ip || '',
-        item.page_url || '',
-        item.referrer || '',
-      ]
+      const haystack = [item.session_key, item.client_ip || '', item.page_url || '', item.referrer || '']
         .join(' ')
         .toLowerCase();
       return haystack.includes(q);
     });
   }, [search, sessions]);
-
-  const insights = useMemo(() => {
-    const summary = selectedSession?.summary || {};
-    const screens = asNumber(summary.screens);
-    const scenes = asNumber(summary.scenes);
-    const duration = asNumber(summary.duration_sec ?? selectedSession?.duration_sec);
-
-    const assistAppliedCount = events.filter((event) => event.event_type === 'assist_applied').length;
-    const screenCreatedByEvent = events.filter((event) => event.event_type === 'screen_created').length;
-    const screenUpdatedCount = events.filter((event) => event.event_type === 'screen_updated').length;
-    const backgroundUploadedByEvent = events.filter((event) => event.event_type === 'background_uploaded').length;
-    const summaryScreens = asNumber(summary.screens);
-    const summaryBackgrounds = asNumber(summary.backgrounds);
-
-    const lastReportExport = [...events]
-      .reverse()
-      .find((event) => event.event_type === 'report_exported');
-    const lastReportShared = [...events]
-      .reverse()
-      .find((event) => event.event_type === 'report_shared' && event.payload?.status === 'success');
-
-    const reportShares: ReportShareItem[] = events
-      .filter((event) => event.event_type === 'report_shared' && event.payload?.status === 'success')
-      .map((event) => {
-        const metrics = asRecord(event.payload?.metrics);
-        return {
-          id: event.id,
-          at: event.ts,
-          url: asString(event.payload?.url) || '',
-          scope: asString(event.payload?.export_scope),
-          previewImage: asString(event.payload?.preview_image),
-          screensCurrent: asNumber(metrics?.screens_current),
-          scenesTotal: asNumber(metrics?.scenes_total),
-          backgroundsTotal: asNumber(metrics?.backgrounds_total),
-        };
-      })
-      .filter((item) => item.url)
-      .sort((a, b) => b.at.localeCompare(a.at));
-
-    const lastShare = reportShares[0] ?? null;
-    const summaryScreensFromShare = lastShare?.screensCurrent ?? null;
-    const summaryBackgroundsFromShare = lastShare?.backgroundsTotal ?? null;
-
-    return {
-      screens,
-      scenes,
-      duration,
-      assistAppliedCount,
-      screenCreatedCount: Math.max(screenCreatedByEvent, summaryScreens ?? 0, summaryScreensFromShare ?? 0),
-      screenUpdatedCount,
-      backgroundUploadedCount: Math.max(backgroundUploadedByEvent, summaryBackgrounds ?? 0, summaryBackgroundsFromShare ?? 0),
-      reportScope: asString(lastReportExport?.payload?.scope) || asString(lastReportShared?.payload?.export_scope) || asString(summary.report_export_scope),
-      reportUrl: asString(lastReportShared?.payload?.url) || asString(summary.report_url),
-      reportSharedAt: lastReportShared?.ts || null,
-      reportShares,
-      summary,
-    };
-  }, [selectedSession, events]);
-
-  const tabButtons: Array<{ id: TabId; label: string; count?: number }> = [
-    { id: 'overview', label: ui.tabs.overview },
-    { id: 'results', label: ui.tabs.results },
-    { id: 'backgrounds', label: ui.tabs.backgrounds, count: assets.length },
-    { id: 'events', label: ui.tabs.events, count: events.length },
-  ];
-
-  const eventFeed = useMemo(
-    () =>
-      [...events]
-        .sort((a, b) => b.ts.localeCompare(a.ts))
-        .map((event) => ({
-          ...event,
-          scope: asString(event.payload?.scope) || asString(event.payload?.export_scope),
-          url: asString(event.payload?.url),
-        })),
-    [events],
-  );
 
   return (
     <AdminLayout title={ui.title} subtitle={ui.subtitle}>
@@ -375,41 +357,51 @@ const AdminVisualLedLogsPage = () => {
         </div>
 
         {loading ? (
-          <LoadingState title={ui.sessions} />
+          <LoadingState title={ui.feed} />
         ) : (
-          <div className="grid gap-4 xl:grid-cols-[340px,1fr]">
-            <div className="card max-h-[74vh] overflow-y-auto p-3">
-              <div className="mb-2 text-sm font-semibold text-white">{ui.feed}</div>
-              {filtered.length === 0 ? (
-                <EmptyState title={ui.noSessions} />
-              ) : (
-                <div className="space-y-2">
-                  {filtered.map((session) => {
-                    const active = session.id === selectedId;
-                    const summary = session.summary || {};
-                    const sessionScreens = asNumber(summary.screens);
-                    const sessionScenes = asNumber(summary.scenes);
-                    const visualNo = visualizationNumberFromSessionKey(session.session_key);
-                    return (
+          <div className="card p-3">
+            <div className="mb-2 text-sm font-semibold text-white">{ui.feed}</div>
+            {filtered.length === 0 ? (
+              <EmptyState title={ui.noSessions} />
+            ) : (
+              <div className="space-y-2">
+                {filtered.map((session) => {
+                  const isExpanded = expandedSessionId === session.id;
+                  const summary = session.summary || {};
+                  const sessionScreens = asNumber(summary.screens);
+                  const sessionScenes = asNumber(summary.scenes);
+                  const visualNo = visualizationNumberFromSessionKey(session.session_key);
+                  const details = detailsBySessionId[session.id];
+                  const eventFeed = buildEventFeed(details?.events || []);
+                  const insights = buildInsights(session, details?.events || []);
+                  const eventExpandedMap = expandedEvents[session.id] || {};
+
+                  return (
+                    <div
+                      key={session.id}
+                      className={`rounded-lg border transition ${
+                        isExpanded ? 'border-brand-400 bg-brand-500/10' : 'border-white/10 bg-white/5'
+                      }`}
+                    >
                       <button
-                        key={session.id}
                         type="button"
-                        onClick={() => setSelectedId(session.id)}
-                        className={`w-full rounded-lg border px-3 py-2 text-left transition ${
-                          active
-                            ? 'border-brand-400 bg-brand-500/15'
-                            : 'border-white/10 bg-white/5 hover:border-white/30'
-                        }`}
+                        onClick={() => {
+                          if (isExpanded) {
+                            setExpandedSessionId(null);
+                            return;
+                          }
+                          setExpandedSessionId(session.id);
+                          if (!details) void loadSessionDetails(session.id);
+                        }}
+                        className="w-full px-3 py-2 text-left"
                       >
                         <div className="flex items-center justify-between gap-2">
                           <div className="inline-flex items-center rounded-md border border-white/15 bg-slate-950/70 px-2 py-0.5 text-[11px] font-semibold text-sky-200">
                             #{visualNo}
                           </div>
-                          <div className="text-[11px] text-slate-400">
-                            {new Date(session.started_at).toLocaleString(locale)}
-                          </div>
+                          <div className="text-[11px] text-slate-400">{new Date(session.started_at).toLocaleString(locale)}</div>
                         </div>
-                        <div className="mt-1 text-xs text-slate-300">{ui.visualization} {`#${visualNo}`}</div>
+                        <div className="mt-1 text-xs text-slate-300">{ui.visualization} #{visualNo}</div>
                         <div className="mt-1 text-[11px] text-slate-500 truncate">{session.session_key}</div>
                         <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-slate-300">
                           <span className="rounded bg-slate-900/70 px-1.5 py-0.5">{session.client_ip || 'IP?'}</span>
@@ -419,261 +411,198 @@ const AdminVisualLedLogsPage = () => {
                           {session.duration_sec !== null ? <span>{session.duration_sec}s</span> : null}
                         </div>
                       </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
 
-            <div className="space-y-3">
-              {!selectedId ? (
-                <div className="card p-6 text-slate-300">{ui.choose}</div>
-              ) : detailsLoading ? (
-                <LoadingState title={ui.events} />
-              ) : (
-                <>
-                  <div className="card p-3">
-                    <div className="mb-3 grid gap-2 md:grid-cols-2 xl:grid-cols-4">
-                      <div className="rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2">
-                        <div className="text-[10px] uppercase tracking-wide text-slate-500">{ui.cards.screens}</div>
-                        <div className="text-sm font-semibold text-white">{insights.screens ?? '-'}</div>
-                      </div>
-                      <div className="rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2">
-                        <div className="text-[10px] uppercase tracking-wide text-slate-500">{ui.cards.scenes}</div>
-                        <div className="text-sm font-semibold text-white">{insights.scenes ?? '-'}</div>
-                      </div>
-                      <div className="rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2">
-                        <div className="text-[10px] uppercase tracking-wide text-slate-500">{ui.cards.duration}</div>
-                        <div className="text-sm font-semibold text-white">
-                          {formatDurationCompact(insights.duration)}
-                        </div>
-                      </div>
-                      <div className="rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2">
-                        <div className="text-[10px] uppercase tracking-wide text-slate-500">{ui.cards.assistApplied}</div>
-                        <div className="text-sm font-semibold text-white">{insights.assistAppliedCount}</div>
-                      </div>
-                    </div>
+                      {isExpanded ? (
+                        <div className="space-y-3 border-t border-white/10 px-3 pb-3 pt-2">
+                          {details?.loading ? <LoadingState title={ui.events} /> : null}
+                          {details?.error ? <div className="text-sm text-red-300">{details.error}</div> : null}
 
-                    {selectedSession ? (
-                      <div className="mb-3 grid gap-2 md:grid-cols-3">
-                        <div className="rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2 text-xs text-slate-300">
-                          IP: <span className="text-white">{selectedSession.client_ip || '-'}</span>
-                        </div>
-                        <div className="rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2 text-xs text-slate-300">
-                          Browser: <span className="text-white">{browserFromUserAgent(selectedSession.user_agent)}</span>
-                        </div>
-                        <div className="rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2 text-xs text-slate-300">
-                          Events: <span className="text-white">{eventFeed.length}</span>
-                        </div>
-                      </div>
-                    ) : null}
+                          {!details?.loading && !details?.error ? (
+                            <>
+                              <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+                                <div className="rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2">
+                                  <div className="text-[10px] uppercase tracking-wide text-slate-500">{ui.cards.screens}</div>
+                                  <div className="text-sm font-semibold text-white">{insights.screens ?? '-'}</div>
+                                </div>
+                                <div className="rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2">
+                                  <div className="text-[10px] uppercase tracking-wide text-slate-500">{ui.cards.scenes}</div>
+                                  <div className="text-sm font-semibold text-white">{insights.scenes ?? '-'}</div>
+                                </div>
+                                <div className="rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2">
+                                  <div className="text-[10px] uppercase tracking-wide text-slate-500">{ui.cards.duration}</div>
+                                  <div className="text-sm font-semibold text-white">{formatDurationCompact(insights.duration)}</div>
+                                </div>
+                                <div className="rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2">
+                                  <div className="text-[10px] uppercase tracking-wide text-slate-500">{ui.cards.assistApplied}</div>
+                                  <div className="text-sm font-semibold text-white">{insights.assistAppliedCount}</div>
+                                </div>
+                              </div>
 
-                    <div className="flex flex-wrap items-center gap-2">
-                      {tabButtons.map((tab) => (
-                        <button
-                          key={tab.id}
-                          type="button"
-                          onClick={() => setActiveTab(tab.id)}
-                          className={`rounded-full border px-3 py-1.5 text-xs transition ${
-                            activeTab === tab.id
-                              ? 'border-brand-500/50 bg-brand-500/15 text-white'
-                              : 'border-white/10 bg-white/5 text-slate-300 hover:text-white'
-                          }`}
-                        >
-                          {tab.label}
-                          {typeof tab.count === 'number' ? ` (${tab.count})` : ''}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                              <div className="grid gap-2 text-sm md:grid-cols-2">
+                                <div className="rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2 text-slate-300">
+                                  {ui.cards.reportScope}: <span className="text-white">{insights.reportScope || '-'}</span>
+                                </div>
+                                <div className="rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2 text-slate-300">
+                                  {ui.cards.reportSharedAt}:{' '}
+                                  <span className="text-white">
+                                    {insights.reportSharedAt ? new Date(insights.reportSharedAt).toLocaleString(locale) : '-'}
+                                  </span>
+                                </div>
+                                <div className="rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2 text-slate-300">
+                                  Screen created: <span className="text-white">{insights.screenCreatedCount}</span>
+                                </div>
+                                <div className="rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2 text-slate-300">
+                                  Screen updated: <span className="text-white">{insights.screenUpdatedCount}</span>
+                                </div>
+                                <div className="rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2 text-slate-300 md:col-span-2">
+                                  Background uploaded: <span className="text-white">{insights.backgroundUploadedCount}</span>
+                                </div>
+                                {insights.reportUrl ? (
+                                  <div className="rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2 text-slate-300 md:col-span-2">
+                                    <div className="mb-1">{ui.cards.reportLink}</div>
+                                    <a
+                                      href={insights.reportUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="break-all text-sky-300 hover:text-sky-200"
+                                    >
+                                      {insights.reportUrl}
+                                    </a>
+                                  </div>
+                                ) : null}
+                              </div>
 
-                  {activeTab === 'overview' ? (
-                    <div className="card p-4">
-                      <div className="mb-3 text-sm font-semibold text-white">{ui.client}</div>
-                      {selectedSession ? (
-                        <div className="grid gap-2 text-sm md:grid-cols-2">
-                          <div className="text-slate-300">Session: {selectedSession.session_key}</div>
-                          <div className="text-slate-300">IP: {selectedSession.client_ip || '-'}</div>
-                          <div className="text-slate-300">Started: {new Date(selectedSession.started_at).toLocaleString(locale)}</div>
-                          <div className="text-slate-300">Duration: {selectedSession.duration_sec ?? '-'} sec</div>
-                          <div className="text-slate-300 md:col-span-2 break-all">URL: {selectedSession.page_url || '-'}</div>
-                          <div className="text-slate-300 md:col-span-2 break-all">UA: {selectedSession.user_agent || '-'}</div>
+                              <div>
+                                <div className="mb-2 text-xs uppercase tracking-wide text-slate-500">{ui.cards.sharedReports}</div>
+                                {insights.reportShares.length === 0 ? (
+                                  <div className="rounded-lg border border-dashed border-white/15 bg-slate-950/60 p-3 text-xs text-slate-400">
+                                    {ui.cards.noSharedReports}
+                                  </div>
+                                ) : (
+                                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                                    {insights.reportShares.map((share) => (
+                                      <div key={share.id} className="rounded-lg border border-white/10 bg-slate-950/60 p-2">
+                                        {share.previewImage ? (
+                                          <img
+                                            src={share.previewImage}
+                                            alt="report preview"
+                                            className="h-24 w-full rounded-md border border-white/10 object-cover"
+                                            loading="lazy"
+                                          />
+                                        ) : (
+                                          <div className="flex h-24 w-full items-center justify-center rounded-md border border-dashed border-white/15 text-xs text-slate-500">
+                                            preview unavailable
+                                          </div>
+                                        )}
+                                        <div className="mt-2 space-y-1 text-xs text-slate-300">
+                                          <div>{new Date(share.at).toLocaleString(locale)}</div>
+                                          <div>scope: {share.scope || '-'}</div>
+                                          <div>S: {share.scenesTotal ?? '-'} · LED: {share.screensCurrent ?? '-'} · BG: {share.backgroundsTotal ?? '-'}</div>
+                                        </div>
+                                        <a
+                                          href={share.url}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="mt-2 inline-flex rounded-md border border-white/15 bg-white/5 px-2 py-1 text-xs text-slate-200 hover:bg-white/10"
+                                        >
+                                          {ui.open}
+                                        </a>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+
+                              <div>
+                                <div className="mb-2 text-xs uppercase tracking-wide text-slate-500">{ui.backgrounds}</div>
+                                {(details?.assets || []).length === 0 ? (
+                                  <EmptyState title={ui.noBackgrounds} />
+                                ) : (
+                                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                                    {(details?.assets || []).map((asset) => (
+                                      <div key={asset.id} className="rounded-lg border border-white/10 bg-slate-950/60 p-2">
+                                        {asset.preview_url ? (
+                                          <img
+                                            src={asset.preview_url}
+                                            alt={asset.file_name}
+                                            className="h-28 w-full rounded-md border border-white/10 object-cover"
+                                            loading="lazy"
+                                          />
+                                        ) : (
+                                          <div className="flex h-28 w-full items-center justify-center rounded-md border border-dashed border-white/15 text-xs text-slate-500">
+                                            preview unavailable
+                                          </div>
+                                        )}
+                                        <div className="mt-2 text-xs text-slate-300">
+                                          <div className="truncate font-medium text-white">{asset.file_name}</div>
+                                          <div>{asset.mime_type || '-'}</div>
+                                          <div>{asset.size_bytes ?? '-'} bytes</div>
+                                          <div className="truncate text-slate-500">{asset.storage_path}</div>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+
+                              <div>
+                                <div className="mb-2 text-xs uppercase tracking-wide text-slate-500">{ui.events}</div>
+                                {eventFeed.length === 0 ? (
+                                  <EmptyState title={ui.noEvents} />
+                                ) : (
+                                  <div className="max-h-[58vh] space-y-2 overflow-y-auto">
+                                    {eventFeed.map((entry) => {
+                                      const isEventExpanded = Boolean(eventExpandedMap[entry.id]);
+                                      return (
+                                        <button
+                                          key={entry.id}
+                                          type="button"
+                                          onClick={() =>
+                                            setExpandedEvents((prev) => ({
+                                              ...prev,
+                                              [session.id]: {
+                                                ...(prev[session.id] || {}),
+                                                [entry.id]: !isEventExpanded,
+                                              },
+                                            }))
+                                          }
+                                          className="w-full rounded-lg border border-white/10 bg-slate-950/60 p-2 text-left text-xs"
+                                        >
+                                          <div className="flex flex-wrap items-center gap-2 text-slate-400">
+                                            <span>{new Date(entry.ts).toLocaleString(locale)}</span>
+                                            <span>{entry.event_type}</span>
+                                            <span>scene: {entry.scene_id || '-'}</span>
+                                            <span>screen: {entry.screen_id || '-'}</span>
+                                            {entry.scope ? <span>scope: {entry.scope}</span> : null}
+                                          </div>
+                                          {entry.url ? <div className="mt-1 truncate text-sky-300">{entry.url}</div> : null}
+                                          {isEventExpanded ? (
+                                            <pre className="mt-2 overflow-auto rounded-md border border-white/10 bg-slate-900/60 p-2 text-slate-300">
+                                              {JSON.stringify(entry.payload || {}, null, 2)}
+                                            </pre>
+                                          ) : null}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+
+                              <div>
+                                <div className="mb-2 text-xs uppercase tracking-wide text-slate-500">{ui.summary}</div>
+                                <pre className="max-h-56 overflow-auto rounded-lg border border-white/10 bg-slate-950/70 p-3 text-xs text-slate-200">
+                                  {JSON.stringify(insights.summary || {}, null, 2)}
+                                </pre>
+                              </div>
+                            </>
+                          ) : null}
                         </div>
                       ) : null}
                     </div>
-                  ) : null}
-
-                  {activeTab === 'results' ? (
-                    <div className="card p-4">
-                      <div className="grid gap-2 text-sm md:grid-cols-2">
-                        <div className="rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2 text-slate-300">
-                          {ui.cards.reportScope}: <span className="text-white">{insights.reportScope || '-'}</span>
-                        </div>
-                        <div className="rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2 text-slate-300">
-                          {ui.cards.reportSharedAt}:{' '}
-                          <span className="text-white">
-                            {insights.reportSharedAt ? new Date(insights.reportSharedAt).toLocaleString(locale) : '-'}
-                          </span>
-                        </div>
-                        <div className="rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2 text-slate-300">
-                          Screen created: <span className="text-white">{insights.screenCreatedCount}</span>
-                        </div>
-                        <div className="rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2 text-slate-300">
-                          Screen updated: <span className="text-white">{insights.screenUpdatedCount}</span>
-                        </div>
-                        <div className="rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2 text-slate-300 md:col-span-2">
-                          Background uploaded: <span className="text-white">{insights.backgroundUploadedCount}</span>
-                        </div>
-                        {insights.reportUrl ? (
-                          <div className="rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2 text-slate-300 md:col-span-2">
-                            <div className="mb-1">{ui.cards.reportLink}</div>
-                            <a
-                              href={insights.reportUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="break-all text-sky-300 hover:text-sky-200"
-                            >
-                              {insights.reportUrl}
-                            </a>
-                          </div>
-                        ) : null}
-                      </div>
-
-                      <div className="mt-3">
-                        <div className="mb-2 text-xs uppercase tracking-wide text-slate-500">{ui.summary}</div>
-                        <pre className="max-h-56 overflow-auto rounded-lg border border-white/10 bg-slate-950/70 p-3 text-xs text-slate-200">
-                          {JSON.stringify(insights.summary || {}, null, 2)}
-                        </pre>
-                      </div>
-
-                      <div className="mt-3">
-                        <div className="mb-2 text-xs uppercase tracking-wide text-slate-500">{ui.cards.sharedReports}</div>
-                        {insights.reportShares.length === 0 ? (
-                          <div className="rounded-lg border border-dashed border-white/15 bg-slate-950/60 p-3 text-xs text-slate-400">
-                            {ui.cards.noSharedReports}
-                          </div>
-                        ) : (
-                          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                            {insights.reportShares.map((share) => (
-                              <div key={share.id} className="rounded-lg border border-white/10 bg-slate-950/60 p-2">
-                                {share.previewImage ? (
-                                  <img
-                                    src={share.previewImage}
-                                    alt="report preview"
-                                    className="h-24 w-full rounded-md border border-white/10 object-cover"
-                                    loading="lazy"
-                                  />
-                                ) : (
-                                  <div className="flex h-24 w-full items-center justify-center rounded-md border border-dashed border-white/15 text-xs text-slate-500">
-                                    preview unavailable
-                                  </div>
-                                )}
-                                <div className="mt-2 space-y-1 text-xs text-slate-300">
-                                  <div>{new Date(share.at).toLocaleString(locale)}</div>
-                                  <div>scope: {share.scope || '-'}</div>
-                                  <div>S: {share.scenesTotal ?? '-'} · LED: {share.screensCurrent ?? '-'} · BG: {share.backgroundsTotal ?? '-'}</div>
-                                </div>
-                                <a
-                                  href={share.url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="mt-2 inline-flex rounded-md border border-white/15 bg-white/5 px-2 py-1 text-xs text-slate-200 hover:bg-white/10"
-                                >
-                                  {ui.open}
-                                </a>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ) : null}
-
-                  {activeTab === 'backgrounds' ? (
-                    <div className="card p-4">
-                      {assets.length === 0 ? (
-                        <EmptyState title={ui.noBackgrounds} />
-                      ) : (
-                        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                          {assets.map((asset) => (
-                            <div key={asset.id} className="rounded-lg border border-white/10 bg-slate-950/60 p-2">
-                              {asset.preview_url ? (
-                                <img
-                                  src={asset.preview_url}
-                                  alt={asset.file_name}
-                                  className="h-28 w-full rounded-md border border-white/10 object-cover"
-                                  loading="lazy"
-                                />
-                              ) : (
-                                <div className="flex h-28 w-full items-center justify-center rounded-md border border-dashed border-white/15 text-xs text-slate-500">
-                                  preview unavailable
-                                </div>
-                              )}
-                              <div className="mt-2 text-xs text-slate-300">
-                                <div className="truncate font-medium text-white">{asset.file_name}</div>
-                                <div>{asset.mime_type || '-'}</div>
-                                <div>{asset.size_bytes ?? '-'} bytes</div>
-                                <div className="truncate text-slate-500">{asset.storage_path}</div>
-                              </div>
-                              {asset.preview_url ? (
-                                <a
-                                  href={asset.preview_url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="mt-2 inline-flex rounded-md border border-white/15 bg-white/5 px-2 py-1 text-xs text-slate-200 hover:bg-white/10"
-                                >
-                                  {ui.open}
-                                </a>
-                              ) : null}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ) : null}
-
-                  {activeTab === 'events' ? (
-                    <div className="card p-4">
-                      {eventFeed.length === 0 ? (
-                        <EmptyState title={ui.noEvents} />
-                      ) : (
-                        <div className="max-h-[58vh] space-y-2 overflow-y-auto">
-                          {eventFeed.map((entry) => {
-                            const isExpanded = Boolean(expandedEvents[entry.id]);
-                            return (
-                              <button
-                                key={entry.id}
-                                type="button"
-                                onClick={() =>
-                                  setExpandedEvents((prev) => ({ ...prev, [entry.id]: !isExpanded }))
-                                }
-                                className="w-full rounded-lg border border-white/10 bg-slate-950/60 p-2 text-left text-xs"
-                              >
-                                <div className="flex flex-wrap items-center gap-2 text-slate-400">
-                                  <span>{new Date(entry.ts).toLocaleString(locale)}</span>
-                                  <span>{entry.event_type}</span>
-                                  <span>scene: {entry.scene_id || '-'}</span>
-                                  <span>screen: {entry.screen_id || '-'}</span>
-                                  {entry.scope ? <span>scope: {entry.scope}</span> : null}
-                                </div>
-                                {entry.url ? (
-                                  <div className="mt-1 truncate text-sky-300">{entry.url}</div>
-                                ) : null}
-                                {isExpanded ? (
-                                  <pre className="mt-2 overflow-auto rounded-md border border-white/10 bg-slate-900/60 p-2 text-slate-300">
-                                    {JSON.stringify(entry.payload || {}, null, 2)}
-                                  </pre>
-                                ) : null}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  ) : null}
-                </>
-              )}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
       </div>
