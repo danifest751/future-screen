@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -94,12 +94,13 @@ const AdminHomeEquipmentSectionPage = () => {
   const schema = useMemo(() => createSchema(content.validation.required), [content.validation.required]);
   const localeTag = adminLocale === 'ru' ? 'ru-RU' : 'en-US';
 
-  const { data, staticSection, fallbackUsed, hasDbRecord, loading, saving, save } = useHomeEquipmentSection(
+  const { data, staticSection, fallbackUsed, hasDbRecord, loading, saving, save, initializeFromStatic } = useHomeEquipmentSection(
     adminContentLocale,
     true,
   );
   const [lastSaved, setLastSaved] = useState<string | null>(null);
   const [previewSection, setPreviewSection] = useState<HomeEquipmentSectionContent>(staticSection);
+  const initAttemptedRef = useRef(false);
 
   const {
     register,
@@ -120,6 +121,12 @@ const AdminHomeEquipmentSectionPage = () => {
     reset(sectionToForm(source));
     setLastSaved(null);
   }, [adminContentLocale, data, reset, staticSection]);
+
+  useEffect(() => {
+    if (loading || hasDbRecord || initAttemptedRef.current) return;
+    initAttemptedRef.current = true;
+    void initializeFromStatic();
+  }, [hasDbRecord, initializeFromStatic, loading]);
 
   const watchValues = watch();
   useEffect(() => {

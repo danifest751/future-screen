@@ -94,6 +94,38 @@ export function useHomeEquipmentSection(locale: Locale = 'ru', fallbackToRu = tr
     [fallbackToRu, locale],
   );
 
+  const initializeFromStatic = useCallback(async () => {
+    setSaving(true);
+    setError(null);
+    try {
+      const ruSection = getHomePageContent('ru').equipmentSection as HomeEquipmentSectionContent;
+      const enSection = getHomePageContent('en').equipmentSection as HomeEquipmentSectionContent;
+
+      await Promise.all([
+        saveSiteContent(
+          HOME_EQUIPMENT_SECTION_KEY,
+          { content: serializeHomeEquipmentSection(ruSection) },
+          'ru',
+          true,
+        ),
+        saveSiteContent(
+          HOME_EQUIPMENT_SECTION_KEY,
+          { content: serializeHomeEquipmentSection(enSection) },
+          'en',
+          true,
+        ),
+      ]);
+
+      await load();
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : errorBoundaryContent.savingError);
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  }, [load]);
+
   useEffect(() => {
     void load();
   }, [load]);
@@ -107,6 +139,7 @@ export function useHomeEquipmentSection(locale: Locale = 'ru', fallbackToRu = tr
     saving,
     error,
     save,
+    initializeFromStatic,
     reload: load,
   };
 }
