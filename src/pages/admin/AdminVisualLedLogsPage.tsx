@@ -61,6 +61,7 @@ const copy = {
     reload: 'Обновить',
     search: 'Поиск по IP / URL / session key',
     sessions: 'Сессии',
+    feed: 'Лента визуализаций',
     events: 'События',
     backgrounds: 'Фоны',
     client: 'Клиент',
@@ -88,6 +89,7 @@ const copy = {
     noBackgrounds: 'Фоны в этой сессии не загружались',
     noEvents: 'Событий нет',
     open: 'Открыть',
+    visualization: 'Визуализация',
   },
   en: {
     title: 'Visual LED logs',
@@ -95,6 +97,7 @@ const copy = {
     reload: 'Reload',
     search: 'Search by IP / URL / session key',
     sessions: 'Sessions',
+    feed: 'Visualizations feed',
     events: 'Events',
     backgrounds: 'Backgrounds',
     client: 'Client',
@@ -122,6 +125,7 @@ const copy = {
     noBackgrounds: 'No backgrounds were uploaded in this session',
     noEvents: 'No events',
     open: 'Open',
+    visualization: 'Visualization',
   },
 } as const;
 
@@ -167,6 +171,16 @@ function browserFromUserAgent(userAgent: string | null): string {
   if (ua.includes('safari/') && !ua.includes('chrome/')) return 'Safari';
   if (ua.includes('firefox/')) return 'Firefox';
   return 'Other';
+}
+
+function visualizationNumberFromSessionKey(sessionKey: string): string {
+  let hash = 2166136261;
+  for (let i = 0; i < sessionKey.length; i += 1) {
+    hash ^= sessionKey.charCodeAt(i);
+    hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
+  }
+  const normalized = (hash >>> 0) % 1_000_000;
+  return String(normalized).padStart(6, '0');
 }
 
 const AdminVisualLedLogsPage = () => {
@@ -365,7 +379,7 @@ const AdminVisualLedLogsPage = () => {
         ) : (
           <div className="grid gap-4 xl:grid-cols-[340px,1fr]">
             <div className="card max-h-[74vh] overflow-y-auto p-3">
-              <div className="mb-2 text-sm font-semibold text-white">{ui.sessions}</div>
+              <div className="mb-2 text-sm font-semibold text-white">{ui.feed}</div>
               {filtered.length === 0 ? (
                 <EmptyState title={ui.noSessions} />
               ) : (
@@ -375,6 +389,7 @@ const AdminVisualLedLogsPage = () => {
                     const summary = session.summary || {};
                     const sessionScreens = asNumber(summary.screens);
                     const sessionScenes = asNumber(summary.scenes);
+                    const visualNo = visualizationNumberFromSessionKey(session.session_key);
                     return (
                       <button
                         key={session.id}
@@ -382,16 +397,23 @@ const AdminVisualLedLogsPage = () => {
                         onClick={() => setSelectedId(session.id)}
                         className={`w-full rounded-lg border px-3 py-2 text-left transition ${
                           active
-                            ? 'border-brand-400 bg-brand-500/10'
+                            ? 'border-brand-400 bg-brand-500/15'
                             : 'border-white/10 bg-white/5 hover:border-white/30'
                         }`}
                       >
-                        <div className="text-[11px] text-slate-400">{session.session_key}</div>
-                        <div className="mt-1 text-sm text-white">
-                          {new Date(session.started_at).toLocaleString(locale)}
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="inline-flex items-center rounded-md border border-white/15 bg-slate-950/70 px-2 py-0.5 text-[11px] font-semibold text-sky-200">
+                            #{visualNo}
+                          </div>
+                          <div className="text-[11px] text-slate-400">
+                            {new Date(session.started_at).toLocaleString(locale)}
+                          </div>
                         </div>
-                        <div className="mt-1 flex flex-wrap gap-2 text-[11px] text-slate-400">
-                          <span>{session.client_ip || 'IP?'}</span>
+                        <div className="mt-1 text-xs text-slate-300">{ui.visualization} {`#${visualNo}`}</div>
+                        <div className="mt-1 text-[11px] text-slate-500 truncate">{session.session_key}</div>
+                        <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-slate-300">
+                          <span className="rounded bg-slate-900/70 px-1.5 py-0.5">{session.client_ip || 'IP?'}</span>
+                          <span className="rounded bg-slate-900/70 px-1.5 py-0.5">{browserFromUserAgent(session.user_agent)}</span>
                           {sessionScenes !== null ? <span>S:{sessionScenes}</span> : null}
                           {sessionScreens !== null ? <span>LED:{sessionScreens}</span> : null}
                           {session.duration_sec !== null ? <span>{session.duration_sec}s</span> : null}
