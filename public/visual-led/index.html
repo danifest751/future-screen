@@ -3091,23 +3091,10 @@ function ensureVisualLedSessionKey() {
   if (state.analytics.sessionKey) {
     return state.analytics.sessionKey;
   }
-  let stored = null;
-  try {
-    stored = sessionStorage.getItem("visualLedSessionKey");
-  } catch (_error) {
-    stored = null;
-  }
-  if (stored && stored.length > 8) {
-    state.analytics.sessionKey = stored;
-    return stored;
-  }
+  // One browser page lifecycle = one analytics session.
+  // Do not persist across reloads/tabs, otherwise different work periods merge.
   const key = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
   state.analytics.sessionKey = key;
-  try {
-    sessionStorage.setItem("visualLedSessionKey", key);
-  } catch (_error) {
-    // ignore
-  }
   return key;
 }
 

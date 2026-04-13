@@ -145,6 +145,19 @@ function asRecord(value: unknown): Record<string, unknown> | null {
     : null;
 }
 
+function formatDurationCompact(seconds: number | null): string {
+  if (seconds === null || !Number.isFinite(seconds) || seconds < 0) return '-';
+  const total = Math.floor(seconds);
+  const days = Math.floor(total / 86400);
+  const hours = Math.floor((total % 86400) / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const secs = total % 60;
+  if (days > 0) return `${days}d ${hours}h ${minutes}m`;
+  if (hours > 0) return `${hours}h ${minutes}m ${secs}s`;
+  if (minutes > 0) return `${minutes}m ${secs}s`;
+  return `${secs}s`;
+}
+
 const AdminVisualLedLogsPage = () => {
   const { adminLocale } = useI18n();
   const ui = copy[adminLocale];
@@ -385,7 +398,7 @@ const AdminVisualLedLogsPage = () => {
                       <div className="rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2">
                         <div className="text-[10px] uppercase tracking-wide text-slate-500">{ui.cards.duration}</div>
                         <div className="text-sm font-semibold text-white">
-                          {insights.duration !== null ? `${insights.duration}s` : '-'}
+                          {formatDurationCompact(insights.duration)}
                         </div>
                       </div>
                       <div className="rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2">
