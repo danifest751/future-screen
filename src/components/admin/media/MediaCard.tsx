@@ -45,7 +45,7 @@ export const MediaCard = memo(function MediaCard({
       }`}
     >
       {selectable && (
-        <div className="absolute left-2 top-2 z-10">
+        <div className="absolute left-2 top-2 z-30">
           <button
             onClick={(event) => {
               event.stopPropagation();
@@ -61,7 +61,7 @@ export const MediaCard = memo(function MediaCard({
       )}
 
       {showActions && (
-        <div className="absolute right-2 top-2 z-10 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+        <div className="absolute right-2 top-2 z-30 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
           {onEdit && (
             <button
               onClick={(event) => {
