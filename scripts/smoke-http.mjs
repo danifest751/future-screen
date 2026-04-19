@@ -1,0 +1,101 @@
+#!/usr/bin/env node
+// HTTP smoke checks on a deployment URL.
+// Usage: node scripts/smoke-http.mjs <url>
+//
+// Expands with each phase; update CHECKS after merging each PR.
+
+import { argv, exit } from 'node:process';
+
+const base = argv[2];
+if (!base) {
+  console.error('usage: smoke-http.mjs <url>');
+  exit(2);
+}
+
+const CHECKS = [
+  {
+    name: 'GET / returns 200 HTML',
+    path: '/',
+    method: 'GET',
+    expectStatus: [200],
+    expectContentType: /text\/html/,
+  },
+  {
+    name: 'OPTIONS /api/send returns 204 or 200 with CORS',
+    path: '/api/send',
+    method: 'OPTIONS',
+    headers: { Origin: base, 'Access-Control-Request-Method': 'POST' },
+    expectStatus: [200, 204],
+  },
+  {
+    name: 'GET /api/send returns 405 (POST-only)',
+    path: '/api/send',
+    method: 'GET',
+    expectStatus: [405, 404],
+  },
+  // После PR #2 активируется:
+  // {
+  //   name: 'GET /api/telegram-webhook?action=getWebhookInfo without auth returns 401',
+  //   path: '/api/telegram-webhook?action=getWebhookInfo',
+  //   method: 'GET',
+  //   expectStatus: [401, 403],
+  // },
+  {
+    name: 'GET /admin without session returns HTML (SPA serves, redirect happens client-side)',
+    path: '/admin',
+    method: 'GET',
+    expectStatus: [200, 302, 307],
+  },
+  {
+    name: 'GET /non-existent-page returns SPA shell (not 404)',
+    path: '/some-page-that-does-not-exist',
+    method: 'GET',
+    expectStatus: [200],
+    expectContentType: /text\/html/,
+  },
+];
+
+async function runCheck(check) {
+  const url = base.replace(/\/$/, '') + check.path;
+  const res = await fetch(url, {
+    method: check.method,
+    headers: check.headers || {},
+    redirect: 'manual',
+  });
+  const ct = res.headers.get('content-type') || '';
+
+  if (!check.expectStatus.includes(res.status)) {
+    return { ok: false, msg: `${check.name} — got ${res.status}, expected ${check.expectStatus.join('/')}` };
+  }
+  if (check.expectContentType && !check.expectContentType.test(ct)) {
+    return { ok: false, msg: `${check.name} — content-type "${ct}" does not match ${check.expectContentType}` };
+  }
+  return { ok: true, msg: `${check.name} [${res.status}]` };
+}
+
+async function main() {
+  let failed = 0;
+  for (const check of CHECKS) {
+    try {
+      const r = await runCheck(check);
+      if (r.ok) console.log(`OK: ${r.msg}`);
+      else {
+        console.error(`FAIL: ${r.msg}`);
+        failed++;
+      }
+    } catch (err) {
+      console.error(`ERR: ${check.name} — ${err.message}`);
+      failed++;
+    }
+  }
+  if (failed > 0) {
+    console.error(`\n${failed} smoke check(s) failed`);
+    exit(1);
+  }
+  console.log('\nAll smoke checks passed');
+}
+
+main().catch((err) => {
+  console.error('unexpected error:', err);
+  exit(2);
+});
