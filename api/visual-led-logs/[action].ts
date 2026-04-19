@@ -14,25 +14,29 @@ const bucket = 'visual-led-backgrounds';
 
 let supabaseAdmin: SupabaseClient | null = null;
 
+// Клиент (public/visual-led/index.html) шлёт `null` для пустых опциональных
+// полей (e.g. document.referrer || null, activeScene()?.id || null). Zod
+// `.optional()` = `T | undefined`, null ломает схему. Поэтому
+// `.nullable().optional()` — принимаем оба.
 const startSchema = z.object({
   session_key: z.string().min(8).max(120),
-  page_url: z.string().max(1000).optional(),
-  referrer: z.string().max(1000).optional(),
-  utm: z.record(z.string()).optional(),
-  timezone: z.string().max(120).optional(),
-  viewport: z.record(z.any()).optional(),
-  screen: z.record(z.any()).optional(),
-  device: z.record(z.any()).optional(),
-  is_admin: z.boolean().optional(),
-  admin_user_id: z.string().uuid().optional(),
+  page_url: z.string().max(1000).nullable().optional(),
+  referrer: z.string().max(1000).nullable().optional(),
+  utm: z.record(z.string()).nullable().optional(),
+  timezone: z.string().max(120).nullable().optional(),
+  viewport: z.record(z.any()).nullable().optional(),
+  screen: z.record(z.any()).nullable().optional(),
+  device: z.record(z.any()).nullable().optional(),
+  is_admin: z.boolean().nullable().optional(),
+  admin_user_id: z.string().uuid().nullable().optional(),
 });
 
 const eventSchema = z.object({
   event_type: z.string().min(1).max(120),
-  ts: z.string().optional(),
-  scene_id: z.string().max(120).optional(),
-  screen_id: z.string().max(120).optional(),
-  payload: z.record(z.any()).optional(),
+  ts: z.string().nullable().optional(),
+  scene_id: z.string().max(120).nullable().optional(),
+  screen_id: z.string().max(120).nullable().optional(),
+  payload: z.record(z.any()).nullable().optional(),
 });
 
 const eventBatchSchema = z.object({
