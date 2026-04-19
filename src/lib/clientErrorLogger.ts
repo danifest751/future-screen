@@ -10,8 +10,6 @@ type ClientLogPayload = {
   meta?: Record<string, unknown>;
 };
 
-const LOG_TAG = '[client-log]';
-
 const getErrorLogUrl = () => {
   if (import.meta.env.VITE_ERROR_LOG_URL) return import.meta.env.VITE_ERROR_LOG_URL as string;
   if (import.meta.env.DEV) return 'http://localhost:3001/api/client-log';
@@ -57,31 +55,19 @@ const sendClientLog = async (payload: ClientLogPayload) => {
 export const installClientErrorLogger = () => {
   if (typeof window === 'undefined') return;
 
-  const originalConsoleError = window.console.error.bind(window.console);
-
-  window.console.error = (...args: unknown[]) => {
-    originalConsoleError(...args);
-
-    const first = args[0];
-    if (typeof first === 'string' && first.includes(LOG_TAG)) return;
-
-    const normalized = toError(first);
-    void sendClientLog({
-      level: 'error',
-      message: normalized.message,
-      stack: normalized.stack,
-      url: window.location.href,
-      userAgent: navigator.userAgent,
-      timestamp: new Date().toISOString(),
-      meta: {
-        args: args.map((arg) => {
-          if (arg instanceof Error) return { message: arg.message, stack: arg.stack };
-          if (typeof arg === 'string' || typeof arg === 'number' || typeof arg === 'boolean') return arg;
-          return String(arg);
-        }),
-      },
-    });
-  };
+  // H12: do not monkey-patch window.console.error.
+  //
+  // Original intent was to ship every console.error to /api/client-log so
+  // we could see react warnings in production. The cost:
+  //   - Swallows third-party log lines into our backend (noise + PII risk).
+  //   - If sendClientLog itself fails and throws, the failure funnels
+  //     through the new console.error and loops.
+  //   - Breaks libraries that replace console.error themselves (Sentry,
+  //     DataDog) because order of installation matters.
+  //
+  // The two listeners below are enough: uncaught exceptions and unhandled
+  // promise rejections both fire window events natively. Anything we
+  // explicitly want to report should call `reportClientError` instead.
 
   window.addEventListener('error', (event) => {
     const err = event.error ? toError(event.error) : new Error(event.message || 'Unknown window error');

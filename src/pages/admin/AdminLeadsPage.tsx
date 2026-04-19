@@ -389,24 +389,37 @@ const AdminLeadsPage = () => {
     try {
       const headers = adminLeadsContent.csvHeaders;
 
+      // M12: CSV injection. Excel / Google Sheets treat a cell that starts
+      // with =, +, -, @, tab or CR as a formula. A lead whose name is
+      // `=HYPERLINK("http://evil/",...)` would execute on open. Always
+      // quote every cell, escape embedded quotes, and prefix the
+      // dangerous leading characters with a single quote so spreadsheets
+      // render them as text.
+      const csvEscape = (value: unknown): string => {
+        const str = value === null || value === undefined ? '' : String(value);
+        const needsPrefix = /^[=+\-@\t\r]/.test(str);
+        const safe = needsPrefix ? `'${str}` : str;
+        return `"${safe.replace(/"/g, '""')}"`;
+      };
+
       const rows = leads.map((lead) => [
-        lead.id,
-        lead.requestId ?? '',
-        new Date(lead.timestamp).toLocaleDateString(localeTag),
-        new Date(lead.timestamp).toLocaleTimeString(localeTag, { hour: '2-digit', minute: '2-digit' }),
-        lead.source,
-        lead.status ?? '',
-        lead.name,
-        lead.phone,
-        lead.email ?? '',
-        lead.telegram ?? '',
-        lead.city ?? '',
-        lead.date ?? '',
-        lead.format ?? '',
-        `"${(lead.comment ?? '').replace(/"/g, '""')}"`,
+        csvEscape(lead.id),
+        csvEscape(lead.requestId ?? ''),
+        csvEscape(new Date(lead.timestamp).toLocaleDateString(localeTag)),
+        csvEscape(new Date(lead.timestamp).toLocaleTimeString(localeTag, { hour: '2-digit', minute: '2-digit' })),
+        csvEscape(lead.source),
+        csvEscape(lead.status ?? ''),
+        csvEscape(lead.name),
+        csvEscape(lead.phone),
+        csvEscape(lead.email ?? ''),
+        csvEscape(lead.telegram ?? ''),
+        csvEscape(lead.city ?? ''),
+        csvEscape(lead.date ?? ''),
+        csvEscape(lead.format ?? ''),
+        csvEscape(lead.comment ?? ''),
       ]);
 
-      const content = [headers.join(';'), ...rows.map((row) => row.join(';'))].join('\n');
+      const content = [headers.map(csvEscape).join(';'), ...rows.map((row) => row.join(';'))].join('\n');
       const dataBlob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(dataBlob);
       const link = document.createElement('a');

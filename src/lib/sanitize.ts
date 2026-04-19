@@ -52,10 +52,14 @@ export function sanitizeMarkdown(
 
   const {
     allowedTags = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'hr', 'strong', 'em', 'u', 's', 'code', 'pre', 'blockquote', 'ul', 'ol', 'li', 'a', 'img', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'dl', 'dt', 'dd'],
+    // H10: `style` removed from the allow-list. Inline style was the last
+    // vector for `background: url(javascript:...)` / `expression()` on
+    // older engines and for CSS-based data exfiltration via `background:
+    // url(//attacker)`. Use className from the design system instead.
     allowedAttributes = {
       a: ['href', 'title', 'target', 'rel'],
       img: ['src', 'alt', 'title', 'width', 'height'],
-      '*': ['class', 'id', 'style'],
+      '*': ['class', 'id'],
     },
   } = options || {};
 

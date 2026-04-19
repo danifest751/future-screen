@@ -48,8 +48,13 @@ type DeliveryLogEntry = {
 
 type DeliveryLogger = (entry: Omit<DeliveryLogEntry, 'at'>) => Promise<void>;
 
-const isOriginAllowed = (origin?: string) => {
-  if (!origin) return true;
+// H8: empty Origin used to pass. An attacker calling the endpoint from
+// curl / a non-browser tool just omits the header and gets through CORS.
+// Now Origin is required on state-changing methods (POST/OPTIONS) and the
+// caller must match the allow-list. Browsers always send Origin for
+// cross-origin XHR, so legitimate traffic is unaffected.
+const isOriginAllowed = (origin: string | undefined, requireOrigin: boolean): boolean => {
+  if (!origin) return !requireOrigin;
   const normalizedOrigin = origin.replace(/\/$/, '').toLowerCase();
   const normalizedAllowed = allowedOrigins.map((item) => item.replace(/\/$/, '').toLowerCase());
   return normalizedAllowed.includes(normalizedOrigin);
@@ -715,7 +720,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     await syncLeadState(currentLeadStatus, entry);
   };
 
-  if (!isOriginAllowed(origin)) {
+  const methodRequiresOrigin = req.method === 'POST' || req.method === 'OPTIONS';
+  if (!isOriginAllowed(origin, methodRequiresOrigin)) {
     await syncLeadState('failed', {
       step: 'origin_rejected',
       channel: 'api',

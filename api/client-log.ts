@@ -23,8 +23,10 @@ const ClientLogSchema = z.object({
 
 type ClientLogPayload = z.infer<typeof ClientLogSchema>;
 
-const isOriginAllowed = (origin?: string) => {
-  if (!origin) return true;
+// H8: require Origin on state-changing methods — empty Origin would
+// otherwise be an easy CORS bypass for non-browser clients.
+const isOriginAllowed = (origin: string | undefined, requireOrigin: boolean): boolean => {
+  if (!origin) return !requireOrigin;
   const normalizedOrigin = origin.replace(/\/$/, '').toLowerCase();
   const normalizedAllowed = allowedOrigins.map(o => o.replace(/\/$/, '').toLowerCase());
   return normalizedAllowed.includes(normalizedOrigin);
@@ -65,8 +67,9 @@ const sanitizeLogPayload = (payload: unknown): { valid: boolean; data?: ClientLo
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const origin = req.headers.origin;
+  const methodRequiresOrigin = req.method === 'POST' || req.method === 'OPTIONS';
 
-  if (!isOriginAllowed(origin)) {
+  if (!isOriginAllowed(origin, methodRequiresOrigin)) {
     return res.status(403).json({ error: 'Forbidden origin' });
   }
 
