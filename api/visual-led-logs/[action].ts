@@ -70,8 +70,8 @@ function parseRole(value: unknown): UserRole | null {
 }
 
 function resolveRole(user: User): UserRole {
+  // Trusted RBAC source: app_metadata only. user_metadata is user-writable.
   const candidates: unknown[] = [
-    user.user_metadata?.role,
     user.app_metadata?.role,
     user.app_metadata?.user_role,
     (user.app_metadata as { claims?: { role?: unknown } } | null)?.claims?.role,
