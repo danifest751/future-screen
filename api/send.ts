@@ -243,6 +243,58 @@ const persistLeadState = async ({
   }
 };
 
+// PR #5a (C5): server is now the single writer for the `leads` table.
+// Previously the browser INSERTed a 'queued' row directly via the anon key
+// before calling /api/send. That INSERT path has to be closed so we can
+// revoke the anonymous INSERT policy in PR #5b — otherwise an attacker
+// could POST arbitrary PII rows straight into the table bypassing
+// validation and rate-limit.
+//
+// This function creates (or updates) the lead row from the already-
+// validated request body using the service role, which bypasses RLS.
+// Called exactly once per request, right after Zod validation succeeds.
+const upsertLeadFromPayload = async ({
+  requestId,
+  payload,
+  pagePath,
+  referrer,
+  deliveryLog,
+}: {
+  requestId: string;
+  payload: EmailPayload;
+  pagePath?: string;
+  referrer?: string;
+  deliveryLog: DeliveryLogEntry[];
+}): Promise<void> => {
+  const supabase = getSupabaseAdmin();
+  if (!supabase || !requestId) return;
+
+  const { error } = await supabase.from('leads').upsert(
+    {
+      request_id: requestId,
+      source: payload.source,
+      name: payload.name,
+      phone: payload.phone,
+      email: payload.email ?? null,
+      telegram: payload.telegram ?? null,
+      city: payload.city ?? null,
+      date: payload.date ?? null,
+      format: payload.format ?? null,
+      comment: payload.comment ?? null,
+      extra: payload.extra ?? {},
+      page_path: pagePath ?? null,
+      referrer: referrer ?? null,
+      status: 'processing',
+      delivery_log: deliveryLog,
+    },
+    { onConflict: 'request_id' },
+  );
+
+  if (error) {
+    console.warn(`[LeadTracking][${requestId}] failed to upsert lead: ${error.message}`);
+  }
+};
+
 const retryAsync = async <T>(
   task: () => Promise<T>,
   {
@@ -782,6 +834,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       details,
     });
   }
+
+  // PR #5a: the server now owns the INSERT. Persist the lead as soon as
+  // the payload has been validated — any downstream syncLeadState() call
+  // then UPDATEs this row.
+  const validatedPayload = validation.data as EmailPayload;
+  await upsertLeadFromPayload({
+    requestId,
+    payload: validatedPayload,
+    pagePath,
+    referrer,
+    deliveryLog,
+  });
 
   const result = await processEmailSubmission({
     body: req.body,
