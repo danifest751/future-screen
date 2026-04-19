@@ -250,9 +250,18 @@ const persistLeadState = async ({
 // could POST arbitrary PII rows straight into the table bypassing
 // validation and rate-limit.
 //
-// This function creates (or updates) the lead row from the already-
-// validated request body using the service role, which bypasses RLS.
 // Called exactly once per request, right after Zod validation succeeds.
+//
+// Why SELECT-then-INSERT-or-UPDATE instead of .upsert():
+// The unique index on request_id is partial —
+//   CREATE UNIQUE INDEX ... (request_id) WHERE request_id IS NOT NULL
+// (see supabase/migrations/20260406_add_lead_delivery_tracking.sql).
+// Postgres will not use a partial unique index for ON CONFLICT unless
+// the exact predicate is repeated in the conflict target, and
+// supabase-js has no way to express that WHERE clause. The call returns
+// 400 "no unique or exclusion constraint matching the ON CONFLICT
+// specification". A SELECT + conditional INSERT/UPDATE is idempotent
+// against duplicate requestIds (same row) and needs no migration.
 const upsertLeadFromPayload = async ({
   requestId,
   payload,
@@ -269,29 +278,41 @@ const upsertLeadFromPayload = async ({
   const supabase = getSupabaseAdmin();
   if (!supabase || !requestId) return;
 
-  const { error } = await supabase.from('leads').upsert(
-    {
-      request_id: requestId,
-      source: payload.source,
-      name: payload.name,
-      phone: payload.phone,
-      email: payload.email ?? null,
-      telegram: payload.telegram ?? null,
-      city: payload.city ?? null,
-      date: payload.date ?? null,
-      format: payload.format ?? null,
-      comment: payload.comment ?? null,
-      extra: payload.extra ?? {},
-      page_path: pagePath ?? null,
-      referrer: referrer ?? null,
-      status: 'processing',
-      delivery_log: deliveryLog,
-    },
-    { onConflict: 'request_id' },
-  );
+  const { data: existing, error: selectError } = await supabase
+    .from('leads')
+    .select('id')
+    .eq('request_id', requestId)
+    .maybeSingle();
+
+  if (selectError) {
+    console.warn(`[LeadTracking][${requestId}] lookup failed: ${selectError.message}`);
+    return;
+  }
+
+  const row = {
+    request_id: requestId,
+    source: payload.source,
+    name: payload.name,
+    phone: payload.phone,
+    email: payload.email ?? null,
+    telegram: payload.telegram ?? null,
+    city: payload.city ?? null,
+    date: payload.date ?? null,
+    format: payload.format ?? null,
+    comment: payload.comment ?? null,
+    extra: payload.extra ?? {},
+    page_path: pagePath ?? null,
+    referrer: referrer ?? null,
+    status: 'processing',
+    delivery_log: deliveryLog,
+  };
+
+  const { error } = existing
+    ? await supabase.from('leads').update(row).eq('id', existing.id)
+    : await supabase.from('leads').insert(row);
 
   if (error) {
-    console.warn(`[LeadTracking][${requestId}] failed to upsert lead: ${error.message}`);
+    console.warn(`[LeadTracking][${requestId}] write failed: ${error.message}`);
   }
 };
 
