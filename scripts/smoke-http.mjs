@@ -30,11 +30,27 @@ const CHECKS = [
     expectContentType: /text\/html/,
   },
   {
-    name: 'OPTIONS /api/send returns 204 or 200 with CORS',
+    // Preflight from a known-allowed Origin (prod domain). Previously we
+    // sent `Origin: <preview-url>` which is NOT in ALLOWED_ORIGINS, so
+    // after PR #8 hardened the empty-Origin bypass the preflight itself
+    // was rejected with 403. That was correct behavior, not a bug — we
+    // just need to test the positive path with a real allowed origin.
+    name: 'OPTIONS /api/send from allowed origin returns 204/200',
     path: '/api/send',
     method: 'OPTIONS',
-    headers: { Origin: base, 'Access-Control-Request-Method': 'POST' },
+    headers: { Origin: 'https://future-screen.ru', 'Access-Control-Request-Method': 'POST' },
     expectStatus: [200, 204],
+    followRedirects: false,
+  },
+  {
+    // Negative CORS check: preflight from a bogus origin must be rejected.
+    // This guards against accidentally loosening isOriginAllowed.
+    name: 'OPTIONS /api/send from unknown origin is 403',
+    path: '/api/send',
+    method: 'OPTIONS',
+    headers: { Origin: 'https://evil.example', 'Access-Control-Request-Method': 'POST' },
+    expectStatus: [403],
+    followRedirects: false,
   },
   {
     name: 'GET /api/send returns 405 (POST-only)',
