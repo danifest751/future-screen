@@ -40,6 +40,7 @@
     "dompurify": "^3.3.3",
     "dotenv": "^17.4.0",
     "express": "^5.2.1",
+    "isomorphic-dompurify": "^3.9.0",
     "lucide-react": "^1.7.0",
     "markdown-to-jsx": "^7.4.5",
     "nodemailer": "^8.0.4",

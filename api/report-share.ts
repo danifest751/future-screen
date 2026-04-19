@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import DOMPurify from 'isomorphic-dompurify';
 import { z } from 'zod';
 
 const allowedOrigins = (
@@ -30,8 +31,8 @@ const bodySchema = z.object({
     .optional(),
 });
 
-const isOriginAllowed = (origin?: string): boolean => {
-  if (!origin) return true;
+const isOriginAllowed = (origin: string | undefined, requireOrigin: boolean): boolean => {
+  if (!origin) return !requireOrigin; // POST требует Origin; GET (публичный просмотр) — нет.
   const normalizedOrigin = origin.replace(/\/$/, '').toLowerCase();
   const normalizedAllowed = allowedOrigins.map((item) => item.replace(/\/$/, '').toLowerCase());
   return normalizedAllowed.includes(normalizedOrigin);
@@ -51,13 +52,18 @@ const getSupabaseAdmin = (): SupabaseClient => {
   return supabaseAdmin;
 };
 
+// Server-side DOMPurify. The previous check (`html.toLowerCase().includes('<script')`)
+// was trivially bypassable (e.g. `<SCR\u0049PT>`, event handlers like
+// `<img onerror=...>`, `<iframe srcdoc>`). DOMPurify strips every executable
+// vector and unsafe URL scheme regardless of encoding.
 const sanitizeHtml = (html: string): string => {
-  const trimmed = html.trim();
-  const lowered = trimmed.toLowerCase();
-  if (lowered.includes('<script')) {
-    throw new Error('Script tags are not allowed in shared report HTML');
-  }
-  return trimmed;
+  return DOMPurify.sanitize(html.trim(), {
+    FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'base', 'meta', 'link', 'form'],
+    FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'srcdoc'],
+    ALLOW_DATA_ATTR: false,
+    WHOLE_DOCUMENT: true,
+    RETURN_TRUSTED_TYPE: false,
+  });
 };
 
 const randomSlug = (length = 14): string => {
@@ -86,14 +92,33 @@ const createUniqueSlug = async (supabase: SupabaseClient): Promise<string> => {
 const sendHtmlResponse = (res: VercelResponse, html: string): VercelResponse => {
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+  // Defence-in-depth: even if something slips past DOMPurify, the browser
+  // runs the page sandboxed — no script execution, no top-level navigation,
+  // no cookies or storage access. `allow-same-origin` keeps images from
+  // our own Supabase storage visible; that's the most permissive bit set.
+  res.setHeader(
+    'Content-Security-Policy',
+    [
+      "default-src 'none'",
+      "script-src 'none'",
+      "style-src 'unsafe-inline'",
+      "img-src 'self' data: https:",
+      "font-src 'self' data: https:",
+      "base-uri 'none'",
+      "form-action 'none'",
+      "sandbox allow-same-origin",
+    ].join('; '),
+  );
+  res.setHeader('X-Content-Type-Options', 'nosniff');
   return res.status(200).send(html);
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const origin = normalizeOrigin(req.headers.origin);
   const method = req.method || '';
+  const requireOrigin = method === 'POST' || method === 'OPTIONS';
 
-  if (origin && !isOriginAllowed(origin)) {
+  if (!isOriginAllowed(origin || undefined, requireOrigin)) {
     return res.status(403).json({ error: 'Forbidden origin' });
   }
 
