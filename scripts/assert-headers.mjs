@@ -13,17 +13,18 @@ if (!url) {
 }
 
 const EXPECTED = {
-  // Phase 1 баseline — эти директивы ДОЛЖНЫ появиться после PR #1.
-  // Пока PR #1 не замержен в preview — отмечены как optional:true,
-  // workflow не будет падать, но будет предупреждать.
   'content-security-policy': {
     required: true,
-    contains: ["default-src 'self'", "frame-ancestors"],
-    // после PR #1:
-    shouldContainAfterPhase1: ["base-uri 'self'", "form-action 'self'", "object-src 'none'"],
+    contains: [
+      "default-src 'self'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "object-src 'none'",
+      'frame-ancestors',
+    ],
   },
   'strict-transport-security': {
-    required: false, // станет required после PR #1
+    required: true,
     contains: ['max-age='],
   },
   'x-content-type-options': {
@@ -35,7 +36,11 @@ const EXPECTED = {
     anyOf: ['DENY', 'SAMEORIGIN'],
   },
   'referrer-policy': {
-    required: false,
+    required: true,
+  },
+  'permissions-policy': {
+    required: true,
+    contains: ['camera=()'],
   },
 };
 
@@ -86,13 +91,6 @@ async function main() {
         if (!value.includes(sub)) {
           fail(`header "${name}" missing "${sub}" (got: ${value.slice(0, 120)}...)`);
           continue;
-        }
-      }
-    }
-    if (rule.shouldContainAfterPhase1) {
-      for (const sub of rule.shouldContainAfterPhase1) {
-        if (!value.includes(sub)) {
-          console.log(`WARN: header "${name}" missing "${sub}" (expected after PR #1)`);
         }
       }
     }
