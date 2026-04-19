@@ -64,10 +64,33 @@ const CHECKS = [
   },
 ];
 
+// Shared cookie jar for the whole smoke run. Vercel's Protection Bypass
+// 307s to self and expects the bypass cookie back. One jar per process
+// also means downstream checks reuse the bypass cookie, avoiding another
+// round of set-cookie redirects.
+const jar = new Map();
+
+function collectCookies(res) {
+  const raw = res.headers.getSetCookie?.() ?? [res.headers.get('set-cookie')].filter(Boolean);
+  for (const entry of raw) {
+    const [pair] = entry.split(';');
+    const eq = pair.indexOf('=');
+    if (eq > 0) jar.set(pair.slice(0, eq).trim(), pair.slice(eq + 1).trim());
+  }
+}
+
+function cookieHeader() {
+  if (jar.size === 0) return undefined;
+  return [...jar.entries()].map(([k, v]) => `${k}=${v}`).join('; ');
+}
+
 async function fetchFollowing(startUrl, init, maxHops = 5) {
   let current = startUrl;
   for (let hop = 0; hop <= maxHops; hop += 1) {
-    const res = await fetch(current, { ...init, redirect: 'manual' });
+    const cookie = cookieHeader();
+    const headers = cookie ? { ...(init.headers || {}), cookie } : init.headers;
+    const res = await fetch(current, { ...init, headers, redirect: 'manual' });
+    collectCookies(res);
     if (res.status >= 300 && res.status < 400) {
       const loc = res.headers.get('location');
       if (!loc) return res;

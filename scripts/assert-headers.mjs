@@ -66,11 +66,32 @@ function pass(msg) {
   console.log(`OK: ${msg}`);
 }
 
+// Vercel's Protection Bypass flow on the first request sets a bypass
+// cookie and 307-redirects to the same URL. Without a cookie jar the
+// redirect loops. Parse Set-Cookie and echo it back on each hop.
+function collectCookies(res, jar) {
+  const raw = res.headers.getSetCookie?.() ?? [res.headers.get('set-cookie')].filter(Boolean);
+  for (const entry of raw) {
+    const [pair] = entry.split(';');
+    const eq = pair.indexOf('=');
+    if (eq > 0) jar.set(pair.slice(0, eq).trim(), pair.slice(eq + 1).trim());
+  }
+}
+
+function cookieHeader(jar) {
+  if (jar.size === 0) return undefined;
+  return [...jar.entries()].map(([k, v]) => `${k}=${v}`).join('; ');
+}
+
 async function fetchFollowing(startUrl, maxHops = 5) {
   let current = startUrl;
+  const jar = new Map();
   for (let hop = 0; hop <= maxHops; hop += 1) {
-    const res = await fetch(current, { redirect: 'manual', headers: bypassHeaders });
+    const cookie = cookieHeader(jar);
+    const headers = cookie ? { ...bypassHeaders, cookie } : { ...bypassHeaders };
+    const res = await fetch(current, { redirect: 'manual', headers });
     console.log(`Fetched ${current} -> ${res.status}`);
+    collectCookies(res, jar);
     if (res.status >= 300 && res.status < 400) {
       const loc = res.headers.get('location');
       if (!loc) return res;
