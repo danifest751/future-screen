@@ -60,7 +60,17 @@ export const RequestForm = ({
     if (values.honey) return;
 
     setSubmitError(null);
-    trackEvent('submit_form', { pagePath: window.location.pathname, ...values });
+    // H2: never send PII (name/phone/email/telegram/comment) to analytics.
+    // Only emit the structural fields that help segment conversions.
+    trackEvent('submit_form', {
+      pagePath: window.location.pathname,
+      city: values.city,
+      date: values.date,
+      format: values.format,
+      has_telegram: Boolean(values.telegram),
+      has_comment: Boolean(values.comment),
+      more_fields_shown: showMoreFields,
+    });
 
     const result = await submitForm({
       source: `${requestFormContent.sourcePrefix} (${window.location.pathname})`,

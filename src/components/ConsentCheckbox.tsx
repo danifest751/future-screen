@@ -30,7 +30,12 @@ export const ConsentCheckbox = memo(function ConsentCheckbox({
         />
         <span className="text-sm text-slate-400">
           {consentContent.prefix}{' '}
-          <Link to="/privacy" target="_blank" className="text-brand-400 underline hover:text-brand-300">
+          <Link
+            to="/privacy"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-brand-400 underline hover:text-brand-300"
+          >
             {consentContent.linkLabel}
           </Link>
         </span>

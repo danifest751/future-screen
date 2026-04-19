@@ -29,7 +29,17 @@
     "memory:session:sync": "py -X utf8 scripts/memory_session.py --mode sync",
     "work:start": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/start-work.ps1",
     "work:end": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/end-work.ps1",
-    "check:prepush": "npm run lint && npm run build && npm run work:end"
+    "check:prepush": "npm run lint && npm run build && npm run work:end",
+    "prepare": "husky",
+    "secrets:scan": "node scripts/scan-secrets.mjs"
+  },
+  "lint-staged": {
+    "src/**/*.{ts,tsx}": "eslint --fix",
+    "server/**/*.js": "eslint --fix",
+    "api/**/*.ts": "eslint --fix",
+    "*.{env,env.local,env.production,env.development,pem,key}": [
+      "node scripts/scan-secrets.mjs --staged"
+    ]
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.4",
@@ -40,6 +50,7 @@
     "dompurify": "^3.3.3",
     "dotenv": "^17.4.0",
     "express": "^5.2.1",
+    "isomorphic-dompurify": "^3.9.0",
     "lucide-react": "^1.7.0",
     "markdown-to-jsx": "^7.4.5",
     "nodemailer": "^8.0.4",
@@ -76,7 +87,9 @@
     "eslint": "^8.56.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.5",
+    "husky": "^9.1.7",
     "jsdom": "^28.1.0",
+    "lint-staged": "^16.4.0",
     "postcss": "^8.4.38",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.4.2",

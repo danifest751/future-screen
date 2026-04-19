@@ -1,0 +1,99 @@
+name: Verify Deploy
+
+on:
+  deployment_status:
+
+permissions:
+  contents: read
+  pull-requests: write
+  deployments: read
+  statuses: write
+
+jobs:
+  verify:
+    if: github.event.deployment_status.state == 'success' && github.event.deployment.creator.login == 'vercel[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      DEPLOY_URL: ${{ github.event.deployment_status.target_url }}
+      DEPLOY_ENV: ${{ github.event.deployment.environment }}
+      # Vercel Deployment Protection sits in front of preview URLs and
+      # returns 401 to unauthenticated probes. Add this repo secret
+      # (Settings → Secrets → Actions) with the value from
+      # Vercel → Settings → Deployment Protection → Protection Bypass
+      # for Automation. Leaving it empty on prod deploys is fine — the
+      # production URL is not protected.
+      VERCEL_PROTECTION_BYPASS: ${{ secrets.VERCEL_PROTECTION_BYPASS }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Wait for deployment to warm up
+        run: sleep 5
+
+      - name: Assert HTTP headers
+        id: headers
+        run: node scripts/assert-headers.mjs "$DEPLOY_URL"
+
+      - name: HTTP smoke checks
+        id: http
+        run: node scripts/smoke-http.mjs "$DEPLOY_URL"
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Playwright smoke tests against Preview
+        id: e2e
+        env:
+          BASE_URL: ${{ env.DEPLOY_URL }}
+        run: npx playwright test --config=playwright.preview.config.ts
+
+      - name: Upload Playwright report on failure
+        if: failure() && steps.e2e.conclusion == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ github.run_id }}
+          path: playwright-report/
+          retention-days: 7
+
+      - name: Post summary comment on PR
+        if: always() && github.event.deployment.payload.prId != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const url = process.env.DEPLOY_URL;
+            const env = process.env.DEPLOY_ENV;
+            const headers = '${{ steps.headers.outcome }}';
+            const http = '${{ steps.http.outcome }}';
+            const e2e = '${{ steps.e2e.outcome }}';
+            const icon = x => x === 'success' ? 'OK' : (x === 'skipped' ? '-' : 'FAIL');
+            const body = [
+              `### verify-deploy — ${env}`,
+              ``,
+              `Target: ${url}`,
+              ``,
+              `| Check | Status |`,
+              `|-------|--------|`,
+              `| Headers assertion | ${icon(headers)} |`,
+              `| HTTP smoke | ${icon(http)} |`,
+              `| Playwright E2E | ${icon(e2e)} |`,
+              ``,
+            ].join('\n');
+            const pr = context.payload.deployment?.payload?.prId;
+            if (pr) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: Number(pr),
+                body,
+              });
+            }

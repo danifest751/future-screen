@@ -8,6 +8,7 @@ import { I18nProvider } from './context/I18nContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { SiteSettingsProvider } from './context/SiteSettingsContext';
 import App from './App';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { installClientErrorLogger } from './lib/clientErrorLogger';
 import './index.css';
 
@@ -25,20 +26,22 @@ const queryClient = new QueryClient({
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <HelmetProvider>
-        <BrowserRouter>
-          <I18nProvider>
-            <ThemeProvider>
-              <AuthProvider>
-                <SiteSettingsProvider>
-                  <App />
-                </SiteSettingsProvider>
-              </AuthProvider>
-            </ThemeProvider>
-          </I18nProvider>
-        </BrowserRouter>
-      </HelmetProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <HelmetProvider>
+          <BrowserRouter>
+            <I18nProvider>
+              <ThemeProvider>
+                <AuthProvider>
+                  <SiteSettingsProvider>
+                    <App />
+                  </SiteSettingsProvider>
+                </AuthProvider>
+              </ThemeProvider>
+            </I18nProvider>
+          </BrowserRouter>
+        </HelmetProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   </React.StrictMode>
 );

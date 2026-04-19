@@ -10,8 +10,6 @@ export type UserWithRole = {
   role: UserRole;
 };
 
-const ROLE_PRIORITY: UserRole[] = ['admin', 'editor', 'viewer'];
-
 function parseRole(value: unknown): UserRole | null {
   if (typeof value !== 'string') return null;
   const normalized = value.trim().toLowerCase();
@@ -22,14 +20,27 @@ function parseRole(value: unknown): UserRole | null {
 }
 
 function resolveRole(user: User): UserRole {
-  for (const candidate of ROLE_PRIORITY) {
-    if (parseRole(user.user_metadata?.role) === candidate) return candidate;
-    if (parseRole(user.app_metadata?.role) === candidate) return candidate;
-    if (parseRole(user.app_metadata?.user_role) === candidate) return candidate;
-    if (parseRole((user.app_metadata as { claims?: { role?: unknown } } | null)?.claims?.role) === candidate) {
-      return candidate;
-    }
+  // app_metadata is server-only (user cannot self-update it via auth.updateUser),
+  // so it is the trusted source of truth. We prefer it strictly over user_metadata.
+  // user_metadata is kept only as a transitional fallback; once every user has
+  // a role in app_metadata (see scripts/backfill-app-metadata-role.mjs), the
+  // user_metadata branch and SQL policy will be removed in PR #4c.
+  const appRole =
+    parseRole(user.app_metadata?.role) ??
+    parseRole(user.app_metadata?.user_role) ??
+    parseRole((user.app_metadata as { claims?: { role?: unknown } } | null)?.claims?.role);
+
+  if (appRole) return appRole;
+
+  const userRole = parseRole(user.user_metadata?.role);
+  if (userRole) {
+    console.warn(
+      `[useUserRole] user ${user.id} has role in user_metadata but not app_metadata — ` +
+        'this is insecure (user can self-promote). Run the backfill script (PR #4b).',
+    );
+    return userRole;
   }
+
   return 'viewer';
 }
 

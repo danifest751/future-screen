@@ -48,8 +48,13 @@ type DeliveryLogEntry = {
 
 type DeliveryLogger = (entry: Omit<DeliveryLogEntry, 'at'>) => Promise<void>;
 
-const isOriginAllowed = (origin?: string) => {
-  if (!origin) return true;
+// H8: empty Origin used to pass. An attacker calling the endpoint from
+// curl / a non-browser tool just omits the header and gets through CORS.
+// Now Origin is required on state-changing methods (POST/OPTIONS) and the
+// caller must match the allow-list. Browsers always send Origin for
+// cross-origin XHR, so legitimate traffic is unaffected.
+const isOriginAllowed = (origin: string | undefined, requireOrigin: boolean): boolean => {
+  if (!origin) return !requireOrigin;
   const normalizedOrigin = origin.replace(/\/$/, '').toLowerCase();
   const normalizedAllowed = allowedOrigins.map((item) => item.replace(/\/$/, '').toLowerCase());
   return normalizedAllowed.includes(normalizedOrigin);
@@ -79,14 +84,24 @@ const getSupabaseAdmin = (): SupabaseClient | null => {
   if (supabaseAdmin) return supabaseAdmin;
 
   const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+  const serviceRole = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  if (!supabaseUrl || !supabaseKey) {
-    console.warn('[LeadTracking] Supabase env vars are not configured');
+  if (!supabaseUrl) {
+    console.warn('[LeadTracking] SUPABASE_URL is not configured');
     return null;
   }
 
-  supabaseAdmin = createClient(supabaseUrl, supabaseKey);
+  if (!serviceRole) {
+    // Hard refusal: writes to `leads`/`delivery_log` require service role.
+    // Falling back to the anon key historically let rows silently stay in the
+    // `processing` state because RLS blocked UPDATE. Fail loudly instead.
+    console.error(
+      '[LeadTracking] SUPABASE_SERVICE_ROLE_KEY is not configured — refusing to fall back to anon key',
+    );
+    return null;
+  }
+
+  supabaseAdmin = createClient(supabaseUrl, serviceRole, { auth: { persistSession: false } });
   return supabaseAdmin;
 };
 
@@ -705,7 +720,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     await syncLeadState(currentLeadStatus, entry);
   };
 
-  if (!isOriginAllowed(origin)) {
+  const methodRequiresOrigin = req.method === 'POST' || req.method === 'OPTIONS';
+  if (!isOriginAllowed(origin, methodRequiresOrigin)) {
     await syncLeadState('failed', {
       step: 'origin_rejected',
       channel: 'api',
