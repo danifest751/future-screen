@@ -4,6 +4,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import 'dotenv/config';
 import { processEmailSubmission } from '../server/lib/emailCore.js';
+import { checkRateLimit } from './_lib/rateLimit.js';
 
 const allowedOrigins = (
   process.env.ALLOWED_ORIGINS ||
@@ -12,10 +13,6 @@ const allowedOrigins = (
   .split(',')
   .map((v) => v.trim())
   .filter(Boolean);
-
-const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
-const RATE_LIMIT_MAX = 10;
-const requestsByIp = new Map<string, number[]>();
 
 type SubmissionBody = {
   requestId?: string;
@@ -64,18 +61,6 @@ const getClientIp = (req: VercelRequest) => {
   const forwardedFor = req.headers['x-forwarded-for'];
   const value = Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor;
   return value?.split(',')[0]?.trim() || 'unknown';
-};
-
-const isRateLimited = (ip: string) => {
-  const now = Date.now();
-  const attempts = (requestsByIp.get(ip) || []).filter((ts) => now - ts < RATE_LIMIT_WINDOW_MS);
-  if (attempts.length >= RATE_LIMIT_MAX) {
-    requestsByIp.set(ip, attempts);
-    return true;
-  }
-  attempts.push(now);
-  requestsByIp.set(ip, attempts);
-  return false;
 };
 
 let supabaseAdmin: SupabaseClient | null = null;
@@ -768,12 +753,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }),
   });
 
-  if (isRateLimited(ip)) {
+  const rl = await checkRateLimit('send', ip);
+  if (!rl.allowed) {
+    res.setHeader('Retry-After', Math.max(1, Math.ceil((rl.reset - Date.now()) / 1000)).toString());
     await syncLeadState('failed', {
       step: 'rate_limited',
       channel: 'api',
       status: 'error',
       message: 'Rate limit exceeded',
+      meta: toRecord({ limit: String(rl.limit), remaining: String(rl.remaining) }),
     });
     return res.status(429).json({ ok: false, error: 'Too many requests' });
   }
