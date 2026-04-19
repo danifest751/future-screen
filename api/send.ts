@@ -65,15 +65,14 @@ const getClientIp = (req: VercelRequest) => {
 
 let supabaseAdmin: SupabaseClient | null = null;
 
-const getSupabaseAdmin = (): SupabaseClient | null => {
+const getSupabaseAdmin = (): SupabaseClient => {
   if (supabaseAdmin) return supabaseAdmin;
 
   const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
   const serviceRole = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl) {
-    console.warn('[LeadTracking] SUPABASE_URL is not configured');
-    return null;
+    throw new Error('SUPABASE_URL is not configured');
   }
 
   if (!serviceRole) {
@@ -83,7 +82,7 @@ const getSupabaseAdmin = (): SupabaseClient | null => {
     console.error(
       '[LeadTracking] SUPABASE_SERVICE_ROLE_KEY is not configured — refusing to fall back to anon key',
     );
-    return null;
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY is not configured');
   }
 
   supabaseAdmin = createClient(supabaseUrl, serviceRole, { auth: { persistSession: false } });
@@ -190,9 +189,11 @@ const deriveLeadStatus = (body: SubmissionBody | undefined, statusCode: number):
   return 'processing';
 };
 
-const loadExistingLeadLog = async (requestId: string): Promise<DeliveryLogEntry[]> => {
-  const supabase = getSupabaseAdmin();
-  if (!supabase || !requestId) return [];
+const loadExistingLeadLog = async (
+  supabase: SupabaseClient,
+  requestId: string,
+): Promise<DeliveryLogEntry[]> => {
+  if (!requestId) return [];
 
   const { data, error } = await supabase
     .from('leads')
@@ -209,20 +210,21 @@ const loadExistingLeadLog = async (requestId: string): Promise<DeliveryLogEntry[
 };
 
 const persistLeadState = async ({
+  supabase,
   requestId,
   status,
   deliveryLog,
   pagePath,
   referrer,
 }: {
+  supabase: SupabaseClient;
   requestId: string;
   status: string;
   deliveryLog: DeliveryLogEntry[];
   pagePath?: string;
   referrer?: string;
 }): Promise<void> => {
-  const supabase = getSupabaseAdmin();
-  if (!supabase || !requestId) return;
+  if (!requestId) return;
 
   const payload: Record<string, unknown> = {
     request_id: requestId,
@@ -263,20 +265,21 @@ const persistLeadState = async ({
 // specification". A SELECT + conditional INSERT/UPDATE is idempotent
 // against duplicate requestIds (same row) and needs no migration.
 const upsertLeadFromPayload = async ({
+  supabase,
   requestId,
   payload,
   pagePath,
   referrer,
   deliveryLog,
 }: {
+  supabase: SupabaseClient;
   requestId: string;
   payload: EmailPayload;
   pagePath?: string;
   referrer?: string;
   deliveryLog: DeliveryLogEntry[];
 }): Promise<void> => {
-  const supabase = getSupabaseAdmin();
-  if (!supabase || !requestId) return;
+  if (!requestId) return;
 
   const { data: existing, error: selectError } = await supabase
     .from('leads')
@@ -753,7 +756,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const requestId = getRequestIdFromBody(body);
   const pagePath = toCleanString(body?.pagePath) || undefined;
   const referrer = toCleanString(body?.referrer) || undefined;
-  const deliveryLog = await loadExistingLeadLog(requestId);
+  let supabase: SupabaseClient;
+
+  try {
+    supabase = getSupabaseAdmin();
+  } catch (err) {
+    const details = toErrorMessage(err);
+    console.error(`[LeadTracking][${requestId || 'no-request-id'}] config error: ${details}`);
+    return res.status(500).json({
+      ok: false,
+      error: 'Server misconfiguration: lead tracking is unavailable',
+      details,
+    });
+  }
+
+  const deliveryLog = await loadExistingLeadLog(supabase, requestId);
   let currentLeadStatus = 'processing';
 
   const syncLeadState = async (
@@ -766,6 +783,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     currentLeadStatus = status;
     await persistLeadState({
+      supabase,
       requestId,
       status,
       deliveryLog,
@@ -861,6 +879,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // then UPDATEs this row.
   const validatedPayload = validation.data as EmailPayload;
   await upsertLeadFromPayload({
+    supabase,
     requestId,
     payload: validatedPayload,
     pagePath,

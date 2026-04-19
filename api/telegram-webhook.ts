@@ -71,6 +71,8 @@ interface Session {
   selectedTags: string[];
 }
 
+type UserRole = 'admin' | 'editor' | 'viewer';
+
 let supabase: SupabaseClient | null = null;
 const sessionCache = new Map<number, Session & { lastActivity: number }>();
 
@@ -104,6 +106,27 @@ const getSupabaseClient = (): SupabaseClient => {
   return supabase;
 };
 
+function parseRole(value: unknown): UserRole | null {
+  if (typeof value !== 'string') return null;
+  const normalized = value.trim().toLowerCase();
+  if (normalized === 'admin' || normalized === 'editor' || normalized === 'viewer') {
+    return normalized;
+  }
+  return null;
+}
+
+function resolveTrustedRole(appMetadata: unknown): UserRole {
+  const roleCandidates: unknown[] = [
+    (appMetadata as { role?: unknown } | null)?.role,
+    (appMetadata as { user_role?: unknown } | null)?.user_role,
+    (appMetadata as { claims?: { role?: unknown } } | null)?.claims?.role,
+  ];
+
+  if (roleCandidates.some((candidate) => parseRole(candidate) === 'admin')) return 'admin';
+  if (roleCandidates.some((candidate) => parseRole(candidate) === 'editor')) return 'editor';
+  return 'viewer';
+}
+
 async function ensureAdmin(req: VercelRequest): Promise<void> {
   const auth = String(req.headers.authorization || '');
   const match = auth.match(/^Bearer\s+(.+)$/i);
@@ -112,10 +135,8 @@ async function ensureAdmin(req: VercelRequest): Promise<void> {
   const client = getSupabaseClient();
   const { data, error } = await client.auth.getUser(token);
   if (error || !data.user) throw new Error('Unauthorized: invalid user token');
-  const role =
-    (data.user.app_metadata as { role?: string } | null)?.role ??
-    (data.user.user_metadata as { role?: string } | null)?.role ??
-    null;
+  // Trusted RBAC source: app_metadata only. user_metadata is user-writable.
+  const role = resolveTrustedRole(data.user.app_metadata);
   if (role !== 'admin') throw new Error('Forbidden: admin role required');
 }
 
