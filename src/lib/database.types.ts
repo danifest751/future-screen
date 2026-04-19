@@ -257,6 +257,7 @@ export type Database = {
           comment: string | null
           created_at: string | null
           date: string | null
+          deleted_at: string | null
           delivery_log: Json | null
           email: string | null
           extra: Json | null
@@ -276,6 +277,7 @@ export type Database = {
           comment?: string | null
           created_at?: string | null
           date?: string | null
+          deleted_at?: string | null
           delivery_log?: Json | null
           email?: string | null
           extra?: Json | null
@@ -295,6 +297,7 @@ export type Database = {
           comment?: string | null
           created_at?: string | null
           date?: string | null
+          deleted_at?: string | null
           delivery_log?: Json | null
           email?: string | null
           extra?: Json | null

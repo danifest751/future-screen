@@ -1,5 +1,3 @@
-import { supabase } from './supabase';
-
 export type FormPayload = {
   requestId?: string;
   source: string;
@@ -21,41 +19,10 @@ const REQUEST_TIMEOUT_MS = 15000;
 const createRequestId = () =>
   `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
-const saveToLeads = async (payload: FormPayload, requestId: string) => {
-  try {
-    const { error } = await supabase.from('leads').insert({
-      request_id: requestId,
-      source: payload.source,
-      name: payload.name,
-      phone: payload.phone,
-      email: payload.email ?? null,
-      telegram: payload.telegram ?? null,
-      city: payload.city ?? null,
-      date: payload.date ?? null,
-      format: payload.format ?? null,
-      comment: payload.comment ?? null,
-      extra: payload.extra ?? {},
-      page_path: payload.pagePath ?? null,
-      referrer: payload.referrer ?? null,
-      status: 'queued',
-      delivery_log: [
-        {
-          at: new Date().toISOString(),
-          step: 'lead_saved',
-          status: 'success',
-          channel: 'database',
-          message: 'Lead saved before delivery start',
-        },
-      ],
-    });
-
-    if (error) {
-      console.error('[saveToLeads] error:', error.message);
-    }
-  } catch (error) {
-    console.error('[saveToLeads] error:', error);
-  }
-};
+// PR #5a (C5): direct INSERT into `leads` from the browser has been
+// removed. The server-side handler in api/send.ts is now the single
+// writer (service role), so we can drop the anonymous INSERT policy on
+// the leads table in PR #5b without breaking form submission.
 
 export const submitForm = async (payload: FormPayload): Promise<{ tg: boolean; email: boolean }> => {
   const requestId = payload.requestId?.trim() || createRequestId();
@@ -63,8 +30,6 @@ export const submitForm = async (payload: FormPayload): Promise<{ tg: boolean; e
     ...payload,
     requestId,
   };
-
-  await saveToLeads(requestPayload, requestId);
 
   const rawApiUrl = import.meta.env.VITE_API_URL?.trim();
   const apiUrl = rawApiUrl

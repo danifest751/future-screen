@@ -1,15 +1,11 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { z } from 'zod';
+import { checkRateLimit } from './_lib/rateLimit.js';
 
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'https://future-screen.ru,https://future-screen.vercel.app,http://localhost:5173,http://127.0.0.1:5173')
   .split(',')
   .map((v) => v.trim())
   .filter(Boolean);
-
-// Rate limiting config (client-log менее критичен, поэтому более мягкие лимиты)
-const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 минута
-const RATE_LIMIT_MAX = 30; // 30 запросов в минуту
-const requestsByIp = new Map<string, number[]>();
 
 // Zod схема валидации
 const ClientLogSchema = z.object({
@@ -36,18 +32,6 @@ const getClientIp = (req: VercelRequest): string => {
   const forwardedFor = req.headers['x-forwarded-for'];
   const value = Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor;
   return value?.split(',')[0]?.trim() || 'unknown';
-};
-
-const isRateLimited = (ip: string): boolean => {
-  const now = Date.now();
-  const attempts = (requestsByIp.get(ip) || []).filter((ts) => now - ts < RATE_LIMIT_WINDOW_MS);
-  if (attempts.length >= RATE_LIMIT_MAX) {
-    requestsByIp.set(ip, attempts);
-    return true;
-  }
-  attempts.push(now);
-  requestsByIp.set(ip, attempts);
-  return false;
 };
 
 const sanitizeLogPayload = (payload: unknown): { valid: boolean; data?: ClientLogPayload; errors?: string[] } => {
@@ -90,9 +74,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Rate limiting check
   const ip = getClientIp(req);
-  if (isRateLimited(ip)) {
+  const rl = await checkRateLimit('clientLog', ip);
+  if (!rl.allowed) {
+    res.setHeader('Retry-After', Math.max(1, Math.ceil((rl.reset - Date.now()) / 1000)).toString());
     return res.status(429).json({ ok: false, error: 'Too many requests' });
   }
 

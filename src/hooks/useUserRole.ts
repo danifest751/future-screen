@@ -20,28 +20,19 @@ function parseRole(value: unknown): UserRole | null {
 }
 
 function resolveRole(user: User): UserRole {
-  // app_metadata is server-only (user cannot self-update it via auth.updateUser),
-  // so it is the trusted source of truth. We prefer it strictly over user_metadata.
-  // user_metadata is kept only as a transitional fallback; once every user has
-  // a role in app_metadata (see scripts/backfill-app-metadata-role.mjs), the
-  // user_metadata branch and SQL policy will be removed in PR #4c.
+  // Role is read ONLY from app_metadata. That field is server-side (the user
+  // cannot change it through supabase.auth.updateUser), so it is the trusted
+  // source of truth. The transitional user_metadata fallback existed in PR
+  // #4a; PR #4b confirmed every existing user has app_metadata.role set, so
+  // in PR #4c we drop the fallback entirely. If a new user appears without
+  // app_metadata.role they correctly default to `viewer` until an admin
+  // assigns one via the service-role API.
   const appRole =
     parseRole(user.app_metadata?.role) ??
     parseRole(user.app_metadata?.user_role) ??
     parseRole((user.app_metadata as { claims?: { role?: unknown } } | null)?.claims?.role);
 
-  if (appRole) return appRole;
-
-  const userRole = parseRole(user.user_metadata?.role);
-  if (userRole) {
-    console.warn(
-      `[useUserRole] user ${user.id} has role in user_metadata but not app_metadata — ` +
-        'this is insecure (user can self-promote). Run the backfill script (PR #4b).',
-    );
-    return userRole;
-  }
-
-  return 'viewer';
+  return appRole ?? 'viewer';
 }
 
 /**

@@ -4,6 +4,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import 'dotenv/config';
 import { processEmailSubmission } from '../server/lib/emailCore.js';
+import { checkRateLimit } from './_lib/rateLimit.js';
 
 const allowedOrigins = (
   process.env.ALLOWED_ORIGINS ||
@@ -12,10 +13,6 @@ const allowedOrigins = (
   .split(',')
   .map((v) => v.trim())
   .filter(Boolean);
-
-const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
-const RATE_LIMIT_MAX = 10;
-const requestsByIp = new Map<string, number[]>();
 
 type SubmissionBody = {
   requestId?: string;
@@ -64,18 +61,6 @@ const getClientIp = (req: VercelRequest) => {
   const forwardedFor = req.headers['x-forwarded-for'];
   const value = Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor;
   return value?.split(',')[0]?.trim() || 'unknown';
-};
-
-const isRateLimited = (ip: string) => {
-  const now = Date.now();
-  const attempts = (requestsByIp.get(ip) || []).filter((ts) => now - ts < RATE_LIMIT_WINDOW_MS);
-  if (attempts.length >= RATE_LIMIT_MAX) {
-    requestsByIp.set(ip, attempts);
-    return true;
-  }
-  attempts.push(now);
-  requestsByIp.set(ip, attempts);
-  return false;
 };
 
 let supabaseAdmin: SupabaseClient | null = null;
@@ -255,6 +240,58 @@ const persistLeadState = async ({
 
   if (error) {
     console.warn(`[LeadTracking][${requestId}] failed to persist: ${error.message}`);
+  }
+};
+
+// PR #5a (C5): server is now the single writer for the `leads` table.
+// Previously the browser INSERTed a 'queued' row directly via the anon key
+// before calling /api/send. That INSERT path has to be closed so we can
+// revoke the anonymous INSERT policy in PR #5b — otherwise an attacker
+// could POST arbitrary PII rows straight into the table bypassing
+// validation and rate-limit.
+//
+// This function creates (or updates) the lead row from the already-
+// validated request body using the service role, which bypasses RLS.
+// Called exactly once per request, right after Zod validation succeeds.
+const upsertLeadFromPayload = async ({
+  requestId,
+  payload,
+  pagePath,
+  referrer,
+  deliveryLog,
+}: {
+  requestId: string;
+  payload: EmailPayload;
+  pagePath?: string;
+  referrer?: string;
+  deliveryLog: DeliveryLogEntry[];
+}): Promise<void> => {
+  const supabase = getSupabaseAdmin();
+  if (!supabase || !requestId) return;
+
+  const { error } = await supabase.from('leads').upsert(
+    {
+      request_id: requestId,
+      source: payload.source,
+      name: payload.name,
+      phone: payload.phone,
+      email: payload.email ?? null,
+      telegram: payload.telegram ?? null,
+      city: payload.city ?? null,
+      date: payload.date ?? null,
+      format: payload.format ?? null,
+      comment: payload.comment ?? null,
+      extra: payload.extra ?? {},
+      page_path: pagePath ?? null,
+      referrer: referrer ?? null,
+      status: 'processing',
+      delivery_log: deliveryLog,
+    },
+    { onConflict: 'request_id' },
+  );
+
+  if (error) {
+    console.warn(`[LeadTracking][${requestId}] failed to upsert lead: ${error.message}`);
   }
 };
 
@@ -768,12 +805,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }),
   });
 
-  if (isRateLimited(ip)) {
+  const rl = await checkRateLimit('send', ip);
+  if (!rl.allowed) {
+    res.setHeader('Retry-After', Math.max(1, Math.ceil((rl.reset - Date.now()) / 1000)).toString());
     await syncLeadState('failed', {
       step: 'rate_limited',
       channel: 'api',
       status: 'error',
       message: 'Rate limit exceeded',
+      meta: toRecord({ limit: String(rl.limit), remaining: String(rl.remaining) }),
     });
     return res.status(429).json({ ok: false, error: 'Too many requests' });
   }
@@ -794,6 +834,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       details,
     });
   }
+
+  // PR #5a: the server now owns the INSERT. Persist the lead as soon as
+  // the payload has been validated — any downstream syncLeadState() call
+  // then UPDATEs this row.
+  const validatedPayload = validation.data as EmailPayload;
+  await upsertLeadFromPayload({
+    requestId,
+    payload: validatedPayload,
+    pagePath,
+    referrer,
+    deliveryLog,
+  });
 
   const result = await processEmailSubmission({
     body: req.body,

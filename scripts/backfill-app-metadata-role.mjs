@@ -11,7 +11,14 @@
 // Usage:
 //   SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... node scripts/backfill-app-metadata-role.mjs [--dry-run]
 
+import { setDefaultResultOrder } from 'node:dns';
 import { createClient } from '@supabase/supabase-js';
+
+// Windows default is 'verbatim' (IPv6 first when returned by DNS); when
+// IPv6 is not truly routable the 10s connect timeout fires before Node
+// falls back to IPv4. Force v4-first so fetch hits Supabase/Cloudflare
+// over the IPv4 address straight away.
+setDefaultResultOrder('ipv4first');
 
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY;
