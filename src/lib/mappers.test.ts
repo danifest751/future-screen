@@ -255,6 +255,7 @@ describe('mapLeadFromDB', () => {
       referrer: 'https://example.com',
       status: 'new',
       delivery_log: [],
+      deleted_at: null,
     };
 
     const result = mapLeadFromDB(row);
@@ -290,6 +291,7 @@ describe('mapLeadFromDB', () => {
       referrer: null,
       status: null,
       delivery_log: null,
+      deleted_at: null,
     };
 
     const result = mapLeadFromDB(row);

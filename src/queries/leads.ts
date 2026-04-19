@@ -16,9 +16,11 @@ export function useLeadsQuery() {
   return useQuery({
     queryKey: queryKeys.leads.all,
     queryFn: async () => {
+      // PR #5b: soft-delete — hide rows where deleted_at IS NOT NULL.
       const { data, error } = await supabase
         .from('leads')
         .select('*')
+        .is('deleted_at', null)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -38,7 +40,11 @@ export function useInvalidateLeads() {
 }
 
 /**
- * Очистить все лиды.
+ * Очистить все лиды (soft-delete).
+ *
+ * PR #5b: was a hard DELETE; now marks deleted_at so entries stay
+ * recoverable and audit-traceable. Only admins can UPDATE leads under
+ * the new RLS, which matches the admin-only gating on /admin/leads.
  */
 export function useClearLeadsMutation() {
   const queryClient = useQueryClient();
@@ -47,8 +53,8 @@ export function useClearLeadsMutation() {
     mutationFn: async () => {
       const { error } = await supabase
         .from('leads')
-        .delete()
-        .not('id', 'is', null);
+        .update({ deleted_at: new Date().toISOString() })
+        .is('deleted_at', null);
 
       if (error) throw error;
     },
@@ -59,14 +65,17 @@ export function useClearLeadsMutation() {
 }
 
 /**
- * Удалить одну заявку по id.
+ * Удалить одну заявку по id (soft-delete).
  */
 export function useDeleteLeadMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('leads').delete().eq('id', id);
+      const { error } = await supabase
+        .from('leads')
+        .update({ deleted_at: new Date().toISOString() })
+        .eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {

@@ -122,7 +122,10 @@ const AdminLayout = ({ title, subtitle, children, contentLocale, onContentLocale
     let mounted = true;
 
     const loadLeadCount = async () => {
-      const { count, error } = await supabase.from('leads').select('id', { count: 'exact', head: true });
+      const { count, error } = await supabase
+        .from('leads')
+        .select('id', { count: 'exact', head: true })
+        .is('deleted_at', null);
 
       if (!mounted) return;
       if (error) {
