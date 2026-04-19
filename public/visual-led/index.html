@@ -552,6 +552,11 @@ select option { background: rgb(15, 23, 42); color: #f1f5f9; }
             <span class="i">📋</span> Копировать
           </button>
         </div>
+        <div class="inline-row">
+          <button id="saveProjectBtn" class="action" title="Сохранить проект и получить ссылку для восстановления сцены">
+            <span class="i">💾</span> Сохранить проект
+          </button>
+        </div>
         <label title="Выбери, какие сцены попадут в отчет">
           Экспорт
           <select id="exportScopeSelect">
@@ -678,6 +683,35 @@ select option { background: rgb(15, 23, 42); color: #f1f5f9; }
     </aside>
   </div>
 
+  <div id="shareDialog" class="share-dialog" hidden>
+    <div class="share-dialog__backdrop" data-dismiss="share"></div>
+    <div class="share-dialog__card" role="dialog" aria-modal="true" aria-labelledby="shareDialogTitle">
+      <h3 id="shareDialogTitle" class="share-dialog__title">Ссылка на проект</h3>
+      <p class="share-dialog__hint">Любой, кто откроет эту ссылку, увидит сохранённую сцену.</p>
+      <div class="share-dialog__row">
+        <input id="shareDialogUrl" class="share-dialog__url" readonly />
+        <button id="shareDialogCopyBtn" class="action compact" type="button">Копировать</button>
+      </div>
+      <div id="shareDialogStatus" class="share-dialog__status"></div>
+      <div class="share-dialog__actions">
+        <button class="action secondary compact" type="button" data-dismiss="share">Закрыть</button>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    .share-dialog { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; }
+    .share-dialog[hidden] { display: none; }
+    .share-dialog__backdrop { position: absolute; inset: 0; background: rgba(2, 6, 23, 0.72); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+    .share-dialog__card { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px; width: min(92vw, 460px); box-shadow: 0 30px 80px rgba(0,0,0,0.5); }
+    .share-dialog__title { margin: 0 0 6px; font-size: 16px; color: var(--ink); }
+    .share-dialog__hint { margin: 0 0 14px; font-size: 12px; color: var(--muted); }
+    .share-dialog__row { display: flex; gap: 8px; margin-bottom: 10px; }
+    .share-dialog__url { flex: 1; min-width: 0; background: rgba(255,255,255,0.04); border: 1px solid var(--line); border-radius: 8px; color: var(--ink); font-size: 12px; padding: 8px 10px; font-family: 'JetBrains Mono', 'Consolas', monospace; }
+    .share-dialog__status { font-size: 12px; color: var(--muted); min-height: 16px; margin-bottom: 10px; }
+    .share-dialog__actions { display: flex; justify-content: flex-end; gap: 8px; }
+  </style>
+
   <script>
 ﻿const canvas = document.getElementById("editorCanvas");
 const ctx = canvas.getContext("2d");
@@ -703,6 +737,11 @@ const ui = {
   openReportBtn: document.getElementById("openReportBtn"),
   exportScopeSelect: document.getElementById("exportScopeSelect"),
   copySceneBtn: document.getElementById("copySceneBtn"),
+  saveProjectBtn: document.getElementById("saveProjectBtn"),
+  shareDialog: document.getElementById("shareDialog"),
+  shareDialogUrl: document.getElementById("shareDialogUrl"),
+  shareDialogCopyBtn: document.getElementById("shareDialogCopyBtn"),
+  shareDialogStatus: document.getElementById("shareDialogStatus"),
   clipboardStatus: document.getElementById("clipboardStatus"),
   deleteSelectedBtn: document.getElementById("deleteSelectedBtn"),
   screenWidthMeters: document.getElementById("screenWidthMeters"),
@@ -804,6 +843,11 @@ function uid(prefix = "id") {
 function createImage(src) {
   return new Promise((resolve, reject) => {
     const image = new Image();
+    // Cross-origin фоны (signed URL из Supabase Storage при загрузке проекта)
+    // иначе делают canvas tainted и ломают toDataURL при экспорте.
+    if (typeof src === "string" && !src.startsWith("data:")) {
+      image.crossOrigin = "anonymous";
+    }
     image.onload = () => resolve(image);
     image.onerror = reject;
     image.src = src;
@@ -3454,6 +3498,7 @@ async function loadPresetVideos() {
   ui.toggleCabinetGrid.checked = true;
   ui.toggleAssistGuides.checked = true;
   await startVisualLedSession();
+  await loadProjectFromUrl();
   applySceneCanvas(activeScene());
   refreshSceneTabs();
   updateToolStatus("ожидание");
@@ -3467,6 +3512,211 @@ async function loadPresetVideos() {
   render();
   animationTick();
 })();
+
+function serializeProjectState() {
+  const scenes = state.scenes.map((scene) => ({
+    id: scene.id,
+    name: scene.name,
+    backgrounds: (scene.backgrounds || []).map((bg) => ({
+      id: bg.id,
+      name: bg.name,
+      storagePath: bg.storagePath || null,
+      storageBucket: bg.storageBucket || null,
+    })),
+    activeBackgroundId: scene.activeBackgroundId,
+    elements: scene.elements,
+    selectedElementId: scene.selectedElementId,
+    scaleCalib: scene.scaleCalib,
+    assist: null,
+    view: scene.view,
+    canvasWidth: scene.canvasWidth,
+    canvasHeight: scene.canvasHeight,
+  }));
+  return {
+    schemaVersion: 1,
+    scenes,
+    activeSceneId: state.activeSceneId,
+    showCabinetGrid: state.showCabinetGrid,
+    showAssistGuides: state.showAssistGuides,
+    showStatsOverlay: state.showStatsOverlay,
+  };
+}
+
+function openShareDialog(url) {
+  if (!ui.shareDialog) return;
+  ui.shareDialogUrl.value = url;
+  ui.shareDialogStatus.textContent = "";
+  ui.shareDialog.hidden = false;
+  queueMicrotask(() => {
+    try { ui.shareDialogUrl.select(); } catch (_e) {}
+  });
+}
+
+function closeShareDialog() {
+  if (!ui.shareDialog) return;
+  ui.shareDialog.hidden = true;
+}
+
+async function copyShareUrl() {
+  const url = ui.shareDialogUrl.value;
+  if (!url) return;
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(url);
+    } else {
+      ui.shareDialogUrl.select();
+      document.execCommand("copy");
+    }
+    ui.shareDialogStatus.textContent = "Ссылка скопирована";
+    ui.shareDialogStatus.style.color = "#34d399";
+  } catch (_err) {
+    ui.shareDialogStatus.textContent = "Не удалось скопировать — скопируй вручную";
+    ui.shareDialogStatus.style.color = "#f87171";
+  }
+}
+
+async function saveProject() {
+  const btn = ui.saveProjectBtn;
+  if (!btn) return;
+  const previousLabel = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="i">⏳</span> Сохранение...';
+  try {
+    const payload = { state: serializeProjectState() };
+    const response = await fetch("/api/visual-led/save", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) {
+      const detail = await response.json().catch(() => ({}));
+      if (response.status === 413) {
+        alert("Проект слишком большой для сохранения. Попробуй уменьшить количество сцен или фоновых изображений.");
+      } else if (response.status === 429) {
+        alert("Слишком много сохранений подряд. Подожди немного и попробуй снова.");
+      } else {
+        alert(`Не удалось сохранить проект: ${detail.error || response.status}`);
+      }
+      queueVisualLedEvent("project_save_failed", { status: response.status });
+      return;
+    }
+    const data = await response.json();
+    const shareUrl = `${location.origin}/visual-led?project=${encodeURIComponent(data.id)}`;
+    openShareDialog(shareUrl);
+    queueVisualLedEvent("project_saved", { project_id: data.id });
+  } catch (err) {
+    console.error("[visual-led] save failed", err);
+    alert("Не удалось сохранить проект. Проверь интернет и попробуй снова.");
+    queueVisualLedEvent("project_save_failed", { reason: String(err?.message || err) });
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = previousLabel;
+  }
+}
+
+async function hydrateLoadedState(loadedState) {
+  if (!loadedState || typeof loadedState !== "object") return false;
+  const scenes = Array.isArray(loadedState.scenes) ? loadedState.scenes : [];
+  if (!scenes.length) return false;
+
+  const rebuiltScenes = [];
+  for (const raw of scenes) {
+    const scene = createSceneData(raw.name || "default");
+    scene.id = raw.id || scene.id;
+    scene.canvasWidth = Number(raw.canvasWidth) || scene.canvasWidth;
+    scene.canvasHeight = Number(raw.canvasHeight) || scene.canvasHeight;
+    scene.scaleCalib = raw.scaleCalib || null;
+    scene.assist = null;
+    scene.view = raw.view && typeof raw.view === "object"
+      ? { ...scene.view, ...raw.view }
+      : scene.view;
+    scene.elements = Array.isArray(raw.elements)
+      ? raw.elements.map((el) => ({ ...el, videoId: null }))
+      : [];
+    scene.selectedElementId = raw.selectedElementId || null;
+
+    const bgs = Array.isArray(raw.backgrounds) ? raw.backgrounds : [];
+    for (const bg of bgs) {
+      if (!bg?.src) continue;
+      try {
+        const image = await createImage(bg.src);
+        scene.backgrounds.push({
+          id: bg.id || uid("bg"),
+          src: bg.src,
+          image,
+          name: bg.name || "background",
+          storagePath: bg.storagePath || null,
+          storageBucket: bg.storageBucket || null,
+        });
+      } catch (err) {
+        console.warn("[visual-led] не удалось загрузить фон", bg.name, err);
+      }
+    }
+    scene.activeBackgroundId = scene.backgrounds.some((b) => b.id === raw.activeBackgroundId)
+      ? raw.activeBackgroundId
+      : (scene.backgrounds[0]?.id ?? null);
+    rebuiltScenes.push(scene);
+  }
+
+  if (!rebuiltScenes.length) return false;
+
+  state.scenes = rebuiltScenes;
+  state.activeSceneId = rebuiltScenes.some((s) => s.id === loadedState.activeSceneId)
+    ? loadedState.activeSceneId
+    : rebuiltScenes[0].id;
+  state.showCabinetGrid = loadedState.showCabinetGrid !== false;
+  state.showAssistGuides = loadedState.showAssistGuides !== false;
+  state.showStatsOverlay = loadedState.showStatsOverlay !== false;
+
+  const activeScene = state.scenes.find((s) => s.id === state.activeSceneId) || state.scenes[0];
+  const activeBg = activeScene?.backgrounds.find((b) => b.id === activeScene.activeBackgroundId);
+  if (activeBg?.image) {
+    setCanvasFromImage(activeBg.image);
+  }
+  return true;
+}
+
+async function loadProjectFromUrl() {
+  const params = new URLSearchParams(location.search);
+  const projectId = params.get("project");
+  if (!projectId) return false;
+  try {
+    const response = await fetch(`/api/visual-led/load?id=${encodeURIComponent(projectId)}`);
+    if (!response.ok) {
+      if (response.status === 404) {
+        alert("Сохранённый проект не найден. Возможно, ссылка устарела.");
+      } else {
+        alert("Не удалось загрузить проект.");
+      }
+      queueVisualLedEvent("project_load_failed", { project_id: projectId, status: response.status });
+      return false;
+    }
+    const data = await response.json();
+    const hydrated = await hydrateLoadedState(data.state);
+    if (hydrated) {
+      queueVisualLedEvent("project_loaded", { project_id: projectId });
+    }
+    return hydrated;
+  } catch (err) {
+    console.error("[visual-led] load failed", err);
+    queueVisualLedEvent("project_load_failed", { project_id: projectId, reason: String(err?.message || err) });
+    return false;
+  }
+}
+
+ui.saveProjectBtn?.addEventListener("click", () => { void saveProject(); });
+ui.shareDialogCopyBtn?.addEventListener("click", () => { void copyShareUrl(); });
+ui.shareDialog?.addEventListener("click", (event) => {
+  const target = event.target;
+  if (target instanceof HTMLElement && target.dataset.dismiss === "share") {
+    closeShareDialog();
+  }
+});
+window.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && ui.shareDialog && !ui.shareDialog.hidden) {
+    closeShareDialog();
+  }
+});
 
 window.addEventListener("pagehide", () => {
   void endVisualLedSession("pagehide");
