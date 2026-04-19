@@ -40,7 +40,6 @@ const CHECKS = [
     method: 'OPTIONS',
     headers: { Origin: 'https://future-screen.vercel.app', 'Access-Control-Request-Method': 'POST' },
     expectStatus: [200, 204],
-    followRedirects: false,
   },
   {
     // Negative CORS check: preflight from a bogus origin must be rejected.
@@ -50,7 +49,6 @@ const CHECKS = [
     method: 'OPTIONS',
     headers: { Origin: 'https://evil.example', 'Access-Control-Request-Method': 'POST' },
     expectStatus: [403],
-    followRedirects: false,
   },
   {
     name: 'GET /api/send returns 405 (POST-only)',
