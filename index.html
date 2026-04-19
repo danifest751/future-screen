@@ -3,6 +3,22 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      // Sync <html lang> with stored locale before React mounts to avoid ru/en flip.
+      // Mirrors src/context/I18nContext.tsx: admin paths use admin locale (fallback ru),
+      // everything else uses site locale (fallback en).
+      (function () {
+        try {
+          var path = location.pathname;
+          var isAdmin = path.indexOf('/admin') === 0;
+          var key = isAdmin ? 'future-screen.locale.admin' : 'future-screen.locale.site';
+          var stored = localStorage.getItem(key);
+          var fallback = isAdmin ? 'ru' : 'en';
+          var lang = stored === 'ru' || stored === 'en' ? stored : fallback;
+          document.documentElement.lang = lang;
+        } catch (e) {}
+      })();
+    </script>
     <title>Фьючер Скрин — Техническое оснащение мероприятий | LED-экраны, звук, свет</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="description" content="Аренда LED-экранов, звукового и светового оборудования в Екатеринбурге. Техническое сопровождение концертов, корпоративов, конференций с 2007 года." />

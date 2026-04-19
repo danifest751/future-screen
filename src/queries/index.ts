@@ -51,12 +51,6 @@ export {
   useSavePrivacyPolicyMutation,
 } from './privacyPolicy';
 
-// Site Settings
-export {
-  useSiteSettingsQuery,
-  useSaveSiteSettingsMutation,
-} from './siteSettings';
-
 // Rental Categories
 export {
   useRentalCategoriesQuery,

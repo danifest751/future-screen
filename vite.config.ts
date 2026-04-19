@@ -30,7 +30,7 @@ export default defineConfig({
         },
       },
     },
-    reportCompressedSize: true,
+    reportCompressedSize: false,
     chunkSizeWarningLimit: 500,
   },
 });

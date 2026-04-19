@@ -48,8 +48,6 @@ export const useSiteSettings = () => {
             ...(data.star_border_settings || {}),
           },
         });
-      } else {
-        console.log('[useSiteSettings] Настройки не найдены, используем дефолтные');
       }
     } catch (err) {
       console.error('[useSiteSettings] Ошибка загрузки:', err);
@@ -126,8 +124,7 @@ export const useSiteSettings = () => {
           table: 'site_settings',
           filter: 'id=eq.default',
         },
-        (payload) => {
-          console.log('[useSiteSettings] Получены изменения:', payload);
+        () => {
           loadSettings();
         }
       )

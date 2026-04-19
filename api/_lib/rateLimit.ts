@@ -16,7 +16,7 @@
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
 
-type LimiterName = 'send' | 'clientLog';
+type LimiterName = 'send' | 'clientLog' | 'visualLedSave';
 
 const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL;
 const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
@@ -45,6 +45,7 @@ function getLimiter(name: LimiterName): Ratelimit | null {
   const config: Record<LimiterName, { tokens: number; window: `${number} ${'s' | 'm' | 'h'}` }> = {
     send: { tokens: 10, window: '15 m' },
     clientLog: { tokens: 30, window: '1 m' },
+    visualLedSave: { tokens: 20, window: '10 m' },
   };
 
   const { tokens, window } = config[name];

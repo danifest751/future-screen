@@ -4,6 +4,8 @@ node_modules/
 # Build artifacts
 dist/
 build/
+*.tsbuildinfo
+vite.config.js
 *.js
 
 # Environment
@@ -84,3 +86,14 @@ docs/i18n-report.md
 # Audit reports (working docs)
 docs/audit.md
 .vercel
+
+# Test/build artifacts (not to be committed)
+test-results/
+playwright-report/
+attached_assets/
+design-archive/
+artifacts/
+
+# Replit (project is hosted on Vercel)
+.replit
+replit.nix
