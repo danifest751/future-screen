@@ -1,6 +1,8 @@
 -- Таблица для глобальных настроек сайта (фон и т.д.)
+-- NOTE: клиент читает/пишет строку с id = 'default'. Любые изменения id-значения
+-- должны быть синхронизированы с src/hooks/useSiteSettings.ts и src/queries/siteSettings.ts.
 CREATE TABLE IF NOT EXISTS site_settings (
-  id TEXT PRIMARY KEY DEFAULT 'global',
+  id TEXT PRIMARY KEY DEFAULT 'default',
   background TEXT DEFAULT 'theme',
   background_settings JSONB DEFAULT '{}',
   updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -35,7 +37,7 @@ CREATE POLICY "Admin insert site_settings"
 -- Создаём начальную запись с дефолтными значениями
 INSERT INTO site_settings (id, background, background_settings)
 VALUES (
-  'global',
+  'default',
   'theme',
   '{
     "aurora": {"motion": "normal", "intensity": 1, "contrast": 1, "color1": "#3A29FF", "color2": "#FF94B4", "color3": "#FF3232", "speed": 1, "blend": 0.5, "amplitude": 1},
