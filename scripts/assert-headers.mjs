@@ -66,9 +66,24 @@ function pass(msg) {
   console.log(`OK: ${msg}`);
 }
 
+async function fetchFollowing(startUrl, maxHops = 5) {
+  let current = startUrl;
+  for (let hop = 0; hop <= maxHops; hop += 1) {
+    const res = await fetch(current, { redirect: 'manual', headers: bypassHeaders });
+    console.log(`Fetched ${current} -> ${res.status}`);
+    if (res.status >= 300 && res.status < 400) {
+      const loc = res.headers.get('location');
+      if (!loc) return res;
+      current = new URL(loc, current).toString();
+      continue;
+    }
+    return res;
+  }
+  throw new Error(`too many redirects starting at ${startUrl}`);
+}
+
 async function main() {
-  const res = await fetch(url, { redirect: 'manual', headers: bypassHeaders });
-  console.log(`Fetched ${url} -> ${res.status}`);
+  const res = await fetchFollowing(url);
 
   if (res.status === 401 || res.status === 403) {
     const serverHeader = res.headers.get('server') || '';

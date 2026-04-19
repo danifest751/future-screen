@@ -64,13 +64,32 @@ const CHECKS = [
   },
 ];
 
+async function fetchFollowing(startUrl, init, maxHops = 5) {
+  let current = startUrl;
+  for (let hop = 0; hop <= maxHops; hop += 1) {
+    const res = await fetch(current, { ...init, redirect: 'manual' });
+    if (res.status >= 300 && res.status < 400) {
+      const loc = res.headers.get('location');
+      if (!loc) return res;
+      current = new URL(loc, current).toString();
+      continue;
+    }
+    return res;
+  }
+  throw new Error(`too many redirects starting at ${startUrl}`);
+}
+
 async function runCheck(check) {
   const url = base.replace(/\/$/, '') + check.path;
-  const res = await fetch(url, {
+  const init = {
     method: check.method,
     headers: { ...bypassHeaders, ...(check.headers || {}) },
-    redirect: 'manual',
-  });
+  };
+  // Some checks (OPTIONS preflight, explicit status probes) must NOT follow
+  // redirects because the redirect itself is what we're asserting.
+  const res = check.followRedirects === false
+    ? await fetch(url, { ...init, redirect: 'manual' })
+    : await fetchFollowing(url, init);
   const ct = res.headers.get('content-type') || '';
 
   if (res.status === 401 && /vercel/i.test(res.headers.get('server') || '')) {
