@@ -90,16 +90,34 @@ const hasServiceRole = () => Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY);
 const getSupabaseClient = (): SupabaseClient => {
   if (!supabase) {
     const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+    const serviceRole = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-    if (!supabaseUrl || !supabaseKey) {
-      throw new Error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (or anon key) must be configured');
+    if (!supabaseUrl || !serviceRole) {
+      throw new Error(
+        'SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be configured ' +
+          '(anon-key fallback was removed — service role is required for writes)',
+      );
     }
 
-    supabase = createClient(supabaseUrl, supabaseKey);
+    supabase = createClient(supabaseUrl, serviceRole, { auth: { persistSession: false } });
   }
   return supabase;
 };
+
+async function ensureAdmin(req: VercelRequest): Promise<void> {
+  const auth = String(req.headers.authorization || '');
+  const match = auth.match(/^Bearer\s+(.+)$/i);
+  if (!match) throw new Error('Unauthorized: missing bearer token');
+  const token = match[1];
+  const client = getSupabaseClient();
+  const { data, error } = await client.auth.getUser(token);
+  if (error || !data.user) throw new Error('Unauthorized: invalid user token');
+  const role =
+    (data.user.app_metadata as { role?: string } | null)?.role ??
+    (data.user.user_metadata as { role?: string } | null)?.role ??
+    null;
+  if (role !== 'admin') throw new Error('Forbidden: admin role required');
+}
 
 const sendTelegramMessage = async (chatId: number, text: string, options?: { replyMarkup?: unknown }) => {
   const token = process.env.TG_BOT_TOKEN;
@@ -710,7 +728,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'GET') {
     if (!token) return res.status(500).json({ error: 'TG_BOT_TOKEN not configured' });
 
-    if (req.query?.action === 'setWebhook') {
+    const action = req.query?.action;
+
+    if (action === 'setWebhook' || action === 'getWebhookInfo') {
+      try {
+        await ensureAdmin(req);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Unauthorized';
+        const status = msg.startsWith('Forbidden') ? 403 : 401;
+        return res.status(status).json({ error: msg });
+      }
+    }
+
+    if (action === 'setWebhook') {
       const webhookUrl = req.query.url as string;
       if (!webhookUrl) return res.status(400).json({ error: 'url query param required' });
 
@@ -726,7 +756,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
-    if (req.query?.action === 'getWebhookInfo') {
+    if (action === 'getWebhookInfo') {
       try {
         const response = await fetch(`https://api.telegram.org/bot${token}/getWebhookInfo`);
         return res.status(200).json(await response.json());
@@ -743,11 +773,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const webhookSecret = process.env.TELEGRAM_WEBHOOK_SECRET;
-  if (webhookSecret) {
-    const secret = req.headers['x-telegram-bot-api-secret-token'];
-    if (secret !== webhookSecret) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
+  if (!webhookSecret) {
+    console.error('[TelegramWebhook] TELEGRAM_WEBHOOK_SECRET is not configured — refusing POST');
+    return res.status(500).json({ error: 'Webhook secret not configured on server' });
+  }
+  const secret = req.headers['x-telegram-bot-api-secret-token'];
+  if (secret !== webhookSecret) {
+    return res.status(401).json({ error: 'Unauthorized' });
   }
 
   if (!token) {

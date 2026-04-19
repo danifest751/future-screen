@@ -79,14 +79,24 @@ const getSupabaseAdmin = (): SupabaseClient | null => {
   if (supabaseAdmin) return supabaseAdmin;
 
   const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+  const serviceRole = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  if (!supabaseUrl || !supabaseKey) {
-    console.warn('[LeadTracking] Supabase env vars are not configured');
+  if (!supabaseUrl) {
+    console.warn('[LeadTracking] SUPABASE_URL is not configured');
     return null;
   }
 
-  supabaseAdmin = createClient(supabaseUrl, supabaseKey);
+  if (!serviceRole) {
+    // Hard refusal: writes to `leads`/`delivery_log` require service role.
+    // Falling back to the anon key historically let rows silently stay in the
+    // `processing` state because RLS blocked UPDATE. Fail loudly instead.
+    console.error(
+      '[LeadTracking] SUPABASE_SERVICE_ROLE_KEY is not configured — refusing to fall back to anon key',
+    );
+    return null;
+  }
+
+  supabaseAdmin = createClient(supabaseUrl, serviceRole, { auth: { persistSession: false } });
   return supabaseAdmin;
 };
 
