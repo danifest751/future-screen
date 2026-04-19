@@ -4,13 +4,26 @@
 //
 // Rules evolve with the rollout plan — update EXPECTED below after each phase.
 
-import { argv, exit } from 'node:process';
+import { argv, env, exit } from 'node:process';
 
 const url = argv[2];
 if (!url) {
   console.error('usage: assert-headers.mjs <url>');
   exit(2);
 }
+
+// Vercel Deployment Protection returns 401 with an auth wall HTML instead
+// of routing to our app. Forward the bypass token from a GH secret so CI
+// can see our real headers. In the Vercel dashboard:
+//   Settings → Deployment Protection → Protection Bypass for Automation
+// and add the same value as `VERCEL_PROTECTION_BYPASS` repo secret.
+const BYPASS = env.VERCEL_PROTECTION_BYPASS || env.VERCEL_AUTOMATION_BYPASS_SECRET;
+const bypassHeaders = BYPASS
+  ? {
+      'x-vercel-protection-bypass': BYPASS,
+      'x-vercel-set-bypass-cookie': 'true',
+    }
+  : {};
 
 const EXPECTED = {
   'content-security-policy': {
@@ -54,8 +67,23 @@ function pass(msg) {
 }
 
 async function main() {
-  const res = await fetch(url, { redirect: 'manual' });
+  const res = await fetch(url, { redirect: 'manual', headers: bypassHeaders });
   console.log(`Fetched ${url} -> ${res.status}`);
+
+  if (res.status === 401 || res.status === 403) {
+    const serverHeader = res.headers.get('server') || '';
+    const vercelAuth = res.headers.get('x-vercel-protection-bypass-expected');
+    if (/vercel/i.test(serverHeader) || vercelAuth) {
+      console.error('');
+      console.error('FAIL: hit Vercel Deployment Protection auth wall.');
+      console.error('  The preview is private; our app headers are not reachable.');
+      console.error('  Fix: add Protection Bypass for Automation in Vercel, then');
+      console.error('  set the same value as repo secret VERCEL_PROTECTION_BYPASS');
+      console.error('  and expose it to this step in verify-deploy.yml.');
+      exit(1);
+    }
+  }
+
   const headers = Object.fromEntries(
     [...res.headers.entries()].map(([k, v]) => [k.toLowerCase(), v]),
   );

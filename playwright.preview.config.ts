@@ -8,6 +8,18 @@ if (!baseURL) {
   throw new Error('BASE_URL env var is required for playwright.preview.config.ts');
 }
 
+// Vercel Deployment Protection: if the preview is private, browser requests
+// get a 401 auth wall. The bypass header only works once per session;
+// x-vercel-set-bypass-cookie=true persists it in a cookie so subsequent
+// navigations pass through cleanly.
+const BYPASS = process.env.VERCEL_PROTECTION_BYPASS || process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+const extraHTTPHeaders = BYPASS
+  ? {
+      'x-vercel-protection-bypass': BYPASS,
+      'x-vercel-set-bypass-cookie': 'true',
+    }
+  : undefined;
+
 export default defineConfig({
   testDir: './tests/e2e',
   // Скипаем сценарии, которые требуют залогиненного админа или локальной БД.
@@ -22,6 +34,7 @@ export default defineConfig({
     baseURL,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
+    extraHTTPHeaders,
   },
   projects: [
     {

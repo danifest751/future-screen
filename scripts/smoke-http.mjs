@@ -4,13 +4,22 @@
 //
 // Expands with each phase; update CHECKS after merging each PR.
 
-import { argv, exit } from 'node:process';
+import { argv, env, exit } from 'node:process';
 
 const base = argv[2];
 if (!base) {
   console.error('usage: smoke-http.mjs <url>');
   exit(2);
 }
+
+// See assert-headers.mjs — same bypass mechanism for Vercel protection.
+const BYPASS = env.VERCEL_PROTECTION_BYPASS || env.VERCEL_AUTOMATION_BYPASS_SECRET;
+const bypassHeaders = BYPASS
+  ? {
+      'x-vercel-protection-bypass': BYPASS,
+      'x-vercel-set-bypass-cookie': 'true',
+    }
+  : {};
 
 const CHECKS = [
   {
@@ -59,10 +68,17 @@ async function runCheck(check) {
   const url = base.replace(/\/$/, '') + check.path;
   const res = await fetch(url, {
     method: check.method,
-    headers: check.headers || {},
+    headers: { ...bypassHeaders, ...(check.headers || {}) },
     redirect: 'manual',
   });
   const ct = res.headers.get('content-type') || '';
+
+  if (res.status === 401 && /vercel/i.test(res.headers.get('server') || '')) {
+    return {
+      ok: false,
+      msg: `${check.name} — Vercel auth wall (set VERCEL_PROTECTION_BYPASS secret)`,
+    };
+  }
 
   if (!check.expectStatus.includes(res.status)) {
     return { ok: false, msg: `${check.name} — got ${res.status}, expected ${check.expectStatus.join('/')}` };

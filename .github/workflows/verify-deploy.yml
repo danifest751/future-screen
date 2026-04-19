@@ -17,6 +17,13 @@ jobs:
     env:
       DEPLOY_URL: ${{ github.event.deployment_status.target_url }}
       DEPLOY_ENV: ${{ github.event.deployment.environment }}
+      # Vercel Deployment Protection sits in front of preview URLs and
+      # returns 401 to unauthenticated probes. Add this repo secret
+      # (Settings → Secrets → Actions) with the value from
+      # Vercel → Settings → Deployment Protection → Protection Bypass
+      # for Automation. Leaving it empty on prod deploys is fine — the
+      # production URL is not protected.
+      VERCEL_PROTECTION_BYPASS: ${{ secrets.VERCEL_PROTECTION_BYPASS }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
