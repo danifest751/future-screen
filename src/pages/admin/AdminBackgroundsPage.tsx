@@ -252,6 +252,7 @@ const AdminBackgroundsPage = () => {
                   { key: 'speed', label: adminBackgroundsPageContent.starBorderSpeed, min: 1, max: 20, step: 0.5, suffix: 's' },
                   { key: 'thickness', label: adminBackgroundsPageContent.starBorderThickness, min: 1, max: 5, step: 0.5, suffix: 'px' },
                   { key: 'intensity', label: adminBackgroundsPageContent.starBorderGlow, min: 0.5, max: 3, step: 0.1, suffix: '' },
+                  { key: 'cornerOffset', label: adminBackgroundsPageContent.starBorderCornerOffset, min: 0, max: 80, step: 1, suffix: 'px' },
                 ].map((control) => (
                   <label key={control.key} className="block">
                     <div className="mb-1 flex items-center justify-between">
