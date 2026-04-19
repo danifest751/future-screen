@@ -38,7 +38,7 @@ const CHECKS = [
     name: 'OPTIONS /api/send from allowed origin returns 204/200',
     path: '/api/send',
     method: 'OPTIONS',
-    headers: { Origin: 'https://future-screen.ru', 'Access-Control-Request-Method': 'POST' },
+    headers: { Origin: 'https://future-screen.vercel.app', 'Access-Control-Request-Method': 'POST' },
     expectStatus: [200, 204],
     followRedirects: false,
   },
