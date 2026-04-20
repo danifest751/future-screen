@@ -19,7 +19,7 @@ module.exports = {
       'warn',
       { allowConstantExport: true, allowExportNames: ['useAuth', 'useTheme'] },
     ],
-    '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+    '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
     '@typescript-eslint/no-explicit-any': 'warn',
   },
 };

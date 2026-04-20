@@ -1,10 +1,7 @@
 import { useEffect } from 'react';
 import { useTheme } from '../context/ThemeContext';
 import { useSiteSettingsContext } from '../context/SiteSettingsContext';
-import {
-  isCustomBackgroundId,
-  type BackgroundId,
-} from '../lib/backgrounds';
+import { isCustomBackgroundId } from '../lib/backgrounds';
 import {
   ColorBendsDecorLazy,
   PixelBlastDecorLazy,

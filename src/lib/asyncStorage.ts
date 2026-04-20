@@ -3,8 +3,6 @@
  * Использует MessageChannel для асинхронного доступа к localStorage.
  */
 
-type StorageCallback<T> = (value: T | null) => void;
-
 /**
  * Асинхронно получить значение из localStorage.
  * @param key - Ключ для получения

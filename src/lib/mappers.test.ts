@@ -359,8 +359,7 @@ describe('ID conversion for mutations', () => {
 
   it('excludes id from rest in destructuring for string id', () => {
     const pkg = { id: '123', name: 'Test', for_formats: ['format1'] };
-    const { id, ...rest } = pkg;
-    const { id: _, ...dataWithoutId } = rest as Record<string, unknown> & { id?: unknown };
+    const { id, ...dataWithoutId } = pkg;
 
     expect(id).toBe('123');
     expect('id' in dataWithoutId).toBe(false);
@@ -369,8 +368,7 @@ describe('ID conversion for mutations', () => {
 
   it('excludes id from rest in destructuring for numeric id', () => {
     const pkg = { id: 123, name: 'Test', for_formats: ['format1'] };
-    const { id, ...rest } = pkg;
-    const { id: _, ...dataWithoutId } = rest as Record<string, unknown> & { id?: unknown };
+    const { id, ...dataWithoutId } = pkg;
 
     expect(id).toBe(123);
     expect('id' in dataWithoutId).toBe(false);

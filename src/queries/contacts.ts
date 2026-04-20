@@ -38,11 +38,8 @@ export function useUpdateContactsMutation(locale: Locale = 'ru') {
 
   return useMutation({
     mutationFn: async (updates: ContactUpdate & { id: number }) => {
-      const { id, ...rest } = updates;
-      
-      // Удаляем id из rest, чтобы он не попал в данные для обновления
-      const { id: _, ...dataWithoutId } = rest as Record<string, unknown> & { id?: unknown };
-      
+      const { id, ...dataWithoutId } = updates as Record<string, unknown> & { id: number };
+
       const numId = typeof id === 'string' ? parseInt(id, 10) : id;
       if (isNaN(numId)) {
         throw new Error(`Invalid contact id: ${id}`);

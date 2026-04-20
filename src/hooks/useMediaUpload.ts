@@ -4,7 +4,7 @@
 
 import { useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import { compressImages, isImageFile, formatFileSize } from '../lib/imageCompression';
+import { compressImages, isImageFile } from '../lib/imageCompression';
 import { useCreateMediaItemMutation } from '../queries/mediaLibrary';
 import { useI18n } from '../context/I18nContext';
 import { getMediaUploadContent } from '../content/hooks/mediaUpload';

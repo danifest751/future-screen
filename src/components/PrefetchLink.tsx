@@ -54,6 +54,7 @@ export const PrefetchLink = ({
 /**
  * Hook to prefetch routes programmatically
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export const usePrefetch = () => {
   const prefetch = (path: string) => {
     const link = document.createElement('link');

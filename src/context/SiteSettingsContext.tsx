@@ -85,6 +85,7 @@ export const SiteSettingsProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useSiteSettingsContext = () => {
   const context = useContext(SiteSettingsContext);
   if (!context) {

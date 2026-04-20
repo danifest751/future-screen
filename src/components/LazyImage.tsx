@@ -71,6 +71,7 @@ export const LazyImage = ({
 /**
  * Hook for lazy loading images
  */
+// eslint-disable-next-line react-refresh/only-export-components, @typescript-eslint/no-unused-vars
 export const useLazyImage = (src: string) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [shouldLoad, setShouldLoad] = useState(false);

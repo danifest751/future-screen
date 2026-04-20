@@ -16,6 +16,7 @@ vite.config.js
 # Editors
 .vscode/
 .idea/
+.kilocode/
 
 # Python
 __pycache__/

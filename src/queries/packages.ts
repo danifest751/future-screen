@@ -12,7 +12,6 @@ import type { Locale } from '../i18n/types';
 
 type PackageRow = Database['public']['Tables']['packages']['Row'];
 type PackageInsert = Database['public']['Tables']['packages']['Insert'];
-type PackageUpdate = Database['public']['Tables']['packages']['Update'];
 
 /**
  * Получить все пакеты.
@@ -40,11 +39,8 @@ export function useUpsertPackageMutation(locale: Locale = 'ru') {
 
   return useMutation({
     mutationFn: async (pkg: PackageInsert & { id?: number | string }) => {
-      const { id, created_at, ...rest } = pkg as Record<string, unknown> & { id?: unknown; created_at?: unknown };
-      
-      // Удаляем id из rest, чтобы он не попал в данные для обновления
-      const { id: _, ...dataWithoutId } = rest;
-      
+      const { id, created_at: _createdAt, ...dataWithoutId } = pkg as Record<string, unknown> & { id?: unknown; created_at?: unknown };
+
       if (id) {
         const numId = typeof id === 'string' ? parseInt(id as string, 10) : id as number;
         if (isNaN(numId)) {

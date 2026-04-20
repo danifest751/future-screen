@@ -9,7 +9,6 @@ import type { Database } from '../lib/database.types';
 
 type RentalCategoryRow = Database['public']['Tables']['rental_categories']['Row'];
 type RentalCategoryInsert = Database['public']['Tables']['rental_categories']['Insert'];
-type RentalCategoryUpdate = Database['public']['Tables']['rental_categories']['Update'];
 
 /**
  * Получить все категории аренды.
@@ -57,13 +56,10 @@ export function useUpsertRentalCategoryMutation() {
 
   return useMutation({
     mutationFn: async (category: RentalCategoryInsert & { id?: number | string }) => {
-      const { id, ...rest } = category;
-      
-      // Удаляем id из rest, чтобы он не попал в данные для обновления
-      const { id: _, ...dataWithoutId } = rest as Record<string, unknown> & { id?: unknown };
-      
+      const { id, ...dataWithoutId } = category as Record<string, unknown> & { id?: unknown };
+
       if (id) {
-        const numId = typeof id === 'string' ? parseInt(id, 10) : id;
+        const numId = typeof id === 'string' ? parseInt(id, 10) : (id as number);
         if (isNaN(numId)) {
           throw new Error(`Invalid rental category id: ${id}`);
         }

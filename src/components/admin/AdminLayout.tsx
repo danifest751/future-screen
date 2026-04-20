@@ -99,6 +99,7 @@ const AdminLayout = ({ title, subtitle, children, contentLocale, onContentLocale
       const extras = defaultNavItems.filter((item) => !orderedKeys.includes(item.to));
       return [...ordered, ...extras];
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [adminLocale]);
 
   const activeNavItem = navItems.find((item) =>

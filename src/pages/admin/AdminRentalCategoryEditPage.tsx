@@ -207,7 +207,7 @@ const AdminRentalCategoryEditPage = () => {
           aboutTitle: (cat.about?.title as string) || '',
           aboutText: (cat.about?.text as string) || '',
           aboutItemsText: ((cat.about?.items as string[]) || []).join('\n'),
-          useCasesTitle: (cat.useCases as any)?.title || '',
+          useCasesTitle: (cat.useCases as { title?: string })?.title || '',
           useCasesText: useCases
             .map((uc: { title: string; description: string }) => `${uc.title} | ${uc.description}`)
             .join('\n'),

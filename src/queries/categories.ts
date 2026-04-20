@@ -12,7 +12,6 @@ import type { Locale } from '../i18n/types';
 
 type CategoryRow = Database['public']['Tables']['categories']['Row'];
 type CategoryInsert = Database['public']['Tables']['categories']['Insert'];
-type CategoryUpdate = Database['public']['Tables']['categories']['Update'];
 
 /**
  * Получить все категории.
@@ -40,11 +39,8 @@ export function useUpsertCategoryMutation(locale: Locale = 'ru') {
 
   return useMutation({
     mutationFn: async (category: CategoryInsert & { id?: number | string }) => {
-      const { id, created_at, ...rest } = category as Record<string, unknown> & { id?: unknown; created_at?: unknown };
-      
-      // Удаляем id из rest, чтобы он не попал в данные для обновления
-      const { id: _, ...dataWithoutId } = rest;
-      
+      const { id, created_at: _createdAt, ...dataWithoutId } = category as Record<string, unknown> & { id?: unknown; created_at?: unknown };
+
       if (id) {
         const numId = typeof id === 'string' ? parseInt(id as string, 10) : id as number;
         if (isNaN(numId)) {

@@ -4,7 +4,7 @@
 
 import { useCallback, useState } from 'react';
 import { useMediaLibraryQuery, useMediaTagsQuery, useDeleteMediaItemsMutation, useAddTagsMutation, useRemoveTagsMutation, useUpdateMediaItemMutation } from '../queries/mediaLibrary';
-import type { MediaFilter, MediaItem, MediaBulkAction } from '../types/media';
+import type { MediaFilter, MediaItem } from '../types/media';
 
 export const useMediaLibrary = (filter: MediaFilter = {}) => {
   const { data: mediaItems, isLoading, error, refetch } = useMediaLibraryQuery(filter);
