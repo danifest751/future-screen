@@ -71,14 +71,14 @@ export const persistLeadState = async ({
 // PR #5a (C5): server is now the single writer for the `leads` table.
 // Previously the browser INSERTed a 'queued' row directly via the anon key
 // before calling /api/send. That INSERT path has to be closed so we can
-// revoke the anonymous INSERT policy in PR #5b — otherwise an attacker
+// revoke the anonymous INSERT policy in PR #5b вЂ” otherwise an attacker
 // could POST arbitrary PII rows straight into the table bypassing
 // validation and rate-limit.
 //
 // Called exactly once per request, right after Zod validation succeeds.
 //
 // Why SELECT-then-INSERT-or-UPDATE instead of .upsert():
-// The unique index on request_id is partial —
+// The unique index on request_id is partial вЂ”
 //   CREATE UNIQUE INDEX ... (request_id) WHERE request_id IS NOT NULL
 // (see supabase/migrations/20260406_add_lead_delivery_tracking.sql).
 // Postgres will not use a partial unique index for ON CONFLICT unless

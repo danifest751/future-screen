@@ -11,8 +11,8 @@ import {
   loadExistingLeadLog,
   persistLeadState,
   upsertLeadFromPayload,
-} from './send/leadTracking.js';
-import { retryAsync } from './send/retry.js';
+} from '../server/lib/sendApi/leadTracking.js';
+import { retryAsync } from '../server/lib/sendApi/retry.js';
 import type {
   DeliveryLogEntry,
   DeliveryLogger,
@@ -20,14 +20,14 @@ import type {
   EmailSendResult,
   SubmissionBody,
   SubmissionRequestBody,
-} from './send/types.js';
+} from '../server/lib/sendApi/types.js';
 import {
   escapeHtml,
   getRequestIdFromBody,
   toCleanString,
   toErrorMessage,
   toRecord,
-} from './send/utils.js';
+} from '../server/lib/sendApi/utils.js';
 
 const allowedOrigins = (
   process.env.ALLOWED_ORIGINS ||

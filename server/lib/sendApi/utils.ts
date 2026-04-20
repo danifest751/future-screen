@@ -12,10 +12,10 @@ export const toCleanString = (value: unknown): string => {
 };
 
 export const toErrorMessage = (err: unknown): string => {
-  if (!err) return 'Неизвестная ошибка';
+  if (!err) return 'РќРµРёР·РІРµСЃС‚РЅР°СЏ РѕС€РёР±РєР°';
   if (typeof err === 'string') return err;
   if (typeof err === 'object' && err !== null && 'message' in err) {
-    return String((err as { message?: unknown }).message ?? 'Неизвестная ошибка');
+    return String((err as { message?: unknown }).message ?? 'РќРµРёР·РІРµСЃС‚РЅР°СЏ РѕС€РёР±РєР°');
   }
   return String(err);
 };
