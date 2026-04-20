@@ -75,7 +75,6 @@ export function useUserRole() {
 
       await hydrateUserFromSession(session.user);
     } catch (err) {
-      console.error('[useUserRole] Error loading user role:', err);
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setLoading(false);

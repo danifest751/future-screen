@@ -56,7 +56,6 @@ function ChunkErrorHandler() {
         (isScript && target?.getAttribute('src')?.includes('/assets/'));
 
       if (isChunkError) {
-        console.warn('[ChunkErrorHandler] Detected chunk load error, reloading...');
         setTimeout(() => window.location.reload(), 500);
       }
     };

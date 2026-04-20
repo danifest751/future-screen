@@ -4,11 +4,8 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.error(
-    '[Supabase] Ошибка: VITE_SUPABASE_URL и VITE_SUPABASE_ANON_KEY должны быть заданы в переменных окружения.\n' +
-    'Для локальной разработки создайте файл .env с этими переменными.\n' +
-    'Для продакшена добавьте их в настройки Vercel.'
-  );
+  // Missing Supabase credentials — the client will be created with empty strings
+  // and subsequent API calls will fail with clear network errors.
 }
 
 export const supabase = createClient(

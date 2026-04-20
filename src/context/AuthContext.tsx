@@ -41,17 +41,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = useCallback(async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      console.error('[Auth] Login failed:', error.message);
       return false;
     }
     return true;
   }, []);
 
   const logout = useCallback(async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      console.error('[Auth] Logout failed:', error.message);
-    }
+    await supabase.auth.signOut();
   }, []);
 
   return (

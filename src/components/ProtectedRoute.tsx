@@ -32,10 +32,6 @@ const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
   }
 
   if (requiredRole && !hasRole(requiredRole)) {
-    console.warn(
-      `[ProtectedRoute] Access denied: user role "${user?.role}" < required "${requiredRole}"`,
-    );
-
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4">
         <div className="text-4xl" aria-hidden="true">

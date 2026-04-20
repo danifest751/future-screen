@@ -17,8 +17,7 @@ export async function asyncGetItem(key: string): Promise<string | null> {
     try {
       const value = window.localStorage.getItem(key);
       resolve(value);
-    } catch (error) {
-      console.error(`[asyncStorage] Failed to get item: ${key}`, error);
+    } catch {
       resolve(null);
     }
   });
@@ -40,7 +39,6 @@ export async function asyncSetItem(key: string, value: string): Promise<void> {
       window.localStorage.setItem(key, value);
       resolve();
     } catch (error) {
-      console.error(`[asyncStorage] Failed to set item: ${key}`, error);
       reject(error);
     }
   });
@@ -60,8 +58,7 @@ export async function asyncRemoveItem(key: string): Promise<void> {
     try {
       window.localStorage.removeItem(key);
       resolve();
-    } catch (error) {
-      console.error(`[asyncStorage] Failed to remove item: ${key}`, error);
+    } catch {
       resolve();
     }
   });
@@ -80,8 +77,7 @@ export async function asyncGetJson<T>(key: string): Promise<T | null> {
 
   try {
     return JSON.parse(raw) as T;
-  } catch (error) {
-    console.error(`[asyncStorage] Failed to parse JSON for key: ${key}`, error);
+  } catch {
     return null;
   }
 }
@@ -116,8 +112,7 @@ export async function asyncGetAllKeys(): Promise<string[]> {
         }
       }
       resolve(keys);
-    } catch (error) {
-      console.error('[asyncStorage] Failed to get all keys', error);
+    } catch {
       resolve([]);
     }
   });
@@ -136,8 +131,7 @@ export async function asyncClear(): Promise<void> {
     try {
       window.localStorage.clear();
       resolve();
-    } catch (error) {
-      console.error('[asyncStorage] Failed to clear storage', error);
+    } catch {
       resolve();
     }
   });

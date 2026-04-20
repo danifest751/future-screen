@@ -230,8 +230,8 @@ const AdminCasesRedesignedPage = () => {
       if (toLink.length > 0) {
         await linkMediaMutation.mutateAsync({ caseId, mediaIds: toLink });
       }
-    } catch (error) {
-      console.error('Error syncing case media:', error);
+    } catch {
+      // ignore
     }
   };
 

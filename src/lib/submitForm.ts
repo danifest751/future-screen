@@ -77,14 +77,12 @@ export const submitForm = async (payload: FormPayload): Promise<{ tg: boolean; e
     };
   } catch (error) {
     if (error instanceof DOMException && error.name === 'AbortError') {
-      console.warn('[submitForm] API request timed out');
       return {
         tg: false,
         email: false,
       };
     }
 
-    console.error('[submitForm] error:', error);
     return {
       tg: false,
       email: false,

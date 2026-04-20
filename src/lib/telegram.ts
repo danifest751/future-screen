@@ -1,4 +1,3 @@
-export const sendTelegram = async (text: string): Promise<boolean> => {
-  console.warn('[Telegram] Client-side Telegram send is disabled; use the server mail API instead', text);
+export const sendTelegram = async (_text: string): Promise<boolean> => {
   return false;
 };

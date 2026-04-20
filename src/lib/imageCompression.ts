@@ -111,12 +111,8 @@ export const compressImages = async (
     files.map(async (file) => {
       try {
         const compressed = await compressImage(file, options);
-        if (import.meta.env.DEV) {
-          console.log(`[ImageCompression] ${file.name}: ${(file.size / 1024).toFixed(1)}KB → ${(compressed.size / 1024).toFixed(1)}KB`);
-        }
         return compressed;
-      } catch (err) {
-        console.warn(`[ImageCompression] Failed to compress ${file.name}:`, err);
+      } catch {
         return file;
       }
     })

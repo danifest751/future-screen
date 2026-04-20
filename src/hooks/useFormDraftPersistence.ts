@@ -57,8 +57,7 @@ export const useFormDraftPersistence = <TValues extends FieldValues>({
         } else {
           setHasDraft(false);
         }
-      } catch (error) {
-        console.error(`Failed to restore draft for ${storageKey}`, error);
+      } catch {
         if (!cancelled) {
           await asyncRemoveItem(storageKey);
           setHasDraft(false);
@@ -96,8 +95,8 @@ export const useFormDraftPersistence = <TValues extends FieldValues>({
         try {
           await asyncSetJson(storageKey, values);
           setHasDraft(true);
-        } catch (error) {
-          console.error(`Failed to persist draft for ${storageKey}`, error);
+        } catch {
+          // silently ignore draft persistence errors
         } finally {
           isWritingRef.current = false;
         }
