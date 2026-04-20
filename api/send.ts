@@ -5,6 +5,29 @@ import { z } from 'zod';
 import 'dotenv/config';
 import { processEmailSubmission } from '../server/lib/emailCore.js';
 import { checkRateLimit } from './_lib/rateLimit.js';
+import {
+  buildLogEntry,
+  deriveLeadStatus,
+  loadExistingLeadLog,
+  persistLeadState,
+  upsertLeadFromPayload,
+} from './send/leadTracking.js';
+import { retryAsync } from './send/retry.js';
+import type {
+  DeliveryLogEntry,
+  DeliveryLogger,
+  EmailPayload,
+  EmailSendResult,
+  SubmissionBody,
+  SubmissionRequestBody,
+} from './send/types.js';
+import {
+  escapeHtml,
+  getRequestIdFromBody,
+  toCleanString,
+  toErrorMessage,
+  toRecord,
+} from './send/utils.js';
 
 const allowedOrigins = (
   process.env.ALLOWED_ORIGINS ||
@@ -13,37 +36,6 @@ const allowedOrigins = (
   .split(',')
   .map((v) => v.trim())
   .filter(Boolean);
-
-type SubmissionBody = {
-  requestId?: string;
-  email?: boolean;
-  clientEmail?: boolean;
-  telegram?: boolean;
-  emailError?: string;
-  clientEmailError?: string;
-  error?: string;
-  validationErrors?: string[];
-  details?: string;
-  tgEmailAlertSent?: boolean;
-};
-
-type SubmissionRequestBody = {
-  requestId?: string;
-  pagePath?: string;
-  referrer?: string;
-};
-
-type DeliveryLogEntry = {
-  at: string;
-  step: string;
-  status: 'pending' | 'success' | 'warning' | 'error';
-  channel: 'system' | 'api' | 'telegram' | 'email' | 'client-email' | 'database';
-  message: string;
-  details?: string;
-  meta?: Record<string, string>;
-};
-
-type DeliveryLogger = (entry: Omit<DeliveryLogEntry, 'at'>) => Promise<void>;
 
 // H8: empty Origin used to pass. An attacker calling the endpoint from
 // curl / a non-browser tool just omits the header and gets through CORS.
@@ -102,26 +94,6 @@ const emailPayloadSchema = z.object({
   extra: z.record(z.string()).optional().nullable(),
 });
 
-interface EmailPayload {
-  source: string;
-  name: string;
-  phone: string;
-  email?: string;
-  telegram?: string;
-  city?: string;
-  date?: string;
-  format?: string;
-  comment?: string;
-  extra?: Record<string, string>;
-}
-
-type EmailSendResult = {
-  adminSent: boolean;
-  clientSent: boolean;
-  errorMessage: string;
-  clientErrorMessage: string;
-};
-
 const transporter = nodemailer.createTransport({
   host: 'smtp.mail.ru',
   port: 465,
@@ -131,119 +103,6 @@ const transporter = nodemailer.createTransport({
     pass: process.env.SMTP_PASS,
   },
 });
-
-const escapeHtml = (value = ''): string =>
-  String(value)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-
-const toCleanString = (value: unknown): string => {
-  if (value === null || value === undefined) return '';
-  return String(value).trim();
-};
-
-const wait = (ms: number): Promise<void> =>
-  new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-
-const toErrorMessage = (err: unknown): string => {
-  if (!err) return 'Неизвестная ошибка';
-  if (typeof err === 'string') return err;
-  if (typeof err === 'object' && err !== null && 'message' in err) {
-    return String((err as { message?: unknown }).message ?? 'Неизвестная ошибка');
-  }
-  return String(err);
-};
-
-const normalizeRequestId = (value: unknown): string =>
-  toCleanString(value).replace(/[^a-zA-Z0-9._:-]/g, '').slice(0, 120);
-
-const getRequestIdFromBody = (body: unknown): string => {
-  if (!body || typeof body !== 'object' || Array.isArray(body)) return '';
-  return normalizeRequestId((body as SubmissionRequestBody).requestId);
-};
-
-const toRecord = (value: unknown): Record<string, string> | undefined => {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
-
-  const entries = Object.entries(value)
-    .map(([key, item]) => [String(key), toCleanString(item)] as const)
-    .filter(([, item]) => item);
-
-  return entries.length > 0 ? Object.fromEntries(entries) : undefined;
-};
-
-const buildLogEntry = (entry: Omit<DeliveryLogEntry, 'at'>): DeliveryLogEntry => ({
-  at: new Date().toISOString(),
-  ...entry,
-});
-
-const deriveLeadStatus = (body: SubmissionBody | undefined, statusCode: number): string => {
-  if (!body) return statusCode >= 400 ? 'failed' : 'processing';
-  if (statusCode >= 500) return 'failed';
-  if (body.email && body.telegram) return 'delivered';
-  if (body.email || body.telegram || body.clientEmail) return 'partial';
-  if (body.error || statusCode >= 400) return 'failed';
-  return 'processing';
-};
-
-const loadExistingLeadLog = async (
-  supabase: SupabaseClient,
-  requestId: string,
-): Promise<DeliveryLogEntry[]> => {
-  if (!requestId) return [];
-
-  const { data, error } = await supabase
-    .from('leads')
-    .select('delivery_log')
-    .eq('request_id', requestId)
-    .maybeSingle();
-
-  if (error) {
-    console.warn(`[LeadTracking][${requestId}] failed to load log: ${error.message}`);
-    return [];
-  }
-
-  return Array.isArray(data?.delivery_log) ? (data.delivery_log as DeliveryLogEntry[]) : [];
-};
-
-const persistLeadState = async ({
-  supabase,
-  requestId,
-  status,
-  deliveryLog,
-  pagePath,
-  referrer,
-}: {
-  supabase: SupabaseClient;
-  requestId: string;
-  status: string;
-  deliveryLog: DeliveryLogEntry[];
-  pagePath?: string;
-  referrer?: string;
-}): Promise<void> => {
-  if (!requestId) return;
-
-  const payload: Record<string, unknown> = {
-    request_id: requestId,
-    status,
-    delivery_log: deliveryLog,
-  };
-
-  if (pagePath) payload.page_path = pagePath;
-  if (referrer) payload.referrer = referrer;
-
-  const { error } = await supabase
-    .from('leads')
-    .update(payload)
-    .eq('request_id', requestId);
-
-  if (error) {
-    console.warn(`[LeadTracking][${requestId}] failed to persist: ${error.message}`);
-  }
-};
 
 // PR #5a (C5): server is now the single writer for the `leads` table.
 // Previously the browser INSERTed a 'queued' row directly via the anon key
@@ -264,90 +123,6 @@ const persistLeadState = async ({
 // 400 "no unique or exclusion constraint matching the ON CONFLICT
 // specification". A SELECT + conditional INSERT/UPDATE is idempotent
 // against duplicate requestIds (same row) and needs no migration.
-const upsertLeadFromPayload = async ({
-  supabase,
-  requestId,
-  payload,
-  pagePath,
-  referrer,
-  deliveryLog,
-}: {
-  supabase: SupabaseClient;
-  requestId: string;
-  payload: EmailPayload;
-  pagePath?: string;
-  referrer?: string;
-  deliveryLog: DeliveryLogEntry[];
-}): Promise<void> => {
-  if (!requestId) return;
-
-  const { data: existing, error: selectError } = await supabase
-    .from('leads')
-    .select('id')
-    .eq('request_id', requestId)
-    .maybeSingle();
-
-  if (selectError) {
-    console.warn(`[LeadTracking][${requestId}] lookup failed: ${selectError.message}`);
-    return;
-  }
-
-  const row = {
-    request_id: requestId,
-    source: payload.source,
-    name: payload.name,
-    phone: payload.phone,
-    email: payload.email ?? null,
-    telegram: payload.telegram ?? null,
-    city: payload.city ?? null,
-    date: payload.date ?? null,
-    format: payload.format ?? null,
-    comment: payload.comment ?? null,
-    extra: payload.extra ?? {},
-    page_path: pagePath ?? null,
-    referrer: referrer ?? null,
-    status: 'processing',
-    delivery_log: deliveryLog,
-  };
-
-  const { error } = existing
-    ? await supabase.from('leads').update(row).eq('id', existing.id)
-    : await supabase.from('leads').insert(row);
-
-  if (error) {
-    console.warn(`[LeadTracking][${requestId}] write failed: ${error.message}`);
-  }
-};
-
-const retryAsync = async <T>(
-  task: () => Promise<T>,
-  {
-    attempts = 3,
-    delayMs = 600,
-    onRetry,
-  }: {
-    attempts?: number;
-    delayMs?: number;
-    onRetry?: (err: unknown, attempt: number, attempts: number) => void;
-  } = {},
-): Promise<T> => {
-  let lastError: unknown;
-
-  for (let attempt = 1; attempt <= attempts; attempt += 1) {
-    try {
-      return await task();
-    } catch (err) {
-      lastError = err;
-      if (attempt < attempts) {
-        onRetry?.(err, attempt, attempts);
-        await wait(delayMs * attempt);
-      }
-    }
-  }
-
-  throw lastError;
-};
-
 const RU_PAGE_LABELS: Record<string, string> = {
   '/': 'Главная',
   '/prices': 'Цены',
