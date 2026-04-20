@@ -10,7 +10,6 @@ const publicRoutes = [
   '/about',
   '/contacts',
   '/consult',
-  '/calculator',
   '/check-supabase',
   '/test-supabase',
 ];
@@ -23,7 +22,6 @@ const adminRoutes = [
   '/admin/packages',
   '/admin/categories',
   '/admin/contacts',
-  '/admin/calculator',
 ];
 
 test.describe('Public routes', () => {
@@ -37,7 +35,7 @@ test.describe('Public routes', () => {
 
       await page.goto(route);
       await expect(page.locator('#root')).toBeAttached();
-      await expect(page).toHaveTitle(/Future Screen|Калькулятор LED-экрана/i);
+      await expect(page).toHaveTitle(/Future Screen/i);
     });
   }
 });

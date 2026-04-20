@@ -98,7 +98,7 @@ export const fixtures = {
       format: 'Форум',
       comment: 'Нужен экран',
       extra: { width: '8', height: '4' },
-      page_path: '/calculator',
+      page_path: '/led',
       referrer: null,
       status: 'new',
     },

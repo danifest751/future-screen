@@ -85,6 +85,7 @@ docs/i18n-report.md
 
 # Audit reports (working docs)
 docs/audit.md
+project-audit-report.md
 .vercel
 
 # Test/build artifacts (not to be committed)
