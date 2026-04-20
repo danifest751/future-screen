@@ -1,6 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import DOMPurify from 'isomorphic-dompurify';
 import { z } from 'zod';
 
 const allowedOrigins = (
@@ -15,6 +14,10 @@ const SHARE_TABLE = 'shared_reports';
 const MAX_HTML_LENGTH = 4_000_000;
 
 let supabaseAdmin: SupabaseClient | null = null;
+let domPurifyInstance:
+  | { sanitize: (value: string, config?: Record<string, unknown>) => string }
+  | null
+  | undefined;
 
 const bodySchema = z.object({
   html: z.string().min(1).max(MAX_HTML_LENGTH),
@@ -52,12 +55,50 @@ const getSupabaseAdmin = (): SupabaseClient => {
   return supabaseAdmin;
 };
 
-// Server-side DOMPurify. The previous check (`html.toLowerCase().includes('<script')`)
-// was trivially bypassable (e.g. `<SCR\u0049PT>`, event handlers like
-// `<img onerror=...>`, `<iframe srcdoc>`). DOMPurify strips every executable
-// vector and unsafe URL scheme regardless of encoding.
-const sanitizeHtml = (html: string): string => {
-  return DOMPurify.sanitize(html.trim(), {
+async function getDomPurify() {
+  if (domPurifyInstance !== undefined) return domPurifyInstance;
+  try {
+    const mod = await import('isomorphic-dompurify');
+    const candidate = ((mod as { default?: unknown }).default ?? mod) as {
+      sanitize?: (value: string, config?: Record<string, unknown>) => string;
+    };
+    if (typeof candidate?.sanitize === 'function') {
+      domPurifyInstance = { sanitize: candidate.sanitize.bind(candidate) };
+    } else {
+      domPurifyInstance = null;
+    }
+  } catch (error) {
+    // Do not fail function bootstrap if DOMPurify import breaks in a given runtime.
+    console.warn('[report-share] DOMPurify import failed, using regex fallback sanitizer', error);
+    domPurifyInstance = null;
+  }
+  return domPurifyInstance;
+}
+
+function fallbackSanitizeHtml(html: string): string {
+  // Defence-in-depth fallback if DOMPurify is unavailable at runtime.
+  // Main protection still comes from strict sandbox CSP on /reports/*.
+  let safe = html.trim();
+  safe = safe.replace(
+    /<\s*(script|iframe|object|embed|base|meta|link|form)\b[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi,
+    '',
+  );
+  safe = safe.replace(/<\s*(script|iframe|object|embed|base|meta|link|form)\b[^>]*\/?\s*>/gi, '');
+  safe = safe.replace(/\son[a-z]+\s*=\s*(['"]).*?\1/gi, '');
+  safe = safe.replace(/\son[a-z]+\s*=\s*[^\s>]+/gi, '');
+  safe = safe.replace(/\ssrcdoc\s*=\s*(['"]).*?\1/gi, '');
+  safe = safe.replace(/javascript:/gi, '');
+  return safe;
+}
+
+// Server-side DOMPurify (primary path). The previous check
+// `html.toLowerCase().includes('<script')` was bypassable.
+// We keep a resilient fallback so the endpoint doesn't crash if a runtime
+// cannot initialize DOMPurify.
+const sanitizeHtml = async (html: string): Promise<string> => {
+  const purifier = await getDomPurify();
+  if (!purifier) return fallbackSanitizeHtml(html);
+  return purifier.sanitize(html.trim(), {
     FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'base', 'meta', 'link', 'form'],
     FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'srcdoc'],
     ALLOW_DATA_ATTR: false,
@@ -142,7 +183,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(400).json({ error: 'Invalid payload', details: parsed.error.errors });
       }
 
-      const html = sanitizeHtml(parsed.data.html);
+      const html = await sanitizeHtml(parsed.data.html);
       const slug = await createUniqueSlug(supabase);
 
       const { error } = await supabase.from(SHARE_TABLE).insert({
