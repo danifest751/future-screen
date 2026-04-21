@@ -7,8 +7,10 @@ import { ConsentCheckbox } from '../components/ConsentCheckbox';
 import { useI18n } from '../context/I18nContext';
 import { getHomePageContent, type HomeIconKey } from '../content/pages/home';
 import { useHomeEquipmentSection } from '../hooks/useHomeEquipmentSection';
+import { useHomeHero } from '../hooks/useHomeHero';
 import { useEditableBinding } from '../hooks/useEditableBinding';
 import type { HomeEquipmentSectionContent } from '../lib/content/homeEquipmentSection';
+import type { HomeHeroContent, HomeHeroStat } from '../lib/content/homeHero';
 
 // Scroll reveal hook
 function useScrollReveal(threshold = 0.15) {
@@ -550,13 +552,43 @@ const CtaForm = ({ ctaForm }: { ctaForm: CtaFormContent }) => {
   );
 };
 
+interface HeroStatCardProps {
+  stat: HomeHeroStat;
+  index: number;
+  onSaveStat: (stat: HomeHeroStat) => Promise<void>;
+}
+
+const HeroStatCard = ({ stat, index, onSaveStat }: HeroStatCardProps) => {
+  const valueEdit = useEditableBinding({
+    value: stat.value,
+    onSave: (next) => onSaveStat({ ...stat, value: next }),
+    label: `Hero stat ${index + 1} — value`,
+  });
+  const labelEdit = useEditableBinding({
+    value: stat.label,
+    onSave: (next) => onSaveStat({ ...stat, label: next }),
+    label: `Hero stat ${index + 1} — label`,
+  });
+  return (
+    <div className="rounded-2xl border border-white/15 bg-black/30 p-4 text-center backdrop-blur-sm">
+      <div className="font-display gradient-text text-3xl font-bold md:text-4xl">
+        <span {...valueEdit.bindProps}>{valueEdit.value}</span>
+      </div>
+      <div className="mt-1 text-sm text-gray-300">
+        <span {...labelEdit.bindProps}>{labelEdit.value}</span>
+      </div>
+    </div>
+  );
+};
+
 // Home page
 const HomePage = () => {
   const { siteLocale } = useI18n();
   const homePageContent = getHomePageContent(siteLocale);
   const { data: equipmentSectionOverride, save: saveEquipmentSection } =
     useHomeEquipmentSection(siteLocale, true);
-  const { seo, hero, works, equipmentSection, eventTypesSection, processSection, ctaSection } =
+  const { data: hero, save: saveHero } = useHomeHero(siteLocale, true);
+  const { seo, works, equipmentSection, eventTypesSection, processSection, ctaSection } =
     homePageContent;
   const effectiveEquipmentSection = equipmentSectionOverride ?? equipmentSection;
   const equipment = effectiveEquipmentSection.items;
@@ -591,6 +623,52 @@ const HomePage = () => {
     label: 'Equipment section — subtitle',
     kind: 'multiline',
   });
+
+  // Hero (migrated from bundled content to site_content.home_hero in Phase 5a).
+  const saveHeroField = async (patch: Partial<HomeHeroContent>) => {
+    const ok = await saveHero({ ...hero, ...patch });
+    if (!ok) throw new Error('Failed to save hero');
+  };
+  const heroBadgeEdit = useEditableBinding({
+    value: hero.badge,
+    onSave: (next) => saveHeroField({ badge: next }),
+    label: 'Hero — badge',
+  });
+  const heroLine0Edit = useEditableBinding({
+    value: hero.titleLines[0] ?? '',
+    onSave: (next) =>
+      saveHeroField({ titleLines: [next, hero.titleLines[1] ?? '', hero.titleLines[2] ?? ''] }),
+    label: 'Hero — title line 1',
+  });
+  const heroLine1Edit = useEditableBinding({
+    value: hero.titleLines[1] ?? '',
+    onSave: (next) =>
+      saveHeroField({ titleLines: [hero.titleLines[0] ?? '', next, hero.titleLines[2] ?? ''] }),
+    label: 'Hero — title line 2 (accent)',
+  });
+  const heroLine2Edit = useEditableBinding({
+    value: hero.titleLines[2] ?? '',
+    onSave: (next) =>
+      saveHeroField({ titleLines: [hero.titleLines[0] ?? '', hero.titleLines[1] ?? '', next] }),
+    label: 'Hero — title line 3',
+  });
+  const heroSubtitleEdit = useEditableBinding({
+    value: hero.subtitle,
+    onSave: (next) => saveHeroField({ subtitle: next }),
+    label: 'Hero — subtitle',
+    kind: 'multiline',
+  });
+  const heroPrimaryCtaEdit = useEditableBinding({
+    value: hero.primaryCta,
+    onSave: (next) => saveHeroField({ primaryCta: next }),
+    label: 'Hero — primary CTA',
+  });
+  const heroSecondaryCtaEdit = useEditableBinding({
+    value: hero.secondaryCta,
+    onSave: (next) => saveHeroField({ secondaryCta: next }),
+    label: 'Hero — secondary CTA',
+  });
+
   const eventTypes = eventTypesSection.items;
   const processSteps = processSection.steps;
   const worksItems = works.items;
@@ -620,19 +698,23 @@ const HomePage = () => {
           {/* Badge */}
           <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm text-gray-200 backdrop-blur-sm">
             <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
-            {hero.badge}
+            <span {...heroBadgeEdit.bindProps}>{heroBadgeEdit.value}</span>
           </div>
 
           {/* Title */}
           <h1 className="font-display mb-6 text-balance text-5xl font-bold leading-tight text-white drop-shadow-lg md:text-7xl lg:text-8xl">
-            {hero.titleLines[0]}<br />
-            <span className="gradient-text">{hero.titleLines[1]}</span><br />
-            {hero.titleLines[2]}
+            <span {...heroLine0Edit.bindProps}>{heroLine0Edit.value}</span>
+            <br />
+            <span className="gradient-text" {...heroLine1Edit.bindProps}>
+              {heroLine1Edit.value}
+            </span>
+            <br />
+            <span {...heroLine2Edit.bindProps}>{heroLine2Edit.value}</span>
           </h1>
 
           {/* Subtitle */}
           <p className="mx-auto mb-10 max-w-2xl text-pretty text-lg leading-relaxed text-gray-200 md:text-xl">
-            {hero.subtitle}
+            <span {...heroSubtitleEdit.bindProps}>{heroSubtitleEdit.value}</span>
           </p>
 
           {/* CTA */}
@@ -642,20 +724,26 @@ const HomePage = () => {
               onClick={(e) => { e.preventDefault(); document.getElementById('contacts')?.scrollIntoView({ behavior: 'smooth' }); trackEvent('click_cta_hero'); }}
               className="btn-primary text-base"
             >
-              {hero.primaryCta}
+              <span {...heroPrimaryCtaEdit.bindProps}>{heroPrimaryCtaEdit.value}</span>
             </a>
             <Link to="/cases" className="btn-secondary text-base">
-              {hero.secondaryCta}
+              <span {...heroSecondaryCtaEdit.bindProps}>{heroSecondaryCtaEdit.value}</span>
             </Link>
           </div>
 
           {/* Stats */}
           <div className="mt-16 grid grid-cols-2 gap-4 md:grid-cols-4">
-            {hero.stats.map((stat) => (
-              <div key={stat.label} className="rounded-2xl border border-white/15 bg-black/30 p-4 text-center backdrop-blur-sm">
-                <div className="font-display gradient-text text-3xl font-bold md:text-4xl">{stat.value}</div>
-                <div className="mt-1 text-sm text-gray-300">{stat.label}</div>
-              </div>
+            {hero.stats.map((stat, i) => (
+              <HeroStatCard
+                key={`${stat.label}-${i}`}
+                stat={stat}
+                index={i}
+                onSaveStat={async (nextStat) => {
+                  const nextStats = [...hero.stats];
+                  nextStats[i] = nextStat;
+                  await saveHeroField({ stats: nextStats });
+                }}
+              />
             ))}
           </div>
         </div>
