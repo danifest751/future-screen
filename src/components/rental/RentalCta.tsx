@@ -2,7 +2,6 @@ import { memo } from 'react';
 import { Link } from 'react-router-dom';
 import { getRentalComponentContent } from '../../content/components/rental';
 import { useI18n } from '../../context/I18nContext';
-import { StarBorder } from '../effects/StarBorder';
 import { RequestForm } from '../RequestForm';
 
 interface RentalCtaProps {
@@ -62,11 +61,9 @@ const RentalCta = memo(function RentalCta({ data, showForm = false, formCtaText 
                 {(hasPrimary || hasSecondary) && (
                   <div className="flex flex-wrap justify-center gap-4">
                     {hasPrimary && (
-                      <StarBorder variant="button">
-                        <Link to={primaryCtaLink} className="btn-primary">
-                          {primaryCta}
-                        </Link>
-                      </StarBorder>
+                      <Link to={primaryCtaLink} className="btn-primary">
+                        {primaryCta}
+                      </Link>
                     )}
                     {hasSecondary && (
                       <Link to={secondaryCtaLink} className="btn-secondary">

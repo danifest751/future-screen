@@ -1,6 +1,5 @@
 import { memo } from 'react';
 import { Link } from 'react-router-dom';
-import { StarBorder } from '../effects/StarBorder';
 import { BlurText } from '../effects/BlurText';
 
 interface RentalHeroProps {
@@ -60,14 +59,12 @@ const RentalHero = memo(function RentalHero({
           {(primaryCtaText || secondaryCtaText) && (
             <div className="flex flex-wrap gap-4 mb-10">
               {primaryCtaText && primaryCtaLink && (
-                <StarBorder variant="button">
-                  <Link
-                    to={primaryCtaLink}
-                    className="btn-primary"
-                  >
-                    {primaryCtaText}
-                  </Link>
-                </StarBorder>
+                <Link
+                  to={primaryCtaLink}
+                  className="btn-primary"
+                >
+                  {primaryCtaText}
+                </Link>
               )}
               {secondaryCtaText && secondaryCtaLink && (
                 <Link

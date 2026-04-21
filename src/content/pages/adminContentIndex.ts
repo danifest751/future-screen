@@ -31,12 +31,6 @@ const ru = {
       icon: 'folderOpen',
     },
     {
-      to: '/admin/backgrounds',
-      title: 'Фоны',
-      desc: 'Глобальный фон и параметры анимаций',
-      icon: 'palette',
-    },
-    {
       to: '/admin/privacy-policy',
       title: 'Политика',
       desc: 'Текст политики конфиденциальности',
@@ -86,12 +80,6 @@ const en: typeof ru = {
       title: 'Cases',
       desc: 'Portfolio, metrics, and images',
       icon: 'folderOpen',
-    },
-    {
-      to: '/admin/backgrounds',
-      title: 'Backgrounds',
-      desc: 'Global background and animation parameters',
-      icon: 'palette',
     },
     {
       to: '/admin/privacy-policy',

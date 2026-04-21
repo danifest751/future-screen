@@ -5,7 +5,6 @@ type AdminLayoutContent = {
     dashboard: string;
     leads: string;
     cases: string;
-    backgrounds: string;
     packages: string;
     categories: string;
     rentalCategories: string;
@@ -45,7 +44,6 @@ const ru: AdminLayoutContent = {
     dashboard: 'Дашборд',
     leads: 'Заявки',
     cases: 'Кейсы',
-    backgrounds: 'Фоны',
     packages: 'Пакеты',
     categories: 'Категории',
     rentalCategories: 'Аренда',
@@ -85,7 +83,6 @@ const en: AdminLayoutContent = {
     dashboard: 'Dashboard',
     leads: 'Leads',
     cases: 'Cases',
-    backgrounds: 'Backgrounds',
     packages: 'Packages',
     categories: 'Categories',
     rentalCategories: 'Rental',

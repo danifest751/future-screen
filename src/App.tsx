@@ -4,7 +4,6 @@ import { Helmet } from 'react-helmet-async';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import { StructuredData } from './components/StructuredData';
-import { useStarBorderGlobal } from './hooks/useStarBorderGlobal';
 import { getGlobalContent } from './content/global';
 import { useI18n } from './context/I18nContext';
 
@@ -27,7 +26,6 @@ const AdminCasesPage = lazy(() => import('./pages/admin/AdminCasesRedesignedPage
 const AdminPackagesPage = lazy(() => import('./pages/admin/AdminPackagesPage'));
 const AdminCategoriesPage = lazy(() => import('./pages/admin/AdminCategoriesPage'));
 const AdminContactsPage = lazy(() => import('./pages/admin/AdminContactsPage'));
-const AdminBackgroundsPage = lazy(() => import('./pages/admin/AdminBackgroundsPage'));
 const AdminRentalCategoriesPage = lazy(() => import('./pages/admin/AdminRentalCategoriesPage'));
 const AdminRentalCategoryEditPage = lazy(() => import('./pages/admin/AdminRentalCategoryEditPage'));
 const AdminPrivacyPolicyPage = lazy(() => import('./pages/admin/AdminPrivacyPolicyPage'));
@@ -68,7 +66,6 @@ function ChunkErrorHandler() {
 }
 
 const App = () => {
-  useStarBorderGlobal();
   const location = useLocation();
   const { getLocaleForPath } = useI18n();
   const locale = getLocaleForPath(location.pathname);
@@ -97,7 +94,6 @@ const App = () => {
     { path: '/admin/packages', element: <ProtectedRoute requiredRole="admin"><AdminPackagesPage /></ProtectedRoute> },
     { path: '/admin/categories', element: <ProtectedRoute requiredRole="admin"><AdminCategoriesPage /></ProtectedRoute> },
     { path: '/admin/contacts', element: <ProtectedRoute requiredRole="admin"><AdminContactsPage /></ProtectedRoute> },
-    { path: '/admin/backgrounds', element: <ProtectedRoute requiredRole="admin"><AdminBackgroundsPage /></ProtectedRoute> },
     { path: '/admin/rental-categories', element: <ProtectedRoute requiredRole="admin"><AdminRentalCategoriesPage /></ProtectedRoute> },
     { path: '/admin/rental/:id', element: <ProtectedRoute requiredRole="admin"><AdminRentalCategoryEditPage /></ProtectedRoute> },
     { path: '/admin/privacy-policy', element: <ProtectedRoute requiredRole="admin"><AdminPrivacyPolicyPage /></ProtectedRoute> },

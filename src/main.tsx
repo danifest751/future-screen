@@ -6,7 +6,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './context/AuthContext';
 import { I18nProvider } from './context/I18nContext';
 import { ThemeProvider } from './context/ThemeContext';
-import { SiteSettingsProvider } from './context/SiteSettingsContext';
 import App from './App';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { installClientErrorLogger } from './lib/clientErrorLogger';
@@ -33,9 +32,7 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
             <I18nProvider>
               <ThemeProvider>
                 <AuthProvider>
-                  <SiteSettingsProvider>
-                    <App />
-                  </SiteSettingsProvider>
+                  <App />
                 </AuthProvider>
               </ThemeProvider>
             </I18nProvider>
