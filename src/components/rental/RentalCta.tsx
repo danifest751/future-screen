@@ -1,34 +1,72 @@
 import { memo } from 'react';
 import { Link } from 'react-router-dom';
+import { useOptionalEditMode } from '../../context/EditModeContext';
 import { getRentalComponentContent } from '../../content/components/rental';
 import { useI18n } from '../../context/I18nContext';
+import { useEditableBinding } from '../../hooks/useEditableBinding';
 import { RequestForm } from '../RequestForm';
 
-interface RentalCtaProps {
-  data: {
-    title?: string;
-    text?: string;
-    primaryCta?: string;
-    primaryCtaLink?: string;
-    secondaryCta?: string;
-    secondaryCtaLink?: string;
-  };
-  showForm?: boolean;
-  formCtaText?: string;
+export interface RentalCtaData {
+  title?: string;
+  text?: string;
+  primaryCta?: string;
+  primaryCtaLink?: string;
+  secondaryCta?: string;
+  secondaryCtaLink?: string;
 }
 
-const RentalCta = memo(function RentalCta({ data, showForm = false, formCtaText }: RentalCtaProps) {
+interface RentalCtaProps {
+  data: RentalCtaData;
+  showForm?: boolean;
+  formCtaText?: string;
+  onPatch?: (patch: Partial<RentalCtaData>) => Promise<void>;
+}
+
+const RentalCta = memo(function RentalCta({
+  data,
+  showForm = false,
+  formCtaText,
+  onPatch,
+}: RentalCtaProps) {
+  const { isEditing } = useOptionalEditMode();
   const { siteLocale } = useI18n();
   const rentalComponentContent = getRentalComponentContent(siteLocale);
   const formButtonText = formCtaText ?? rentalComponentContent.ctaFormButton;
   const { title, text, primaryCta, primaryCtaLink, secondaryCta, secondaryCtaLink } = data;
+  const disabled = !onPatch;
 
-  if (!title && !text && !showForm) {
+  const titleEdit = useEditableBinding({
+    value: title ?? '',
+    onSave: async (next) => onPatch?.({ title: next }),
+    label: 'Bottom CTA — title',
+    disabled,
+  });
+  const textEdit = useEditableBinding({
+    value: text ?? '',
+    onSave: async (next) => onPatch?.({ text: next }),
+    label: 'Bottom CTA — text',
+    disabled,
+    kind: 'multiline',
+  });
+  const primaryCtaEdit = useEditableBinding({
+    value: primaryCta ?? '',
+    onSave: async (next) => onPatch?.({ primaryCta: next }),
+    label: 'Bottom CTA — primary CTA',
+    disabled,
+  });
+  const secondaryCtaEdit = useEditableBinding({
+    value: secondaryCta ?? '',
+    onSave: async (next) => onPatch?.({ secondaryCta: next }),
+    label: 'Bottom CTA — secondary CTA',
+    disabled,
+  });
+
+  if (!title && !text && !showForm && !isEditing) {
     return null;
   }
 
-  const hasPrimary = primaryCta && primaryCtaLink;
-  const hasSecondary = secondaryCta && secondaryCtaLink;
+  const hasPrimary = (primaryCta && primaryCtaLink) || isEditing;
+  const hasSecondary = (secondaryCta && secondaryCtaLink) || isEditing;
 
   return (
     <section className="py-12 md:py-16">
@@ -38,7 +76,7 @@ const RentalCta = memo(function RentalCta({ data, showForm = false, formCtaText 
           <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-brand-600/10 blur-3xl" />
 
           <div className="relative max-w-2xl mx-auto text-center">
-            {showForm ? (
+            {showForm && !isEditing ? (
               <RequestForm
                 title={title || rentalComponentContent.ctaFallbackTitle}
                 subtitle={text}
@@ -46,29 +84,43 @@ const RentalCta = memo(function RentalCta({ data, showForm = false, formCtaText 
               />
             ) : (
               <>
-                {title && (
+                {(title || isEditing) && (
                   <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
-                    {title}
+                    <span {...titleEdit.bindProps}>{titleEdit.value}</span>
                   </h2>
                 )}
-
-                {text && (
+                {(text || isEditing) && (
                   <p className="text-slate-300 mb-8 leading-relaxed">
-                    {text}
+                    <span {...textEdit.bindProps}>{textEdit.value}</span>
                   </p>
                 )}
-
                 {(hasPrimary || hasSecondary) && (
                   <div className="flex flex-wrap justify-center gap-4">
                     {hasPrimary && (
-                      <Link to={primaryCtaLink} className="btn-primary">
-                        {primaryCta}
-                      </Link>
+                      isEditing ? (
+                        <span className="btn-primary">
+                          <span {...primaryCtaEdit.bindProps}>
+                            {primaryCtaEdit.value || '— CTA —'}
+                          </span>
+                        </span>
+                      ) : primaryCtaLink ? (
+                        <Link to={primaryCtaLink} className="btn-primary">
+                          {primaryCta}
+                        </Link>
+                      ) : null
                     )}
                     {hasSecondary && (
-                      <Link to={secondaryCtaLink} className="btn-secondary">
-                        {secondaryCta}
-                      </Link>
+                      isEditing ? (
+                        <span className="btn-secondary">
+                          <span {...secondaryCtaEdit.bindProps}>
+                            {secondaryCtaEdit.value || '— secondary —'}
+                          </span>
+                        </span>
+                      ) : secondaryCtaLink ? (
+                        <Link to={secondaryCtaLink} className="btn-secondary">
+                          {secondaryCta}
+                        </Link>
+                      ) : null
                     )}
                   </div>
                 )}
