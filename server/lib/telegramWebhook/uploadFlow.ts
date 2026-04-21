@@ -94,7 +94,7 @@ export const handleCallbackQuery = async (update: TelegramUpdate): Promise<void>
   }
 };
 
-const extractFileInfo = (message: NonNullable<TelegramUpdate['message']>): TelegramFileInfo | 'unsupported' | null => {
+export const extractFileInfo = (message: NonNullable<TelegramUpdate['message']>): TelegramFileInfo | 'unsupported' | null => {
   if (message.photo && message.photo.length > 0) {
     const photo = message.photo[message.photo.length - 1];
     return {
