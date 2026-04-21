@@ -412,7 +412,125 @@ type EventItem = {
   photo: string;
 };
 
-function EventsSlider({ items, prevLabel, nextLabel }: { items: readonly EventItem[]; prevLabel: string; nextLabel: string }) {
+interface EventSlideProps {
+  item: EventItem;
+  index: number;
+  onSaveItem?: (next: EventItem) => Promise<void>;
+}
+
+const EventSlide = ({ item, index, onSaveItem }: EventSlideProps) => {
+  const { isEditing } = useOptionalEditMode();
+  const disabled = !onSaveItem;
+  const titleEdit = useEditableBinding({
+    value: item.title,
+    onSave: async (next) => onSaveItem?.({ ...item, title: next }),
+    label: `Event type ${index + 1} — title`,
+    disabled,
+  });
+  const descEdit = useEditableBinding({
+    value: item.desc,
+    onSave: async (next) => onSaveItem?.({ ...item, desc: next }),
+    label: `Event type ${index + 1} — description`,
+    disabled,
+    kind: 'multiline',
+  });
+
+  const imageEl = (
+    <img
+      src={item.photo}
+      alt={item.title}
+      className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+      style={{ filter: 'saturate(0.5) brightness(0.6)' }}
+    />
+  );
+
+  return (
+    <div className="relative overflow-hidden rounded-xl" style={{ aspectRatio: '4/3' }}>
+      {onSaveItem ? (
+        <EditableImage
+          src={item.photo}
+          alt={item.title}
+          label={`Event type ${index + 1} — photo`}
+          onSave={async ({ url }) => {
+            await onSaveItem({ ...item, photo: url });
+          }}
+        >
+          {() => imageEl}
+        </EditableImage>
+      ) : (
+        imageEl
+      )}
+      <div className="absolute inset-0 bg-black/50 transition-colors duration-300 group-hover:bg-black/25 pointer-events-none" />
+      <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-white pointer-events-none">
+        <div className="mb-3 opacity-80 group-hover:opacity-100 transition-opacity">{homeIcons[item.iconKey]}</div>
+        <h3 className="font-display text-xl font-bold pointer-events-auto">
+          <span {...titleEdit.bindProps}>{titleEdit.value}</span>
+        </h3>
+      </div>
+      <div className="absolute bottom-0 left-0 right-0 p-4 text-center pointer-events-none">
+        <p
+          className={`text-xs leading-relaxed text-gray-200 transition-opacity duration-300 pointer-events-auto ${
+            isEditing ? 'opacity-100' : 'opacity-0 group-hover:opacity-90'
+          }`}
+        >
+          <span {...descEdit.bindProps}>{descEdit.value}</span>
+        </p>
+      </div>
+    </div>
+  );
+};
+
+const EventsEditGrid = ({
+  items,
+  onReplaceItems,
+}: {
+  items: readonly EventItem[];
+  onReplaceItems: (next: EventItem[]) => Promise<void>;
+}) => (
+  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    {items.map((item, i) => (
+      <div key={`${i}-${item.photo.slice(-16)}`} className="group relative overflow-hidden">
+        <EventSlide
+          item={item}
+          index={i}
+          onSaveItem={async (next) => {
+            const nextItems = [...items];
+            nextItems[i] = next;
+            await onReplaceItems(nextItems);
+          }}
+        />
+      </div>
+    ))}
+  </div>
+);
+
+function EventsSlider({
+  items,
+  prevLabel,
+  nextLabel,
+  onReplaceItems,
+}: {
+  items: readonly EventItem[];
+  prevLabel: string;
+  nextLabel: string;
+  onReplaceItems?: (next: EventItem[]) => Promise<void>;
+}) {
+  const { isEditing } = useOptionalEditMode();
+  if (isEditing && onReplaceItems) {
+    return <EventsEditGrid items={items} onReplaceItems={onReplaceItems} />;
+  }
+  return <EventsSliderView items={items} prevLabel={prevLabel} nextLabel={nextLabel} />;
+}
+
+function EventsSliderView({
+  items,
+  prevLabel,
+  nextLabel,
+}: {
+  items: readonly EventItem[];
+  prevLabel: string;
+  nextLabel: string;
+}) {
   const [shuffled] = useState(() => shuffle(items));
   const n = shuffled.length;
   const all = [...shuffled, ...shuffled, ...shuffled];
@@ -1135,6 +1253,16 @@ const HomePage = () => {
     if (!ok) throw new Error('Failed to save works items');
   };
 
+  // Event type items — replace entire array. Cast back to HomeEventTypeItem
+  // (slider uses narrower iconKey union).
+  const replaceEventTypeItems = async (next: EventItem[]) => {
+    const ok = await saveEventTypes({
+      ...eventTypesSection,
+      items: next as HomeEventTypesContent['items'],
+    });
+    if (!ok) throw new Error('Failed to save event type items');
+  };
+
   return (
     <div>
       <Helmet>
@@ -1306,7 +1434,12 @@ const HomePage = () => {
           </RevealSection>
 
           <RevealSection>
-            <EventsSlider items={eventTypes as readonly EventItem[]} prevLabel={eventTypesSection.prevLabel} nextLabel={eventTypesSection.nextLabel} />
+            <EventsSlider
+              items={eventTypes as readonly EventItem[]}
+              prevLabel={eventTypesSection.prevLabel}
+              nextLabel={eventTypesSection.nextLabel}
+              onReplaceItems={replaceEventTypeItems}
+            />
           </RevealSection>
         </div>
       </section>
