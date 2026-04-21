@@ -8,9 +8,17 @@ import { useI18n } from '../context/I18nContext';
 import { getHomePageContent, type HomeIconKey } from '../content/pages/home';
 import { useHomeEquipmentSection } from '../hooks/useHomeEquipmentSection';
 import { useHomeHero } from '../hooks/useHomeHero';
+import { useHomeWorks } from '../hooks/useHomeWorks';
+import { useHomeEventTypes } from '../hooks/useHomeEventTypes';
+import { useHomeProcess } from '../hooks/useHomeProcess';
+import { useHomeCta } from '../hooks/useHomeCta';
 import { useEditableBinding } from '../hooks/useEditableBinding';
 import type { HomeEquipmentSectionContent } from '../lib/content/homeEquipmentSection';
 import type { HomeHeroContent, HomeHeroStat } from '../lib/content/homeHero';
+import type { HomeWorksContent } from '../lib/content/homeWorks';
+import type { HomeEventTypesContent } from '../lib/content/homeEventTypes';
+import type { HomeProcessContent, HomeProcessStep } from '../lib/content/homeProcess';
+import type { HomeCtaContent } from '../lib/content/homeCta';
 
 // Scroll reveal hook
 function useScrollReveal(threshold = 0.15) {
@@ -552,6 +560,47 @@ const CtaForm = ({ ctaForm }: { ctaForm: CtaFormContent }) => {
   );
 };
 
+interface ProcessStepCardProps {
+  step: HomeProcessStep;
+  index: number;
+  onSaveStep: (next: HomeProcessStep) => Promise<void>;
+}
+
+const ProcessStepCard = ({ step, index, onSaveStep }: ProcessStepCardProps) => {
+  const numEdit = useEditableBinding({
+    value: step.num,
+    onSave: (next) => onSaveStep({ ...step, num: next }),
+    label: `Process step ${index + 1} — number`,
+  });
+  const titleEdit = useEditableBinding({
+    value: step.title,
+    onSave: (next) => onSaveStep({ ...step, title: next }),
+    label: `Process step ${index + 1} — title`,
+  });
+  const descEdit = useEditableBinding({
+    value: step.desc,
+    onSave: (next) => onSaveStep({ ...step, desc: next }),
+    label: `Process step ${index + 1} — description`,
+    kind: 'multiline',
+  });
+  return (
+    <div className="card relative h-full text-center">
+      <div
+        className="font-display mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full text-2xl font-bold text-white"
+        style={{ background: 'var(--accent-gradient)', boxShadow: 'var(--glow)' }}
+      >
+        <span {...numEdit.bindProps}>{numEdit.value}</span>
+      </div>
+      <h3 className="font-display mb-2 text-lg font-semibold text-white">
+        <span {...titleEdit.bindProps}>{titleEdit.value}</span>
+      </h3>
+      <p className="text-sm leading-relaxed text-gray-400">
+        <span {...descEdit.bindProps}>{descEdit.value}</span>
+      </p>
+    </div>
+  );
+};
+
 interface HeroStatCardProps {
   stat: HomeHeroStat;
   index: number;
@@ -588,8 +637,11 @@ const HomePage = () => {
   const { data: equipmentSectionOverride, save: saveEquipmentSection } =
     useHomeEquipmentSection(siteLocale, true);
   const { data: hero, save: saveHero } = useHomeHero(siteLocale, true);
-  const { seo, works, equipmentSection, eventTypesSection, processSection, ctaSection } =
-    homePageContent;
+  const { data: works, save: saveWorks } = useHomeWorks(siteLocale, true);
+  const { data: eventTypesSection, save: saveEventTypes } = useHomeEventTypes(siteLocale, true);
+  const { data: processSection, save: saveProcess } = useHomeProcess(siteLocale, true);
+  const { data: ctaSection, save: saveCta } = useHomeCta(siteLocale, true);
+  const { seo, equipmentSection } = homePageContent;
   const effectiveEquipmentSection = equipmentSectionOverride ?? equipmentSection;
   const equipment = effectiveEquipmentSection.items;
   const extraEquipment = effectiveEquipmentSection.extraItems;
@@ -667,6 +719,96 @@ const HomePage = () => {
     value: hero.secondaryCta,
     onSave: (next) => saveHeroField({ secondaryCta: next }),
     label: 'Hero — secondary CTA',
+  });
+
+  // Works section (migrated in Phase 5b).
+  const saveWorksField = async (patch: Partial<HomeWorksContent>) => {
+    const ok = await saveWorks({ ...works, ...patch });
+    if (!ok) throw new Error('Failed to save works section');
+  };
+  const worksBadgeEdit = useEditableBinding({
+    value: works.badge,
+    onSave: (next) => saveWorksField({ badge: next }),
+    label: 'Works — badge',
+  });
+  const worksTitleEdit = useEditableBinding({
+    value: works.title,
+    onSave: (next) => saveWorksField({ title: next }),
+    label: 'Works — title',
+  });
+  const worksAccentTitleEdit = useEditableBinding({
+    value: works.accentTitle,
+    onSave: (next) => saveWorksField({ accentTitle: next }),
+    label: 'Works — accent title',
+  });
+  const worksAllCasesLinkEdit = useEditableBinding({
+    value: works.allCasesLink,
+    onSave: (next) => saveWorksField({ allCasesLink: next }),
+    label: 'Works — all cases link',
+  });
+
+  // Event types section.
+  const saveEventTypesField = async (patch: Partial<HomeEventTypesContent>) => {
+    const ok = await saveEventTypes({ ...eventTypesSection, ...patch });
+    if (!ok) throw new Error('Failed to save event types section');
+  };
+  const eventTypesBadgeEdit = useEditableBinding({
+    value: eventTypesSection.badge,
+    onSave: (next) => saveEventTypesField({ badge: next }),
+    label: 'Event types — badge',
+  });
+  const eventTypesTitleEdit = useEditableBinding({
+    value: eventTypesSection.title,
+    onSave: (next) => saveEventTypesField({ title: next }),
+    label: 'Event types — title',
+  });
+  const eventTypesAccentTitleEdit = useEditableBinding({
+    value: eventTypesSection.accentTitle,
+    onSave: (next) => saveEventTypesField({ accentTitle: next }),
+    label: 'Event types — accent title',
+  });
+
+  // Process section.
+  const saveProcessField = async (patch: Partial<HomeProcessContent>) => {
+    const ok = await saveProcess({ ...processSection, ...patch });
+    if (!ok) throw new Error('Failed to save process section');
+  };
+  const processBadgeEdit = useEditableBinding({
+    value: processSection.badge,
+    onSave: (next) => saveProcessField({ badge: next }),
+    label: 'Process — badge',
+  });
+  const processTitleEdit = useEditableBinding({
+    value: processSection.title,
+    onSave: (next) => saveProcessField({ title: next }),
+    label: 'Process — title',
+  });
+  const processAccentTitleEdit = useEditableBinding({
+    value: processSection.accentTitle,
+    onSave: (next) => saveProcessField({ accentTitle: next }),
+    label: 'Process — accent title',
+  });
+
+  // CTA section.
+  const saveCtaField = async (patch: Partial<HomeCtaContent>) => {
+    const ok = await saveCta({ ...ctaSection, ...patch });
+    if (!ok) throw new Error('Failed to save CTA section');
+  };
+  const ctaTitleEdit = useEditableBinding({
+    value: ctaSection.title,
+    onSave: (next) => saveCtaField({ title: next }),
+    label: 'CTA — title',
+  });
+  const ctaAccentTitleEdit = useEditableBinding({
+    value: ctaSection.accentTitle,
+    onSave: (next) => saveCtaField({ accentTitle: next }),
+    label: 'CTA — accent title',
+  });
+  const ctaSubtitleEdit = useEditableBinding({
+    value: ctaSection.subtitle,
+    onSave: (next) => saveCtaField({ subtitle: next }),
+    label: 'CTA — subtitle',
+    kind: 'multiline',
   });
 
   const eventTypes = eventTypesSection.items;
@@ -756,15 +898,17 @@ const HomePage = () => {
             <div className="mb-12 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
               <div>
                 <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-sm text-gray-400">
-                  {works.badge}
+                  <span {...worksBadgeEdit.bindProps}>{worksBadgeEdit.value}</span>
                 </div>
                 <h2 className="font-display text-balance text-4xl font-bold text-white md:text-5xl">
-                  {works.title}{' '}
-                  <span className="gradient-text">{works.accentTitle}</span>
+                  <span {...worksTitleEdit.bindProps}>{worksTitleEdit.value}</span>{' '}
+                  <span className="gradient-text" {...worksAccentTitleEdit.bindProps}>
+                    {worksAccentTitleEdit.value}
+                  </span>
                 </h2>
               </div>
               <Link to="/cases" className="text-brand-400 hover:text-brand-300 transition-colors text-sm font-medium whitespace-nowrap">
-                {works.allCasesLink}
+                <span {...worksAllCasesLinkEdit.bindProps}>{worksAllCasesLinkEdit.value}</span>
               </Link>
             </div>
           </RevealSection>
@@ -863,17 +1007,19 @@ const HomePage = () => {
           <RevealSection>
             <div className="mb-12 text-center">
               <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-sm text-gray-400">
-                {eventTypesSection.badge}
+                <span {...eventTypesBadgeEdit.bindProps}>{eventTypesBadgeEdit.value}</span>
               </div>
               <h2 className="font-display mb-4 text-balance text-4xl font-bold text-white md:text-5xl">
-                {eventTypesSection.title}{' '}
-                <span className="gradient-text">{eventTypesSection.accentTitle}</span>
+                <span {...eventTypesTitleEdit.bindProps}>{eventTypesTitleEdit.value}</span>{' '}
+                <span className="gradient-text" {...eventTypesAccentTitleEdit.bindProps}>
+                  {eventTypesAccentTitleEdit.value}
+                </span>
               </h2>
             </div>
           </RevealSection>
 
           <RevealSection>
-            <EventsSlider items={eventTypes} prevLabel={eventTypesSection.prevLabel} nextLabel={eventTypesSection.nextLabel} />
+            <EventsSlider items={eventTypes as readonly EventItem[]} prevLabel={eventTypesSection.prevLabel} nextLabel={eventTypesSection.nextLabel} />
           </RevealSection>
         </div>
       </section>
@@ -884,11 +1030,13 @@ const HomePage = () => {
           <RevealSection>
             <div className="mb-12 text-center">
               <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-sm text-gray-400">
-                {processSection.badge}
+                <span {...processBadgeEdit.bindProps}>{processBadgeEdit.value}</span>
               </div>
               <h2 className="font-display mb-4 text-balance text-4xl font-bold text-white md:text-5xl">
-                {processSection.title}{' '}
-                <span className="gradient-text">{processSection.accentTitle}</span>
+                <span {...processTitleEdit.bindProps}>{processTitleEdit.value}</span>{' '}
+                <span className="gradient-text" {...processAccentTitleEdit.bindProps}>
+                  {processAccentTitleEdit.value}
+                </span>
               </h2>
             </div>
           </RevealSection>
@@ -898,17 +1046,17 @@ const HomePage = () => {
               className="absolute left-0 right-0 top-10 hidden h-px md:block"
               style={{ background: 'linear-gradient(90deg, transparent, rgba(102,126,234,0.4), transparent)' }}
             />
-            {processSteps.map((step) => (
-              <div key={step.num} className="card relative h-full text-center">
-                <div
-                  className="font-display mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full text-2xl font-bold text-white"
-                  style={{ background: 'var(--accent-gradient)', boxShadow: 'var(--glow)' }}
-                >
-                  {step.num}
-                </div>
-                <h3 className="font-display mb-2 text-lg font-semibold text-white">{step.title}</h3>
-                <p className="text-sm leading-relaxed text-gray-400">{step.desc}</p>
-              </div>
+            {processSteps.map((step, i) => (
+              <ProcessStepCard
+                key={`${step.num}-${i}`}
+                step={step}
+                index={i}
+                onSaveStep={async (next) => {
+                  const steps = [...processSection.steps];
+                  steps[i] = next;
+                  await saveProcessField({ steps });
+                }}
+              />
             ))}
           </RevealSection>
         </div>
@@ -938,11 +1086,13 @@ const HomePage = () => {
               />
               <div className="relative z-10">
                 <h2 className="font-display mb-4 text-balance text-4xl font-bold text-white md:text-5xl">
-                  {ctaSection.title}{' '}
-                  <span className="gradient-text">{ctaSection.accentTitle}</span>
+                  <span {...ctaTitleEdit.bindProps}>{ctaTitleEdit.value}</span>{' '}
+                  <span className="gradient-text" {...ctaAccentTitleEdit.bindProps}>
+                    {ctaAccentTitleEdit.value}
+                  </span>
                 </h2>
                 <p className="mx-auto mb-8 max-w-xl text-gray-400">
-                  {ctaSection.subtitle}
+                  <span {...ctaSubtitleEdit.bindProps}>{ctaSubtitleEdit.value}</span>
                 </p>
                 <CtaForm ctaForm={homePageContent.ctaForm} />
               </div>
