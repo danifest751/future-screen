@@ -82,6 +82,11 @@ const EditableImage = ({
 
   return (
     <>
+      {/*
+        Fill the nearest positioned ancestor — all current callers render the
+        image as a cover layer (absolute/h-full inside a `.relative` card), so
+        an inline-block wrapper would collapse and the image would vanish.
+      */}
       <div
         role="button"
         tabIndex={0}
@@ -97,7 +102,7 @@ const EditableImage = ({
             setIsPickerOpen(true);
           }
         }}
-        style={{ display: 'inline-block', cursor: 'pointer' }}
+        style={{ position: 'absolute', inset: 0, cursor: 'pointer' }}
       >
         {baseImage}
       </div>
