@@ -7,6 +7,8 @@ import { ConsentCheckbox } from '../components/ConsentCheckbox';
 import { useI18n } from '../context/I18nContext';
 import { getHomePageContent, type HomeIconKey } from '../content/pages/home';
 import { useHomeEquipmentSection } from '../hooks/useHomeEquipmentSection';
+import { useEditableBinding } from '../hooks/useEditableBinding';
+import type { HomeEquipmentSectionContent } from '../lib/content/homeEquipmentSection';
 
 // Scroll reveal hook
 function useScrollReveal(threshold = 0.15) {
@@ -552,12 +554,43 @@ const CtaForm = ({ ctaForm }: { ctaForm: CtaFormContent }) => {
 const HomePage = () => {
   const { siteLocale } = useI18n();
   const homePageContent = getHomePageContent(siteLocale);
-  const { data: equipmentSectionOverride } = useHomeEquipmentSection(siteLocale, true);
+  const { data: equipmentSectionOverride, save: saveEquipmentSection } =
+    useHomeEquipmentSection(siteLocale, true);
   const { seo, hero, works, equipmentSection, eventTypesSection, processSection, ctaSection } =
     homePageContent;
   const effectiveEquipmentSection = equipmentSectionOverride ?? equipmentSection;
   const equipment = effectiveEquipmentSection.items;
   const extraEquipment = effectiveEquipmentSection.extraItems;
+
+  // Inline-edit bindings for the Equipment section header (admin-only in
+  // edit mode; inert for everyone else).
+  const makeEqFieldSaver = (field: keyof HomeEquipmentSectionContent) => async (next: string) => {
+    const base = equipmentSectionOverride ?? effectiveEquipmentSection;
+    const ok = await saveEquipmentSection({ ...base, [field]: next });
+    if (!ok) throw new Error('Failed to save equipment section');
+  };
+
+  const eqBadgeEdit = useEditableBinding({
+    value: effectiveEquipmentSection.badge,
+    onSave: makeEqFieldSaver('badge'),
+    label: 'Equipment section — badge',
+  });
+  const eqTitleEdit = useEditableBinding({
+    value: effectiveEquipmentSection.title,
+    onSave: makeEqFieldSaver('title'),
+    label: 'Equipment section — title',
+  });
+  const eqAccentTitleEdit = useEditableBinding({
+    value: effectiveEquipmentSection.accentTitle,
+    onSave: makeEqFieldSaver('accentTitle'),
+    label: 'Equipment section — accent title',
+  });
+  const eqSubtitleEdit = useEditableBinding({
+    value: effectiveEquipmentSection.subtitle,
+    onSave: makeEqFieldSaver('subtitle'),
+    label: 'Equipment section — subtitle',
+    kind: 'multiline',
+  });
   const eventTypes = eventTypesSection.items;
   const processSteps = processSection.steps;
   const worksItems = works.items;
@@ -660,14 +693,16 @@ const HomePage = () => {
           <RevealSection>
             <div className="mb-12 text-center">
                 <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-sm text-gray-400">
-                {effectiveEquipmentSection.badge}
+                <span {...eqBadgeEdit.bindProps}>{eqBadgeEdit.value}</span>
               </div>
               <h2 className="font-display mb-4 text-balance text-4xl font-bold text-white md:text-5xl">
-                {effectiveEquipmentSection.title}{' '}
-                <span className="gradient-text">{effectiveEquipmentSection.accentTitle}</span>
+                <span {...eqTitleEdit.bindProps}>{eqTitleEdit.value}</span>{' '}
+                <span className="gradient-text" {...eqAccentTitleEdit.bindProps}>
+                  {eqAccentTitleEdit.value}
+                </span>
               </h2>
               <p className="mx-auto max-w-2xl text-gray-400">
-                {effectiveEquipmentSection.subtitle}
+                <span {...eqSubtitleEdit.bindProps}>{eqSubtitleEdit.value}</span>
               </p>
             </div>
           </RevealSection>

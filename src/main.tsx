@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './context/AuthContext';
+import { EditModeProvider } from './context/EditModeContext';
 import { I18nProvider } from './context/I18nContext';
 import { ThemeProvider } from './context/ThemeContext';
 import App from './App';
@@ -32,7 +33,9 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
             <I18nProvider>
               <ThemeProvider>
                 <AuthProvider>
-                  <App />
+                  <EditModeProvider>
+                    <App />
+                  </EditModeProvider>
                 </AuthProvider>
               </ThemeProvider>
             </I18nProvider>

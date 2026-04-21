@@ -433,3 +433,36 @@ select:focus-visible {
 :focus:not(:focus-visible) {
   outline: none;
 }
+
+/* ===== Inline edit mode (admin-only) ===== */
+[data-editable='true'] {
+  outline: 1px dashed rgba(251, 191, 36, 0.45);
+  outline-offset: 3px;
+  border-radius: 4px;
+  cursor: text;
+  transition: outline-color 0.15s, background-color 0.15s;
+  min-width: 12px;
+  min-height: 1em;
+  display: inline-block;
+}
+
+[data-editable='true']:hover {
+  outline-style: solid;
+  outline-color: rgba(251, 191, 36, 0.7);
+  background-color: rgba(251, 191, 36, 0.05);
+}
+
+[data-editable='true']:focus {
+  outline: 2px solid rgba(251, 191, 36, 0.9);
+  outline-offset: 3px;
+  background-color: rgba(251, 191, 36, 0.08);
+}
+
+[data-editable-saving='true'] {
+  outline-color: rgba(16, 185, 129, 0.8) !important;
+}
+
+[data-editable-error='true'] {
+  outline-color: rgba(239, 68, 68, 0.9) !important;
+  background-color: rgba(239, 68, 68, 0.08);
+}
