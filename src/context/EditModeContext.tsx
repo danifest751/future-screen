@@ -2,6 +2,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -10,26 +11,19 @@ import {
 /**
  * Inline visual edit mode — admin-only overlay that marks DB-backed content
  * blocks as editable and saves on blur.
- *
- * Phase 1 scope:
- *   - plain-text fields only
- *   - auto-save on blur (no "Save all" batch yet)
- *   - locale switcher controls live `siteLocale` from I18nContext
- *
- * Future (Phase 2): pending-changes map, batch save, dirty-exit guard,
- * markdown + image kinds.
  */
 
 type EditModeContextValue = {
   isEditing: boolean;
   toggle: () => void;
   setEditing: (next: boolean) => void;
-  /**
-   * Incremented each time a save succeeds — lets sibling components
-   * trigger refetches/invalidations without a coupling back to the writer.
-   */
+  /** Incremented on each successful save — signals listeners to refetch. */
   savesVersion: number;
   reportSaveSucceeded: () => void;
+  /** Number of in-flight saves — used for beforeunload guard. */
+  activeSaves: number;
+  reportSaveStart: () => void;
+  reportSaveEnd: () => void;
 };
 
 const EditModeContext = createContext<EditModeContextValue | null>(null);
@@ -37,6 +31,7 @@ const EditModeContext = createContext<EditModeContextValue | null>(null);
 export const EditModeProvider = ({ children }: { children: ReactNode }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [savesVersion, setSavesVersion] = useState(0);
+  const [activeSaves, setActiveSaves] = useState(0);
 
   const toggle = useCallback(() => setIsEditing((prev) => !prev), []);
   const setEditing = useCallback((next: boolean) => setIsEditing(next), []);
@@ -44,10 +39,55 @@ export const EditModeProvider = ({ children }: { children: ReactNode }) => {
     () => setSavesVersion((prev) => prev + 1),
     [],
   );
+  const reportSaveStart = useCallback(() => setActiveSaves((n) => n + 1), []);
+  const reportSaveEnd = useCallback(() => setActiveSaves((n) => Math.max(0, n - 1)), []);
+
+  // Body attribute lets non-provider CSS scope edit-mode-only styles.
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    if (isEditing) {
+      document.body.setAttribute('data-edit-mode', 'on');
+    } else {
+      document.body.removeAttribute('data-edit-mode');
+    }
+    return () => {
+      document.body.removeAttribute('data-edit-mode');
+    };
+  }, [isEditing]);
+
+  // beforeunload guard while a save is in flight.
+  useEffect(() => {
+    if (activeSaves === 0) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+      return '';
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [activeSaves]);
 
   const value = useMemo<EditModeContextValue>(
-    () => ({ isEditing, toggle, setEditing, savesVersion, reportSaveSucceeded }),
-    [isEditing, toggle, setEditing, savesVersion, reportSaveSucceeded],
+    () => ({
+      isEditing,
+      toggle,
+      setEditing,
+      savesVersion,
+      reportSaveSucceeded,
+      activeSaves,
+      reportSaveStart,
+      reportSaveEnd,
+    }),
+    [
+      isEditing,
+      toggle,
+      setEditing,
+      savesVersion,
+      reportSaveSucceeded,
+      activeSaves,
+      reportSaveStart,
+      reportSaveEnd,
+    ],
   );
 
   return <EditModeContext.Provider value={value}>{children}</EditModeContext.Provider>;
@@ -76,6 +116,9 @@ export const useOptionalEditMode = (): EditModeContextValue => {
       setEditing: () => {},
       savesVersion: 0,
       reportSaveSucceeded: () => {},
+      activeSaves: 0,
+      reportSaveStart: () => {},
+      reportSaveEnd: () => {},
     };
   }
   return ctx;

@@ -1,14 +1,32 @@
 import { Helmet } from 'react-helmet-async';
 import Markdown from 'markdown-to-jsx';
 import { usePrivacyPolicyQuery } from '../queries';
-import { sanitizeMarkdown } from '../lib/sanitize';
+import EditableMarkdown from '../components/admin/EditableMarkdown';
 import { useI18n } from '../context/I18nContext';
 import { getPrivacyPageContent } from '../content/pages/privacy';
+import { useEditableBinding } from '../hooks/useEditableBinding';
+import { usePrivacyPolicy } from '../hooks/usePrivacyPolicy';
 
 const PrivacyPolicyPage = () => {
   const { siteLocale } = useI18n();
   const privacyPageContent = getPrivacyPageContent(siteLocale);
   const { data: content, isLoading, error } = usePrivacyPolicyQuery(siteLocale);
+  const { save: savePrivacy } = usePrivacyPolicy(siteLocale, false);
+
+  const titleEdit = useEditableBinding({
+    value: content?.title ?? '',
+    onSave: async (next) => {
+      const ok = await savePrivacy({ title: next });
+      if (!ok) throw new Error('Privacy title save failed');
+    },
+    label: 'Privacy — title',
+    disabled: !content,
+  });
+
+  const handleMarkdownSave = async (next: string) => {
+    const ok = await savePrivacy({ content: next });
+    if (!ok) throw new Error('Privacy content save failed');
+  };
 
   if (isLoading) {
     return (
@@ -50,8 +68,15 @@ const PrivacyPolicyPage = () => {
           className="prose prose-invert prose-lg mx-auto max-w-3xl"
           style={content.font_size ? { fontSize: content.font_size } : undefined}
         >
-          <h1 className="text-4xl font-bold text-white">{content.title}</h1>
-          <Markdown>{sanitizeMarkdown(content.content)}</Markdown>
+          <h1 className="text-4xl font-bold text-white">
+            <span {...titleEdit.bindProps}>{titleEdit.value}</span>
+          </h1>
+          <EditableMarkdown
+            value={content.content}
+            onSave={handleMarkdownSave}
+            label="Privacy — body"
+            render={(safe) => <Markdown>{safe}</Markdown>}
+          />
         </article>
       </div>
     </>

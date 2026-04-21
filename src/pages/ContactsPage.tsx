@@ -1,9 +1,11 @@
 import { Helmet } from 'react-helmet-async';
 import { RequestForm } from '../components/RequestForm';
 import Section from '../components/Section';
+import { useOptionalEditMode } from '../context/EditModeContext';
 import { useI18n } from '../context/I18nContext';
 import { getContactsPageContent } from '../content/pages/contacts';
 import { useContacts } from '../hooks/useContacts';
+import { useEditableBinding } from '../hooks/useEditableBinding';
 
 const PhoneIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-5 w-5">
@@ -34,8 +36,34 @@ const ClockIcon = () => (
 
 const ContactsPage = () => {
   const { siteLocale } = useI18n();
+  const { isEditing } = useOptionalEditMode();
   const contactsPageContent = getContactsPageContent(siteLocale);
-  const { contacts, loading, error } = useContacts(siteLocale, false);
+  const { contacts, loading, error, update } = useContacts(siteLocale, false);
+
+  const makeContactsSaver = (field: 'address' | 'workingHours') => async (next: string) => {
+    if (!contacts) throw new Error('Contacts not loaded');
+    const ok = await update({
+      phones: contacts.phones ?? [],
+      emails: contacts.emails ?? [],
+      address: field === 'address' ? next : contacts.address,
+      workingHours: field === 'workingHours' ? next : contacts.workingHours,
+    });
+    if (!ok) throw new Error('Contacts save failed');
+  };
+
+  const addressEdit = useEditableBinding({
+    value: contacts?.address ?? '',
+    onSave: makeContactsSaver('address'),
+    label: 'Address',
+    disabled: !contacts,
+  });
+
+  const workingHoursEdit = useEditableBinding({
+    value: contacts?.workingHours ?? '',
+    onSave: makeContactsSaver('workingHours'),
+    label: 'Working hours',
+    disabled: !contacts,
+  });
 
   return (
     <div className="space-y-2">
@@ -104,14 +132,20 @@ const ContactsPage = () => {
                 </div>
                 <div>
                   <div className="text-sm font-medium text-slate-400">{contactsPageContent.labels.address}</div>
-                  <a
-                    href={`https://yandex.ru/maps/?text=${encodeURIComponent(contacts.address)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-1 block text-white transition hover:text-brand-400"
-                  >
-                    {contacts.address}
-                  </a>
+                  {isEditing ? (
+                    <div className="mt-1 block text-white">
+                      <span {...addressEdit.bindProps}>{addressEdit.value}</span>
+                    </div>
+                  ) : (
+                    <a
+                      href={`https://yandex.ru/maps/?text=${encodeURIComponent(contacts.address)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-1 block text-white transition hover:text-brand-400"
+                    >
+                      {contacts.address}
+                    </a>
+                  )}
                 </div>
               </div>
 
@@ -121,7 +155,9 @@ const ContactsPage = () => {
                 </div>
                 <div>
                   <div className="text-sm font-medium text-slate-400">{contactsPageContent.labels.workingHours}</div>
-                  <div className="mt-1 text-white">{contacts.workingHours}</div>
+                  <div className="mt-1 text-white">
+                    <span {...workingHoursEdit.bindProps}>{workingHoursEdit.value}</span>
+                  </div>
                 </div>
               </div>
 

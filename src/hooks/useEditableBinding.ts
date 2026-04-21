@@ -47,7 +47,8 @@ export function useEditableBinding({
   disabled,
   label,
 }: UseEditableBindingArgs): EditableBindingResult {
-  const { isEditing, reportSaveSucceeded } = useOptionalEditMode();
+  const { isEditing, reportSaveSucceeded, reportSaveStart, reportSaveEnd } =
+    useOptionalEditMode();
   const active = isEditing && !disabled;
 
   const ref = useRef<HTMLElement | null>(null);
@@ -74,6 +75,7 @@ export function useEditableBinding({
       }
       setIsSaving(true);
       setError(null);
+      reportSaveStart();
       try {
         await onSave(cleaned);
         reportSaveSucceeded();
@@ -84,9 +86,10 @@ export function useEditableBinding({
       } finally {
         setIsSaving(false);
         setDraft(null);
+        reportSaveEnd();
       }
     },
-    [kind, onSave, reportSaveSucceeded, value],
+    [kind, onSave, reportSaveSucceeded, reportSaveStart, reportSaveEnd, value],
   );
 
   const cancel = useCallback(() => {
