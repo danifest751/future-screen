@@ -449,6 +449,16 @@ body[data-edit-mode='on'] [data-editable='true'] {
   background-color: rgba(251, 191, 36, 0.04);
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
+  /*
+   * Force readable text inside editable spans even when a parent sets
+   * `-webkit-text-fill-color: transparent` (e.g. .gradient-text). The
+   * fill color is inherited and would hide the text while the user is
+   * typing. Resetting it to `currentColor` shows the normal glyphs in
+   * edit mode; in display mode the editable outline is off so the
+   * parent's gradient styling wins as before.
+   */
+  -webkit-text-fill-color: currentColor !important;
+  background-image: none !important;
 }
 
 body[data-edit-mode='on'] [data-editable='true']:hover {
