@@ -2,7 +2,6 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import nodemailer from 'nodemailer';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
-import 'dotenv/config';
 import { processEmailSubmission } from '../server/lib/emailCore.js';
 import { checkRateLimit } from './_lib/rateLimit.js';
 import {
