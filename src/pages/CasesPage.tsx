@@ -2,6 +2,7 @@ import type { ComponentPropsWithoutRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Play } from 'lucide-react';
+import EditableImage from '../components/admin/EditableImage';
 import Section from '../components/Section';
 import { useCases } from '../hooks/useCases';
 import type { CaseItem } from '../data/cases';
@@ -37,6 +38,13 @@ const CaseCard = ({ item, onUpdate, videoOverlay }: CaseCardProps) => {
       if (!ok) throw new Error(`Failed to save case ${field}`);
     };
 
+  const saveImageAt = (index: number) => async ({ url }: { url: string }) => {
+    const nextImages = [...(item.images ?? [])];
+    nextImages[index] = url;
+    const ok = await onUpdate(item.slug, { images: nextImages });
+    if (!ok) throw new Error('Failed to save case image');
+  };
+
   const titleEdit = useEditableBinding({ value: item.title, onSave: saveField('title'), label: 'Case title' });
   const cityEdit = useEditableBinding({ value: item.city, onSave: saveField('city'), label: 'Case city' });
   const dateEdit = useEditableBinding({ value: item.date, onSave: saveField('date'), label: 'Case date' });
@@ -69,24 +77,42 @@ const CaseCard = ({ item, onUpdate, videoOverlay }: CaseCardProps) => {
       {previewImages.length > 0 && (
         <div className="relative h-48 overflow-hidden bg-slate-800">
           {previewImages.length === 1 ? (
-            <LazyImage
+            <EditableImage
               src={previewImages[0]}
               alt={item.title}
-              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-              placeholderClassName="h-full w-full"
-              containerClassName="h-full w-full"
-            />
+              onSave={saveImageAt(0)}
+              label="Case cover image"
+            >
+              {(src) => (
+                <LazyImage
+                  src={src}
+                  alt={item.title}
+                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  placeholderClassName="h-full w-full"
+                  containerClassName="h-full w-full"
+                />
+              )}
+            </EditableImage>
           ) : (
             <div className="flex h-full gap-0.5">
               {previewImages.map((src, idx) => (
                 <div key={src} className="relative flex-1 overflow-hidden">
-                  <LazyImage
+                  <EditableImage
                     src={src}
                     alt={`${item.title} ${idx + 1}`}
-                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    placeholderClassName="h-full w-full"
-                    containerClassName="h-full w-full"
-                  />
+                    onSave={saveImageAt(idx)}
+                    label={`Case image ${idx + 1}`}
+                  >
+                    {(finalSrc) => (
+                      <LazyImage
+                        src={finalSrc}
+                        alt={`${item.title} ${idx + 1}`}
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        placeholderClassName="h-full w-full"
+                        containerClassName="h-full w-full"
+                      />
+                    )}
+                  </EditableImage>
                 </div>
               ))}
             </div>
