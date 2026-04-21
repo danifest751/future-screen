@@ -4,7 +4,10 @@ import { Helmet } from 'react-helmet-async';
 import { trackEvent } from '../lib/analytics';
 import { submitForm } from '../lib/submitForm';
 import { ConsentCheckbox } from '../components/ConsentCheckbox';
+import EditableImage from '../components/admin/EditableImage';
+import EditableList from '../components/admin/EditableList';
 import { useI18n } from '../context/I18nContext';
+import { useOptionalEditMode } from '../context/EditModeContext';
 import { getHomePageContent, type HomeIconKey } from '../content/pages/home';
 import { useHomeEquipmentSection } from '../hooks/useHomeEquipmentSection';
 import { useHomeHero } from '../hooks/useHomeHero';
@@ -15,10 +18,13 @@ import { useHomeCta } from '../hooks/useHomeCta';
 import { useEditableBinding } from '../hooks/useEditableBinding';
 import type { HomeEquipmentSectionContent } from '../lib/content/homeEquipmentSection';
 import type { HomeHeroContent, HomeHeroStat } from '../lib/content/homeHero';
-import type { HomeWorksContent } from '../lib/content/homeWorks';
+import type { HomeWorksContent, HomeWorksItem } from '../lib/content/homeWorks';
 import type { HomeEventTypesContent } from '../lib/content/homeEventTypes';
 import type { HomeProcessContent, HomeProcessStep } from '../lib/content/homeProcess';
 import type { HomeCtaContent } from '../lib/content/homeCta';
+
+type HomeEquipmentItem = HomeEquipmentSectionContent['items'][number];
+type HomeEquipmentExtraItem = HomeEquipmentSectionContent['extraItems'][number];
 
 // Scroll reveal hook
 function useScrollReveal(threshold = 0.15) {
@@ -183,14 +189,119 @@ function shuffle<T>(arr: readonly T[]): T[] {
   return a;
 }
 
-type HomeWorkItem = {
-  src: string;
-  tag: string;
-  title: string;
+type HomeWorkItem = HomeWorksItem;
+
+interface WorkSlideProps {
+  item: HomeWorkItem;
+  index: number;
+  onSaveItem?: (next: HomeWorkItem) => Promise<void>;
+}
+
+const WorkSlide = ({ item, index, onSaveItem }: WorkSlideProps) => {
+  const disabled = !onSaveItem;
+  const tagEdit = useEditableBinding({
+    value: item.tag,
+    onSave: async (next) => onSaveItem?.({ ...item, tag: next }),
+    label: `Work ${index + 1} — tag`,
+    disabled,
+  });
+  const titleEdit = useEditableBinding({
+    value: item.title,
+    onSave: async (next) => onSaveItem?.({ ...item, title: next }),
+    label: `Work ${index + 1} — title`,
+    disabled,
+  });
+
+  const imageContent = (
+    <img
+      src={item.src}
+      alt={item.title}
+      className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+    />
+  );
+
+  return (
+    <div className="relative overflow-hidden rounded-xl" style={{ aspectRatio: '4/5' }}>
+      {onSaveItem ? (
+        <EditableImage
+          src={item.src}
+          alt={item.title}
+          label={`Work ${index + 1} — photo`}
+          onSave={async ({ url }) => {
+            await onSaveItem({ ...item, src: url });
+          }}
+        >
+          {() => imageContent}
+        </EditableImage>
+      ) : (
+        imageContent
+      )}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent pointer-events-none" />
+      <div className="absolute bottom-0 left-0 p-5 transform translate-y-2 transition-transform duration-300 group-hover:translate-y-0">
+        <p className="text-brand-400 font-medium mb-1 uppercase tracking-wider text-xs">
+          <span {...tagEdit.bindProps}>{tagEdit.value}</span>
+        </p>
+        <h3 className="text-lg font-bold text-white leading-tight">
+          <span {...titleEdit.bindProps}>{titleEdit.value}</span>
+        </h3>
+      </div>
+    </div>
+  );
 };
 
-// Works slider
-function WorksSlider({ items, prevLabel, nextLabel }: { items: readonly HomeWorkItem[]; prevLabel: string; nextLabel: string }) {
+// Edit-mode grid: static 1:1 mapping so inline edits target items[i] directly.
+const WorksEditGrid = ({
+  items,
+  onReplaceItems,
+}: {
+  items: readonly HomeWorkItem[];
+  onReplaceItems: (next: HomeWorkItem[]) => Promise<void>;
+}) => (
+  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    {items.map((item, i) => (
+      <div key={`${i}-${item.src.slice(-16)}`} className="group relative overflow-hidden">
+        <WorkSlide
+          item={item}
+          index={i}
+          onSaveItem={async (next) => {
+            const nextItems = [...items];
+            nextItems[i] = next;
+            await onReplaceItems(nextItems);
+          }}
+        />
+      </div>
+    ))}
+  </div>
+);
+
+// Works slider (dispatch: grid in edit mode, carousel otherwise).
+function WorksSlider({
+  items,
+  prevLabel,
+  nextLabel,
+  onReplaceItems,
+}: {
+  items: readonly HomeWorkItem[];
+  prevLabel: string;
+  nextLabel: string;
+  onReplaceItems?: (next: HomeWorkItem[]) => Promise<void>;
+}) {
+  const { isEditing } = useOptionalEditMode();
+  if (isEditing && onReplaceItems) {
+    return <WorksEditGrid items={items} onReplaceItems={onReplaceItems} />;
+  }
+  return <WorksSliderView items={items} prevLabel={prevLabel} nextLabel={nextLabel} />;
+}
+
+function WorksSliderView({
+  items,
+  prevLabel,
+  nextLabel,
+}: {
+  items: readonly HomeWorkItem[];
+  prevLabel: string;
+  nextLabel: string;
+}) {
   const [shuffled] = useState(() => shuffle(items));
   const n = shuffled.length;
   const all = [...shuffled, ...shuffled, ...shuffled];
@@ -630,6 +741,191 @@ const HeroStatCard = ({ stat, index, onSaveStat }: HeroStatCardProps) => {
   );
 };
 
+interface EquipmentCardProps {
+  item: HomeEquipmentItem;
+  index: number;
+  onSaveItem?: (next: HomeEquipmentItem) => Promise<void>;
+}
+
+const EquipmentCard = ({ item, index, onSaveItem }: EquipmentCardProps) => {
+  const { isEditing } = useOptionalEditMode();
+  const disabled = !onSaveItem;
+
+  const titleEdit = useEditableBinding({
+    value: item.title,
+    onSave: async (next) => onSaveItem?.({ ...item, title: next }),
+    label: `Equipment ${index + 1} — title`,
+    disabled,
+  });
+  const descEdit = useEditableBinding({
+    value: item.desc,
+    onSave: async (next) => onSaveItem?.({ ...item, desc: next }),
+    label: `Equipment ${index + 1} — description`,
+    disabled,
+    kind: 'multiline',
+  });
+
+  const imageEl = (
+    <img
+      src={item.photo}
+      alt={item.title}
+      className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+    />
+  );
+
+  const inner = (
+    <>
+      {onSaveItem ? (
+        <EditableImage
+          src={item.photo}
+          alt={item.title}
+          label={`Equipment ${index + 1} — photo`}
+          onSave={async ({ url }) => {
+            await onSaveItem({ ...item, photo: url });
+          }}
+        >
+          {() => imageEl}
+        </EditableImage>
+      ) : (
+        imageEl
+      )}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/20 pointer-events-none" />
+      <div className="absolute bottom-0 left-0 right-0 z-10 p-6">
+        <div
+          className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl text-white"
+          style={{ background: item.gradient }}
+        >
+          {homeIcons[item.iconKey as HomeIconKey]}
+        </div>
+        <h3 className="font-display mb-1 text-lg font-semibold text-white group-hover:text-brand-300 transition-colors">
+          <span {...titleEdit.bindProps}>{titleEdit.value}</span>
+        </h3>
+        <p className="line-clamp-2 text-sm leading-relaxed text-gray-300 mb-3">
+          <span {...descEdit.bindProps}>{descEdit.value}</span>
+        </p>
+        <EditableList
+          items={[...item.bullets]}
+          onSave={async (next) => {
+            if (!onSaveItem || next.length === 0) return;
+            await onSaveItem({ ...item, bullets: next });
+          }}
+          label={`Equipment ${index + 1} — bullets`}
+          placeholder="One bullet per line"
+        >
+          <ul className="space-y-1">
+            {item.bullets.map((b) => (
+              <li key={b} className="flex items-center gap-2 text-xs text-gray-300">
+                <span
+                  className="h-1 w-1 shrink-0 rounded-full"
+                  style={{ background: item.gradient }}
+                />
+                {b}
+              </li>
+            ))}
+          </ul>
+        </EditableList>
+      </div>
+    </>
+  );
+
+  if (isEditing) {
+    return (
+      <div className="group relative overflow-hidden rounded-2xl min-h-[300px] block">
+        {inner}
+      </div>
+    );
+  }
+  return (
+    <Link
+      to={item.link}
+      className="group relative overflow-hidden rounded-2xl min-h-[300px] block cursor-pointer"
+    >
+      {inner}
+    </Link>
+  );
+};
+
+interface EquipmentExtraCardProps {
+  item: HomeEquipmentExtraItem;
+  index: number;
+  onSaveItem?: (next: HomeEquipmentExtraItem) => Promise<void>;
+}
+
+const EquipmentExtraCard = ({ item, index, onSaveItem }: EquipmentExtraCardProps) => {
+  const { isEditing } = useOptionalEditMode();
+  const disabled = !onSaveItem;
+
+  const titleEdit = useEditableBinding({
+    value: item.title,
+    onSave: async (next) => onSaveItem?.({ ...item, title: next }),
+    label: `Extra equipment ${index + 1} — title`,
+    disabled,
+  });
+  const descEdit = useEditableBinding({
+    value: item.desc,
+    onSave: async (next) => onSaveItem?.({ ...item, desc: next }),
+    label: `Extra equipment ${index + 1} — description`,
+    disabled,
+  });
+
+  const imageEl = (
+    <img
+      src={item.photo}
+      alt={item.title}
+      className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+    />
+  );
+
+  const inner = (
+    <>
+      {onSaveItem ? (
+        <EditableImage
+          src={item.photo}
+          alt={item.title}
+          label={`Extra equipment ${index + 1} — photo`}
+          onSave={async ({ url }) => {
+            await onSaveItem({ ...item, photo: url });
+          }}
+        >
+          {() => imageEl}
+        </EditableImage>
+      ) : (
+        imageEl
+      )}
+      <div className="absolute inset-0 bg-black/65 group-hover:bg-black/55 transition-colors pointer-events-none" />
+      <div className="absolute bottom-0 left-0 right-0 z-10 flex items-center gap-3 p-5">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white group-hover:bg-brand-500/30 transition-colors">
+          {homeIcons[item.iconKey as HomeIconKey]}
+        </div>
+        <div>
+          <div className="font-medium text-white group-hover:text-brand-300 transition-colors leading-tight">
+            <span {...titleEdit.bindProps}>{titleEdit.value}</span>
+          </div>
+          <div className="text-xs text-gray-400 line-clamp-1">
+            <span {...descEdit.bindProps}>{descEdit.value}</span>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+
+  if (isEditing) {
+    return (
+      <div className="group relative overflow-hidden rounded-2xl min-h-[120px] block">
+        {inner}
+      </div>
+    );
+  }
+  return (
+    <Link
+      to={item.link}
+      className="group relative overflow-hidden rounded-2xl min-h-[120px] block cursor-pointer"
+    >
+      {inner}
+    </Link>
+  );
+};
+
 // Home page
 const HomePage = () => {
   const { siteLocale } = useI18n();
@@ -815,6 +1111,30 @@ const HomePage = () => {
   const processSteps = processSection.steps;
   const worksItems = works.items;
 
+  // Equipment items (big cards) — save by index back to the full section.
+  const saveEquipmentItem = async (index: number, next: HomeEquipmentItem) => {
+    const base = equipmentSectionOverride ?? effectiveEquipmentSection;
+    const nextItems = [...base.items];
+    nextItems[index] = next;
+    const ok = await saveEquipmentSection({ ...base, items: nextItems });
+    if (!ok) throw new Error('Failed to save equipment item');
+  };
+
+  // Extra equipment items (small bottom-row cards) — same pattern.
+  const saveEquipmentExtraItem = async (index: number, next: HomeEquipmentExtraItem) => {
+    const base = equipmentSectionOverride ?? effectiveEquipmentSection;
+    const nextItems = [...base.extraItems];
+    nextItems[index] = next;
+    const ok = await saveEquipmentSection({ ...base, extraItems: nextItems });
+    if (!ok) throw new Error('Failed to save extra equipment item');
+  };
+
+  // Works slider items — replace entire array.
+  const replaceWorksItems = async (next: HomeWorkItem[]) => {
+    const ok = await saveWorks({ ...works, items: next });
+    if (!ok) throw new Error('Failed to save works items');
+  };
+
   return (
     <div>
       <Helmet>
@@ -914,7 +1234,12 @@ const HomePage = () => {
           </RevealSection>
 
           <RevealSection>
-            <WorksSlider items={worksItems} prevLabel={works.prevLabel} nextLabel={works.nextLabel} />
+            <WorksSlider
+              items={worksItems}
+              prevLabel={works.prevLabel}
+              nextLabel={works.nextLabel}
+              onReplaceItems={replaceWorksItems}
+            />
           </RevealSection>
         </div>
       </section>
@@ -940,62 +1265,24 @@ const HomePage = () => {
           </RevealSection>
 
           <RevealSection className="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-            {equipment.map((item) => (
-              <Link
-                key={item.title}
-                to={item.link}
-                className="group relative overflow-hidden rounded-2xl min-h-[300px] block cursor-pointer"
-              >
-                {/* Photo background */}
-                <img
-                  src={item.photo!}
-                  alt={item.title}
-                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                />
-                {/* Dark gradient overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/20" />
-                {/* Content anchored to the bottom */}
-                <div className="absolute bottom-0 left-0 right-0 z-10 p-6">
-                  <div
-                    className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl text-white"
-                    style={{ background: item.gradient }}
-                  >
-                    {homeIcons[item.iconKey as HomeIconKey]}
-                  </div>
-                  <h3 className="font-display mb-1 text-lg font-semibold text-white group-hover:text-brand-300 transition-colors">{item.title}</h3>
-                  <p className="line-clamp-2 text-sm leading-relaxed text-gray-300 mb-3">{item.desc}</p>
-                  <ul className="space-y-1">
-                    {item.bullets.map((b) => (
-                      <li key={b} className="flex items-center gap-2 text-xs text-gray-300">
-                        <span className="h-1 w-1 shrink-0 rounded-full" style={{ background: item.gradient }} />
-                        {b}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </Link>
+            {equipment.map((item, i) => (
+              <EquipmentCard
+                key={`${i}-${item.title}`}
+                item={item}
+                index={i}
+                onSaveItem={(next) => saveEquipmentItem(i, next)}
+              />
             ))}
           </RevealSection>
 
           <RevealSection className="mt-5 grid gap-5 sm:grid-cols-3">
-            {extraEquipment.map((item) => (
-              <Link key={item.title} to={item.link} className="group relative overflow-hidden rounded-2xl min-h-[120px] block cursor-pointer">
-                <img
-                  src={item.photo}
-                  alt={item.title}
-                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-black/65 group-hover:bg-black/55 transition-colors" />
-                <div className="absolute bottom-0 left-0 right-0 z-10 flex items-center gap-3 p-5">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white group-hover:bg-brand-500/30 transition-colors">
-                    {homeIcons[item.iconKey as HomeIconKey]}
-                  </div>
-                  <div>
-                    <div className="font-medium text-white group-hover:text-brand-300 transition-colors leading-tight">{item.title}</div>
-                    <div className="text-xs text-gray-400 line-clamp-1">{item.desc}</div>
-                  </div>
-                </div>
-              </Link>
+            {extraEquipment.map((item, i) => (
+              <EquipmentExtraCard
+                key={`${i}-${item.title}`}
+                item={item}
+                index={i}
+                onSaveItem={(next) => saveEquipmentExtraItem(i, next)}
+              />
             ))}
           </RevealSection>
         </div>
