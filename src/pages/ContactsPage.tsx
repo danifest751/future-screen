@@ -1,4 +1,5 @@
 import { Helmet } from 'react-helmet-async';
+import EditableList from '../components/admin/EditableList';
 import { RequestForm } from '../components/RequestForm';
 import Section from '../components/Section';
 import { useOptionalEditMode } from '../context/EditModeContext';
@@ -51,6 +52,28 @@ const ContactsPage = () => {
     if (!ok) throw new Error('Contacts save failed');
   };
 
+  const savePhones = async (next: string[]) => {
+    if (!contacts) throw new Error('Contacts not loaded');
+    const ok = await update({
+      phones: next,
+      emails: contacts.emails ?? [],
+      address: contacts.address,
+      workingHours: contacts.workingHours,
+    });
+    if (!ok) throw new Error('Phones save failed');
+  };
+
+  const saveEmails = async (next: string[]) => {
+    if (!contacts) throw new Error('Contacts not loaded');
+    const ok = await update({
+      phones: contacts.phones ?? [],
+      emails: next,
+      address: contacts.address,
+      workingHours: contacts.workingHours,
+    });
+    if (!ok) throw new Error('Emails save failed');
+  };
+
   const addressEdit = useEditableBinding({
     value: contacts?.address ?? '',
     onSave: makeContactsSaver('address'),
@@ -96,17 +119,33 @@ const ContactsPage = () => {
                 </div>
                 <div>
                   <div className="text-sm font-medium text-slate-400">{contactsPageContent.labels.phones}</div>
-                  <div className="mt-1 space-y-1">
-                    {contacts.phones?.map((phone) => (
-                      <a
-                        key={phone}
-                        href={`tel:${phone.replace(/[^\d+]/g, '')}`}
-                        className="block text-lg font-medium text-white transition hover:text-brand-400"
-                      >
-                        {phone}
-                      </a>
-                    ))}
-                  </div>
+                  <EditableList
+                    items={contacts.phones ?? []}
+                    onSave={savePhones}
+                    label="Phones"
+                    placeholder="+7 123 456-78-90"
+                  >
+                    <div className="mt-1 space-y-1">
+                      {contacts.phones?.map((phone) => (
+                        isEditing ? (
+                          <div
+                            key={phone}
+                            className="block text-lg font-medium text-white"
+                          >
+                            {phone}
+                          </div>
+                        ) : (
+                          <a
+                            key={phone}
+                            href={`tel:${phone.replace(/[^\d+]/g, '')}`}
+                            className="block text-lg font-medium text-white transition hover:text-brand-400"
+                          >
+                            {phone}
+                          </a>
+                        )
+                      ))}
+                    </div>
+                  </EditableList>
                 </div>
               </div>
 
@@ -116,13 +155,26 @@ const ContactsPage = () => {
                 </div>
                 <div>
                   <div className="text-sm font-medium text-slate-400">{contactsPageContent.labels.email}</div>
-                  <div className="mt-1 space-y-1">
-                    {contacts.emails?.map((email) => (
-                      <a key={email} href={`mailto:${email}`} className="block text-white transition hover:text-brand-400">
-                        {email}
-                      </a>
-                    ))}
-                  </div>
+                  <EditableList
+                    items={contacts.emails ?? []}
+                    onSave={saveEmails}
+                    label="Emails"
+                    placeholder="hello@example.com"
+                  >
+                    <div className="mt-1 space-y-1">
+                      {contacts.emails?.map((email) => (
+                        isEditing ? (
+                          <div key={email} className="block text-white">
+                            {email}
+                          </div>
+                        ) : (
+                          <a key={email} href={`mailto:${email}`} className="block text-white transition hover:text-brand-400">
+                            {email}
+                          </a>
+                        )
+                      ))}
+                    </div>
+                  </EditableList>
                 </div>
               </div>
 
