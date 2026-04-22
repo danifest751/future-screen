@@ -6,6 +6,8 @@ import { submitForm } from '../lib/submitForm';
 import { ConsentCheckbox } from '../components/ConsentCheckbox';
 import EditableImage from '../components/admin/EditableImage';
 import EditableList from '../components/admin/EditableList';
+import EditableIcon from '../components/admin/EditableIcon';
+import { HomeIcon } from '../data/homeIcons';
 import { useI18n } from '../context/I18nContext';
 import { useOptionalEditMode } from '../context/EditModeContext';
 import { getHomePageContent, type HomeIconKey } from '../content/pages/home';
@@ -50,137 +52,8 @@ function useScrollReveal(threshold = 0.15) {
   return ref;
 }
 
-const homeIcons: Record<HomeIconKey, JSX.Element> = {
-  led: (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
-      <rect width="20" height="15" x="2" y="3" rx="2" />
-      <path d="m8 21 4-4 4 4" />
-      <path d="M9 17h6" />
-    </svg>
-  ),
-  panel: (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
-      <rect width="20" height="15" x="2" y="3" rx="2" />
-      <path d="m8 21 4-4 4 4" />
-      <circle cx="12" cy="10" r="3" />
-    </svg>
-  ),
-  sound: (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
-      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-      <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
-      <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
-    </svg>
-  ),
-  light: (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
-      <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" />
-      <path d="M9 18h6" />
-      <path d="M10 22h4" />
-    </svg>
-  ),
-  stage: (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
-      <path d="M12 2L2 7l10 5 10-5-10-5z" />
-      <path d="M2 17l10 5 10-5" />
-      <path d="M2 12l10 5 10-5" />
-    </svg>
-  ),
-  computer: (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
-      <path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16" />
-    </svg>
-  ),
-  touch: (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
-      <path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2" />
-      <path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2" />
-      <path d="M10 10.5a2 2 0 0 0-2-2a2 2 0 0 0-2 2V19a4 4 0 0 0 4 4h4a4 4 0 0 0 4-4v-5a2 2 0 0 0-2-2a2 2 0 0 0-2 2" />
-    </svg>
-  ),
-  staff: (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
-      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-      <circle cx="9" cy="7" r="4" />
-      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-    </svg>
-  ),
-  corporate: (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8">
-      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
-      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
-    </svg>
-  ),
-  concert: (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8">
-      <path d="m12 8-9.04 9.06a2.82 2.82 0 1 0 3.98 3.98L16 12" />
-      <circle cx="17" cy="7" r="5" />
-    </svg>
-  ),
-  conference: (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8">
-      <rect width="20" height="14" x="2" y="3" rx="2" />
-      <path d="M8 21h8" />
-      <path d="M12 17v4" />
-    </svg>
-  ),
-  wedding: (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8">
-      <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
-    </svg>
-  ),
-  exhibition: (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8">
-      <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z" />
-      <path d="M6 12H4a2 2 0 0 0-2 2v8h4" />
-      <path d="M18 9h2a2 2 0 0 1 2 2v11h-4" />
-      <path d="M10 6h4" />
-      <path d="M10 10h4" />
-      <path d="M10 14h4" />
-      <path d="M10 18h4" />
-    </svg>
-  ),
-  presentation: (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8">
-      <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" />
-      <path d="M9 18h6" />
-      <path d="M10 22h4" />
-    </svg>
-  ),
-  festival: (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8">
-      <path d="M12 2v8" />
-      <path d="m4.93 10.93 1.41 1.41" />
-      <path d="M2 18h2" />
-      <path d="M20 18h2" />
-      <path d="m19.07 10.93-1.41 1.41" />
-      <path d="M22 22H2" />
-      <path d="m8 22 4-10 4 10" />
-      <path d="M2 22V12a10 10 0 0 1 20 0v10" />
-    </svg>
-  ),
-  promo: (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8">
-      <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-    </svg>
-  ),
-  theater: (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8">
-      <circle cx="12" cy="12" r="10" />
-      <path d="M8 14s1.5 2 4 2 4-2 4-2" />
-      <line x1="9" y1="9" x2="9.01" y2="9" />
-      <line x1="15" y1="9" x2="15.01" y2="9" />
-    </svg>
-  ),
-  sports: (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8">
-      <circle cx="12" cy="12" r="10" />
-      <path d="m4.9 4.9 14.2 14.2" />
-      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-    </svg>
-  ),
-};
+// Icons moved to src/data/homeIcons.tsx so the admin icon picker can
+// enumerate them and render at any size.
 
 function shuffle<T>(arr: readonly T[]): T[] {
   const a = [...arr];
@@ -464,7 +337,18 @@ const EventSlide = ({ item, index, onSaveItem }: EventSlideProps) => {
       )}
       <div className="absolute inset-0 bg-black/50 transition-colors duration-300 group-hover:bg-black/25 pointer-events-none" />
       <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-white pointer-events-none">
-        <div className="mb-3 opacity-80 group-hover:opacity-100 transition-opacity">{homeIcons[item.iconKey]}</div>
+        <div className="mb-3 opacity-80 group-hover:opacity-100 transition-opacity pointer-events-auto">
+          {onSaveItem ? (
+            <EditableIcon
+              iconKey={item.iconKey}
+              onSave={async (next) => onSaveItem({ ...item, iconKey: next })}
+              label={`Event type ${index + 1} — icon`}
+              className="h-8 w-8"
+            />
+          ) : (
+            <HomeIcon iconKey={item.iconKey} className="h-8 w-8" />
+          )}
+        </div>
         <h3 className="font-display text-xl font-bold pointer-events-auto">
           <span {...titleEdit.bindProps}>{titleEdit.value}</span>
         </h3>
@@ -602,7 +486,9 @@ function EventsSliderView({
                 />
                 <div className="absolute inset-0 bg-black/50 transition-colors duration-300 group-hover:bg-black/25" />
                 <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-white">
-                  <div className="mb-3 opacity-80 group-hover:opacity-100 transition-opacity">{homeIcons[item.iconKey]}</div>
+                  <div className="mb-3 opacity-80 group-hover:opacity-100 transition-opacity">
+                    <HomeIcon iconKey={item.iconKey} className="h-8 w-8" />
+                  </div>
                   <h3 className="font-display text-xl font-bold">{item.title}</h3>
                 </div>
                 <div className="absolute bottom-0 left-0 right-0 p-4 text-center">
@@ -947,7 +833,16 @@ const EquipmentCard = ({ item, index, onSaveItem }: EquipmentCardProps) => {
           className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl text-white"
           style={{ background: item.gradient }}
         >
-          {homeIcons[item.iconKey as HomeIconKey]}
+          {onSaveItem ? (
+            <EditableIcon
+              iconKey={item.iconKey as HomeIconKey}
+              onSave={async (next) => onSaveItem({ ...item, iconKey: next })}
+              label={`Equipment ${index + 1} — icon`}
+              className="h-6 w-6"
+            />
+          ) : (
+            <HomeIcon iconKey={item.iconKey as HomeIconKey} className="h-6 w-6" />
+          )}
         </div>
         <h3 className="font-display mb-1 text-lg font-semibold text-white group-hover:text-brand-300 transition-colors">
           <span {...titleEdit.bindProps}>{titleEdit.value}</span>
@@ -1047,7 +942,16 @@ const EquipmentExtraCard = ({ item, index, onSaveItem }: EquipmentExtraCardProps
       <div className="absolute inset-0 bg-black/65 group-hover:bg-black/55 transition-colors pointer-events-none" />
       <div className="absolute bottom-0 left-0 right-0 z-10 flex items-center gap-3 p-5">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white group-hover:bg-brand-500/30 transition-colors">
-          {homeIcons[item.iconKey as HomeIconKey]}
+          {onSaveItem ? (
+            <EditableIcon
+              iconKey={item.iconKey as HomeIconKey}
+              onSave={async (next) => onSaveItem({ ...item, iconKey: next })}
+              label={`Extra equipment ${index + 1} — icon`}
+              className="h-5 w-5"
+            />
+          ) : (
+            <HomeIcon iconKey={item.iconKey as HomeIconKey} className="h-5 w-5" />
+          )}
         </div>
         <div>
           <div className="font-medium text-white group-hover:text-brand-300 transition-colors leading-tight">

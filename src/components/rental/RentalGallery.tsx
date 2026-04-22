@@ -45,6 +45,16 @@ const GalleryCard = ({ item, index, emptyLabel, onSaveItem }: GalleryCardProps) 
           onSave={async ({ url }) => {
             if (onSaveItem) await onSaveItem({ ...item, image: url });
           }}
+          altEditor={
+            onSaveItem
+              ? {
+                  value: item.alt ?? '',
+                  onSave: async (nextAlt) => {
+                    await onSaveItem({ ...item, alt: nextAlt });
+                  },
+                }
+              : undefined
+          }
         >
           {(src) => (
             <img

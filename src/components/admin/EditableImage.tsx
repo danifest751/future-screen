@@ -14,6 +14,16 @@ interface EditableImageProps {
   style?: CSSProperties;
   /** Optional renderer — lets callers keep custom LazyImage / srcset logic. */
   children?: (finalSrc: string) => JSX.Element;
+  /**
+   * Optional alt-text editor. When provided, the picker modal gets an
+   * extra text field that saves the alt independently (most callers
+   * derive alt from a sibling title and don't need this; only pass it
+   * when the data model has a dedicated `alt` field, e.g. gallery items).
+   */
+  altEditor?: {
+    value: string;
+    onSave: (next: string) => Promise<void> | void;
+  };
 }
 
 /**
@@ -30,12 +40,37 @@ const EditableImage = ({
   className,
   style,
   children,
+  altEditor,
 }: EditableImageProps) => {
   const { isEditing, reportSaveStart, reportSaveEnd, reportSaveSucceeded } =
     useOptionalEditMode();
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [altDraft, setAltDraft] = useState<string>(altEditor?.value ?? '');
+  const [altSaving, setAltSaving] = useState(false);
+
+  // Reset the draft whenever the modal opens or the persisted alt changes.
+  useEffect(() => {
+    if (isPickerOpen) setAltDraft(altEditor?.value ?? '');
+  }, [altEditor?.value, isPickerOpen]);
+
+  const handleAltSave = useCallback(async () => {
+    if (!altEditor) return;
+    if (altDraft === altEditor.value) return;
+    setAltSaving(true);
+    setError(null);
+    reportSaveStart();
+    try {
+      await altEditor.onSave(altDraft);
+      reportSaveSucceeded();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'alt save failed');
+    } finally {
+      setAltSaving(false);
+      reportSaveEnd();
+    }
+  }, [altDraft, altEditor, reportSaveEnd, reportSaveStart, reportSaveSucceeded]);
 
   const closePicker = useCallback(() => setIsPickerOpen(false), []);
 
@@ -134,6 +169,32 @@ const EditableImage = ({
                     Close
                   </button>
                 </div>
+                {altEditor ? (
+                  <div className="border-b border-white/10 px-5 py-3">
+                    <label className="flex flex-col gap-1 text-xs text-slate-300">
+                      <span className="font-medium text-slate-200">
+                        Alt text <span className="text-slate-500">(accessibility)</span>
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={altDraft}
+                          onChange={(e) => setAltDraft(e.target.value)}
+                          placeholder="Describe the image for screen readers"
+                          className="flex-1 rounded-lg border border-white/10 bg-slate-950/60 px-3 py-2 text-sm text-white placeholder-slate-500 focus:border-brand-500 focus:outline-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => void handleAltSave()}
+                          disabled={altSaving || altDraft === altEditor.value}
+                          className="rounded-lg bg-emerald-500/90 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-500 disabled:cursor-not-allowed disabled:bg-slate-600"
+                        >
+                          {altSaving ? 'Saving…' : 'Save alt'}
+                        </button>
+                      </div>
+                    </label>
+                  </div>
+                ) : null}
                 <div className="flex-1 overflow-auto p-4">
                   <MediaLibrary
                     selectable

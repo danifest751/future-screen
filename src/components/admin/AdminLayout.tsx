@@ -4,6 +4,7 @@ import {
   ChevronRight,
   ClipboardList,
   FolderOpen,
+  History,
   Inbox,
   LayoutDashboard,
   LogOut,
@@ -57,6 +58,7 @@ const createDefaultNavItems = (content: ReturnType<typeof getAdminLayoutContent>
   { to: '/admin/content', label: content.nav.settings, Icon: Settings },
   { to: '/visual-led', label: content.nav.visualLed, Icon: Monitor },
   { to: '/admin/visual-led-logs', label: content.nav.visualLedLogs, Icon: ClipboardList },
+  { to: '/admin/content/history', label: content.nav.contentHistory, Icon: History },
 ];
 
 const AdminLayout = ({ title, subtitle, children, contentLocale, onContentLocaleChange }: Props) => {

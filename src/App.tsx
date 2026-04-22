@@ -31,6 +31,7 @@ const AdminRentalCategoryEditPage = lazy(() => import('./pages/admin/AdminRental
 const AdminPrivacyPolicyPage = lazy(() => import('./pages/admin/AdminPrivacyPolicyPage'));
 const AdminVisualLedLogsPage = lazy(() => import('./pages/admin/AdminVisualLedLogsPage'));
 const AdminHomeEquipmentSectionPage = lazy(() => import('./pages/admin/AdminHomeEquipmentSectionPage'));
+const AdminContentHistoryPage = lazy(() => import('./pages/admin/AdminContentHistoryPage'));
 const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'));
 const VisualLedEditorPage = lazy(() => import('./pages/VisualLedEditorPage'));
 
@@ -98,6 +99,7 @@ const App = () => {
     { path: '/admin/rental/:id', element: <ProtectedRoute requiredRole="admin"><AdminRentalCategoryEditPage /></ProtectedRoute> },
     { path: '/admin/privacy-policy', element: <ProtectedRoute requiredRole="admin"><AdminPrivacyPolicyPage /></ProtectedRoute> },
     { path: '/admin/content/home-equipment', element: <ProtectedRoute requiredRole="admin"><AdminHomeEquipmentSectionPage /></ProtectedRoute> },
+    { path: '/admin/content/history', element: <ProtectedRoute requiredRole="admin"><AdminContentHistoryPage /></ProtectedRoute> },
     { path: '/admin/visual-led-logs', element: <ProtectedRoute requiredRole="admin"><AdminVisualLedLogsPage /></ProtectedRoute> },
     { path: '/admin', element: <ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute> },
     { path: '/visual-led', element: <VisualLedEditorPage /> },
