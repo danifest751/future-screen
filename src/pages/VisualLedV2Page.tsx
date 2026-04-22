@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import BeforeUnloadGuard from '../components/visualLed/BeforeUnloadGuard';
 import CanvasStage from '../components/visualLed/CanvasStage';
+import ProjectLoader from '../components/visualLed/ProjectLoader';
 import ShortcutsModal from '../components/visualLed/ShortcutsModal';
 import SidebarLeft from '../components/visualLed/SidebarLeft';
 import SidebarRight from '../components/visualLed/SidebarRight';
@@ -57,6 +58,7 @@ const VisualLedV2Page = () => {
             beta · phase 5
           </span>
         </div>
+        <ProjectLoader />
         <div className="grid gap-2 lg:grid-cols-[18rem_1fr_16rem]">
           <SidebarLeft />
           <main className="flex min-h-[70vh] flex-col gap-2">

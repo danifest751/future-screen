@@ -2,15 +2,14 @@ import type { VisualLedState } from './state/types';
 
 /**
  * Serialise the in-memory state into the JSON payload accepted by
- * /api/visual-led/save. Backgrounds' data URLs are dropped because the
- * save endpoint has a 512 KB payload cap — for MVP we preserve only
- * metadata + layout; the user re-uploads the background when opening
- * the shared link. A proper "upload to storage, save ref" flow comes
- * in phase 5 polish.
+ * /api/visual-led/save. Backgrounds keep their storagePath + bucket
+ * (uploaded to Supabase Storage at import-time); data URLs are dropped
+ * to stay under the 512 KB payload cap. On load, /api/visual-led/load
+ * resolves storagePath → a signed URL and hydrates bg.src.
  */
 export function serializeProjectState(state: VisualLedState): Record<string, unknown> {
   return {
-    schemaVersion: 2, // bump to differentiate the React rewrite payloads from legacy
+    schemaVersion: 2,
     origin: 'react-v2',
     scenes: state.scenes.map((scene) => ({
       id: scene.id,
@@ -20,7 +19,9 @@ export function serializeProjectState(state: VisualLedState): Record<string, unk
         name: bg.name,
         width: bg.width,
         height: bg.height,
-        // `src` intentionally dropped to stay under the payload cap.
+        storagePath: bg.storagePath ?? null,
+        storageBucket: bg.storageBucket ?? null,
+        // `src` (data URL) intentionally dropped.
       })),
       activeBackgroundId: scene.activeBackgroundId,
       elements: scene.elements,
@@ -29,11 +30,30 @@ export function serializeProjectState(state: VisualLedState): Record<string, unk
       view: scene.view,
       canvasWidth: scene.canvasWidth,
       canvasHeight: scene.canvasHeight,
-      // assist dropped — ephemeral
     })),
     activeSceneId: state.activeSceneId,
     ui: state.ui,
   };
+}
+
+/**
+ * Count backgrounds that still need to finish uploading before save is
+ * truly safe. Returns { pending, failed } — caller shows a spinner or
+ * warning based on these.
+ */
+export function getUploadStatus(state: VisualLedState): {
+  pending: number;
+  failed: number;
+} {
+  let pending = 0;
+  let failed = 0;
+  for (const scene of state.scenes) {
+    for (const bg of scene.backgrounds) {
+      if (bg.uploadStatus === 'uploading') pending += 1;
+      else if (bg.uploadStatus === 'failed') failed += 1;
+    }
+  }
+  return { pending, failed };
 }
 
 export interface SaveProjectResult {

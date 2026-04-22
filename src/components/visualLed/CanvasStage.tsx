@@ -404,21 +404,80 @@ export async function importBackgrounds(
       const w = Math.max(640, Math.round(img.naturalWidth * s));
       const h = Math.max(360, Math.round(img.naturalHeight * s));
 
+      const bgId = uid('bg');
       dispatch({
         type: 'background/add',
         payload: {
-          id: uid('bg'),
+          id: bgId,
           name: file.name,
           src: dataUrl,
           width: img.naturalWidth,
           height: img.naturalHeight,
+          uploadStatus: 'uploading',
         },
       });
       dispatch({ type: 'view/resizeCanvas', payload: { width: w, height: h } });
       dispatch({ type: 'view/reset' });
+
+      // Background upload to Supabase Storage — gives us storagePath so
+      // saveProject can persist the bg without hitting the 512 KB cap.
+      // Local data URL still works until the upload resolves.
+      void uploadBackground(file, dataUrl, bgId, dispatch);
     } catch (err) {
       console.warn('Failed to import background', file.name, err);
     }
+  }
+}
+
+async function uploadBackground(
+  file: File,
+  dataUrl: string,
+  bgId: string,
+  dispatch: Dispatch<Action>,
+): Promise<void> {
+  try {
+    const response = await fetch('/api/visual-led/upload-background', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        file_name: file.name,
+        mime_type: file.type || 'image/jpeg',
+        data_url: dataUrl,
+      }),
+    });
+    if (!response.ok) {
+      let message = `HTTP ${response.status}`;
+      try {
+        const detail = await response.json();
+        if (detail?.error) message = detail.error;
+      } catch {
+        // ignore
+      }
+      dispatch({
+        type: 'background/update',
+        payload: { id: bgId, patch: { uploadStatus: 'failed', uploadError: message } },
+      });
+      return;
+    }
+    const data = await response.json();
+    dispatch({
+      type: 'background/update',
+      payload: {
+        id: bgId,
+        patch: {
+          storagePath: data.storage_path,
+          storageBucket: data.storage_bucket,
+          uploadStatus: 'uploaded',
+          uploadError: null,
+        },
+      },
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'upload failed';
+    dispatch({
+      type: 'background/update',
+      payload: { id: bgId, patch: { uploadStatus: 'failed', uploadError: message } },
+    });
   }
 }
 

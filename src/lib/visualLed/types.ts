@@ -71,9 +71,16 @@ export interface AssistProposal {
 export interface BackgroundAsset {
   id: string;
   name: string;
+  /** Local data URL (during upload) or signed URL (after project load). */
   src: string;
   width: number;
   height: number;
+  /** Supabase storage path + bucket; present after successful upload. */
+  storagePath?: string;
+  storageBucket?: string;
+  /** Upload lifecycle — drives UI spinners and save-gating. */
+  uploadStatus?: 'idle' | 'uploading' | 'uploaded' | 'failed';
+  uploadError?: string | null;
 }
 
 export interface VideoAsset {

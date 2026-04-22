@@ -1,21 +1,24 @@
 import { useState } from 'react';
-import { Check, Copy, ExternalLink, Save, X } from 'lucide-react';
+import { AlertTriangle, Check, Copy, ExternalLink, Loader2, Save, X } from 'lucide-react';
 import { createPortal } from 'react-dom';
-import { saveProject } from '../saveProject';
+import { getUploadStatus, saveProject } from '../saveProject';
 import { useVisualLed } from '../state/VisualLedContext';
 
 /**
  * Save-project panel: sends the in-memory state to the save endpoint
- * and shows a share-link modal on success. Background images are NOT
- * included in the save payload (payload-size cap); user re-uploads
- * them when opening the shared link. Proper upload-to-storage flow
- * lands in phase 5.
+ * (storagePath references only, no data URLs) and shows a share-link
+ * modal on success. Indicates pending / failed background uploads and
+ * blocks save while anything is still uploading.
  */
 const SavePanel = () => {
   const { state } = useVisualLed();
   const [busy, setBusy] = useState(false);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const uploads = getUploadStatus(state);
+  const hasPending = uploads.pending > 0;
+  const hasFailed = uploads.failed > 0;
 
   const run = async () => {
     setBusy(true);
@@ -40,16 +43,34 @@ const SavePanel = () => {
       <button
         type="button"
         onClick={() => void run()}
-        disabled={busy}
+        disabled={busy || hasPending}
         className="flex w-full items-center justify-center gap-1.5 rounded-md bg-brand-500/80 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-500 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        <Save className="h-3 w-3" />
-        {busy ? 'Сохранение…' : 'Получить ссылку'}
+        {hasPending ? (
+          <>
+            <Loader2 className="h-3 w-3 animate-spin" />
+            Ожидание загрузки фонов ({uploads.pending})
+          </>
+        ) : (
+          <>
+            <Save className="h-3 w-3" />
+            {busy ? 'Сохранение…' : 'Получить ссылку'}
+          </>
+        )}
       </button>
       <p className="mt-2 text-[10px] text-slate-500">
-        Сохранится макет (сцены, экраны, кабинеты). Фоновые изображения нужно будет
-        перезагрузить по ссылке.
+        Сохранятся сцены + экраны + кабинеты + ссылки на загруженные фоны. По
+        share-ссылке проект восстановится со всеми фонами.
       </p>
+      {hasFailed ? (
+        <div className="mt-2 flex items-start gap-1 rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-[11px] text-amber-200">
+          <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
+          <span>
+            Не все фоны загружены на сервер ({uploads.failed}). Они не попадут в
+            сохранение — перезагрузи их в списке «Фоны» или переимпортируй.
+          </span>
+        </div>
+      ) : null}
       {error ? (
         <div className="mt-2 rounded-md border border-red-500/30 bg-red-500/10 px-2 py-1 text-[11px] text-red-200">
           {error}

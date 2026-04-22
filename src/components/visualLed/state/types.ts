@@ -57,6 +57,10 @@ export type Action =
   | { type: 'background/add'; payload: BackgroundAsset }
   | { type: 'background/select'; payload: { id: string | null } }
   | { type: 'background/remove'; payload: { id: string } }
+  | {
+      type: 'background/update';
+      payload: { id: string; patch: Partial<BackgroundAsset> };
+    }
 
   // Screens (elements)
   | { type: 'screen/add'; payload: ScreenElement }
@@ -92,4 +96,7 @@ export type Action =
   | { type: 'video/remove'; payload: { id: string } }
 
   // UI flags
-  | { type: 'ui/toggle'; payload: { key: keyof UiFlags; value?: boolean } };
+  | { type: 'ui/toggle'; payload: { key: keyof UiFlags; value?: boolean } }
+
+  // Wholesale replace — used when hydrating a shared project from a URL.
+  | { type: 'project/replace'; payload: VisualLedState };

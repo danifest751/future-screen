@@ -100,6 +100,18 @@ export function visualLedReducer(state: VisualLedState, action: Action): VisualL
       };
     }
 
+    case 'background/update': {
+      return {
+        ...state,
+        scenes: mapActiveScene(state, (scene) => ({
+          ...scene,
+          backgrounds: scene.backgrounds.map((b) =>
+            b.id === action.payload.id ? { ...b, ...action.payload.patch } : b,
+          ),
+        })),
+      };
+    }
+
     // ----- screens -----
     case 'screen/add': {
       return {
@@ -257,6 +269,10 @@ export function visualLedReducer(state: VisualLedState, action: Action): VisualL
       const next = action.payload.value ?? !state.ui[key];
       return { ...state, ui: { ...state.ui, [key]: next } };
     }
+
+    // ----- full-state replace (project load) -----
+    case 'project/replace':
+      return action.payload;
 
     default:
       return state;
