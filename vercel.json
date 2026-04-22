@@ -28,7 +28,7 @@
       "destination": "/api/report-share.ts?slug=:slug"
     },
     {
-      "source": "/((?!api|assets|visual-led).*)",
+      "source": "/((?!api|assets).*)",
       "destination": "/index.html"
     }
   ],
