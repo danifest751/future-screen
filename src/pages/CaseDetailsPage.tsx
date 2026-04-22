@@ -9,8 +9,9 @@ import { trackEvent } from '../lib/analytics';
 import type { CaseItem } from '../data/cases';
 import { useOptionalEditMode } from '../context/EditModeContext';
 import { useI18n } from '../context/I18nContext';
-import { getCasesPageContent } from '../content/pages/cases';
 import { useEditableBinding } from '../hooks/useEditableBinding';
+import { usePageCases } from '../hooks/usePageCases';
+import type { PageCasesContent } from '../lib/content/pageCases';
 
 const CaseDetailsPage = () => {
   const { siteLocale } = useI18n();
@@ -18,8 +19,37 @@ const CaseDetailsPage = () => {
   const { slug } = useParams();
   const { cases, updateCase } = useCases(siteLocale, false);
   const item = cases.find((c) => c.slug === slug);
-  const casesPageContent = getCasesPageContent(siteLocale);
+  const { data: casesPageContent, save: savePageCases } = usePageCases(siteLocale, true);
   const { details } = casesPageContent;
+
+  const savePageDetailsField = (field: keyof PageCasesContent['details']) => async (next: string) => {
+    const ok = await savePageCases({
+      ...casesPageContent,
+      details: { ...casesPageContent.details, [field]: next },
+    });
+    if (!ok) throw new Error('Failed to save cases details');
+  };
+
+  const servicesLabelEdit = useEditableBinding({
+    value: details.servicesLabel,
+    onSave: savePageDetailsField('servicesLabel'),
+    label: 'Case details — services label',
+  });
+  const videosLabelEdit = useEditableBinding({
+    value: details.videosLabel,
+    onSave: savePageDetailsField('videosLabel'),
+    label: 'Case details — videos label',
+  });
+  const contactPromptEdit = useEditableBinding({
+    value: details.contactPrompt,
+    onSave: savePageDetailsField('contactPrompt'),
+    label: 'Case details — contact prompt',
+  });
+  const contactLinkEdit = useEditableBinding({
+    value: details.contactLink,
+    onSave: savePageDetailsField('contactLink'),
+    label: 'Case details — contact link text',
+  });
 
   const saveField =
     <K extends 'title' | 'city' | 'date' | 'format' | 'summary' | 'metrics'>(field: K) =>
@@ -103,7 +133,7 @@ const CaseDetailsPage = () => {
         <div className="grid gap-6 md:grid-cols-3">
           <div className="card md:col-span-2">
             <div className="text-sm text-slate-400">
-              {details.servicesLabel}{' '}
+              <span {...servicesLabelEdit.bindProps}>{servicesLabelEdit.value}</span>{' '}
               <EditableList
                 items={item.services}
                 onSave={saveServices}
@@ -139,7 +169,9 @@ const CaseDetailsPage = () => {
 
             {(item as CaseItem & { videos?: string[] }).videos && (item as CaseItem & { videos?: string[] }).videos!.length > 0 && (
               <div className="mt-4 space-y-3">
-                <div className="text-sm text-slate-400">{details.videosLabel}</div>
+                <div className="text-sm text-slate-400">
+                  <span {...videosLabelEdit.bindProps}>{videosLabelEdit.value}</span>
+                </div>
                 <div className="grid gap-3 md:grid-cols-2">
                   {(item as CaseItem & { videos?: string[] }).videos!.map((src) => (
                     <video
@@ -154,8 +186,10 @@ const CaseDetailsPage = () => {
               </div>
             )}
             <div className="mt-4 text-sm text-slate-400">
-              {details.contactPrompt}{' '}
-              <Link to="/contacts" className="text-brand-200 hover:text-brand-100">{details.contactLink}</Link>
+              <span {...contactPromptEdit.bindProps}>{contactPromptEdit.value}</span>{' '}
+              <Link to="/contacts" className="text-brand-200 hover:text-brand-100">
+                <span {...contactLinkEdit.bindProps}>{contactLinkEdit.value}</span>
+              </Link>
             </div>
           </div>
           <RequestForm title={details.requestTitle} subtitle={details.requestSubtitle} ctaText={details.requestCta} />

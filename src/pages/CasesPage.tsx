@@ -9,8 +9,9 @@ import type { CaseItem } from '../data/cases';
 import { LazyImage } from '../components/LazyImage';
 import { useOptionalEditMode } from '../context/EditModeContext';
 import { useI18n } from '../context/I18nContext';
-import { getCasesPageContent } from '../content/pages/cases';
 import { useEditableBinding } from '../hooks/useEditableBinding';
+import { usePageCases } from '../hooks/usePageCases';
+import { formatVideoCount, type PageCasesContent } from '../lib/content/pageCases';
 
 type CaseItemWithMedia = CaseItem & { videos?: string[] };
 
@@ -22,10 +23,7 @@ type UpdateCaseFn = (
 interface CaseCardProps {
   item: CaseItemWithMedia;
   onUpdate: UpdateCaseFn;
-  videoOverlay: {
-    watch: string;
-    many: (count: number) => string;
-  };
+  videoOverlay: { watch: string; manyTemplate: string };
 }
 
 const CaseCard = ({ item, onUpdate, videoOverlay }: CaseCardProps) => {
@@ -122,7 +120,9 @@ const CaseCard = ({ item, onUpdate, videoOverlay }: CaseCardProps) => {
             <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
               <div className="flex items-center gap-2 rounded-full bg-brand-500 px-4 py-2 text-sm font-medium text-white shadow-lg">
                 <Play size={16} fill="currentColor" />
-                {videos.length > 1 ? videoOverlay.many(videos.length) : videoOverlay.watch}
+                {videos.length > 1
+                  ? formatVideoCount(videoOverlay.manyTemplate, videos.length)
+                  : videoOverlay.watch}
               </div>
             </div>
           )}
@@ -191,8 +191,24 @@ const CaseCard = ({ item, onUpdate, videoOverlay }: CaseCardProps) => {
 const CasesPage = () => {
   const { siteLocale } = useI18n();
   const { cases, updateCase } = useCases(siteLocale, false);
-  const casesPageContent = getCasesPageContent(siteLocale);
+  const { data: casesPageContent, save: savePageCases } = usePageCases(siteLocale, true);
   const { seo, section, videoOverlay, emptyState } = casesPageContent;
+
+  const savePagePatch = async (patch: Partial<PageCasesContent>) => {
+    const ok = await savePageCases({ ...casesPageContent, ...patch });
+    if (!ok) throw new Error('Failed to save cases page content');
+  };
+
+  const sectionTitleEdit = useEditableBinding({
+    value: section.title,
+    onSave: (next) => savePagePatch({ section: { ...section, title: next } }),
+    label: 'Cases — section title',
+  });
+  const sectionSubtitleEdit = useEditableBinding({
+    value: section.subtitle,
+    onSave: (next) => savePagePatch({ section: { ...section, subtitle: next } }),
+    label: 'Cases — section subtitle',
+  });
 
   return (
     <div className="space-y-2">
@@ -200,7 +216,15 @@ const CasesPage = () => {
         <title>{seo.title}</title>
         <meta name="description" content={seo.description} />
       </Helmet>
-      <Section title={section.title} subtitle={section.subtitle}>
+      <Section>
+        <div className="mb-6 space-y-2">
+          <h2 className="text-2xl font-semibold text-white md:text-3xl">
+            <span {...sectionTitleEdit.bindProps}>{sectionTitleEdit.value}</span>
+          </h2>
+          <p className="text-slate-300 md:text-lg">
+            <span {...sectionSubtitleEdit.bindProps}>{sectionSubtitleEdit.value}</span>
+          </p>
+        </div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {cases.map((item) => (
             <CaseCard

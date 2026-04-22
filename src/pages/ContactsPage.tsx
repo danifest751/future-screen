@@ -4,9 +4,10 @@ import { RequestForm } from '../components/RequestForm';
 import Section from '../components/Section';
 import { useOptionalEditMode } from '../context/EditModeContext';
 import { useI18n } from '../context/I18nContext';
-import { getContactsPageContent } from '../content/pages/contacts';
 import { useContacts } from '../hooks/useContacts';
 import { useEditableBinding } from '../hooks/useEditableBinding';
+import { usePageContacts } from '../hooks/usePageContacts';
+import type { PageContactsContent } from '../lib/content/pageContacts';
 
 const PhoneIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-5 w-5">
@@ -38,8 +39,51 @@ const ClockIcon = () => (
 const ContactsPage = () => {
   const { siteLocale } = useI18n();
   const { isEditing } = useOptionalEditMode();
-  const contactsPageContent = getContactsPageContent(siteLocale);
+  const { data: contactsPageContent, save: savePageContacts } = usePageContacts(siteLocale, true);
   const { contacts, loading, error, update } = useContacts(siteLocale, false);
+
+  const savePagePatch = async (patch: Partial<PageContactsContent>) => {
+    const ok = await savePageContacts({ ...contactsPageContent, ...patch });
+    if (!ok) throw new Error('Failed to save contacts page content');
+  };
+
+  const heroTitleEdit = useEditableBinding({
+    value: contactsPageContent.hero.title,
+    onSave: (next) => savePagePatch({ hero: { ...contactsPageContent.hero, title: next } }),
+    label: 'Contacts — hero title',
+  });
+  const heroSubtitleEdit = useEditableBinding({
+    value: contactsPageContent.hero.subtitle,
+    onSave: (next) => savePagePatch({ hero: { ...contactsPageContent.hero, subtitle: next } }),
+    label: 'Contacts — hero subtitle',
+  });
+  const labelPhonesEdit = useEditableBinding({
+    value: contactsPageContent.labels.phones,
+    onSave: (next) => savePagePatch({ labels: { ...contactsPageContent.labels, phones: next } }),
+    label: 'Contacts — phones label',
+  });
+  const labelEmailEdit = useEditableBinding({
+    value: contactsPageContent.labels.email,
+    onSave: (next) => savePagePatch({ labels: { ...contactsPageContent.labels, email: next } }),
+    label: 'Contacts — email label',
+  });
+  const labelAddressEdit = useEditableBinding({
+    value: contactsPageContent.labels.address,
+    onSave: (next) => savePagePatch({ labels: { ...contactsPageContent.labels, address: next } }),
+    label: 'Contacts — address label',
+  });
+  const labelWorkingHoursEdit = useEditableBinding({
+    value: contactsPageContent.labels.workingHours,
+    onSave: (next) =>
+      savePagePatch({ labels: { ...contactsPageContent.labels, workingHours: next } }),
+    label: 'Contacts — working hours label',
+  });
+  const labelOpenInMapsEdit = useEditableBinding({
+    value: contactsPageContent.labels.openInMaps,
+    onSave: (next) =>
+      savePagePatch({ labels: { ...contactsPageContent.labels, openInMaps: next } }),
+    label: 'Contacts — open in maps label',
+  });
 
   const makeContactsSaver = (field: 'address' | 'workingHours') => async (next: string) => {
     if (!contacts) throw new Error('Contacts not loaded');
@@ -95,7 +139,15 @@ const ContactsPage = () => {
         <meta name="description" content={contactsPageContent.seo.description} />
       </Helmet>
 
-      <Section title={contactsPageContent.hero.title} subtitle={contactsPageContent.hero.subtitle}>
+      <Section>
+        <div className="mb-6 space-y-2">
+          <h2 className="text-2xl font-semibold text-white md:text-3xl">
+            <span {...heroTitleEdit.bindProps}>{heroTitleEdit.value}</span>
+          </h2>
+          <p className="text-slate-300 md:text-lg">
+            <span {...heroSubtitleEdit.bindProps}>{heroSubtitleEdit.value}</span>
+          </p>
+        </div>
         <div className="grid gap-6 lg:grid-cols-2">
           {loading ? (
             <div className="col-span-2 flex h-64 items-center justify-center text-slate-400">
@@ -118,7 +170,9 @@ const ContactsPage = () => {
                   <PhoneIcon />
                 </div>
                 <div>
-                  <div className="text-sm font-medium text-slate-400">{contactsPageContent.labels.phones}</div>
+                  <div className="text-sm font-medium text-slate-400">
+                    <span {...labelPhonesEdit.bindProps}>{labelPhonesEdit.value}</span>
+                  </div>
                   <EditableList
                     items={contacts.phones ?? []}
                     onSave={savePhones}
@@ -154,7 +208,9 @@ const ContactsPage = () => {
                   <EmailIcon />
                 </div>
                 <div>
-                  <div className="text-sm font-medium text-slate-400">{contactsPageContent.labels.email}</div>
+                  <div className="text-sm font-medium text-slate-400">
+                    <span {...labelEmailEdit.bindProps}>{labelEmailEdit.value}</span>
+                  </div>
                   <EditableList
                     items={contacts.emails ?? []}
                     onSave={saveEmails}
@@ -183,7 +239,9 @@ const ContactsPage = () => {
                   <MapPinIcon />
                 </div>
                 <div>
-                  <div className="text-sm font-medium text-slate-400">{contactsPageContent.labels.address}</div>
+                  <div className="text-sm font-medium text-slate-400">
+                    <span {...labelAddressEdit.bindProps}>{labelAddressEdit.value}</span>
+                  </div>
                   {isEditing ? (
                     <div className="mt-1 block text-white">
                       <span {...addressEdit.bindProps}>{addressEdit.value}</span>
@@ -206,7 +264,9 @@ const ContactsPage = () => {
                   <ClockIcon />
                 </div>
                 <div>
-                  <div className="text-sm font-medium text-slate-400">{contactsPageContent.labels.workingHours}</div>
+                  <div className="text-sm font-medium text-slate-400">
+                    <span {...labelWorkingHoursEdit.bindProps}>{labelWorkingHoursEdit.value}</span>
+                  </div>
                   <div className="mt-1 text-white">
                     <span {...workingHoursEdit.bindProps}>{workingHoursEdit.value}</span>
                   </div>
@@ -231,7 +291,7 @@ const ContactsPage = () => {
                   className="flex items-center justify-center gap-2 border-t border-white/10 bg-white/5 py-2 text-sm text-gray-400 transition hover:bg-white/10 hover:text-white"
                 >
                   <MapPinIcon />
-                  {contactsPageContent.labels.openInMaps}
+                  <span {...labelOpenInMapsEdit.bindProps}>{labelOpenInMapsEdit.value}</span>
                 </a>
               </div>
             </div>
