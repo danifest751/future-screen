@@ -105,8 +105,14 @@ const App = () => {
     { path: '/admin/visual-led-logs', element: <ProtectedRoute requiredRole="admin"><AdminVisualLedLogsPage /></ProtectedRoute> },
     { path: '/admin/visual-led-logs/:sessionId', element: <ProtectedRoute requiredRole="admin"><AdminVisualLedSessionPage /></ProtectedRoute> },
     { path: '/admin', element: <ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute> },
-    { path: '/visual-led', element: <VisualLedEditorPage /> },
+    // Cutover: the React rewrite (VisualLedV2Page) is the primary
+    // `/visual-led` entry point now. `/visual-led/v2` is kept as an
+    // alias so old share links from the beta period keep working, and
+    // `/visual-led/legacy` still opens the old HTML via iframe for
+    // fallback / rollback during the observation period.
+    { path: '/visual-led', element: <VisualLedV2Page /> },
     { path: '/visual-led/v2', element: <VisualLedV2Page /> },
+    { path: '/visual-led/legacy', element: <VisualLedEditorPage /> },
     { path: '*', element: <NotFoundPage /> },
   ];
 

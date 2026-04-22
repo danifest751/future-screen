@@ -58,10 +58,7 @@ const StageHeader = ({ onOpenShortcuts }: StageHeaderProps) => {
     <header className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-slate-900/50 px-4 py-2">
       <div className="flex flex-wrap items-center gap-3">
         <div className="text-sm font-semibold tracking-tight text-white">
-          Perspective Planner{' '}
-          <span className="ml-1 rounded bg-brand-500/20 px-1.5 py-0.5 text-[10px] font-mono text-brand-200">
-            v2
-          </span>
+          Perspective Planner
         </div>
         <ScenesTabs />
       </div>

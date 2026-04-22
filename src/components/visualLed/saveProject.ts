@@ -87,7 +87,7 @@ export async function saveProject(state: VisualLedState): Promise<SaveProjectRes
       return { ok: false, error: message };
     }
     const data = await response.json();
-    const shareUrl = `${window.location.origin}/visual-led/v2?project=${encodeURIComponent(data.id)}`;
+    const shareUrl = `${window.location.origin}/visual-led?project=${encodeURIComponent(data.id)}`;
     return { ok: true, id: data.id, shareUrl };
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : 'Сеть недоступна' };

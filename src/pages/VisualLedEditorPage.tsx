@@ -201,8 +201,8 @@ const VisualLedEditorPage = () => {
         )}
 
         <iframe
-          src="/visual-led/index.html"
-          title="Визуализатор размещения LED-экрана"
+          src="/visual-led-legacy/index.html"
+          title="Визуализатор размещения LED-экрана (legacy)"
           onLoad={() => setIframeLoaded(true)}
           style={{
             width: '100%',

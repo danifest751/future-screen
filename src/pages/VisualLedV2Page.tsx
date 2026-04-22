@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { Archive, Home } from 'lucide-react';
 import BeforeUnloadGuard from '../components/visualLed/BeforeUnloadGuard';
 import CanvasStage from '../components/visualLed/CanvasStage';
 import ProjectLoader from '../components/visualLed/ProjectLoader';
@@ -14,9 +14,10 @@ import WorkflowSteps from '../components/visualLed/WorkflowSteps';
 import { VisualLedProvider } from '../components/visualLed/state/VisualLedContext';
 
 /**
- * New React-based Visual LED planner at /visual-led/v2. Parallel to
- * the legacy HTML at /visual-led; the React version ships features
- * phase-by-phase.
+ * React-based Visual LED planner. Primary entry point at /visual-led
+ * (with /visual-led/v2 kept as alias for old share links). The legacy
+ * vanilla-HTML version lives at /visual-led/legacy as a rollback path
+ * during the observation period.
  */
 const VisualLedV2Page = () => {
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
@@ -24,7 +25,7 @@ const VisualLedV2Page = () => {
   return (
     <VisualLedProvider>
       <Helmet>
-        <title>Visual LED · v2 (beta)</title>
+        <title>Visual LED · Perspective Planner</title>
       </Helmet>
       {/*
         Scoped focus-visible ring so keyboard navigation is visible.
@@ -48,15 +49,20 @@ const VisualLedV2Page = () => {
       >
         <div className="mb-2 flex items-center justify-between text-xs text-slate-400">
           <Link
-            to="/visual-led"
+            to="/"
             className="inline-flex items-center gap-1 rounded-md border border-white/10 bg-slate-900/40 px-2 py-1 text-slate-300 hover:border-white/30 hover:text-white"
           >
-            <ArrowLeft className="h-3 w-3" />
-            Legacy visualizer
+            <Home className="h-3 w-3" />
+            На сайт
           </Link>
-          <span className="rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-[10px] font-medium text-amber-200">
-            beta · phase 5
-          </span>
+          <Link
+            to="/visual-led/legacy"
+            className="inline-flex items-center gap-1 rounded-md border border-white/10 bg-slate-900/40 px-2 py-1 text-slate-500 hover:border-white/30 hover:text-white"
+            title="Старая версия визуализатора (временно доступна)"
+          >
+            <Archive className="h-3 w-3" />
+            Legacy
+          </Link>
         </div>
         <ProjectLoader />
         <div className="grid gap-2 lg:grid-cols-[18rem_1fr_16rem]">
