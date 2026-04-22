@@ -70,6 +70,7 @@ const ScenesTabs = () => {
                 onClick={() => startRename(scene.id, scene.name)}
                 className="rounded p-0.5 text-slate-400 hover:bg-white/10 hover:text-white"
                 title="Переименовать"
+                aria-label={`Переименовать сцену «${scene.name}»`}
               >
                 <Pencil className="h-3 w-3" />
               </button>
@@ -80,6 +81,7 @@ const ScenesTabs = () => {
                 onClick={() => dispatch({ type: 'scene/remove', payload: { id: scene.id } })}
                 className="rounded p-0.5 text-slate-500 opacity-0 transition hover:bg-red-500/20 hover:text-red-300 group-hover:opacity-100"
                 title="Удалить сцену"
+                aria-label={`Удалить сцену «${scene.name}»`}
               >
                 <X className="h-3 w-3" />
               </button>
@@ -92,6 +94,7 @@ const ScenesTabs = () => {
         onClick={() => dispatch({ type: 'scene/add', payload: {} })}
         className="flex h-6 w-6 items-center justify-center rounded-full border border-white/10 bg-slate-900/40 text-slate-400 hover:border-white/30 hover:text-white"
         title="Добавить сцену"
+        aria-label="Добавить сцену"
       >
         <Plus className="h-3 w-3" />
       </button>

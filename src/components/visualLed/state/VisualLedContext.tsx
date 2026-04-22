@@ -1,5 +1,6 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -8,6 +9,7 @@ import {
   type ReactNode,
 } from 'react';
 import type { Scene } from '../../../lib/visualLed';
+import { buildInitialHistory, withHistory, type HistoryAction } from './history';
 import { createInitialState } from './initialState';
 import { clearPersistedState, loadPersistedState, persistState } from './persistence';
 import { visualLedReducer } from './reducer';
@@ -15,7 +17,11 @@ import type { Action, VisualLedState } from './types';
 
 interface ContextValue {
   state: VisualLedState;
-  dispatch: Dispatch<Action>;
+  dispatch: Dispatch<Action | HistoryAction>;
+  /** True when there's a past snapshot to revert to. */
+  canUndo: boolean;
+  /** True when there's a future snapshot to redo. */
+  canRedo: boolean;
   /** Wipe localStorage snapshot — used by the Reset button in the header. */
   clearPersistence: () => void;
 }
@@ -24,34 +30,39 @@ const VisualLedContext = createContext<ContextValue | null>(null);
 
 const AUTOSAVE_DEBOUNCE_MS = 800;
 
-/**
- * Build the initial state, preferring a localStorage snapshot if it's
- * present and schema-compatible. Runs once on provider mount.
- */
+const historyReducer = withHistory(visualLedReducer);
+
+/** Initial state — prefer a localStorage snapshot if compatible. */
 function buildInitial(): VisualLedState {
   const persisted = loadPersistedState();
   return persisted?.state ?? createInitialState();
 }
 
 export const VisualLedProvider = ({ children }: { children: ReactNode }) => {
-  const [state, dispatch] = useReducer(visualLedReducer, undefined, buildInitial);
+  const [history, dispatch] = useReducer(historyReducer, undefined, () =>
+    buildInitialHistory(buildInitial()),
+  );
+  const state = history.present;
 
-  // Debounced autosave: persist whenever state settles for
-  // AUTOSAVE_DEBOUNCE_MS without further changes.
+  // Debounced autosave of the CURRENT state (no history, too large).
   useEffect(() => {
     const timer = window.setTimeout(() => persistState(state), AUTOSAVE_DEBOUNCE_MS);
     return () => window.clearTimeout(timer);
   }, [state]);
 
+  const clearPersistence = useCallback(() => {
+    clearPersistedState();
+  }, []);
+
   const value = useMemo<ContextValue>(
     () => ({
       state,
       dispatch,
-      clearPersistence: () => {
-        clearPersistedState();
-      },
+      canUndo: history.past.length > 0,
+      canRedo: history.future.length > 0,
+      clearPersistence,
     }),
-    [state],
+    [clearPersistence, history.future.length, history.past.length, state],
   );
 
   return <VisualLedContext.Provider value={value}>{children}</VisualLedContext.Provider>;
