@@ -35,6 +35,7 @@ const AdminHomeEquipmentSectionPage = lazy(() => import('./pages/admin/AdminHome
 const AdminContentHistoryPage = lazy(() => import('./pages/admin/AdminContentHistoryPage'));
 const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'));
 const VisualLedEditorPage = lazy(() => import('./pages/VisualLedEditorPage'));
+const VisualLedV2Page = lazy(() => import('./pages/VisualLedV2Page'));
 
 const PageLoader = () => (
   <div
@@ -105,6 +106,7 @@ const App = () => {
     { path: '/admin/visual-led-logs/:sessionId', element: <ProtectedRoute requiredRole="admin"><AdminVisualLedSessionPage /></ProtectedRoute> },
     { path: '/admin', element: <ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute> },
     { path: '/visual-led', element: <VisualLedEditorPage /> },
+    { path: '/visual-led/v2', element: <VisualLedV2Page /> },
     { path: '*', element: <NotFoundPage /> },
   ];
 

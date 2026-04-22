@@ -1,0 +1,95 @@
+import type {
+  AssistProposal,
+  BackgroundAsset,
+  CabinetPlan,
+  Point,
+  Quad,
+  ScaleCalibration,
+  Scene,
+  ScreenElement,
+  VideoAsset,
+  ViewTransform,
+} from '../../../lib/visualLed';
+
+/**
+ * Tool — the click-driven placement flow the user is currently in.
+ *   `scale2`: expecting 2 points for scale calibration
+ *   `place4`: expecting 4 corner points to drop a new screen
+ */
+export type Tool =
+  | { mode: 'scale2'; points: Point[] }
+  | { mode: 'place4'; points: Point[] };
+
+/**
+ * Drag — transient gesture while the user holds the mouse button down.
+ * Stored in state only for duration of the drag; cleared on mouseup.
+ */
+export type Drag =
+  | { type: 'pan'; lastClientX: number; lastClientY: number }
+  | { type: 'corner'; id: string; corner: number }
+  | { type: 'move'; id: string; lastX: number; lastY: number };
+
+export interface UiFlags {
+  showCabinetGrid: boolean;
+  showAssistGuides: boolean;
+  showStatsOverlay: boolean;
+}
+
+export interface VisualLedState {
+  scenes: Scene[];
+  activeSceneId: string;
+  videos: VideoAsset[];
+  tool: Tool | null;
+  drag: Drag | null;
+  ui: UiFlags;
+}
+
+// ----- actions -----
+
+export type Action =
+  // Scenes
+  | { type: 'scene/add'; payload: { name?: string } }
+  | { type: 'scene/switch'; payload: { id: string } }
+  | { type: 'scene/rename'; payload: { id: string; name: string } }
+  | { type: 'scene/remove'; payload: { id: string } }
+
+  // Backgrounds
+  | { type: 'background/add'; payload: BackgroundAsset }
+  | { type: 'background/select'; payload: { id: string | null } }
+  | { type: 'background/remove'; payload: { id: string } }
+
+  // Screens (elements)
+  | { type: 'screen/add'; payload: ScreenElement }
+  | { type: 'screen/update'; payload: { id: string; patch: Partial<ScreenElement> } }
+  | { type: 'screen/updateCorners'; payload: { id: string; corners: Quad } }
+  | { type: 'screen/setCabinetPlan'; payload: { id: string; plan: CabinetPlan | null } }
+  | { type: 'screen/delete'; payload: { id: string } }
+  | { type: 'screen/select'; payload: { id: string | null } }
+
+  // Scale calibration
+  | { type: 'scale/set'; payload: ScaleCalibration }
+  | { type: 'scale/clear' }
+
+  // Assist
+  | { type: 'assist/set'; payload: AssistProposal | null }
+
+  // Tool flow
+  | { type: 'tool/start'; payload: Tool }
+  | { type: 'tool/pushPoint'; payload: Point }
+  | { type: 'tool/cancel' }
+
+  // Drag
+  | { type: 'drag/begin'; payload: Drag }
+  | { type: 'drag/end' }
+
+  // View
+  | { type: 'view/set'; payload: Partial<ViewTransform> }
+  | { type: 'view/reset' }
+  | { type: 'view/resizeCanvas'; payload: { width: number; height: number } }
+
+  // Videos (library scope, not scene scope)
+  | { type: 'video/add'; payload: VideoAsset }
+  | { type: 'video/remove'; payload: { id: string } }
+
+  // UI flags
+  | { type: 'ui/toggle'; payload: { key: keyof UiFlags; value?: boolean } };
