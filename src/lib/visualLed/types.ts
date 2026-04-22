@@ -47,16 +47,25 @@ export interface ScreenElement {
   cabinetPlan: CabinetPlan | null;
 }
 
+export type AssistConfidence = 'high' | 'medium' | 'low';
+export type AssistSource = 'edge-snap' | 'dominant-angles' | 'fallback';
+
 export interface AssistProposal {
   corners: Quad;
-  confidence: number;
-  /** ROI used for the analysis (canvas-space rectangle). */
+  confidence: AssistConfidence;
+  /** 0..1 — raw score used to derive `confidence`. */
+  score: number;
+  /** Short human-readable reason for the proposal / its rating. */
+  reason: string;
+  /** Which analysis path produced the quad. */
+  source: AssistSource;
+  /** Canvas-space ROI that was sampled. */
   roi: { x: number; y: number; width: number; height: number };
-  /** Optional debug overlay data — guide lines etc. */
-  debug?: {
-    samples?: number;
-    dominantAngles?: number[];
-  };
+  /** Lines used as edge hints — already translated into canvas space. */
+  guides: Array<{ nx: number; ny: number; d: number }>;
+  /** Screen the proposal targets (for in-place updates). */
+  targetElementId: string;
+  analyzedAt: number;
 }
 
 export interface BackgroundAsset {

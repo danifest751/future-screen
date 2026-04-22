@@ -152,7 +152,7 @@ export function lineIntersection(
  * and return the two boundary intersections, or null if it doesn't cross.
  */
 export function lineClipToCanvas(
-  line: Line,
+  line: Pick<Line, 'nx' | 'ny' | 'd'>,
   canvasWidth: number,
   canvasHeight: number,
 ): [Point, Point] | null {

@@ -62,8 +62,15 @@ const CanvasStage = () => {
     if (!ctx) return;
     renderScene(ctx, scene, state.tool, imageCache.current, {
       showCabinetGrid: state.ui.showCabinetGrid,
+      showAssistGuides: state.ui.showAssistGuides,
     });
-  }, [scene, state.tool, state.ui.showCabinetGrid, cacheVersion]);
+  }, [
+    scene,
+    state.tool,
+    state.ui.showCabinetGrid,
+    state.ui.showAssistGuides,
+    cacheVersion,
+  ]);
 
   const onDrop = useCallback(
     async (event: React.DragEvent<HTMLDivElement>) => {
