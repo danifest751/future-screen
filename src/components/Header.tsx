@@ -7,6 +7,24 @@ import { RentalDropdown } from './RentalDropdown';
 import LoginModal from './LoginModal';
 import LocaleSwitch from './LocaleSwitch';
 import { getGlobalContent } from '../content/global';
+import { useGlobalHeader } from '../hooks/useGlobalHeader';
+import { useEditableBinding } from '../hooks/useEditableBinding';
+import type { GlobalHeaderContent } from '../lib/content/globalHeader';
+
+interface HeaderNavLinkTextProps {
+  index: number;
+  label: string;
+  onSave: (next: string) => Promise<void>;
+}
+
+const HeaderNavLinkText = ({ index, label, onSave }: HeaderNavLinkTextProps) => {
+  const edit = useEditableBinding({
+    value: label,
+    onSave,
+    label: `Header nav ${index + 1} — label`,
+  });
+  return <span {...edit.bindProps}>{edit.value}</span>;
+};
 
 const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -20,7 +38,35 @@ const Header = () => {
   const location = useLocation();
   const locale = getLocaleForPath(location.pathname);
   const isAdminPath = location.pathname.startsWith('/admin');
-  const { brandContent, headerContent } = getGlobalContent(locale);
+  const { brandContent } = getGlobalContent(locale);
+  const { data: headerContent, save: saveHeader } = useGlobalHeader(siteLocale, true);
+
+  const savePatch = async (patch: Partial<GlobalHeaderContent>) => {
+    const ok = await saveHeader({ ...headerContent, ...patch });
+    if (!ok) throw new Error('Failed to save header');
+  };
+
+  const saveNavLinkLabel = (index: number) => async (nextLabel: string) => {
+    const nextLinks = headerContent.navLinks.map((l, i) =>
+      i === index ? { ...l, label: nextLabel } : l,
+    );
+    await savePatch({ navLinks: nextLinks });
+  };
+  const rentLabelEdit = useEditableBinding({
+    value: headerContent.rentLabel,
+    onSave: (next) => savePatch({ rentLabel: next }),
+    label: 'Header — rent label',
+  });
+  const casesLabelEdit = useEditableBinding({
+    value: headerContent.casesLabel,
+    onSave: (next) => savePatch({ casesLabel: next }),
+    label: 'Header — cases label',
+  });
+  const contactsLabelEdit = useEditableBinding({
+    value: headerContent.contactsLabel,
+    onSave: (next) => savePatch({ contactsLabel: next }),
+    label: 'Header — contacts label',
+  });
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -135,14 +181,14 @@ const Header = () => {
         </Link>
 
         <nav className="hidden items-center gap-1 lg:flex">
-          {headerContent.navLinks.map((item) => (
+          {headerContent.navLinks.map((item, i) => (
             <a
-              key={item.to}
+              key={`${i}-${item.to}`}
               href={item.to}
               onClick={(event) => handleHashNav(event, item.to)}
               className="rounded-full px-4 py-2 text-sm font-medium text-gray-300 transition-all duration-200 hover:bg-white/5 hover:text-white"
             >
-              {item.label}
+              <HeaderNavLinkText index={i} label={item.label} onSave={saveNavLinkLabel(i)} />
             </a>
           ))}
           <div className="relative" onMouseEnter={handleRentalMouseEnter} onMouseLeave={handleRentalMouseLeave}>
@@ -150,7 +196,7 @@ const Header = () => {
               to="/rent"
               className="rounded-full px-4 py-2 text-sm font-medium text-gray-300 transition-all duration-200 hover:bg-white/5 hover:text-white"
             >
-              {headerContent.rentLabel}
+              <span {...rentLabelEdit.bindProps}>{rentLabelEdit.value}</span>
             </PrefetchLink>
             <RentalDropdown isOpen={rentalDropdownOpen} onClose={() => setRentalDropdownOpen(false)} />
           </div>
@@ -158,13 +204,13 @@ const Header = () => {
             to="/cases"
             className="rounded-full px-4 py-2 text-sm font-medium text-gray-300 transition-all duration-200 hover:bg-white/5 hover:text-white"
           >
-            {headerContent.casesLabel}
+            <span {...casesLabelEdit.bindProps}>{casesLabelEdit.value}</span>
           </PrefetchLink>
           <PrefetchLink
             to="/contacts"
             className="rounded-full px-4 py-2 text-sm font-medium text-gray-300 transition-all duration-200 hover:bg-white/5 hover:text-white"
           >
-            {headerContent.contactsLabel}
+            <span {...contactsLabelEdit.bindProps}>{contactsLabelEdit.value}</span>
           </PrefetchLink>
         </nav>
 
@@ -242,9 +288,9 @@ const Header = () => {
               </div>
             ) : null}
 
-            {headerContent.navLinks.map((item) => (
+            {headerContent.navLinks.map((item, i) => (
               <a
-                key={item.to}
+                key={`${i}-${item.to}`}
                 href={item.to}
                 onClick={(event) => handleHashNav(event, item.to)}
                 className="rounded-xl px-3 py-2 text-sm font-medium text-gray-300 transition hover:bg-white/5 hover:text-white"

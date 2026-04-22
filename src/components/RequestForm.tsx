@@ -2,13 +2,26 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { getGlobalContent } from '../content/global';
 import { useI18n } from '../context/I18nContext';
 import { trackEvent } from '../lib/analytics';
 import { submitForm } from '../lib/submitForm';
 import { ConsentCheckbox } from './ConsentCheckbox';
+import { useGlobalRequestForm } from '../hooks/useGlobalRequestForm';
+import { useEditableBinding } from '../hooks/useEditableBinding';
+import type { GlobalRequestFormContent } from '../lib/content/globalRequestForm';
 
-const createSchema = (content: ReturnType<typeof getGlobalContent>['requestFormContent']) =>
+interface EditableLabelProps {
+  value: string;
+  onSave: (next: string) => Promise<void>;
+  label: string;
+}
+
+const EditableLabel = ({ value, onSave, label }: EditableLabelProps) => {
+  const edit = useEditableBinding({ value, onSave, label });
+  return <span {...edit.bindProps}>{edit.value}</span>;
+};
+
+const createSchema = (content: GlobalRequestFormContent) =>
   z.object({
     name: z.string().min(1, content.validation.nameRequired),
     phone: z.string().min(5, content.validation.phoneRequired),
@@ -39,8 +52,17 @@ export const RequestForm = ({
   ctaText,
 }: Props) => {
   const { siteLocale } = useI18n();
-  const { requestFormContent } = getGlobalContent(siteLocale);
+  const { data: requestFormContent, save: saveRequestForm } = useGlobalRequestForm(siteLocale, true);
   const schema = createSchema(requestFormContent);
+
+  const savePatch = async (patch: Partial<GlobalRequestFormContent>) => {
+    const ok = await saveRequestForm({ ...requestFormContent, ...patch });
+    if (!ok) throw new Error('Failed to save request form');
+  };
+  const saveFieldLabel =
+    (fieldKey: keyof GlobalRequestFormContent['fields']) => async (next: string) => {
+      await savePatch({ fields: { ...requestFormContent.fields, [fieldKey]: next } });
+    };
 
   const [sent, setSent] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -105,7 +127,11 @@ export const RequestForm = ({
         <input type="text" className="hidden" tabIndex={-1} autoComplete="off" {...register('honey')} />
 
         <label className="space-y-1 text-sm text-slate-200">
-          {requestFormContent.fields.emailLabel}
+          <EditableLabel
+            value={requestFormContent.fields.emailLabel}
+            onSave={saveFieldLabel('emailLabel')}
+            label="Form — email label"
+          />
           <input
             className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
             placeholder={requestFormContent.fields.emailPlaceholder}
@@ -116,7 +142,11 @@ export const RequestForm = ({
 
         <div className="grid gap-2 md:grid-cols-2">
           <label className="space-y-1 text-sm text-slate-200">
-            {requestFormContent.fields.nameLabel}
+            <EditableLabel
+              value={requestFormContent.fields.nameLabel}
+              onSave={saveFieldLabel('nameLabel')}
+              label="Form — name label"
+            />
             <input
               className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
               placeholder={requestFormContent.fields.namePlaceholder}
@@ -126,7 +156,11 @@ export const RequestForm = ({
           </label>
 
           <label className="space-y-1 text-sm text-slate-200">
-            {requestFormContent.fields.phoneLabel}
+            <EditableLabel
+              value={requestFormContent.fields.phoneLabel}
+              onSave={saveFieldLabel('phoneLabel')}
+              label="Form — phone label"
+            />
             <input
               className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
               placeholder={requestFormContent.fields.phonePlaceholder}
@@ -144,16 +178,30 @@ export const RequestForm = ({
           <span className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-white/15 text-xs">
             {showMoreFields ? '−' : '+'}
           </span>
-          {showMoreFields
-            ? requestFormContent.fields.moreFieldsHide
-            : requestFormContent.fields.moreFieldsShow}
+          {showMoreFields ? (
+            <EditableLabel
+              value={requestFormContent.fields.moreFieldsHide}
+              onSave={saveFieldLabel('moreFieldsHide')}
+              label="Form — more fields (hide)"
+            />
+          ) : (
+            <EditableLabel
+              value={requestFormContent.fields.moreFieldsShow}
+              onSave={saveFieldLabel('moreFieldsShow')}
+              label="Form — more fields (show)"
+            />
+          )}
         </button>
 
         {showMoreFields ? (
           <div className="grid gap-3">
             <div className="grid gap-2 md:grid-cols-2">
               <label className="space-y-1 text-sm text-slate-200">
-                {requestFormContent.fields.telegramLabel}
+                <EditableLabel
+                  value={requestFormContent.fields.telegramLabel}
+                  onSave={saveFieldLabel('telegramLabel')}
+                  label="Form — telegram label"
+                />
                 <input
                   className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
                   placeholder={requestFormContent.fields.telegramPlaceholder}
@@ -162,7 +210,11 @@ export const RequestForm = ({
               </label>
 
               <label className="space-y-1 text-sm text-slate-200">
-                {requestFormContent.fields.cityLabel}
+                <EditableLabel
+                  value={requestFormContent.fields.cityLabel}
+                  onSave={saveFieldLabel('cityLabel')}
+                  label="Form — city label"
+                />
                 <input
                   className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
                   placeholder={requestFormContent.fields.cityPlaceholder}
@@ -173,7 +225,11 @@ export const RequestForm = ({
 
             <div className="grid gap-2 md:grid-cols-2">
               <label className="space-y-1 text-sm text-slate-200">
-                {requestFormContent.fields.dateLabel}
+                <EditableLabel
+                  value={requestFormContent.fields.dateLabel}
+                  onSave={saveFieldLabel('dateLabel')}
+                  label="Form — date label"
+                />
                 <input
                   className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
                   placeholder={requestFormContent.fields.datePlaceholder}
@@ -182,7 +238,11 @@ export const RequestForm = ({
               </label>
 
               <label className="space-y-1 text-sm text-slate-200">
-                {requestFormContent.fields.formatLabel}
+                <EditableLabel
+                  value={requestFormContent.fields.formatLabel}
+                  onSave={saveFieldLabel('formatLabel')}
+                  label="Form — format label"
+                />
                 <input
                   className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
                   placeholder={requestFormContent.fields.formatPlaceholder}
@@ -192,7 +252,11 @@ export const RequestForm = ({
             </div>
 
             <label className="space-y-1 text-sm text-slate-200">
-              {requestFormContent.fields.commentLabel}
+              <EditableLabel
+                value={requestFormContent.fields.commentLabel}
+                onSave={saveFieldLabel('commentLabel')}
+                label="Form — comment label"
+              />
               <textarea
                 className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
                 rows={3}
