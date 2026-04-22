@@ -8,9 +8,13 @@
 -- table itself is read-only from the public API (no INSERT/UPDATE/DELETE
 -- policies), and only admins can SELECT.
 
+-- NOTE: public.site_content.id is text (seed rows use string keys like
+-- 'home_works'), so site_content_id mirrors that type — not uuid. A
+-- separate fix migration (20260424000100_fix_site_content_versions_id_type)
+-- patches environments that ran an earlier version of this file.
 CREATE TABLE IF NOT EXISTS public.site_content_versions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  site_content_id uuid NOT NULL,
+  site_content_id text NOT NULL,
   key text NOT NULL,
   operation text NOT NULL CHECK (operation IN ('INSERT', 'UPDATE', 'DELETE')),
   edited_by uuid REFERENCES auth.users(id) ON DELETE SET NULL,
