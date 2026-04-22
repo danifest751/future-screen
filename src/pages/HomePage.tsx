@@ -15,6 +15,8 @@ import { useHomeWorks } from '../hooks/useHomeWorks';
 import { useHomeEventTypes } from '../hooks/useHomeEventTypes';
 import { useHomeProcess } from '../hooks/useHomeProcess';
 import { useHomeCta } from '../hooks/useHomeCta';
+import { useHomeCtaForm } from '../hooks/useHomeCtaForm';
+import type { HomeCtaFormContent } from '../lib/content/homeCtaForm';
 import { useEditableBinding } from '../hooks/useEditableBinding';
 import type { HomeEquipmentSectionContent } from '../lib/content/homeEquipmentSection';
 import type { HomeHeroContent, HomeHeroStat } from '../lib/content/homeHero';
@@ -653,10 +655,38 @@ const RevealSection = ({ children, className = '' }: { children: React.ReactNode
   );
 };
 
-type CtaFormContent = ReturnType<typeof getHomePageContent>['ctaForm'];
+// CTA form — content sourced from DB (home_cta_form) with inline
+// editing on the visible button text + success panel. Placeholders and
+// validation errors stay DB-backed but aren't inline-editable (HTML
+// attribute / ephemeral state).
+const CtaForm = () => {
+  const { siteLocale } = useI18n();
+  const { data: ctaForm, save: saveCtaForm } = useHomeCtaForm(siteLocale, true);
+  const saveCtaPatch = async (patch: Partial<HomeCtaFormContent>) => {
+    const ok = await saveCtaForm({ ...ctaForm, ...patch });
+    if (!ok) throw new Error('Failed to save CTA form content');
+  };
+  const submitIdleEdit = useEditableBinding({
+    value: ctaForm.submit.idle,
+    onSave: (next) => saveCtaPatch({ submit: { ...ctaForm.submit, idle: next } }),
+    label: 'CTA form — submit button',
+  });
+  const successTitleEdit = useEditableBinding({
+    value: ctaForm.success.title,
+    onSave: (next) => saveCtaPatch({ success: { ...ctaForm.success, title: next } }),
+    label: 'CTA form — success title',
+  });
+  const successSubtitleEdit = useEditableBinding({
+    value: ctaForm.success.subtitle,
+    onSave: (next) => saveCtaPatch({ success: { ...ctaForm.success, subtitle: next } }),
+    label: 'CTA form — success subtitle',
+  });
+  const successResetEdit = useEditableBinding({
+    value: ctaForm.success.reset,
+    onSave: (next) => saveCtaPatch({ success: { ...ctaForm.success, reset: next } }),
+    label: 'CTA form — success reset button',
+  });
 
-// CTA form
-const CtaForm = ({ ctaForm }: { ctaForm: CtaFormContent }) => {
   const [formData, setFormData] = useState({ name: '', phone: '', email: '' });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -718,10 +748,14 @@ const CtaForm = ({ ctaForm }: { ctaForm: CtaFormContent }) => {
             <path d="m20 6-11 11-5-5"/>
           </svg>
         </div>
-        <h3 className="mb-2 text-lg font-semibold text-white">{ctaForm.success.title}</h3>
-        <p className="text-gray-400">{ctaForm.success.subtitle}</p>
+        <h3 className="mb-2 text-lg font-semibold text-white">
+          <span {...successTitleEdit.bindProps}>{successTitleEdit.value}</span>
+        </h3>
+        <p className="text-gray-400">
+          <span {...successSubtitleEdit.bindProps}>{successSubtitleEdit.value}</span>
+        </p>
         <button onClick={() => setIsSuccess(false)} className="mt-4 text-sm text-brand-400 hover:text-brand-300">
-          {ctaForm.success.reset}
+          <span {...successResetEdit.bindProps}>{successResetEdit.value}</span>
         </button>
       </div>
     );
@@ -779,7 +813,7 @@ const CtaForm = ({ ctaForm }: { ctaForm: CtaFormContent }) => {
               {ctaForm.submit.loading}
             </span>
           ) : (
-            ctaForm.submit.idle
+            <span {...submitIdleEdit.bindProps}>{submitIdleEdit.value}</span>
           )}
         </button>
       </div>
@@ -1514,7 +1548,7 @@ const HomePage = () => {
                 <p className="mx-auto mb-8 max-w-xl text-gray-400">
                   <span {...ctaSubtitleEdit.bindProps}>{ctaSubtitleEdit.value}</span>
                 </p>
-                <CtaForm ctaForm={homePageContent.ctaForm} />
+                <CtaForm />
               </div>
             </div>
           </RevealSection>

@@ -1,9 +1,10 @@
-import { Link, useLocation } from 'react-router-dom';
-import { getGlobalContent } from '../content/global';
+import { Link } from 'react-router-dom';
 import { useI18n } from '../context/I18nContext';
 import { useGlobalFooter } from '../hooks/useGlobalFooter';
+import { useGlobalBrand } from '../hooks/useGlobalBrand';
 import { useEditableBinding } from '../hooks/useEditableBinding';
 import type { GlobalFooterContent, GlobalFooterLink } from '../lib/content/globalFooter';
+import type { GlobalBrandContent } from '../lib/content/globalBrand';
 
 const handleHashNav = (event: React.MouseEvent<HTMLAnchorElement>, href: string) => {
   const hash = href.split('#')[1];
@@ -48,18 +49,39 @@ const FooterNavLink = ({ link, index, labelPrefix, onSaveLabel, hashNav }: Foote
 };
 
 const Footer = () => {
-  const { getLocaleForPath, siteLocale } = useI18n();
-  const location = useLocation();
-  const locale = getLocaleForPath(location.pathname);
-  const { brandContent } = getGlobalContent(locale);
-  // Footer chrome comes from DB for the editor's current locale; we fall back
-  // to the route-derived locale for read-only rendering outside edit mode.
+  const { siteLocale } = useI18n();
   const { data: footerContent, save: saveFooter } = useGlobalFooter(siteLocale, true);
+  const { data: brandContent, save: saveBrand } = useGlobalBrand(siteLocale, true);
 
   const savePatch = async (patch: Partial<GlobalFooterContent>) => {
     const ok = await saveFooter({ ...footerContent, ...patch });
     if (!ok) throw new Error('Failed to save footer');
   };
+  const saveBrandPatch = async (patch: Partial<GlobalBrandContent>) => {
+    const ok = await saveBrand({ ...brandContent, ...patch });
+    if (!ok) throw new Error('Failed to save brand');
+  };
+
+  const brandPrimaryEdit = useEditableBinding({
+    value: brandContent.namePrimary,
+    onSave: (next) => saveBrandPatch({ namePrimary: next }),
+    label: 'Brand — primary name',
+  });
+  const brandSecondaryEdit = useEditableBinding({
+    value: brandContent.nameSecondary,
+    onSave: (next) => saveBrandPatch({ nameSecondary: next }),
+    label: 'Brand — secondary name',
+  });
+  const brandSubtitleEdit = useEditableBinding({
+    value: brandContent.subtitle,
+    onSave: (next) => saveBrandPatch({ subtitle: next }),
+    label: 'Brand — subtitle',
+  });
+  const brandPhoneDisplayEdit = useEditableBinding({
+    value: brandContent.phoneDisplay,
+    onSave: (next) => saveBrandPatch({ phoneDisplay: next }),
+    label: 'Brand — phone (display)',
+  });
 
   const descriptionEdit = useEditableBinding({
     value: footerContent.description,
@@ -141,7 +163,7 @@ const Footer = () => {
             <Link to="/" className="mb-5 flex flex-col gap-0.5">
               <div className="flex items-center gap-1.5">
                 <span className="font-display text-[15px] font-bold tracking-tight text-white">
-                  {brandContent.namePrimary}
+                  <span {...brandPrimaryEdit.bindProps}>{brandPrimaryEdit.value}</span>
                 </span>
                 <svg viewBox="0 0 28 24" width="28" height="24" xmlns="http://www.w3.org/2000/svg" className="shrink-0">
                   <rect x="0.5" y="0.5" width="27" height="23" rx="2.5" fill="#0d0d0d" stroke="rgba(255,255,255,0.18)" strokeWidth="1" />
@@ -159,11 +181,11 @@ const Footer = () => {
                   <circle cx="23" cy="18" r="2" fill="#ef4444" opacity="0.95" />
                 </svg>
                 <span className="font-display text-[15px] font-bold tracking-tight text-white">
-                  {brandContent.nameSecondary}
+                  <span {...brandSecondaryEdit.bindProps}>{brandSecondaryEdit.value}</span>
                 </span>
               </div>
               <div className="text-[8.5px] font-medium uppercase tracking-[0.12em] text-gray-300">
-                {brandContent.subtitle}
+                <span {...brandSubtitleEdit.bindProps}>{brandSubtitleEdit.value}</span>
               </div>
             </Link>
 
@@ -222,7 +244,7 @@ const Footer = () => {
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 shrink-0">
                     <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.4 2 2 0 0 1 3.6 1.22h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.1a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92Z" />
                   </svg>
-                  {brandContent.phoneDisplay}
+                  <span {...brandPhoneDisplayEdit.bindProps}>{brandPhoneDisplayEdit.value}</span>
                 </a>
               </li>
               <li className="flex items-start gap-2">

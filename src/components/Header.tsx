@@ -6,10 +6,11 @@ import { PrefetchLink } from './PrefetchLink';
 import { RentalDropdown } from './RentalDropdown';
 import LoginModal from './LoginModal';
 import LocaleSwitch from './LocaleSwitch';
-import { getGlobalContent } from '../content/global';
 import { useGlobalHeader } from '../hooks/useGlobalHeader';
+import { useGlobalBrand } from '../hooks/useGlobalBrand';
 import { useEditableBinding } from '../hooks/useEditableBinding';
 import type { GlobalHeaderContent } from '../lib/content/globalHeader';
+import type { GlobalBrandContent } from '../lib/content/globalBrand';
 
 interface HeaderNavLinkTextProps {
   index: number;
@@ -33,13 +34,37 @@ const Header = () => {
   const [rentalDropdownOpen, setRentalDropdownOpen] = useState(false);
   const rentalTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { isAuthenticated, logout } = useAuth();
-  const { siteLocale, setSiteLocale, getLocaleForPath } = useI18n();
+  const { siteLocale, setSiteLocale } = useI18n();
   const navigate = useNavigate();
   const location = useLocation();
-  const locale = getLocaleForPath(location.pathname);
   const isAdminPath = location.pathname.startsWith('/admin');
-  const { brandContent } = getGlobalContent(locale);
+  const { data: brandContent, save: saveBrand } = useGlobalBrand(siteLocale, true);
   const { data: headerContent, save: saveHeader } = useGlobalHeader(siteLocale, true);
+
+  const saveBrandPatch = async (patch: Partial<GlobalBrandContent>) => {
+    const ok = await saveBrand({ ...brandContent, ...patch });
+    if (!ok) throw new Error('Failed to save brand');
+  };
+  const brandPrimaryEdit = useEditableBinding({
+    value: brandContent.namePrimary,
+    onSave: (next) => saveBrandPatch({ namePrimary: next }),
+    label: 'Brand — primary name',
+  });
+  const brandSecondaryEdit = useEditableBinding({
+    value: brandContent.nameSecondary,
+    onSave: (next) => saveBrandPatch({ nameSecondary: next }),
+    label: 'Brand — secondary name',
+  });
+  const brandSubtitleEdit = useEditableBinding({
+    value: brandContent.subtitle,
+    onSave: (next) => saveBrandPatch({ subtitle: next }),
+    label: 'Brand — subtitle',
+  });
+  const brandPhoneDisplayEdit = useEditableBinding({
+    value: brandContent.phoneDisplay,
+    onSave: (next) => saveBrandPatch({ phoneDisplay: next }),
+    label: 'Brand — phone (display)',
+  });
 
   const savePatch = async (patch: Partial<GlobalHeaderContent>) => {
     const ok = await saveHeader({ ...headerContent, ...patch });
@@ -154,7 +179,7 @@ const Header = () => {
         <Link to="/" className="flex shrink-0 flex-col gap-0.5" onClick={handleLogoClick}>
           <div className="flex items-center gap-1.5">
             <span className="font-display text-[15px] font-bold tracking-tight text-white lg:text-[16px]">
-              {brandContent.namePrimary}
+              <span {...brandPrimaryEdit.bindProps}>{brandPrimaryEdit.value}</span>
             </span>
             <svg viewBox="0 0 28 24" width="28" height="24" xmlns="http://www.w3.org/2000/svg" className="shrink-0">
               <rect x="0.5" y="0.5" width="27" height="23" rx="2.5" fill="#0d0d0d" stroke="rgba(255,255,255,0.18)" strokeWidth="1" />
@@ -172,11 +197,11 @@ const Header = () => {
               <circle cx="23" cy="18" r="2" fill="#ef4444" opacity="0.95" />
             </svg>
             <span className="font-display text-[15px] font-bold tracking-tight text-white lg:text-[16px]">
-              {brandContent.nameSecondary}
+              <span {...brandSecondaryEdit.bindProps}>{brandSecondaryEdit.value}</span>
             </span>
           </div>
           <div className="hidden text-[8.5px] font-medium uppercase tracking-[0.12em] text-gray-300 lg:block">
-            {brandContent.subtitle}
+            <span {...brandSubtitleEdit.bindProps}>{brandSubtitleEdit.value}</span>
           </div>
         </Link>
 
@@ -231,7 +256,7 @@ const Header = () => {
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
               <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.4 2 2 0 0 1 3.6 1.22h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.1a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92Z" />
             </svg>
-            {brandContent.phoneDisplay}
+            <span {...brandPhoneDisplayEdit.bindProps}>{brandPhoneDisplayEdit.value}</span>
           </a>
 
           {isAuthenticated ? (
