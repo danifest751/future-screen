@@ -25,7 +25,26 @@ const VisualLedV2Page = () => {
       <Helmet>
         <title>Visual LED · v2 (beta)</title>
       </Helmet>
-      <div className="min-h-screen bg-slate-950 p-2 text-slate-200">
+      {/*
+        Scoped focus-visible ring so keyboard navigation is visible.
+        Confined to [data-vled-root] so the rest of the site's styles
+        stay untouched.
+      */}
+      <style>{`
+        [data-vled-root="true"] button:focus-visible,
+        [data-vled-root="true"] input:focus-visible,
+        [data-vled-root="true"] select:focus-visible,
+        [data-vled-root="true"] textarea:focus-visible,
+        [data-vled-root="true"] a:focus-visible {
+          outline: 2px solid rgb(96 165 250);
+          outline-offset: 2px;
+          border-radius: 0.375rem;
+        }
+      `}</style>
+      <div
+        data-vled-root="true"
+        className="min-h-screen bg-slate-950 p-2 text-slate-200"
+      >
         <div className="mb-2 flex items-center justify-between text-xs text-slate-400">
           <Link
             to="/visual-led"
