@@ -52,3 +52,19 @@ export async function loadVisualLedSession(sessionId: string): Promise<VisualLed
     assets: payload.assets || [],
   };
 }
+
+export async function deleteVisualLedSession(sessionId: string): Promise<void> {
+  const token = await getAccessToken();
+  if (!token) throw new Error('Unauthorized');
+  const response = await fetch(
+    `/api/visual-led-logs/session-delete?id=${encodeURIComponent(sessionId)}`,
+    {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+    },
+  );
+  if (!response.ok) {
+    const text = await response.text().catch(() => '');
+    throw new Error(text || `HTTP ${response.status}`);
+  }
+}

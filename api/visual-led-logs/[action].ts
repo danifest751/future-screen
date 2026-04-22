@@ -414,6 +414,68 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
+    if (action === 'session-delete') {
+      if (req.method !== 'POST' && req.method !== 'DELETE') {
+        return res.status(405).json({ error: 'Method not allowed' });
+      }
+      await ensureAdmin(req);
+      const body = toJsonBody<{ id?: string }>(req.body);
+      const sessionId = String(req.query.id || body.id || '').trim();
+      if (!sessionId) return res.status(400).json({ error: 'Missing session id' });
+
+      // Gather asset storage paths first — we need them to clean up the bucket
+      // before the DB rows disappear.
+      const { data: assetsToDelete, error: assetsFetchError } = await supabase
+        .from('visual_led_assets')
+        .select('storage_bucket, storage_path')
+        .eq('session_id', sessionId);
+      if (assetsFetchError) throw assetsFetchError;
+
+      // Group paths by bucket (future-proof even though all uploads go to
+      // `visual-led-backgrounds` today).
+      const byBucket = new Map<string, string[]>();
+      for (const asset of assetsToDelete ?? []) {
+        const paths = byBucket.get(asset.storage_bucket) ?? [];
+        paths.push(asset.storage_path);
+        byBucket.set(asset.storage_bucket, paths);
+      }
+      for (const [bucketName, paths] of byBucket.entries()) {
+        if (paths.length === 0) continue;
+        const { error: removeError } = await supabase.storage.from(bucketName).remove(paths);
+        if (removeError) {
+          // Storage cleanup best-effort: log and continue, don't block DB delete.
+          console.warn('[visual-led-logs] storage remove failed', bucketName, removeError.message);
+        }
+      }
+
+      // DB cleanup — rely on ON DELETE CASCADE if set, otherwise explicit.
+      const { error: eventsDeleteError } = await supabase
+        .from('visual_led_events')
+        .delete()
+        .eq('session_id', sessionId);
+      if (eventsDeleteError) throw eventsDeleteError;
+
+      const { error: assetsDeleteError } = await supabase
+        .from('visual_led_assets')
+        .delete()
+        .eq('session_id', sessionId);
+      if (assetsDeleteError) throw assetsDeleteError;
+
+      const { error: sessionDeleteError } = await supabase
+        .from('visual_led_sessions')
+        .delete()
+        .eq('id', sessionId);
+      if (sessionDeleteError) throw sessionDeleteError;
+
+      return res.status(200).json({
+        ok: true,
+        deleted: {
+          session_id: sessionId,
+          assets_removed: (assetsToDelete ?? []).length,
+        },
+      });
+    }
+
     return res.status(404).json({ error: 'Unknown action' });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

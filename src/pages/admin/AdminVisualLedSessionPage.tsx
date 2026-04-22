@@ -1,10 +1,15 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Copy, ExternalLink } from 'lucide-react';
+import { useCallback, useMemo, useState } from 'react';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { ArrowLeft, Copy, ExternalLink, Trash2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import AdminLayout from '../../components/admin/AdminLayout';
 import { EmptyState, LoadingState } from '../../components/admin/ui';
+import EventTimeline from '../../components/admin/EventTimeline';
 import { useI18n } from '../../context/I18nContext';
-import { loadVisualLedSession } from '../../services/visualLedLogs';
+import {
+  useDeleteVisualLedSessionMutation,
+  useVisualLedSessionQuery,
+} from '../../queries/visualLedLogs';
 import {
   browserFromUserAgent,
   buildEventFeed,
@@ -13,13 +18,15 @@ import {
   formatDurationCompact,
   shortSessionId,
 } from '../../lib/visualLedLogs';
-import type {
-  VisualLedAsset,
-  VisualLedEvent,
-  VisualLedSession,
-} from '../../types/visualLedLogs';
+import { getEventMeta } from '../../lib/visualLedEventTypes';
+import type { VisualLedAsset, VisualLedEvent } from '../../types/visualLedLogs';
 
 type TabKey = 'overview' | 'events' | 'backgrounds' | 'reports' | 'raw';
+
+// Shared empty refs: avoids re-creating arrays each render and keeps
+// hook dependency arrays stable when the query is still pending.
+const EMPTY_EVENTS: VisualLedEvent[] = [];
+const EMPTY_ASSETS: VisualLedAsset[] = [];
 
 const copy = {
   ru: {
@@ -28,6 +35,12 @@ const copy = {
     loading: 'Загружаем сессию',
     copy: 'Скопировать',
     copied: 'Скопировано',
+    delete: 'Удалить сессию',
+    deleteConfirm: 'Удалить сессию, события и фоны? Это действие необратимо.',
+    deleting: 'Удаление…',
+    deleteSuccess: 'Сессия удалена',
+    deleteError: 'Не удалось удалить',
+    cancel: 'Отмена',
     tabs: {
       overview: 'Обзор',
       events: 'События',
@@ -83,6 +96,12 @@ const copy = {
     loading: 'Loading session',
     copy: 'Copy',
     copied: 'Copied',
+    delete: 'Delete session',
+    deleteConfirm: 'Delete session, events, and backgrounds? This cannot be undone.',
+    deleting: 'Deleting…',
+    deleteSuccess: 'Session deleted',
+    deleteError: 'Delete failed',
+    cancel: 'Cancel',
     tabs: {
       overview: 'Overview',
       events: 'Events',
@@ -134,21 +153,6 @@ const copy = {
   },
 } as const;
 
-const eventTypeColors: Record<string, string> = {
-  assist_applied: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
-  report_shared: 'bg-sky-500/15 text-sky-300 border-sky-500/30',
-  report_exported: 'bg-sky-500/10 text-sky-200 border-sky-500/20',
-  screen_created: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
-  screen_updated: 'bg-emerald-500/10 text-emerald-200 border-emerald-500/20',
-  screen_deleted: 'bg-red-500/15 text-red-300 border-red-500/30',
-  scene_created: 'bg-violet-500/15 text-violet-300 border-violet-500/30',
-  scene_updated: 'bg-violet-500/10 text-violet-200 border-violet-500/20',
-  background_uploaded: 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30',
-};
-
-const eventBadgeClass = (type: string) =>
-  eventTypeColors[type] ?? 'bg-slate-700/40 text-slate-300 border-slate-600/40';
-
 const CopyButton = ({ value, label }: { value: string; label: string }) => {
   const [copied, setCopied] = useState(false);
   const onClick = useCallback(() => {
@@ -188,6 +192,23 @@ const AdminVisualLedSessionPage = () => {
   const { adminLocale } = useI18n();
   const ui = copy[adminLocale];
   const localeTag = adminLocale === 'ru' ? 'ru-RU' : 'en-US';
+  const navigate = useNavigate();
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const deleteMutation = useDeleteVisualLedSessionMutation();
+  const deleting = deleteMutation.isPending;
+
+  const handleDelete = useCallback(async () => {
+    if (!sessionId) return;
+    try {
+      await deleteMutation.mutateAsync(sessionId);
+      toast.success(ui.deleteSuccess);
+      navigate('/admin/visual-led-logs');
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : ui.deleteError);
+    } finally {
+      setConfirmDelete(false);
+    }
+  }, [deleteMutation, navigate, sessionId, ui.deleteError, ui.deleteSuccess]);
 
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = (searchParams.get('tab') as TabKey) || 'overview';
@@ -198,35 +219,18 @@ const AdminVisualLedSessionPage = () => {
     setSearchParams(sp, { replace: true });
   };
 
-  const [session, setSession] = useState<VisualLedSession | null>(null);
-  const [events, setEvents] = useState<VisualLedEvent[]>([]);
-  const [assets, setAssets] = useState<VisualLedAsset[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!sessionId) return;
-    let cancelled = false;
-    setLoading(true);
-    setError(null);
-    loadVisualLedSession(sessionId)
-      .then((detail) => {
-        if (cancelled) return;
-        setSession(detail.session);
-        setEvents(detail.events);
-        setAssets(detail.assets);
-      })
-      .catch((e: unknown) => {
-        if (cancelled) return;
-        setError(e instanceof Error ? e.message : 'Failed to load session');
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [sessionId]);
+  const detailQuery = useVisualLedSessionQuery(sessionId);
+  const session = detailQuery.data?.session ?? null;
+  // Stable empty-array references so hook dep arrays don't change every
+  // render when the query is still pending.
+  const events = useMemo(() => detailQuery.data?.events ?? EMPTY_EVENTS, [detailQuery.data]);
+  const assets = useMemo(() => detailQuery.data?.assets ?? EMPTY_ASSETS, [detailQuery.data]);
+  const loading = detailQuery.isPending;
+  const error = detailQuery.isError
+    ? detailQuery.error instanceof Error
+      ? detailQuery.error.message
+      : 'Failed to load session'
+    : null;
 
   const insights = useMemo(
     () => (session ? buildInsights(session, events) : null),
@@ -266,7 +270,55 @@ const AdminVisualLedSessionPage = () => {
           <ArrowLeft className="h-4 w-4" />
           {ui.back}
         </Link>
+        {session ? (
+          <button
+            type="button"
+            onClick={() => setConfirmDelete(true)}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-1.5 text-sm font-medium text-red-200 hover:border-red-400 hover:bg-red-500/20"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            {ui.delete}
+          </button>
+        ) : null}
       </div>
+
+      {confirmDelete && session ? (
+        <div
+          className="fixed inset-0 z-[10002] flex items-center justify-center bg-black/70 p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !deleting) setConfirmDelete(false);
+          }}
+        >
+          <div className="w-full max-w-md rounded-2xl border border-white/15 bg-slate-900 p-6 shadow-2xl">
+            <h3 className="mb-2 text-lg font-semibold text-white">{ui.delete}</h3>
+            <p className="mb-4 text-sm text-slate-300">{ui.deleteConfirm}</p>
+            <div className="mb-5 rounded-lg border border-white/10 bg-slate-950/50 p-3 text-xs">
+              <div className="font-mono text-slate-500">
+                #{shortSessionId(session.session_key)} · {new Date(session.started_at).toLocaleString(localeTag)}
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(false)}
+                disabled={deleting}
+                className="rounded-lg border border-white/10 bg-slate-800 px-4 py-2 text-sm font-medium text-slate-200 hover:border-white/30 hover:text-white disabled:opacity-60"
+              >
+                {ui.cancel}
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleDelete()}
+                disabled={deleting}
+                className="inline-flex items-center gap-1 rounded-lg bg-red-500/90 px-4 py-2 text-sm font-semibold text-white hover:bg-red-500 disabled:opacity-60"
+              >
+                <Trash2 className="h-4 w-4" />
+                {deleting ? ui.deleting : ui.delete}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {loading ? <LoadingState title={ui.loading} /> : null}
       {error ? (
@@ -489,11 +541,39 @@ const AdminVisualLedSessionPage = () => {
           )}
 
           {tab === 'events' && (
-            <div className="space-y-2">
+            <div className="space-y-3">
               {eventFeed.length === 0 ? (
                 <EmptyState title={ui.empty.events} />
               ) : (
-                eventFeed.map((e) => <EventRow key={e.id} entry={e} localeTag={localeTag} />)
+                <>
+                  <EventTimeline
+                    events={events}
+                    startedAt={session.started_at}
+                    endedAt={session.ended_at}
+                    locale={adminLocale}
+                    localeTag={localeTag}
+                    onEventClick={(e) => {
+                      const el = document.getElementById(`event-row-${e.id}`);
+                      if (el) {
+                        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        el.classList.add('ring-2', 'ring-brand-400');
+                        window.setTimeout(() => {
+                          el.classList.remove('ring-2', 'ring-brand-400');
+                        }, 1500);
+                      }
+                    }}
+                  />
+                  <div className="space-y-2">
+                    {eventFeed.map((e) => (
+                      <EventRow
+                        key={e.id}
+                        entry={e}
+                        localeTag={localeTag}
+                        adminLocale={adminLocale}
+                      />
+                    ))}
+                  </div>
+                </>
               )}
             </div>
           )}
@@ -604,13 +684,17 @@ const StatCard = ({ label, value }: { label: string; value: string | number }) =
 const EventRow = ({
   entry,
   localeTag,
+  adminLocale,
 }: {
   entry: VisualLedEvent & { scope: string | null; url: string | null };
   localeTag: string;
+  adminLocale: 'ru' | 'en';
 }) => {
   const [open, setOpen] = useState(false);
+  const meta = getEventMeta(entry.event_type);
+  const label = adminLocale === 'ru' ? meta.labelRu : meta.labelEn;
   return (
-    <div className="rounded-xl border border-white/10 bg-slate-900/50">
+    <div id={`event-row-${entry.id}`} className="rounded-xl border border-white/10 bg-slate-900/50 transition-shadow">
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
@@ -626,9 +710,10 @@ const EventRow = ({
           })}
         </span>
         <span
-          className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-medium ${eventBadgeClass(entry.event_type)}`}
+          className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-medium ${meta.badgeClass}`}
+          title={entry.event_type}
         >
-          {entry.event_type}
+          {label}
         </span>
         <span className="min-w-0 flex-1 truncate text-slate-300">
           {entry.scope ? `scope=${entry.scope}` : null}

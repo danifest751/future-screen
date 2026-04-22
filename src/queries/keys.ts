@@ -49,4 +49,11 @@ export const queryKeys = {
     all: ['rental-categories'] as const,
     bySlug: (slug: string) => ['rental-categories', slug] as const,
   },
+
+  // Visual LED logs
+  visualLedLogs: {
+    sessions: (limit: number, offset: number) =>
+      ['visual-led-sessions', limit, offset] as const,
+    session: (id: string) => ['visual-led-session', id] as const,
+  },
 } as const;

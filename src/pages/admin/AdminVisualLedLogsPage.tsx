@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { ChevronRight, RefreshCcw, UserCog, Image as ImageIcon, Share2, Wand2 } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout';
 import { Button, EmptyState, Input, LoadingState } from '../../components/admin/ui';
 import { useI18n } from '../../context/I18nContext';
-import { loadVisualLedSessions } from '../../services/visualLedLogs';
+import { useVisualLedSessionsQuery } from '../../queries/visualLedLogs';
 import {
   asNumber,
   browserFromUserAgent,
@@ -128,57 +129,59 @@ const AdminVisualLedLogsPage = () => {
   const ui = copy[adminLocale];
   const localeTag = adminLocale === 'ru' ? 'ru-RU' : 'en-US';
 
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
-  const [sessions, setSessions] = useState<VisualLedSession[]>([]);
-  const [total, setTotal] = useState(0);
-  const [offset, setOffset] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  // Pagination state: one page at a time via React Query; we grow a
+  // local buffer to keep older pages in view after "load more".
+  const [pagesLoaded, setPagesLoaded] = useState(1);
+  const [accumulated, setAccumulated] = useState<VisualLedSession[]>([]);
+  const [accumulatedTotal, setAccumulatedTotal] = useState(0);
 
   const [filterAdmin, setFilterAdmin] = useState(false);
   const [filterBackgrounds, setFilterBackgrounds] = useState(false);
   const [filterReport, setFilterReport] = useState(false);
   const [filterAssist, setFilterAssist] = useState(false);
 
-  const reset = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const page = await loadVisualLedSessions({ limit: PAGE_SIZE, offset: 0 });
-      setSessions(page.items);
-      setTotal(page.total);
-      setOffset(page.items.length);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : ui.unauthorized);
-    } finally {
-      setLoading(false);
-    }
-  }, [ui.unauthorized]);
+  const currentOffset = (pagesLoaded - 1) * PAGE_SIZE;
+  const currentQuery = useVisualLedSessionsQuery({ limit: PAGE_SIZE, offset: currentOffset });
 
-  const loadMore = useCallback(async () => {
-    if (loadingMore || loading) return;
-    setLoadingMore(true);
-    setError(null);
-    try {
-      const page = await loadVisualLedSessions({ limit: PAGE_SIZE, offset });
-      setSessions((prev) => {
-        const seen = new Set(prev.map((s) => s.id));
-        const next = page.items.filter((item) => !seen.has(item.id));
-        return [...prev, ...next];
-      });
-      setTotal(page.total);
-      setOffset((prev) => prev + page.items.length);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : ui.unauthorized);
-    } finally {
-      setLoadingMore(false);
-    }
-  }, [loading, loadingMore, offset, ui.unauthorized]);
-
+  // Merge the active page into the accumulated list whenever it resolves.
+  // We stash the accumulated list in local state so "load more" keeps the
+  // previous pages visible without fetching them again.
   useEffect(() => {
-    void reset();
-  }, [reset]);
+    if (!currentQuery.data) return;
+    const { items, total: pageTotal } = currentQuery.data;
+    setAccumulatedTotal((prev) => (prev === pageTotal ? prev : pageTotal));
+    setAccumulated((prev) => {
+      if (pagesLoaded === 1) return items;
+      const haveIds = new Set(prev.map((s) => s.id));
+      const missing = items.filter((item) => !haveIds.has(item.id));
+      return missing.length === 0 ? prev : [...prev, ...missing];
+    });
+  }, [currentQuery.data, pagesLoaded]);
+
+  const sessions = useMemo<VisualLedSession[]>(() => {
+    if (accumulated.length > 0) return accumulated;
+    return currentQuery.data?.items ?? [];
+  }, [accumulated, currentQuery.data]);
+  const total = currentQuery.data?.total ?? accumulatedTotal;
+  const loading = currentQuery.isPending && sessions.length === 0;
+  const loadingMore = currentQuery.isFetching && pagesLoaded > 1;
+  const error = currentQuery.isError
+    ? (currentQuery.error instanceof Error ? currentQuery.error.message : ui.unauthorized)
+    : null;
+
+  const reset = useCallback(() => {
+    setPagesLoaded(1);
+    setAccumulated([]);
+    setAccumulatedTotal(0);
+    void queryClient.invalidateQueries({ queryKey: ['visual-led-sessions'] });
+  }, [queryClient]);
+
+  const loadMore = useCallback(() => {
+    if (loadingMore || loading) return;
+    setPagesLoaded((p) => p + 1);
+  }, [loading, loadingMore]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
