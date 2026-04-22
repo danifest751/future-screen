@@ -72,6 +72,36 @@ const CanvasStage = () => {
     cacheVersion,
   ]);
 
+  // When at least one screen has a video assigned, run a rAF loop so
+  // the canvas redraws at ~60fps and the video frames stay in sync.
+  // Idle (no videos) means no loop, zero CPU overhead.
+  const hasPlayingVideo = scene.elements.some((el) => el.videoId);
+  useEffect(() => {
+    if (!hasPlayingVideo) return;
+    let rafId = 0;
+    const tick = () => {
+      const canvas = canvasRef.current;
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          renderScene(ctx, scene, state.tool, imageCache.current, {
+            showCabinetGrid: state.ui.showCabinetGrid,
+            showAssistGuides: state.ui.showAssistGuides,
+          });
+        }
+      }
+      rafId = requestAnimationFrame(tick);
+    };
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
+  }, [
+    hasPlayingVideo,
+    scene,
+    state.tool,
+    state.ui.showCabinetGrid,
+    state.ui.showAssistGuides,
+  ]);
+
   const onDrop = useCallback(
     async (event: React.DragEvent<HTMLDivElement>) => {
       event.preventDefault();

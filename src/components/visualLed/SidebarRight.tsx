@@ -1,20 +1,51 @@
 import { useRef, type ReactNode } from 'react';
-import { Upload, Trash2 } from 'lucide-react';
+import { Film, Upload, Trash2, XCircle } from 'lucide-react';
 import { importBackgrounds } from './CanvasStage';
-import { useActiveScene, useVisualLed } from './state/VisualLedContext';
+import { fileToDataUrl } from './imageLoader';
+import { uid } from './state/initialState';
+import { useActiveScene, useSelectedElement, useVisualLed } from './state/VisualLedContext';
 
 /**
- * Right sidebar — backgrounds library (working in phase 3) + videos
- * library (placeholder, phase 4).
+ * Right sidebar — backgrounds + videos libraries.
+ * Phase 4: videos become functional — upload, assign to selected
+ * screen, remove from library.
  */
 const SidebarRight = () => {
   const scene = useActiveScene();
-  const { dispatch } = useVisualLed();
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const selected = useSelectedElement();
+  const { state, dispatch } = useVisualLed();
+  const bgInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
 
-  const onFiles = async (files: FileList | null) => {
+  const onBackgroundFiles = async (files: FileList | null) => {
     if (!files) return;
     await importBackgrounds(Array.from(files), dispatch);
+  };
+
+  const onVideoFiles = async (files: FileList | null) => {
+    if (!files) return;
+    for (const file of Array.from(files)) {
+      if (!file.type.startsWith('video/')) continue;
+      try {
+        const src = await fileToDataUrl(file);
+        dispatch({
+          type: 'video/add',
+          payload: { id: uid('vid'), name: file.name, src },
+        });
+      } catch (err) {
+        console.warn('Failed to import video', file.name, err);
+      }
+    }
+  };
+
+  const assignVideo = (videoId: string) => {
+    if (!selected) return;
+    dispatch({ type: 'screen/update', payload: { id: selected.id, patch: { videoId } } });
+  };
+
+  const clearAssignment = () => {
+    if (!selected || !selected.videoId) return;
+    dispatch({ type: 'screen/update', payload: { id: selected.id, patch: { videoId: null } } });
   };
 
   return (
@@ -24,14 +55,14 @@ const SidebarRight = () => {
           <Upload className="h-3.5 w-3.5" />
           Загрузить
           <input
-            ref={fileInputRef}
+            ref={bgInputRef}
             type="file"
             accept="image/*"
             multiple
             className="hidden"
             onChange={(e) => {
-              void onFiles(e.target.files);
-              if (fileInputRef.current) fileInputRef.current.value = '';
+              void onBackgroundFiles(e.target.files);
+              if (bgInputRef.current) bgInputRef.current.value = '';
             }}
           />
         </label>
@@ -82,10 +113,89 @@ const SidebarRight = () => {
         )}
       </Panel>
 
-      <Panel title="Видео" hint="Фаза 4">
-        <div className="rounded-md border border-dashed border-white/10 bg-slate-950/40 p-4 text-center text-[11px] text-slate-500">
-          Назначение видео на экран — следующая фаза
-        </div>
+      <Panel title="Видео">
+        <label className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-white/15 bg-slate-950/40 py-3 text-xs text-slate-300 hover:border-white/30 hover:text-white">
+          <Upload className="h-3.5 w-3.5" />
+          Загрузить
+          <input
+            ref={videoInputRef}
+            type="file"
+            accept="video/mp4,video/webm"
+            multiple
+            className="hidden"
+            onChange={(e) => {
+              void onVideoFiles(e.target.files);
+              if (videoInputRef.current) videoInputRef.current.value = '';
+            }}
+          />
+        </label>
+
+        {state.videos.length === 0 ? (
+          <div className="mt-2 rounded-md border border-dashed border-white/10 bg-slate-950/40 p-3 text-center text-[11px] text-slate-500">
+            MP4 / WebM — клик по ролику назначит его выбранному экрану
+          </div>
+        ) : (
+          <>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              {state.videos.map((video) => {
+                const isAssigned = selected?.videoId === video.id;
+                return (
+                  <div
+                    key={video.id}
+                    className={`group relative overflow-hidden rounded-md border ${
+                      isAssigned ? 'border-brand-400' : 'border-white/10'
+                    }`}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => assignVideo(video.id)}
+                      disabled={!selected}
+                      className="block w-full bg-slate-950/60 disabled:cursor-not-allowed disabled:opacity-50"
+                      title={selected ? `Назначить ${video.name}` : 'Выбери экран'}
+                    >
+                      <video
+                        src={video.src}
+                        className="block aspect-video w-full object-cover"
+                        muted
+                        loop
+                        autoPlay
+                        playsInline
+                        preload="metadata"
+                      />
+                      <div className="truncate px-1.5 py-0.5 text-[10px] text-slate-300">
+                        {video.name}
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => dispatch({ type: 'video/remove', payload: { id: video.id } })}
+                      className="absolute right-1 top-1 hidden rounded bg-black/60 p-0.5 text-slate-300 hover:text-red-300 group-hover:inline-block"
+                      title="Удалить из библиотеки"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                    {isAssigned ? (
+                      <span className="absolute left-1 top-1 flex items-center gap-0.5 rounded bg-brand-500/80 px-1 py-0.5 text-[9px] font-semibold uppercase text-white">
+                        <Film className="h-2.5 w-2.5" />
+                        on
+                      </span>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+            {selected?.videoId ? (
+              <button
+                type="button"
+                onClick={clearAssignment}
+                className="mt-2 flex w-full items-center justify-center gap-1 rounded-md border border-white/15 bg-slate-900 px-2 py-1 text-[11px] text-white hover:border-white/30"
+              >
+                <XCircle className="h-3 w-3" />
+                Снять видео с «{selected.name}»
+              </button>
+            ) : null}
+          </>
+        )}
       </Panel>
     </aside>
   );

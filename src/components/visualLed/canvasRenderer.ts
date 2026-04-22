@@ -1,4 +1,5 @@
 import {
+  drawWarpedSource,
   getElementSizeMeters,
   lineClipToCanvas,
   quadPoint,
@@ -134,7 +135,15 @@ function drawScreen(
   ctx.fillStyle = 'rgba(11, 16, 22, 0.92)';
   ctx.fill();
 
-  // Video draw comes in phase 4 — needs the video pool in state.
+  // Project the assigned video's current frame into the quad.
+  if (element.videoId) {
+    const video = document.querySelector<HTMLVideoElement>(
+      `video[data-video-id="${element.videoId}"]`,
+    );
+    if (video && video.readyState >= 2) {
+      drawWarpedSource(ctx, video, element.corners);
+    }
+  }
 
   ctx.lineWidth = isSelected ? 2 : 1;
   ctx.strokeStyle = isSelected ? 'rgba(96, 165, 250, 0.95)' : 'rgba(226, 232, 240, 0.7)';

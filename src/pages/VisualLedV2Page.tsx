@@ -5,6 +5,7 @@ import CanvasStage from '../components/visualLed/CanvasStage';
 import SidebarLeft from '../components/visualLed/SidebarLeft';
 import SidebarRight from '../components/visualLed/SidebarRight';
 import StageHeader from '../components/visualLed/StageHeader';
+import VideoPool from '../components/visualLed/VideoPool';
 import { VisualLedProvider } from '../components/visualLed/state/VisualLedContext';
 
 /**
@@ -30,7 +31,7 @@ const VisualLedV2Page = () => {
             Legacy visualizer
           </Link>
           <span className="rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-[10px] font-medium text-amber-200">
-            beta · phase 2 (shell only)
+            beta · phase 4
           </span>
         </div>
         <div className="grid gap-2 lg:grid-cols-[18rem_1fr_16rem]">
@@ -41,6 +42,7 @@ const VisualLedV2Page = () => {
           </main>
           <SidebarRight />
         </div>
+        <VideoPool />
       </div>
     </VisualLedProvider>
   );
