@@ -1,4 +1,12 @@
-import type { Scene, ScreenElement, ViewTransform } from '../../lib/visualLed';
+import {
+  getElementSizeMeters,
+  quadPoint,
+  type CabinetPlan,
+  type ScaleCalibration,
+  type Scene,
+  type ScreenElement,
+  type ViewTransform,
+} from '../../lib/visualLed';
 import type { Tool } from './state/types';
 
 /**
@@ -9,11 +17,16 @@ import type { Tool } from './state/types';
  * Phase 3a draws background + screens + current tool preview. Cabinet
  * grid, assist overlay, stats HUD come in later phases.
  */
+export interface RenderOptions {
+  showCabinetGrid: boolean;
+}
+
 export function renderScene(
   ctx: CanvasRenderingContext2D,
   scene: Scene,
   tool: Tool | null,
   imageCache: Map<string, HTMLImageElement>,
+  options: RenderOptions = { showCabinetGrid: true },
 ): void {
   const canvas = ctx.canvas;
   ctx.save();
@@ -26,7 +39,11 @@ export function renderScene(
 
   // 2. Screens
   for (const element of scene.elements) {
-    drawScreen(ctx, element, element.id === scene.selectedElementId);
+    const isSelected = element.id === scene.selectedElementId;
+    drawScreen(ctx, element, isSelected);
+    if (options.showCabinetGrid && element.cabinetPlan) {
+      drawCabinetGrid(ctx, element, element.cabinetPlan, scene.scaleCalib);
+    }
   }
 
   // 3. Tool preview — scale line, placement dots, etc.
@@ -125,6 +142,66 @@ function drawScreen(
       ctx.fill();
     }
   }
+}
+
+/**
+ * Draw the 0.5m × 0.5m cabinet grid as cells on top of the screen quad.
+ * Cells that exceed the physical screen area (per `getCabinetStats`)
+ * are tinted red so overflow is visually obvious.
+ */
+function drawCabinetGrid(
+  ctx: CanvasRenderingContext2D,
+  element: ScreenElement,
+  plan: CabinetPlan,
+  scale: ScaleCalibration | null,
+): void {
+  const size = getElementSizeMeters(element.corners, scale);
+  const totalCellsCol = plan.cols;
+  const totalCellsRow = plan.rows;
+  const uStep = 1 / totalCellsCol;
+  const vStep = 1 / totalCellsRow;
+
+  // How many cells actually fit inside the physical screen size. Cells
+  // with col >= fitCols or row >= fitRows are drawn as red overflow.
+  const tolerance = 0.015;
+  const fitCols = size
+    ? Math.max(0, Math.floor((size.width + tolerance) / plan.cabinetSide))
+    : totalCellsCol;
+  const fitRows = size
+    ? Math.max(0, Math.floor((size.height + tolerance) / plan.cabinetSide))
+    : totalCellsRow;
+
+  ctx.save();
+  ctx.lineWidth = 1;
+  for (let row = 0; row < totalCellsRow; row += 1) {
+    for (let col = 0; col < totalCellsCol; col += 1) {
+      const u0 = col * uStep;
+      const v0 = row * vStep;
+      const u1 = u0 + uStep;
+      const v1 = v0 + vStep;
+      const p00 = quadPoint(element.corners, u0, v0);
+      const p10 = quadPoint(element.corners, u1, v0);
+      const p11 = quadPoint(element.corners, u1, v1);
+      const p01 = quadPoint(element.corners, u0, v1);
+
+      const isOverflow = col >= fitCols || row >= fitRows;
+      ctx.beginPath();
+      ctx.moveTo(p00.x, p00.y);
+      ctx.lineTo(p10.x, p10.y);
+      ctx.lineTo(p11.x, p11.y);
+      ctx.lineTo(p01.x, p01.y);
+      ctx.closePath();
+      ctx.fillStyle = isOverflow
+        ? 'rgba(239, 68, 68, 0.18)'
+        : 'rgba(96, 165, 250, 0.08)';
+      ctx.fill();
+      ctx.strokeStyle = isOverflow
+        ? 'rgba(239, 68, 68, 0.55)'
+        : 'rgba(226, 232, 240, 0.28)';
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
 }
 
 function drawToolPreview(ctx: CanvasRenderingContext2D, tool: Tool): void {

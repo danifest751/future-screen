@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type Dispatch } from 'react';
 import {
+  clamp,
   distance,
   findCornerHit,
   moveCorner,
@@ -59,8 +60,10 @@ const CanvasStage = () => {
     if (canvas.height !== scene.canvasHeight) canvas.height = scene.canvasHeight;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    renderScene(ctx, scene, state.tool, imageCache.current);
-  }, [scene, state.tool, cacheVersion]);
+    renderScene(ctx, scene, state.tool, imageCache.current, {
+      showCabinetGrid: state.ui.showCabinetGrid,
+    });
+  }, [scene, state.tool, state.ui.showCabinetGrid, cacheVersion]);
 
   const onDrop = useCallback(
     async (event: React.DragEvent<HTMLDivElement>) => {
@@ -78,8 +81,10 @@ const CanvasStage = () => {
   const dragRef = useRef<
     | { type: 'corner'; id: string; corner: number }
     | { type: 'move'; id: string; last: Point }
+    | { type: 'pan'; lastClientX: number; lastClientY: number }
     | null
   >(null);
+  const spaceDownRef = useRef(false);
 
   const finishTool = useCallback(
     (finalPoint: Point) => {
@@ -120,9 +125,26 @@ const CanvasStage = () => {
 
   const onCanvasPointerDown = useCallback(
     (event: React.PointerEvent<HTMLCanvasElement>) => {
-      if (event.button !== 0) return;
       const canvas = canvasRef.current;
       if (!canvas) return;
+
+      // Pan: right button, middle button, or Space+left.
+      const isPanTrigger =
+        event.button === 2 ||
+        event.button === 1 ||
+        (event.button === 0 && spaceDownRef.current);
+      if (isPanTrigger) {
+        event.preventDefault();
+        canvas.setPointerCapture(event.pointerId);
+        dragRef.current = {
+          type: 'pan',
+          lastClientX: event.clientX,
+          lastClientY: event.clientY,
+        };
+        return;
+      }
+
+      if (event.button !== 0) return;
       const p = getScenePointer(canvas, event.clientX, event.clientY, scene.view);
 
       // Tool flow: push a point. On final click, compute + dispatch.
@@ -179,6 +201,28 @@ const CanvasStage = () => {
       if (!drag) return;
       const canvas = canvasRef.current;
       if (!canvas) return;
+
+      if (drag.type === 'pan') {
+        const dx = event.clientX - drag.lastClientX;
+        const dy = event.clientY - drag.lastClientY;
+        // Translate client-pixel delta into canvas-pixel delta via the
+        // same CSS ratio getScenePointer uses, so panning "follows the
+        // mouse" even when the canvas is scaled to fit.
+        const rect = canvas.getBoundingClientRect();
+        const ratioX = canvas.width / rect.width;
+        const ratioY = canvas.height / rect.height;
+        dispatch({
+          type: 'view/set',
+          payload: {
+            offsetX: scene.view.offsetX + dx * ratioX,
+            offsetY: scene.view.offsetY + dy * ratioY,
+          },
+        });
+        drag.lastClientX = event.clientX;
+        drag.lastClientY = event.clientY;
+        return;
+      }
+
       const p = getScenePointer(canvas, event.clientX, event.clientY, scene.view);
       const el = scene.elements.find((it) => it.id === drag.id);
       if (!el) return;
@@ -203,22 +247,67 @@ const CanvasStage = () => {
     [dispatch, scene.elements, scene.view],
   );
 
+  // Wheel zoom — zoom-at-cursor, clamped to scene view min/max.
+  const onWheel = useCallback(
+    (event: React.WheelEvent<HTMLCanvasElement>) => {
+      event.preventDefault();
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      const canvasX = ((event.clientX - rect.left) * canvas.width) / rect.width;
+      const canvasY = ((event.clientY - rect.top) * canvas.height) / rect.height;
+      const factor = event.deltaY < 0 ? 1.1 : 1 / 1.1;
+      const prevScale = scene.view.scale;
+      const nextScale = clamp(
+        prevScale * factor,
+        scene.view.minScale,
+        scene.view.maxScale,
+      );
+      if (nextScale === prevScale) return;
+      // Keep the scene point under the cursor stationary after zoom.
+      const wx = (canvasX - scene.view.offsetX) / prevScale;
+      const wy = (canvasY - scene.view.offsetY) / prevScale;
+      dispatch({
+        type: 'view/set',
+        payload: {
+          scale: nextScale,
+          offsetX: canvasX - wx * nextScale,
+          offsetY: canvasY - wy * nextScale,
+        },
+      });
+    },
+    [dispatch, scene.view],
+  );
+
   const onCanvasPointerUp = useCallback(() => {
     dragRef.current = null;
   }, []);
 
-  // Global keyboard: Delete / Backspace removes the selected element
-  // (but not while the user is typing in an input).
+  // Global keyboard: Delete / Backspace removes the selected element,
+  // Space toggles the pan-on-left-drag modifier (LMB+Space = pan).
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Delete' && e.key !== 'Backspace') return;
-      const tag = (document.activeElement?.tagName ?? '').toLowerCase();
-      if (tag === 'input' || tag === 'textarea') return;
-      if (!scene.selectedElementId) return;
-      dispatch({ type: 'screen/delete', payload: { id: scene.selectedElementId } });
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'Space') {
+        const tag = (document.activeElement?.tagName ?? '').toLowerCase();
+        if (tag === 'input' || tag === 'textarea') return;
+        spaceDownRef.current = true;
+      }
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        const tag = (document.activeElement?.tagName ?? '').toLowerCase();
+        if (tag === 'input' || tag === 'textarea') return;
+        if (!scene.selectedElementId) return;
+        dispatch({ type: 'screen/delete', payload: { id: scene.selectedElementId } });
+      }
     };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (e.code === 'Space') spaceDownRef.current = false;
+    };
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
+    };
   }, [dispatch, scene.selectedElementId]);
 
   return (
@@ -235,6 +324,7 @@ const CanvasStage = () => {
     >
       <canvas
         ref={canvasRef}
+        data-vled-canvas="true"
         width={scene.canvasWidth}
         height={scene.canvasHeight}
         className={`max-h-full max-w-full rounded-lg border border-white/5 shadow-xl ${
@@ -243,6 +333,8 @@ const CanvasStage = () => {
         onPointerDown={onCanvasPointerDown}
         onPointerMove={onCanvasPointerMove}
         onPointerUp={onCanvasPointerUp}
+        onWheel={onWheel}
+        onContextMenu={(e) => e.preventDefault()}
       />
       {dropActive ? (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-xl bg-brand-500/10 text-sm font-medium text-white">
