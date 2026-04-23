@@ -1,6 +1,10 @@
-import { useRef, type ReactNode } from 'react';
-import { Film, Upload, Trash2, XCircle } from 'lucide-react';
+import { useRef, useState, type ReactNode } from 'react';
+import { Film, Sparkles, Upload, Trash2, XCircle } from 'lucide-react';
 import { importBackgrounds } from './CanvasStage';
+import {
+  generateDemoVideos,
+  isDemoRecordingSupported,
+} from './demoVideos';
 import { fileToDataUrl } from './imageLoader';
 import { uid } from './state/initialState';
 import { useActiveScene, useSelectedElement, useVisualLed } from './state/VisualLedContext';
@@ -16,6 +20,9 @@ const SidebarRight = () => {
   const { state, dispatch } = useVisualLed();
   const bgInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
+  const [demoBusy, setDemoBusy] = useState(false);
+  const [demoProgress, setDemoProgress] = useState<{ done: number; total: number; name: string } | null>(null);
+  const demoSupported = isDemoRecordingSupported();
 
   const onBackgroundFiles = async (files: FileList | null) => {
     if (!files) return;
@@ -35,6 +42,25 @@ const SidebarRight = () => {
       } catch (err) {
         console.warn('Failed to import video', file.name, err);
       }
+    }
+  };
+
+  const loadDemos = async () => {
+    if (demoBusy) return;
+    setDemoBusy(true);
+    try {
+      const demos = await generateDemoVideos((done, total, name) =>
+        setDemoProgress({ done, total, name }),
+      );
+      for (const demo of demos) {
+        dispatch({
+          type: 'video/add',
+          payload: { id: uid('vid'), name: demo.name, src: demo.src },
+        });
+      }
+    } finally {
+      setDemoBusy(false);
+      setDemoProgress(null);
     }
   };
 
@@ -114,25 +140,49 @@ const SidebarRight = () => {
       </Panel>
 
       <Panel title="Видео">
-        <label className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-white/15 bg-slate-950/40 py-3 text-xs text-slate-300 hover:border-white/30 hover:text-white">
-          <Upload className="h-3.5 w-3.5" />
-          Загрузить
-          <input
-            ref={videoInputRef}
-            type="file"
-            accept="video/mp4,video/webm"
-            multiple
-            className="hidden"
-            onChange={(e) => {
-              void onVideoFiles(e.target.files);
-              if (videoInputRef.current) videoInputRef.current.value = '';
-            }}
-          />
-        </label>
+        <div className="grid grid-cols-2 gap-1.5">
+          <label className="flex cursor-pointer items-center justify-center gap-1 rounded-lg border border-dashed border-white/15 bg-slate-950/40 py-2 text-xs text-slate-300 hover:border-white/30 hover:text-white">
+            <Upload className="h-3 w-3" />
+            Загрузить
+            <input
+              ref={videoInputRef}
+              type="file"
+              accept="video/mp4,video/webm"
+              multiple
+              className="hidden"
+              onChange={(e) => {
+                void onVideoFiles(e.target.files);
+                if (videoInputRef.current) videoInputRef.current.value = '';
+              }}
+            />
+          </label>
+          <button
+            type="button"
+            onClick={() => void loadDemos()}
+            disabled={demoBusy || !demoSupported}
+            className="flex items-center justify-center gap-1 rounded-lg border border-white/15 bg-slate-900/60 py-2 text-xs text-slate-300 hover:border-white/30 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+            title={
+              demoSupported
+                ? 'Сгенерировать 5 демо-роликов (Equalizer, Spectrum, Ripple, Pulse, Matrix)'
+                : 'Браузер не поддерживает MediaRecorder'
+            }
+          >
+            <Sparkles className="h-3 w-3" />
+            {demoBusy ? 'Генерация…' : 'Демо'}
+          </button>
+        </div>
+
+        {demoBusy && demoProgress ? (
+          <div className="mt-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-[11px] text-amber-200">
+            {demoProgress.name
+              ? `Рендерим ${demoProgress.name} (${demoProgress.done + 1}/${demoProgress.total})…`
+              : 'Готово'}
+          </div>
+        ) : null}
 
         {state.videos.length === 0 ? (
           <div className="mt-2 rounded-md border border-dashed border-white/10 bg-slate-950/40 p-3 text-center text-[11px] text-slate-500">
-            MP4 / WebM — клик по ролику назначит его выбранному экрану
+            MP4 / WebM или жми «Демо» для 5 готовых роликов
           </div>
         ) : (
           <>
