@@ -56,7 +56,7 @@
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://mc.yandex.ru https://mc.yandex.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https://pyframwlnqrzeynqcvle.supabase.co wss://pyframwlnqrzeynqcvle.supabase.co https://mc.yandex.ru wss://mc.yandex.ru https://mc.yandex.com wss://mc.yandex.com; media-src 'self' blob: https://pyframwlnqrzeynqcvle.supabase.co; frame-src 'self' https://mc.yandex.ru https://mc.yandex.com https://yandex.ru https://yandex.com; worker-src 'self' blob:; upgrade-insecure-requests"
+          "value": "default-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://mc.yandex.ru https://mc.yandex.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https://pyframwlnqrzeynqcvle.supabase.co wss://pyframwlnqrzeynqcvle.supabase.co https://mc.yandex.ru wss://mc.yandex.ru https://mc.yandex.com wss://mc.yandex.com; media-src 'self' data: blob: https://pyframwlnqrzeynqcvle.supabase.co; frame-src 'self' https://mc.yandex.ru https://mc.yandex.com https://yandex.ru https://yandex.com; worker-src 'self' blob:; upgrade-insecure-requests"
         },
         {
           "key": "Strict-Transport-Security",
