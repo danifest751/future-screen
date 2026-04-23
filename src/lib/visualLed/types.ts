@@ -86,8 +86,21 @@ export interface BackgroundAsset {
 export interface VideoAsset {
   id: string;
   name: string;
+  /** Video source — data URL, blob URL, or signed URL. Empty for procedural demos. */
   src: string;
   duration?: number;
+  /**
+   * If set, the asset is a procedural canvas animation (equalizer etc.)
+   * rendered on an offscreen canvas in the VideoPool. These loop
+   * perfectly — no WebM seam stutter from <video loop>.
+   */
+  animationKind?:
+    | 'equalizer'
+    | 'spectrum'
+    | 'ripple'
+    | 'pulse'
+    | 'matrix'
+    | null;
 }
 
 export interface Scene {

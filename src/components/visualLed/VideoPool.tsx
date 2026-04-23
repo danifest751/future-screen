@@ -1,15 +1,57 @@
+import { useEffect, useRef } from 'react';
+import {
+  DEMO_CANVAS_HEIGHT,
+  DEMO_CANVAS_WIDTH,
+  DEMO_DRAWERS,
+  demoPhase,
+} from './demoVideos';
 import { useVisualLed } from './state/VisualLedContext';
 
 /**
- * Hidden pool of <video> elements — one per VideoAsset in state. The
- * canvas renderer looks these up by `data-video-id` to draw their
- * current frame onto screen quads via drawWarpedSource.
+ * Hidden pool of media sources for the warped-video renderer.
  *
- * Kept muted + autoPlay + loop so videos start rolling as soon as
- * they're added (no user click required, matches legacy behaviour).
+ * - Uploaded video assets: a <video> element keyed by data-video-id,
+ *   muted + autoPlay + loop so it starts rolling automatically.
+ * - Procedural demos (animationKind set): a <canvas> keyed by the
+ *   same data-video-id. A single rAF loop redraws every demo canvas
+ *   with the current phase. Loops are mathematically seamless so
+ *   there's no seam stutter like the native <video loop> has.
+ *
+ * The canvas renderer looks up the element via querySelector and
+ * passes it to drawWarpedSource — both <video> and <canvas> satisfy
+ * CanvasImageSource.
  */
 const VideoPool = () => {
   const { state } = useVisualLed();
+  const canvasRefs = useRef<Map<string, HTMLCanvasElement>>(new Map());
+
+  const demoVideos = state.videos.filter((v) => v.animationKind);
+  const fileVideos = state.videos.filter((v) => !v.animationKind);
+
+  // rAF loop for procedural demos. Only runs when there's at least
+  // one demo asset AND at least one screen has any videoId assigned
+  // (so we don't spin CPU if nothing's showing on screen).
+  const hasAnyVideoAssignment = state.scenes.some((s) =>
+    s.elements.some((el) => el.videoId),
+  );
+  useEffect(() => {
+    if (demoVideos.length === 0 || !hasAnyVideoAssignment) return;
+    let rafId = 0;
+    const tick = () => {
+      const t = demoPhase(performance.now());
+      for (const video of demoVideos) {
+        const canvas = canvasRefs.current.get(video.id);
+        if (!canvas || !video.animationKind) continue;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) continue;
+        DEMO_DRAWERS[video.animationKind](ctx, t);
+      }
+      rafId = requestAnimationFrame(tick);
+    };
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
+  }, [demoVideos, hasAnyVideoAssignment]);
+
   return (
     <div
       aria-hidden="true"
@@ -21,7 +63,7 @@ const VideoPool = () => {
         pointerEvents: 'none',
       }}
     >
-      {state.videos.map((v) => (
+      {fileVideos.map((v) => (
         <video
           key={v.id}
           data-video-id={v.id}
@@ -31,6 +73,18 @@ const VideoPool = () => {
           autoPlay
           playsInline
           preload="auto"
+        />
+      ))}
+      {demoVideos.map((v) => (
+        <canvas
+          key={v.id}
+          data-video-id={v.id}
+          ref={(el) => {
+            if (el) canvasRefs.current.set(v.id, el);
+            else canvasRefs.current.delete(v.id);
+          }}
+          width={DEMO_CANVAS_WIDTH}
+          height={DEMO_CANVAS_HEIGHT}
         />
       ))}
     </div>

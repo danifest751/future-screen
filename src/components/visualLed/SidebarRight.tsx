@@ -1,10 +1,8 @@
-import { useRef, useState, type ReactNode } from 'react';
+import { useRef, type ReactNode } from 'react';
 import { Film, Sparkles, Upload, Trash2, XCircle } from 'lucide-react';
 import { importBackgrounds } from './CanvasStage';
-import {
-  generateDemoVideos,
-  isDemoRecordingSupported,
-} from './demoVideos';
+import { DEMO_SPECS } from './demoVideos';
+import DemoThumbnail from './DemoThumbnail';
 import { fileToDataUrl } from './imageLoader';
 import { uid } from './state/initialState';
 import { useActiveScene, useSelectedElement, useVisualLed } from './state/VisualLedContext';
@@ -20,9 +18,14 @@ const SidebarRight = () => {
   const { state, dispatch } = useVisualLed();
   const bgInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
-  const [demoBusy, setDemoBusy] = useState(false);
-  const [demoProgress, setDemoProgress] = useState<{ done: number; total: number; name: string } | null>(null);
-  const demoSupported = isDemoRecordingSupported();
+
+  // Count existing demo instances so we don't add duplicates on repeat
+  // clicks. "Демо" either adds missing kinds, or short-circuits when
+  // all 5 are already present.
+  const existingDemoKinds = new Set(
+    state.videos.map((v) => v.animationKind).filter(Boolean) as string[],
+  );
+  const missingDemoKinds = DEMO_SPECS.filter((s) => !existingDemoKinds.has(s.kind));
 
   const onBackgroundFiles = async (files: FileList | null) => {
     if (!files) return;
@@ -45,22 +48,17 @@ const SidebarRight = () => {
     }
   };
 
-  const loadDemos = async () => {
-    if (demoBusy) return;
-    setDemoBusy(true);
-    try {
-      const demos = await generateDemoVideos((done, total, name) =>
-        setDemoProgress({ done, total, name }),
-      );
-      for (const demo of demos) {
-        dispatch({
-          type: 'video/add',
-          payload: { id: uid('vid'), name: demo.name, src: demo.src },
-        });
-      }
-    } finally {
-      setDemoBusy(false);
-      setDemoProgress(null);
+  const loadDemos = () => {
+    for (const spec of missingDemoKinds) {
+      dispatch({
+        type: 'video/add',
+        payload: {
+          id: uid('vid'),
+          name: spec.name,
+          src: '',
+          animationKind: spec.kind,
+        },
+      });
     }
   };
 
@@ -158,27 +156,19 @@ const SidebarRight = () => {
           </label>
           <button
             type="button"
-            onClick={() => void loadDemos()}
-            disabled={demoBusy || !demoSupported}
+            onClick={loadDemos}
+            disabled={missingDemoKinds.length === 0}
             className="flex items-center justify-center gap-1 rounded-lg border border-white/15 bg-slate-900/60 py-2 text-xs text-slate-300 hover:border-white/30 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
             title={
-              demoSupported
-                ? 'Сгенерировать 5 демо-роликов (Equalizer, Spectrum, Ripple, Pulse, Matrix)'
-                : 'Браузер не поддерживает MediaRecorder'
+              missingDemoKinds.length === 0
+                ? 'Все 5 демо уже в библиотеке'
+                : 'Добавить демо-ролики (Equalizer, Spectrum, Ripple, Pulse, Matrix) — рисуются canvas, seamless loop'
             }
           >
             <Sparkles className="h-3 w-3" />
-            {demoBusy ? 'Генерация…' : 'Демо'}
+            {missingDemoKinds.length === 0 ? 'Демо добавлены' : 'Демо'}
           </button>
         </div>
-
-        {demoBusy && demoProgress ? (
-          <div className="mt-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-[11px] text-amber-200">
-            {demoProgress.name
-              ? `Рендерим ${demoProgress.name} (${demoProgress.done + 1}/${demoProgress.total})…`
-              : 'Готово'}
-          </div>
-        ) : null}
 
         {state.videos.length === 0 ? (
           <div className="mt-2 rounded-md border border-dashed border-white/10 bg-slate-950/40 p-3 text-center text-[11px] text-slate-500">
@@ -203,15 +193,19 @@ const SidebarRight = () => {
                       className="block w-full bg-slate-950/60 disabled:cursor-not-allowed disabled:opacity-50"
                       title={selected ? `Назначить ${video.name}` : 'Выбери экран'}
                     >
-                      <video
-                        src={video.src}
-                        className="block aspect-video w-full object-cover"
-                        muted
-                        loop
-                        autoPlay
-                        playsInline
-                        preload="metadata"
-                      />
+                      {video.animationKind ? (
+                        <DemoThumbnail kind={video.animationKind} />
+                      ) : (
+                        <video
+                          src={video.src}
+                          className="block aspect-video w-full object-cover"
+                          muted
+                          loop
+                          autoPlay
+                          playsInline
+                          preload="metadata"
+                        />
+                      )}
                       <div className="truncate px-1.5 py-0.5 text-[10px] text-slate-300">
                         {video.name}
                       </div>

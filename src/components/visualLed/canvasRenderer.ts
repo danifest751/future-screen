@@ -137,11 +137,18 @@ function drawScreen(
 
   // Project the assigned video's current frame into the quad.
   if (element.videoId) {
-    const video = document.querySelector<HTMLVideoElement>(
-      `video[data-video-id="${element.videoId}"]`,
+    // VideoPool keys both real <video> assets and procedural demo
+    // <canvas> animations by the same attribute, so one selector
+    // covers both cases.
+    const source = document.querySelector<HTMLVideoElement | HTMLCanvasElement>(
+      `[data-video-id="${element.videoId}"]`,
     );
-    if (video && video.readyState >= 2) {
-      drawWarpedSource(ctx, video, element.corners);
+    if (source) {
+      if (source instanceof HTMLVideoElement && source.readyState < 2) {
+        // still loading — skip
+      } else {
+        drawWarpedSource(ctx, source, element.corners);
+      }
     }
   }
 
