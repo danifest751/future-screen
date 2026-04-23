@@ -32,8 +32,10 @@ import { clearSession, getSession, setSession } from './sessions.js';
 import {
   answerCallbackQuery,
   editMessageReplyMarkup,
+  getTelegramFile,
   sendTelegramMessage,
 } from './telegramApi.js';
+import { getSupabaseClient } from './supabaseClient.js';
 import { extractFileInfo, handleCallbackQuery, handleFileUpload } from './uploadFlow.js';
 
 type MessageShape = NonNullable<TelegramUpdate['message']>;
@@ -277,6 +279,121 @@ describe('telegramWebhook/uploadFlow', () => {
       await handleFileUpload({});
       expect(getSession).not.toHaveBeenCalled();
       expect(sendTelegramMessage).not.toHaveBeenCalled();
+    });
+
+    it('warns when telegram file metadata cannot be resolved', async () => {
+      vi.mocked(getSession).mockResolvedValue({ state: 'awaiting_files', selectedTags: [] });
+      vi.mocked(getTelegramFile).mockResolvedValue(null);
+
+      await handleFileUpload(photoUpdate());
+
+      expect(sendTelegramMessage).toHaveBeenCalledTimes(2);
+      const [, text] = vi.mocked(sendTelegramMessage).mock.calls[1];
+      expect(text).toContain('Не удалось скачать файл');
+    });
+
+    it('reports storage upload errors', async () => {
+      vi.mocked(getSession).mockResolvedValue({ state: 'awaiting_files', selectedTags: ['promo'] });
+      vi.mocked(getTelegramFile).mockResolvedValue({
+        file_path: 'files/abc.jpg',
+        data: new Uint8Array([1, 2, 3]),
+      } as any);
+
+      const upload = vi.fn(async () => ({ error: { message: 'storage failed' } }));
+      vi.mocked(getSupabaseClient).mockImplementation(
+        () =>
+          ({
+            storage: {
+              from: vi.fn(() => ({
+                upload,
+                getPublicUrl: vi.fn(() => ({ data: { publicUrl: 'https://cdn.example/file.jpg' } })),
+              })),
+            },
+            from: vi.fn(() => ({
+              insert: vi.fn(async () => ({ error: null })),
+            })),
+          }) as any,
+      );
+
+      await handleFileUpload(photoUpdate());
+
+      expect(upload).toHaveBeenCalledTimes(1);
+      expect(sendTelegramMessage).toHaveBeenCalledTimes(2);
+      const [, text] = vi.mocked(sendTelegramMessage).mock.calls[1];
+      expect(text).toContain('Не удалось сохранить файл');
+      expect(text).toContain('storage failed');
+    });
+
+    it('reports database insert errors after successful upload', async () => {
+      vi.mocked(getSession).mockResolvedValue({ state: 'awaiting_files', selectedTags: [] });
+      vi.mocked(getTelegramFile).mockResolvedValue({
+        file_path: 'files/abc.jpg',
+        data: new Uint8Array([5, 6, 7, 8]),
+      } as any);
+
+      const insert = vi.fn(async () => ({ error: { message: 'db failed' } }));
+      vi.mocked(getSupabaseClient).mockImplementation(
+        () =>
+          ({
+            storage: {
+              from: vi.fn(() => ({
+                upload: vi.fn(async () => ({ error: null })),
+                getPublicUrl: vi.fn(() => ({ data: { publicUrl: 'https://cdn.example/file.jpg' } })),
+              })),
+            },
+            from: vi.fn(() => ({
+              insert,
+            })),
+          }) as any,
+      );
+
+      await handleFileUpload(photoUpdate());
+
+      expect(insert).toHaveBeenCalledTimes(1);
+      expect(sendTelegramMessage).toHaveBeenCalledTimes(2);
+      const [, text] = vi.mocked(sendTelegramMessage).mock.calls[1];
+      expect(text).toContain('не записался в базу');
+      expect(text).toContain('db failed');
+    });
+
+    it('persists media item and sends success confirmation', async () => {
+      vi.mocked(getSession).mockResolvedValue({ state: 'awaiting_files', selectedTags: ['concert'] });
+      vi.mocked(getTelegramFile).mockResolvedValue({
+        file_path: 'files/abc.jpg',
+        data: new Uint8Array([9, 8, 7]),
+      } as any);
+
+      const insert = vi.fn(async () => ({ error: null }));
+      vi.mocked(getSupabaseClient).mockImplementation(
+        () =>
+          ({
+            storage: {
+              from: vi.fn(() => ({
+                upload: vi.fn(async () => ({ error: null })),
+                getPublicUrl: vi.fn(() => ({ data: { publicUrl: 'https://cdn.example/file.jpg' } })),
+              })),
+            },
+            from: vi.fn(() => ({
+              insert,
+            })),
+          }) as any,
+      );
+
+      await handleFileUpload(photoUpdate());
+
+      expect(insert).toHaveBeenCalledTimes(1);
+      const insertCall = insert.mock.calls[0] as unknown[] | undefined;
+      expect(insertCall).toBeDefined();
+      const insertedRows = insertCall?.[0] as Array<Record<string, unknown>> | undefined;
+      const insertPayload = insertedRows?.[0];
+      expect(insertPayload).toBeDefined();
+      const payload = insertPayload as Record<string, unknown>;
+      expect(payload.tags).toEqual(['concert']);
+      expect(payload.type).toBe('image');
+
+      expect(sendTelegramMessage).toHaveBeenCalledTimes(2);
+      const [, text] = vi.mocked(sendTelegramMessage).mock.calls[1];
+      expect(text).toContain('успешно добавлен');
     });
   });
 });

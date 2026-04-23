@@ -26,6 +26,33 @@ const createWrapper = () => {
 };
 
 describe('useCases', () => {
+  const mockBase = (overrides?: {
+    data?: any[];
+    createMutate?: any;
+    updateMutate?: any;
+    deleteMutate?: any;
+    resetMutate?: any;
+    error?: Error | null;
+  }) => {
+    vi.mocked(queries.useCasesQuery).mockReturnValue({
+      data: overrides?.data ?? [],
+      isLoading: false,
+      error: overrides?.error ?? null,
+    } as any);
+    vi.mocked(queries.useCreateCaseMutation).mockReturnValue({
+      mutateAsync: overrides?.createMutate ?? vi.fn(),
+    } as any);
+    vi.mocked(queries.useUpdateCaseMutation).mockReturnValue({
+      mutateAsync: overrides?.updateMutate ?? vi.fn(),
+    } as any);
+    vi.mocked(queries.useDeleteCaseMutation).mockReturnValue({
+      mutateAsync: overrides?.deleteMutate ?? vi.fn(),
+    } as any);
+    vi.mocked(queries.useResetCasesMutation).mockReturnValue({
+      mutateAsync: overrides?.resetMutate ?? vi.fn(),
+    } as any);
+  };
+
   it('должен вернуть пустой массив кейсов при отсутствии данных', () => {
     vi.clearAllMocks();
     vi.mocked(queries.useCasesQuery).mockReturnValue({
@@ -201,5 +228,73 @@ describe('useCases', () => {
 
     expect(ok).toBe(true);
     expect(mockMutateAsync).toHaveBeenCalled();
+  });
+
+  it('supports editor-mode mapping and fallback flags for EN locale', () => {
+    vi.clearAllMocks();
+    mockBase({
+      data: [
+        {
+          id: 1,
+          slug: 'slug-1',
+          title: 'Русский заголовок',
+          title_en: null,
+          city: 'Москва',
+          city_en: null,
+          date: '2025',
+          date_en: null,
+          format: 'Концерт',
+          format_en: null,
+          services: ['led'],
+          summary: 'Описание',
+          summary_en: null,
+          metrics: '1000',
+          metrics_en: null,
+          images: null,
+          videos: null,
+          created_at: null,
+          updated_at: null,
+        },
+      ],
+    });
+
+    const { result } = renderHook(() => useCases('en', true), { wrapper: createWrapper() });
+
+    expect(result.current.fallbackBySlug['slug-1']).toBe(true);
+
+    const editorCase = result.current.getEditorCase('slug-1');
+    expect(editorCase).not.toBeNull();
+    expect(editorCase?.title).toBe('');
+    expect(result.current.getEditorCase('missing')).toBeNull();
+  });
+
+  it('returns true/false for updateCase based on mutation result', async () => {
+    vi.clearAllMocks();
+    const okMutate = vi.fn().mockResolvedValue({});
+    mockBase({ updateMutate: okMutate });
+    const okHook = renderHook(() => useCases(), { wrapper: createWrapper() });
+    await expect(
+      okHook.result.current.updateCase('slug-ok', { title: 'Updated', services: ['led'] }),
+    ).resolves.toBe(true);
+    expect(okMutate).toHaveBeenCalled();
+
+    vi.clearAllMocks();
+    const failMutate = vi.fn().mockRejectedValue(new Error('update failed'));
+    mockBase({ updateMutate: failMutate });
+    const failHook = renderHook(() => useCases(), { wrapper: createWrapper() });
+    await expect(
+      failHook.result.current.updateCase('slug-fail', { title: 'Broken' }),
+    ).resolves.toBe(false);
+  });
+
+  it('returns false on delete/reset failures', async () => {
+    vi.clearAllMocks();
+    const deleteMutate = vi.fn().mockRejectedValue(new Error('delete failed'));
+    const resetMutate = vi.fn().mockRejectedValue(new Error('reset failed'));
+    mockBase({ deleteMutate, resetMutate });
+
+    const { result } = renderHook(() => useCases(), { wrapper: createWrapper() });
+    await expect(result.current.deleteCase('x')).resolves.toBe(false);
+    await expect(result.current.resetToDefault()).resolves.toBe(false);
   });
 });

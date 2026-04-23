@@ -1,5 +1,11 @@
-import { describe, it, expect } from 'vitest';
-import { buildTagKeyboard, formatSelectedTags } from './tags.js';
+import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('./supabaseClient.js', () => ({
+  getSupabaseClient: vi.fn(),
+}));
+
+import { buildTagKeyboard, formatSelectedTags, getAllTags } from './tags.js';
+import { getSupabaseClient } from './supabaseClient.js';
 
 describe('telegramWebhook/tags', () => {
   describe('formatSelectedTags', () => {
@@ -65,6 +71,43 @@ describe('telegramWebhook/tags', () => {
     it('always appends the four control rows last', () => {
       const keyboard = buildTagKeyboard(['a'], []);
       expect(keyboard.inline_keyboard.slice(-4)).toEqual(controlRows);
+    });
+  });
+
+  describe('getAllTags', () => {
+    it('returns normalized, unique, sorted tags (limited to 20)', async () => {
+      const manyTags = Array.from({ length: 30 }, (_, i) => `Tag-${String.fromCharCode(97 + (i % 26))}-${i}`);
+      vi.mocked(getSupabaseClient).mockReturnValue({
+        from: vi.fn(() => ({
+          select: vi.fn(async () => ({
+            data: [
+              { tags: [' Concert ', 'stage', 'STAGE'] },
+              { tags: ['event', '', null, undefined] },
+              { tags: manyTags },
+            ],
+          })),
+        })),
+      } as any);
+
+      const tags = await getAllTags();
+
+      expect(tags).toContain('concert');
+      expect(tags).toContain('stage');
+      expect(tags).toContain('event');
+      expect(tags).toHaveLength(20);
+      expect(tags).toEqual([...tags].sort());
+    });
+
+    it('returns empty array when supabase call throws', async () => {
+      vi.mocked(getSupabaseClient).mockReturnValue({
+        from: vi.fn(() => ({
+          select: vi.fn(async () => {
+            throw new Error('boom');
+          }),
+        })),
+      } as any);
+
+      await expect(getAllTags()).resolves.toEqual([]);
     });
   });
 });

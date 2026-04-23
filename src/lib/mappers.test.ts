@@ -8,6 +8,8 @@ import {
   mapCaseToDB,
   mapCategoryToDB,
   mapPackageToDB,
+  mapContactsToDB,
+  mapLeadToDB,
 } from './mappers';
 
 describe('mapCaseFromDB', () => {
@@ -97,6 +99,35 @@ describe('mapCaseToDB', () => {
     expect(result.title).toBe('Тестовый кейс');
     expect(result.services).toEqual(['led', 'sound']);
   });
+
+  it('maps EN locale fields and mirrors RU fields for inserts', () => {
+    const result = mapCaseToDB(
+      {
+        slug: 'en-case',
+        title: 'English title',
+        city: 'London',
+        date: '2026',
+        format: 'Forum',
+        summary: 'Summary',
+        metrics: '42',
+      },
+      'en',
+      true,
+    );
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        slug: 'en-case',
+        title: 'English title',
+        city: 'London',
+        date: '2026',
+        format: 'Forum',
+        summary: 'Summary',
+        metrics: '42',
+        title_en: 'English title',
+      }),
+    );
+  });
 });
 
 describe('mapCategoryFromDB', () => {
@@ -159,6 +190,32 @@ describe('mapCategoryToDB', () => {
     expect(result.short_description).toBe('Краткое описание');
     expect(result.bullets).toEqual(['буллет 1']);
     expect(result.page_path).toBe('/rent/light');
+  });
+
+  it('maps EN locale category fields and keeps page_path', () => {
+    const result = mapCategoryToDB(
+      {
+        id: 1,
+        title: 'Lights',
+        shortDescription: 'Short',
+        bullets: ['One'],
+        pagePath: '/rent/lights',
+      },
+      'en',
+      true,
+    );
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        title: 'Lights',
+        short_description: 'Short',
+        bullets: ['One'],
+        title_en: 'Lights',
+        short_description_en: 'Short',
+        bullets_en: ['One'],
+        page_path: '/rent/lights',
+      }),
+    );
   });
 });
 
@@ -232,6 +289,32 @@ describe('mapPackageToDB', () => {
     expect(result.includes).toEqual(['Включено']);
     expect(result.options).toEqual(['Опция']);
     expect(result.price_hint).toBe('Быстрый запуск');
+  });
+
+  it('maps EN locale package fields and mirrors insert payload', () => {
+    const result = mapPackageToDB(
+      {
+        id: 1,
+        name: 'Basic',
+        forFormats: ['Expo'],
+        includes: ['Screen'],
+        options: ['Truss'],
+        priceHint: 'From 1000',
+      },
+      'en',
+      true,
+    );
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        name: 'Basic',
+        for_formats: ['Expo'],
+        includes: ['Screen'],
+        options: ['Truss'],
+        price_hint: 'From 1000',
+        name_en: 'Basic',
+      }),
+    );
   });
 });
 
@@ -333,6 +416,89 @@ describe('mapContactsFromDB', () => {
     expect(result.emails).toEqual([]);
     expect(result.address).toBe('');
     expect(result.workingHours).toBe('');
+  });
+
+  it('uses EN localized contacts with optional RU fallback', () => {
+    const rows = [
+      {
+        id: 1,
+        phones: null,
+        emails: null,
+        address: 'RU address',
+        address_en: null,
+        working_hours: 'RU hours',
+        working_hours_en: null,
+        updated_at: '2024-01-01T00:00:00Z',
+      },
+    ];
+
+    const withFallback = mapContactsFromDB(rows as any, 'en', true);
+    expect(withFallback.address).toBe('RU address');
+    expect(withFallback.workingHours).toBe('RU hours');
+
+    const noFallback = mapContactsFromDB(rows as any, 'en', false);
+    expect(noFallback.address).toBe('');
+    expect(noFallback.workingHours).toBe('');
+  });
+});
+
+describe('mapContactsToDB', () => {
+  const contacts = {
+    phones: ['+79990000000'],
+    emails: ['mail@example.com'],
+    address: 'Address',
+    workingHours: '10:00-20:00',
+  };
+
+  it('maps RU locale to base contact columns', () => {
+    expect(mapContactsToDB(contacts, 'ru')).toEqual({
+      phones: contacts.phones,
+      emails: contacts.emails,
+      address: contacts.address,
+      working_hours: contacts.workingHours,
+    });
+  });
+
+  it('maps EN locale to localized contact columns', () => {
+    expect(mapContactsToDB(contacts, 'en')).toEqual({
+      phones: contacts.phones,
+      emails: contacts.emails,
+      address_en: contacts.address,
+      working_hours_en: contacts.workingHours,
+    });
+  });
+});
+
+describe('mapLeadToDB', () => {
+  it('maps lead log fields to DB column names', () => {
+    const result = mapLeadToDB({
+      id: '1',
+      requestId: 'req-123',
+      timestamp: '2024-01-01T00:00:00Z',
+      source: 'site',
+      name: 'Ivan',
+      phone: '+79991234567',
+      email: 'ivan@example.com',
+      telegram: '@ivan',
+      city: 'Moscow',
+      date: '2024-10-01',
+      format: 'concert',
+      comment: 'hello',
+      extra: { utm: 'x' },
+      pagePath: '/consult',
+      referrer: 'https://example.com',
+      status: 'new',
+      deliveryLog: [{ channel: 'telegram', status: 'sent' } as any],
+    });
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        request_id: 'req-123',
+        source: 'site',
+        page_path: '/consult',
+        delivery_log: [{ channel: 'telegram', status: 'sent' }],
+      }),
+    );
   });
 });
 

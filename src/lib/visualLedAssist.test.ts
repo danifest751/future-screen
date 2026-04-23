@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { analyzeAssistFromImageData, averageAngles, degDistance, lineClipToRect, polarLineFromDeg } from './visualLedAssist';
+import {
+  analyzeAssistFromImageData,
+  angleToDeg,
+  averageAngles,
+  buildAssistFromFallback,
+  degDistance,
+  lineClipToRect,
+  normalizeAngleDeg,
+  polarLineFromDeg,
+  radFromDeg,
+} from './visualLedAssist';
 
 function drawLine(
   data: Uint8ClampedArray,
@@ -77,5 +87,30 @@ describe('visualLedAssist helpers', () => {
     const avg = averageAngles([2, 178]);
     expect(avg).not.toBeNull();
     expect(degDistance(avg!, 0)).toBeLessThan(5);
+  });
+
+  it('returns null clipping when line does not intersect rectangle', () => {
+    const clipped = lineClipToRect({ nx: 0, ny: 1, d: 200 }, 120, 80);
+    expect(clipped).toBeNull();
+  });
+
+  it('handles angle conversion helpers consistently', () => {
+    expect(radFromDeg(180)).toBeCloseTo(Math.PI);
+    expect(angleToDeg(Math.PI / 2)).toBeCloseTo(90);
+    expect(normalizeAngleDeg(190)).toBe(10);
+    expect(normalizeAngleDeg(-10)).toBe(170);
+  });
+
+  it('returns null for empty and opposite-direction angle averages', () => {
+    expect(averageAngles([])).toBeNull();
+    expect(averageAngles([0, 90])).toBeNull();
+  });
+
+  it('builds deterministic fallback assist payload', () => {
+    const assist = buildAssistFromFallback(300, 200);
+    expect(assist.source).toBe('fallback');
+    expect(assist.confidence).toBe('low');
+    expect(assist.corners).toHaveLength(4);
+    expect(assist.guides).toEqual([]);
   });
 });

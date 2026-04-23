@@ -1,5 +1,11 @@
-import { describe, it, expect } from 'vitest';
-import { parseRole, resolveTrustedRole } from './rbac.js';
+import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('./supabaseClient.js', () => ({
+  getSupabaseClient: vi.fn(),
+}));
+
+import { parseRole, resolveTrustedRole, ensureAdmin } from './rbac.js';
+import { getSupabaseClient } from './supabaseClient.js';
 
 describe('telegramWebhook/rbac', () => {
   describe('parseRole', () => {
@@ -46,6 +52,55 @@ describe('telegramWebhook/rbac', () => {
     it('falls back to viewer when only unknown values are present', () => {
       expect(resolveTrustedRole({ role: 'owner' })).toBe('viewer');
       expect(resolveTrustedRole({ role: 42 })).toBe('viewer');
+    });
+  });
+
+  describe('ensureAdmin', () => {
+    const makeReq = (authorization?: string) =>
+      ({ headers: authorization ? { authorization } : {} }) as any;
+
+    it('rejects missing bearer token', async () => {
+      await expect(ensureAdmin(makeReq())).rejects.toThrow('Unauthorized: missing bearer token');
+    });
+
+    it('rejects invalid token when auth.getUser fails', async () => {
+      vi.mocked(getSupabaseClient).mockReturnValue({
+        auth: {
+          getUser: vi.fn(async () => ({ data: { user: null }, error: new Error('bad token') })),
+        },
+      } as any);
+
+      await expect(ensureAdmin(makeReq('Bearer bad-token'))).rejects.toThrow(
+        'Unauthorized: invalid user token',
+      );
+    });
+
+    it('rejects non-admin users', async () => {
+      vi.mocked(getSupabaseClient).mockReturnValue({
+        auth: {
+          getUser: vi.fn(async () => ({
+            data: { user: { app_metadata: { role: 'viewer' } } },
+            error: null,
+          })),
+        },
+      } as any);
+
+      await expect(ensureAdmin(makeReq('Bearer viewer-token'))).rejects.toThrow(
+        'Forbidden: admin role required',
+      );
+    });
+
+    it('accepts admin users from trusted app_metadata', async () => {
+      vi.mocked(getSupabaseClient).mockReturnValue({
+        auth: {
+          getUser: vi.fn(async () => ({
+            data: { user: { app_metadata: { claims: { role: 'admin' } } } },
+            error: null,
+          })),
+        },
+      } as any);
+
+      await expect(ensureAdmin(makeReq('Bearer admin-token'))).resolves.toBeUndefined();
     });
   });
 });

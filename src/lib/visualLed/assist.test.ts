@@ -81,6 +81,29 @@ describe('linesForAssistAngle', () => {
   it('returns null when not enough oriented samples', () => {
     expect(linesForAssistAngle([], 0)).toBeNull();
   });
+
+  it('returns two line candidates for a strong orientation family', () => {
+    const samples = [
+      ...Array.from({ length: 60 }, (_, i) => ({
+        x: i,
+        y: i < 30 ? 10 : 40,
+        angle: 0,
+        mag: 100,
+      })),
+      ...Array.from({ length: 10 }, (_, i) => ({
+        x: i,
+        y: i,
+        angle: Math.PI / 2,
+        mag: 10,
+      })),
+    ];
+
+    const lines = linesForAssistAngle(samples as any, 0);
+    expect(lines).not.toBeNull();
+    expect(lines![0].ny).toBeCloseTo(1, 3);
+    expect(lines![1].ny).toBeCloseTo(1, 3);
+    expect(lines![0].d).toBeLessThan(lines![1].d);
+  });
 });
 
 describe('refineCornersByEdgeSnap', () => {
@@ -93,6 +116,46 @@ describe('refineCornersByEdgeSnap', () => {
     ];
     expect(refineCornersByEdgeSnap(quad, [])).toBeNull();
     expect(refineCornersByEdgeSnap(null, [])).toBeNull();
+  });
+
+  it('returns refined corners when edge samples indicate shifted boundaries', () => {
+    const quad: Quad = [
+      { x: 0, y: 0 },
+      { x: 100, y: 0 },
+      { x: 100, y: 50 },
+      { x: 0, y: 50 },
+    ];
+
+    const samples = [
+      ...Array.from({ length: 51 }, (_, i) => ({ x: i * 2, y: 2, angle: 0, mag: 100 })),
+      ...Array.from({ length: 51 }, (_, i) => ({ x: i * 2, y: 52, angle: 0, mag: 100 })),
+      ...Array.from({ length: 30 }, (_, i) => ({ x: 2, y: i * 2, angle: Math.PI / 2, mag: 100 })),
+      ...Array.from({ length: 30 }, (_, i) => ({ x: 102, y: i * 2, angle: Math.PI / 2, mag: 100 })),
+    ];
+
+    const result = refineCornersByEdgeSnap(quad, samples as any);
+    expect(result).not.toBeNull();
+    expect(result?.corners).toHaveLength(4);
+    expect(result?.avgMove).toBeGreaterThan(0.75);
+    expect(result?.lines).toHaveLength(4);
+  });
+
+  it('returns null when one edge has insufficient support samples', () => {
+    const quad: Quad = [
+      { x: 0, y: 0 },
+      { x: 100, y: 0 },
+      { x: 100, y: 50 },
+      { x: 0, y: 50 },
+    ];
+
+    const samples = [
+      ...Array.from({ length: 51 }, (_, i) => ({ x: i * 2, y: 0, angle: 0, mag: 100 })),
+      ...Array.from({ length: 51 }, (_, i) => ({ x: i * 2, y: 50, angle: 0, mag: 100 })),
+      ...Array.from({ length: 8 }, (_, i) => ({ x: 0, y: i * 2, angle: Math.PI / 2, mag: 100 })),
+      ...Array.from({ length: 8 }, (_, i) => ({ x: 100, y: i * 2, angle: Math.PI / 2, mag: 100 })),
+    ];
+
+    expect(refineCornersByEdgeSnap(quad, samples as any)).toBeNull();
   });
 });
 
