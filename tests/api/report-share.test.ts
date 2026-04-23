@@ -106,7 +106,7 @@ const createSupabaseMock = (options?: SupabaseMockOptions) => {
 
 const importHandler = async () => {
   vi.resetModules();
-  const mod = await import('./report-share');
+  const mod = await import('../../api/report-share');
   return mod.default;
 };
 
@@ -439,4 +439,3 @@ describe('api/report-share', () => {
     expect(mockRes.jsonBody()).toEqual({ error: 'Internal server error' });
   });
 });
-

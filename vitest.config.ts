@@ -11,6 +11,7 @@ export default defineConfig({
       'src/**/*.test.tsx',
       'server/**/*.test.ts',
       'api/**/*.test.ts',
+      'tests/**/*.test.ts',
     ],
     coverage: {
       provider: 'v8',

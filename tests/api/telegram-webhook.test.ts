@@ -1,54 +1,54 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('../server/lib/telegramWebhook/commands.js', () => ({
+vi.mock('../../server/lib/telegramWebhook/commands.js', () => ({
   START_HELP_MESSAGE: 'help message',
   handleStart: vi.fn(async () => undefined),
   parseTelegramCommand: vi.fn(() => null),
   sendHelp: vi.fn(async () => undefined),
 }));
 
-vi.mock('../server/lib/telegramWebhook/rbac.js', () => ({
+vi.mock('../../server/lib/telegramWebhook/rbac.js', () => ({
   ensureAdmin: vi.fn(async () => undefined),
 }));
 
-vi.mock('../server/lib/telegramWebhook/sessions.js', () => ({
+vi.mock('../../server/lib/telegramWebhook/sessions.js', () => ({
   getSession: vi.fn(async () => null),
   isMessageAlreadyProcessed: vi.fn(async () => false),
   markMessageAsProcessed: vi.fn(async () => undefined),
   setSession: vi.fn(async () => undefined),
 }));
 
-vi.mock('../server/lib/telegramWebhook/stats.js', () => ({
+vi.mock('../../server/lib/telegramWebhook/stats.js', () => ({
   sendVisualizationStats: vi.fn(async () => undefined),
 }));
 
-vi.mock('../server/lib/telegramWebhook/tags.js', () => ({
+vi.mock('../../server/lib/telegramWebhook/tags.js', () => ({
   formatSelectedTags: vi.fn((tags: string[]) => tags.join(', ')),
 }));
 
-vi.mock('../server/lib/telegramWebhook/telegramApi.js', () => ({
+vi.mock('../../server/lib/telegramWebhook/telegramApi.js', () => ({
   getWebhookInfo: vi.fn(async () => ({ ok: true })),
   sendTelegramMessage: vi.fn(async () => undefined),
   setWebhook: vi.fn(async () => ({ ok: true })),
 }));
 
-vi.mock('../server/lib/telegramWebhook/uploadFlow.js', () => ({
+vi.mock('../../server/lib/telegramWebhook/uploadFlow.js', () => ({
   handleCallbackQuery: vi.fn(async () => undefined),
   handleFileUpload: vi.fn(async () => undefined),
 }));
 
-import handler from './telegram-webhook';
-import { handleStart, parseTelegramCommand, sendHelp } from '../server/lib/telegramWebhook/commands.js';
-import { ensureAdmin } from '../server/lib/telegramWebhook/rbac.js';
+import handler from '../../api/telegram-webhook';
+import { handleStart, parseTelegramCommand, sendHelp } from '../../server/lib/telegramWebhook/commands.js';
+import { ensureAdmin } from '../../server/lib/telegramWebhook/rbac.js';
 import {
   getSession,
   isMessageAlreadyProcessed,
   markMessageAsProcessed,
   setSession,
-} from '../server/lib/telegramWebhook/sessions.js';
-import { sendVisualizationStats } from '../server/lib/telegramWebhook/stats.js';
-import { getWebhookInfo, sendTelegramMessage, setWebhook } from '../server/lib/telegramWebhook/telegramApi.js';
-import { handleCallbackQuery, handleFileUpload } from '../server/lib/telegramWebhook/uploadFlow.js';
+} from '../../server/lib/telegramWebhook/sessions.js';
+import { sendVisualizationStats } from '../../server/lib/telegramWebhook/stats.js';
+import { getWebhookInfo, sendTelegramMessage, setWebhook } from '../../server/lib/telegramWebhook/telegramApi.js';
+import { handleCallbackQuery, handleFileUpload } from '../../server/lib/telegramWebhook/uploadFlow.js';
 import { createMockRequest, createMockResponse } from './testUtils';
 
 const originalEnv = { ...process.env };
