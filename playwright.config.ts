@@ -21,7 +21,11 @@ export default defineConfig({
   webServer: {
     command: 'npm run dev -- --host 127.0.0.1 --port 4174',
     url: 'http://127.0.0.1:4174',
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: false,
     timeout: 120000,
+    env: {
+      VITE_SUPABASE_URL: 'https://pyframwlnqrzeynqcvle.supabase.co',
+      VITE_SUPABASE_ANON_KEY: 'e2e-anon-key',
+    },
   },
 });

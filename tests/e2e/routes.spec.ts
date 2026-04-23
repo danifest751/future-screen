@@ -35,7 +35,7 @@ test.describe('Public routes', () => {
 
       await page.goto(route);
       await expect(page.locator('#root')).toBeAttached();
-      await expect(page).toHaveTitle(/Future Screen/i);
+      await expect(page).toHaveTitle(/(Future Screen|Фьючер Скрин)/i);
     });
   }
 });

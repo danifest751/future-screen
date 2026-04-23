@@ -27,7 +27,7 @@ export const buildAuthSession = (email = 'admin@example.com') => ({
   token_type: 'bearer',
   expires_in: 3600,
   expires_at: Math.floor(Date.now() / 1000) + 3600,
-  user: { id: 'user-1', email },
+  user: { id: 'user-1', email, app_metadata: { role: 'admin' } },
 });
 
 export const seedAuthSession = async (page: Page, email = 'admin@example.com') => {
@@ -146,14 +146,14 @@ export const installSupabaseMock = async (page: Page, options?: { authenticated?
     token_type: 'bearer',
     expires_in: 3600,
     expires_at: Math.floor(Date.now() / 1000) + 3600,
-    user: { id: 'user-1', email: 'admin@example.com' },
+    user: { id: 'user-1', email: 'admin@example.com', app_metadata: { role: 'admin' } },
     session: {
       access_token: 'token',
       refresh_token: 'refresh',
       token_type: 'bearer',
       expires_in: 3600,
       expires_at: Math.floor(Date.now() / 1000) + 3600,
-      user: { id: 'user-1', email: 'admin@example.com' },
+      user: { id: 'user-1', email: 'admin@example.com', app_metadata: { role: 'admin' } },
     },
   };
 
@@ -169,7 +169,7 @@ export const installSupabaseMock = async (page: Page, options?: { authenticated?
     if (url.pathname.endsWith('/user')) {
       await route.fulfill(
         authenticated
-          ? json({ id: 'user-1', email: 'admin@example.com' })
+          ? json({ id: 'user-1', email: 'admin@example.com', app_metadata: { role: 'admin' } })
           : json({ error: 'not authenticated' }, 401)
       );
       return;
@@ -184,10 +184,10 @@ export const installSupabaseMock = async (page: Page, options?: { authenticated?
         await route.fulfill(
           json({
             ...authPayload,
-            user: { id: 'user-1', email },
+            user: { id: 'user-1', email, app_metadata: { role: 'admin' } },
             session: {
               ...authPayload.session,
-              user: { id: 'user-1', email },
+              user: { id: 'user-1', email, app_metadata: { role: 'admin' } },
             },
           })
         );

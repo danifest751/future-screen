@@ -7,7 +7,7 @@ test('home route responds with app shell', async ({ page, request }) => {
   expect(html).toContain('<div id="root"></div>');
 
   await page.goto('/');
-  await expect(page).toHaveTitle(/Future Screen/i);
+  await expect(page).toHaveTitle(/(Future Screen|Фьючер Скрин)/i);
   await expect(page.locator('#root')).toBeAttached();
 });
 
