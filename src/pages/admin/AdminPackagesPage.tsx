@@ -230,23 +230,23 @@ const AdminPackagesPage = () => {
         onConfirm={handleResetDefaults}
       />
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-xl border border-white/10 bg-slate-800 p-6">
-          <div className="mb-4 flex items-center justify-between">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.45fr)_minmax(340px,0.8fr)]">
+        <div className="rounded-xl border border-white/10 bg-slate-800 p-4 lg:order-2 lg:sticky lg:top-6 lg:self-start">
+          <div className="mb-3 flex items-start justify-between gap-3">
             <div>
-              <h2 className="text-xl font-semibold text-white">
+              <h2 className="text-base font-semibold text-white">
                 {editingId ? adminPackagesPageContent.form.editTitle : adminPackagesPageContent.form.createTitle}
               </h2>
-              <p className="mt-1 text-sm text-slate-400">
+              <p className="mt-1 text-xs text-slate-400">
                 {editingId
                   ? adminPackagesPageContent.form.editDescription(editingId)
                   : adminPackagesPageContent.form.createDescription}
               </p>
-                {isHydrated && hasPackageDraft && !editingId && (
+              {isHydrated && hasPackageDraft && !editingId && (
                 <p className="mt-2 text-xs text-amber-200">{adminPackagesPageContent.form.restoredDraft}</p>
               )}
             </div>
-            <div className="flex flex-col items-end gap-2">
+            <div className="flex shrink-0 flex-col items-end gap-1.5">
               <span className="rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-xs text-slate-300">
                 {sourceLabel}
               </span>
@@ -273,7 +273,7 @@ const AdminPackagesPage = () => {
             </div>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-2.5">
             <Field label={adminPackagesPageContent.form.idLabel} required error={errors.id?.message}>
               <Input disabled={Boolean(editingId)} {...register('id')} />
             </Field>
@@ -314,11 +314,11 @@ const AdminPackagesPage = () => {
           </form>
         </div>
 
-        <div className="rounded-xl border border-white/10 bg-slate-800 p-6">
-          <div className="mb-4 flex items-center justify-between">
+        <div className="rounded-xl border border-white/10 bg-slate-800 p-4 lg:order-1">
+          <div className="mb-3 flex items-start justify-between gap-3">
             <div>
-              <h2 className="text-xl font-semibold text-white">{adminPackagesPageContent.list.title}</h2>
-              <p className="mt-1 text-sm text-slate-400">
+              <h2 className="text-base font-semibold text-white">{adminPackagesPageContent.list.title}</h2>
+              <p className="mt-1 text-xs text-slate-400">
                 {adminPackagesPageContent.list.shown(filteredPackages.length, packages.length)}
               </p>
             </div>
@@ -332,7 +332,7 @@ const AdminPackagesPage = () => {
             </button>
           </div>
 
-          <div className="mb-4 flex items-center gap-2">
+          <div className="mb-3 flex items-center gap-2">
             <Input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
@@ -345,25 +345,25 @@ const AdminPackagesPage = () => {
             )}
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-2">
             {filteredPackages.map((item) => (
-              <div key={item.id} className="rounded-lg border border-white/10 bg-white/5 p-4">
+              <div key={item.id} className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2.5 transition hover:border-white/20 hover:bg-white/[0.07]">
                 <div className="flex items-start justify-between gap-3">
-                  <div>
+                  <div className="min-w-0">
                     <div className="flex items-center gap-2 font-semibold text-white">
-                      <span>{item.name}</span>
+                      <span className="truncate">{item.name}</span>
                       <FallbackDot visible={adminContentLocale === 'en' && !!fallbackById[String(item.id)]} adminLocale={adminLocale} />
                     </div>
                     <div className="text-xs text-slate-400">ID: {item.id}</div>
-                    <div className="mt-1 text-xs text-slate-300">
+                    <div className="mt-1 line-clamp-1 text-xs text-slate-300">
                       {adminPackagesPageContent.list.forFormatsPrefix} {item.forFormats.join(', ')}
                     </div>
-                    <div className="mt-1 text-xs text-slate-300">
+                    <div className="mt-1 line-clamp-2 text-xs text-slate-300">
                       {adminPackagesPageContent.list.includesPrefix} {item.includes.join(' · ')}
                     </div>
                     {item.priceHint && <div className="mt-1 text-xs text-brand-100">{item.priceHint}</div>}
                   </div>
-                  <div className="flex flex-col gap-2">
+                  <div className="flex shrink-0 flex-col gap-1.5">
                     <button
                       type="button"
                       onClick={() => startEdit(item)}
