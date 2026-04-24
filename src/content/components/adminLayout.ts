@@ -14,6 +14,12 @@ type AdminLayoutContent = {
     visualLedLogs: string;
     contentHistory: string;
   };
+  navGroups: {
+    main: string;
+    content: string;
+    catalog: string;
+    visualizers: string;
+  };
   breadcrumbs: {
     admin: string;
   };
@@ -54,6 +60,12 @@ const ru: AdminLayoutContent = {
     visualLedLogs: 'Логи visual-led',
     contentHistory: 'История контента',
   },
+  navGroups: {
+    main: 'Основное',
+    content: 'Контент',
+    catalog: 'Каталог',
+    visualizers: 'Визуализаторы',
+  },
   breadcrumbs: {
     admin: 'Админ',
   },
@@ -93,6 +105,12 @@ const en: AdminLayoutContent = {
     visualLed: 'Screen visualizer',
     visualLedLogs: 'Visual LED logs',
     contentHistory: 'Content history',
+  },
+  navGroups: {
+    main: 'Main',
+    content: 'Content',
+    catalog: 'Catalog',
+    visualizers: 'Visualizers',
   },
   breadcrumbs: {
     admin: 'Admin',
