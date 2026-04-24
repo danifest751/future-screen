@@ -1,6 +1,20 @@
 import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
-import { Trash2 } from 'lucide-react';
+import {
+  CalendarDays,
+  ClipboardList,
+  Download,
+  FileJson,
+  Inbox,
+  Mail,
+  MapPin,
+  MessageCircle,
+  Phone,
+  Search,
+  SlidersHorizontal,
+  Trash2,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout';
 import { useLeads } from '../../hooks/useLeads';
 import type { LeadDeliveryLogEntry, LeadLog } from '../../types/leads';
@@ -71,6 +85,18 @@ const formatDateTime = (value: string) =>
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
+  });
+
+const formatShortDate = (value: string) =>
+  new Date(value).toLocaleDateString(localeTag, {
+    day: '2-digit',
+    month: 'short',
+  });
+
+const formatTime = (value: string) =>
+  new Date(value).toLocaleTimeString(localeTag, {
+    hour: '2-digit',
+    minute: '2-digit',
   });
 
 const LeadLogModal = ({
@@ -175,34 +201,93 @@ const LeadCard = ({
   onDelete: (log: LeadLog) => void;
   deleteTitle: string;
 }) => {
-  const time = new Date(log.timestamp).toLocaleTimeString(localeTag, {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  const time = formatTime(log.timestamp);
   const lastEntry = log.deliveryLog?.[log.deliveryLog.length - 1];
   const statusClass = statusClasses[log.status ?? 'default'] ?? statusClasses.default;
+  const hasDetails = Boolean(log.city || log.date || log.format || log.comment || (log.extra && Object.keys(log.extra).length > 0));
 
   return (
-    <div className="card border-l-4 border-l-brand-500 p-4">
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-base font-semibold text-white">{log.name}</span>
-            <span className="rounded bg-brand-500/10 px-2 py-0.5 text-[11px] text-brand-100">{log.source}</span>
-            <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${statusClass}`}>
-              {formatStatusLabel(log.status)}
-            </span>
+    <article className="overflow-hidden rounded-xl border border-white/10 bg-slate-800/90 shadow-sm transition hover:border-brand-500/30">
+      <div className="grid gap-4 p-4 xl:grid-cols-[minmax(220px,1.2fr)_minmax(220px,1fr)_minmax(260px,1.25fr)_minmax(180px,0.9fr)_132px] xl:items-center">
+        <div className="min-w-0">
+          <div className="truncate text-base font-semibold text-white">{log.name}</div>
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <span className="rounded-md bg-brand-500/10 px-2 py-0.5 text-[11px] text-brand-100">{log.source}</span>
+            <span className="text-xs text-slate-500">{formatShortDate(log.timestamp)} · {time}</span>
           </div>
-          <div className="mt-0.5 text-xs text-slate-500">{time}</div>
           {log.requestId ? (
-            <div className="text-xs text-slate-500">
+            <div className="mt-1 truncate text-xs text-slate-500">
               {adminLeadsContent.requestId.label}: {log.requestId}
             </div>
           ) : null}
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          <Button variant="secondary" size="sm" onClick={() => onOpenLog(log)}>
+        <div className="min-w-0 space-y-1 text-sm">
+          <a href={`tel:${log.phone}`} className="flex items-center gap-2 text-white hover:text-brand-100">
+            <Phone size={14} className="text-slate-500" />
+            <span className="truncate">{log.phone}</span>
+          </a>
+          {log.email ? (
+            <a href={`mailto:${log.email}`} className="flex items-center gap-2 text-slate-300 hover:text-brand-100">
+              <Mail size={14} className="text-slate-500" />
+              <span className="truncate">{log.email}</span>
+            </a>
+          ) : null}
+          {log.telegram ? (
+            <div className="flex items-center gap-2 text-slate-300">
+              <MessageCircle size={14} className="text-slate-500" />
+              <span className="truncate">{log.telegram}</span>
+            </div>
+          ) : null}
+        </div>
+
+        <div className="min-w-0 space-y-1 text-sm">
+          {hasDetails ? (
+            <>
+              {log.city ? (
+                <div className="flex items-center gap-2 text-slate-300">
+                  <MapPin size={14} className="text-slate-500" />
+                  <span className="truncate">{log.city}</span>
+                </div>
+              ) : null}
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-400">
+                {log.date ? <span>{adminLeadsContent.leadCard.fields.date}: {log.date}</span> : null}
+                {log.format ? <span>{adminLeadsContent.leadCard.fields.format}: {log.format}</span> : null}
+              </div>
+              {log.comment ? <div className="line-clamp-2 text-xs text-slate-400">{log.comment}</div> : null}
+              {log.extra && Object.keys(log.extra).length > 0 ? (
+                <div className="flex flex-wrap gap-1.5">
+                  {Object.entries(log.extra).slice(0, 4).map(([key, value]) => (
+                    <span key={key} className="rounded-md border border-white/10 bg-white/5 px-2 py-0.5 text-[11px] text-slate-300">
+                      {key}: {value}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+            </>
+          ) : (
+            <span className="text-sm text-slate-500">{adminLeadsContent.leadCard.fields.noDetails}</span>
+          )}
+        </div>
+
+        <div className="min-w-0">
+          <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${statusClass}`}>
+            {formatStatusLabel(log.status)}
+          </span>
+          {lastEntry ? (
+            <div className="mt-2 text-xs">
+              <div className="line-clamp-2 text-slate-300">{lastEntry.message}</div>
+              <div className="mt-0.5 text-slate-500">
+                {channelLabels[lastEntry.channel]} · {formatTime(lastEntry.at)}
+              </div>
+            </div>
+          ) : (
+            <div className="mt-2 text-xs text-slate-500">{adminLeadsContent.leadCard.fields.noLog}</div>
+          )}
+        </div>
+
+        <div className="flex flex-wrap gap-2 xl:justify-end">
+          <Button variant="secondary" size="sm" leftIcon={<ClipboardList size={14} />} onClick={() => onOpenLog(log)}>
             {adminLeadsContent.leadCard.actions.log}
           </Button>
           {log.pagePath ? (
@@ -210,7 +295,7 @@ const LeadCard = ({
               href={log.pagePath}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-xs text-slate-200 hover:bg-white/10"
+              className="inline-flex items-center rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-sm font-semibold text-slate-200 hover:bg-white/10"
             >
               {adminLeadsContent.leadCard.actions.page}
             </a>
@@ -225,80 +310,34 @@ const LeadCard = ({
           </button>
         </div>
       </div>
-
-      <div className="mt-3 grid gap-x-4 gap-y-1 text-xs md:grid-cols-3 xl:grid-cols-4">
-        <div>
-          <span className="text-slate-400">{adminLeadsContent.leadCard.fields.phone}:</span>{' '}
-          <a href={`tel:${log.phone}`} className="text-white hover:text-brand-100">
-            {log.phone}
-          </a>
-        </div>
-        {log.email ? (
-          <div>
-            <span className="text-slate-400">{adminLeadsContent.leadCard.fields.email}:</span>{' '}
-            <a href={`mailto:${log.email}`} className="text-white hover:text-brand-100">
-              {log.email}
-            </a>
-          </div>
-        ) : null}
-        {log.telegram ? (
-          <div>
-            <span className="text-slate-400">{adminLeadsContent.leadCard.fields.telegram}:</span>{' '}
-            <span className="text-white">{log.telegram}</span>
-          </div>
-        ) : null}
-        {log.city ? (
-          <div>
-            <span className="text-slate-400">{adminLeadsContent.leadCard.fields.city}:</span>{' '}
-            <span className="text-white">{log.city}</span>
-          </div>
-        ) : null}
-        {log.date ? (
-          <div>
-            <span className="text-slate-400">{adminLeadsContent.leadCard.fields.date}:</span>{' '}
-            <span className="text-white">{log.date}</span>
-          </div>
-        ) : null}
-        {log.format ? (
-          <div>
-            <span className="text-slate-400">{adminLeadsContent.leadCard.fields.format}:</span>{' '}
-            <span className="text-white">{log.format}</span>
-          </div>
-        ) : null}
-      </div>
-
-      {lastEntry ? (
-        <div className="mt-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs">
-          <div className="text-[11px] uppercase tracking-wide text-slate-500">{adminLeadsContent.leadCard.fields.lastStep}</div>
-          <div className="mt-0.5 text-slate-100">{lastEntry.message}</div>
-          <div className="text-[11px] text-slate-500">
-            {channelLabels[lastEntry.channel]} · {formatDateTime(lastEntry.at)}
-          </div>
-        </div>
-      ) : null}
-
-      {log.extra && Object.keys(log.extra).length > 0 ? (
-        <div className="mt-2 rounded-lg bg-white/5 px-3 py-2">
-          <div className="mb-1 text-[11px] font-semibold text-slate-400">{adminLeadsContent.leadCard.fields.details}</div>
-          <div className="grid gap-x-3 gap-y-0.5 text-xs md:grid-cols-2 xl:grid-cols-3">
-            {Object.entries(log.extra).map(([key, value]) => (
-              <div key={key}>
-                <span className="text-slate-500">{key}:</span> <span className="text-slate-300">{value}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : null}
-
-      {log.comment ? (
-        <div className="mt-2 rounded-lg bg-white/5 px-3 py-2 text-xs">
-          <span className="text-slate-400">{adminLeadsContent.leadCard.fields.comment}:</span>{' '}
-          <span className="text-slate-300">{log.comment}</span>
-        </div>
-      ) : null}
-    </div>
+    </article>
   );
 };
+
+const LeadMetricCard = ({
+  label,
+  value,
+  hint,
+  Icon,
+}: {
+  label: string;
+  value: string | number;
+  hint: string;
+  Icon: LucideIcon;
+}) => (
+  <div className="rounded-xl border border-white/10 bg-slate-800 p-4">
+    <div className="flex items-start justify-between gap-3">
+      <div>
+        <div className="text-xs font-medium text-slate-400">{label}</div>
+        <div className="mt-1 text-2xl font-bold text-white">{value}</div>
+        <div className="mt-1 text-xs text-slate-500">{hint}</div>
+      </div>
+      <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-brand-500/20 bg-brand-500/10">
+        <Icon size={18} className="text-brand-300" />
+      </div>
+    </div>
+  </div>
+);
 
 const AdminLeadsPage = () => {
   const { adminLocale } = useI18n();
@@ -316,18 +355,18 @@ const AdminLeadsPage = () => {
 
   const deleteCopy = adminLocale === 'ru'
     ? {
-        title: 'Удалить заявку?',
-        description: (name: string) => `Заявка «${name}» будет удалена без возможности восстановления.`,
-        action: 'Удалить',
-        success: 'Заявка удалена',
-        error: 'Не удалось удалить заявку',
+        title: 'Скрыть заявку?',
+        description: (name: string) => `Заявка «${name}» будет скрыта из активного списка.`,
+        action: 'Скрыть',
+        success: 'Заявка скрыта',
+        error: 'Не удалось скрыть заявку',
       }
     : {
-        title: 'Delete lead?',
-        description: (name: string) => `Lead "${name}" will be permanently deleted.`,
-        action: 'Delete',
-        success: 'Lead deleted',
-        error: 'Failed to delete lead',
+        title: 'Hide lead?',
+        description: (name: string) => `Lead "${name}" will be hidden from the active list.`,
+        action: 'Hide',
+        success: 'Lead hidden',
+        error: 'Failed to hide lead',
       };
 
   useEffect(() => {
@@ -341,8 +380,12 @@ const AdminLeadsPage = () => {
     setClearSubmitting(true);
     try {
       const ok = await clearLeads();
-      if (ok) toast.success(adminLeadsContent.toasts.clearSuccess);
-      else toast.error(adminLeadsContent.toasts.clearError);
+      if (ok) {
+        toast.success(adminLeadsContent.toasts.clearSuccess);
+        setClearModalOpen(false);
+      } else {
+        toast.error(adminLeadsContent.toasts.clearError);
+      }
     } finally {
       setClearSubmitting(false);
     }
@@ -435,6 +478,22 @@ const AdminLeadsPage = () => {
 
   const sources = Array.from(new Set(leads.map((lead) => lead.source)));
 
+  const stats = useMemo(() => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayLeads = leads.filter((lead) => new Date(lead.timestamp) >= today).length;
+    const failedLeads = leads.filter((lead) => lead.status === 'failed').length;
+    const withContacts = leads.filter((lead) => lead.email || lead.telegram).length;
+
+    return {
+      total: leads.length,
+      today: todayLeads,
+      sources: new Set(leads.map((lead) => lead.source)).size,
+      failed: failedLeads,
+      contactRate: leads.length > 0 ? Math.round((withContacts / leads.length) * 100) : 0,
+    };
+  }, [leads]);
+
   const filteredLogs = useMemo(
     () =>
       leads.filter((lead) => {
@@ -495,64 +554,100 @@ const AdminLeadsPage = () => {
       ) : null}
       {leadsError ? <div className="mb-4 text-sm text-red-400">{adminLeadsContent.errors.prefix}: {leadsError}</div> : null}
 
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <div className="text-sm text-slate-400">
-          <span className="font-semibold text-white">{adminLeadsContent.summary.shown(filteredLogs.length, leads.length)}</span>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="secondary" size="sm" onClick={exportCSV}>
-            {adminLeadsContent.actions.exportCsv}
-          </Button>
-          <Button variant="secondary" size="sm" onClick={exportLogs}>
-            {adminLeadsContent.actions.exportJson}
-          </Button>
-          <Button variant="danger" size="sm" onClick={() => setClearModalOpen(true)}>
-            {adminLeadsContent.actions.clearAll}
-          </Button>
-        </div>
+      <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <LeadMetricCard
+          label={adminLeadsContent.stats.total}
+          value={stats.total}
+          hint={adminLeadsContent.summary.shown(filteredLogs.length, leads.length)}
+          Icon={Inbox}
+        />
+        <LeadMetricCard
+          label={adminLeadsContent.stats.today}
+          value={stats.today}
+          hint={adminLeadsContent.stats.todayHint}
+          Icon={CalendarDays}
+        />
+        <LeadMetricCard
+          label={adminLeadsContent.stats.sources}
+          value={stats.sources}
+          hint={adminLeadsContent.stats.sourcesHint}
+          Icon={SlidersHorizontal}
+        />
+        <LeadMetricCard
+          label={adminLeadsContent.stats.contactRate}
+          value={`${stats.contactRate}%`}
+          hint={stats.failed > 0 ? adminLeadsContent.stats.failedHint(stats.failed) : adminLeadsContent.stats.contactRateHint}
+          Icon={Phone}
+        />
       </div>
 
-      <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-slate-400">
-        {filter.trim() ? <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1">{adminLeadsContent.chips.search(filter.trim())}</span> : null}
-        {selectedSource !== 'all' ? (
-          <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1">{adminLeadsContent.chips.source(selectedSource)}</span>
-        ) : null}
-        {filter.trim() || selectedSource !== 'all' ? (
-          <button
-            type="button"
-            onClick={resetFilters}
-            className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-slate-300 hover:text-white"
-          >
-            {adminLeadsContent.chips.reset}
-          </button>
-        ) : null}
-      </div>
+      <div className="mb-6 rounded-xl border border-white/10 bg-slate-800 p-4">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <div className="text-sm font-semibold text-white">{adminLeadsContent.toolbar.title}</div>
+            <div className="mt-1 text-xs text-slate-400">{adminLeadsContent.toolbar.subtitle}</div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="secondary" size="sm" leftIcon={<Download size={14} />} onClick={exportCSV}>
+              {adminLeadsContent.actions.exportCsv}
+            </Button>
+            <Button variant="secondary" size="sm" leftIcon={<FileJson size={14} />} onClick={exportLogs}>
+              {adminLeadsContent.actions.exportJson}
+            </Button>
+            <Button variant="danger" size="sm" onClick={() => setClearModalOpen(true)}>
+              {adminLeadsContent.actions.clearAll}
+            </Button>
+          </div>
+        </div>
 
-      <div className="mb-6 grid gap-4 md:grid-cols-2">
-        <label className="text-sm text-slate-200">
-          {adminLeadsContent.filters.searchLabel}
-          <Input
-            type="text"
-            value={filter}
-            onChange={(event) => setFilter(event.target.value)}
-            placeholder={adminLeadsContent.filters.searchPlaceholder}
-          />
-        </label>
-        <label className="text-sm text-slate-200">
-          {adminLeadsContent.filters.sourceLabel}
-          <select
-            value={selectedSource}
-            onChange={(event) => setSelectedSource(event.target.value)}
-            className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-white focus:border-brand-500 focus:outline-none"
-          >
-            <option value="all">{adminLeadsContent.filters.sourceAll}</option>
-            {sources.map((source) => (
-              <option key={source} value={source}>
-                {source}
-              </option>
-            ))}
-          </select>
-        </label>
+        <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_260px]">
+          <label className="text-sm text-slate-200">
+            <span className="mb-1 flex items-center gap-2">
+              <Search size={14} className="text-slate-500" />
+              {adminLeadsContent.filters.searchLabel}
+            </span>
+            <Input
+              type="text"
+              value={filter}
+              onChange={(event) => setFilter(event.target.value)}
+              placeholder={adminLeadsContent.filters.searchPlaceholder}
+            />
+          </label>
+          <label className="text-sm text-slate-200">
+            <span className="mb-1 flex items-center gap-2">
+              <SlidersHorizontal size={14} className="text-slate-500" />
+              {adminLeadsContent.filters.sourceLabel}
+            </span>
+            <select
+              value={selectedSource}
+              onChange={(event) => setSelectedSource(event.target.value)}
+              className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-white focus:border-brand-500 focus:outline-none"
+            >
+              <option value="all">{adminLeadsContent.filters.sourceAll}</option>
+              {sources.map((source) => (
+                <option key={source} value={source}>
+                  {source}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-400">
+          {filter.trim() ? <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1">{adminLeadsContent.chips.search(filter.trim())}</span> : null}
+          {selectedSource !== 'all' ? (
+            <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1">{adminLeadsContent.chips.source(selectedSource)}</span>
+          ) : null}
+          {filter.trim() || selectedSource !== 'all' ? (
+            <button
+              type="button"
+              onClick={resetFilters}
+              className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-slate-300 hover:text-white"
+            >
+              {adminLeadsContent.chips.reset}
+            </button>
+          ) : null}
+        </div>
       </div>
 
       {filteredLogs.length === 0 ? (
@@ -568,8 +663,18 @@ const AdminLeadsPage = () => {
       ) : (
         <div className="space-y-5">
           {Object.entries(logsByDate).map(([date, dateLogs]) => (
-            <div key={date}>
-              <div className="mb-2 text-sm font-semibold text-slate-400">{date}</div>
+            <section key={date}>
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <div className="text-sm font-semibold text-slate-300">{date}</div>
+                <div className="text-xs text-slate-500">{dateLogs.length}</div>
+              </div>
+              <div className="mb-2 hidden rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-[11px] font-semibold uppercase text-slate-500 xl:grid xl:grid-cols-[minmax(220px,1.2fr)_minmax(220px,1fr)_minmax(260px,1.25fr)_minmax(180px,0.9fr)_132px]">
+                <span>{adminLeadsContent.table.client}</span>
+                <span>{adminLeadsContent.table.contacts}</span>
+                <span>{adminLeadsContent.table.request}</span>
+                <span>{adminLeadsContent.table.delivery}</span>
+                <span className="text-right">{adminLeadsContent.table.actions}</span>
+              </div>
               <div className="grid gap-3">
                 {dateLogs.map((log) => (
                   <LeadCard
@@ -581,7 +686,7 @@ const AdminLeadsPage = () => {
                   />
                 ))}
               </div>
-            </div>
+            </section>
           ))}
         </div>
       )}

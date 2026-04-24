@@ -55,12 +55,14 @@ const ru = {
       lastStep: 'Последний шаг',
       details: 'Детали расчета',
       comment: 'Комментарий',
+      noDetails: 'Без дополнительных деталей',
+      noLog: 'Лог доставки пуст',
     },
   },
   confirm: {
-    clearTitle: 'Очистить все заявки?',
-    clearDescription: 'Будут удалены все записи из таблицы leads. Действие необратимо.',
-    clearConfirm: 'Очистить',
+    clearTitle: 'Скрыть все заявки?',
+    clearDescription: 'Все активные заявки будут скрыты из списка. Записи останутся в базе как архивные.',
+    clearConfirm: 'Скрыть',
     cancel: 'Отмена',
   },
   loading: {
@@ -73,10 +75,24 @@ const ru = {
   summary: {
     shown: (filtered: number, total: number) => `Показано: ${filtered} из ${total}`,
   },
+  stats: {
+    total: 'Всего заявок',
+    today: 'Сегодня',
+    todayHint: 'Новые обращения за день',
+    sources: 'Источники',
+    sourcesHint: 'Активные точки входа',
+    contactRate: 'Контактность',
+    contactRateHint: 'Есть email или Telegram',
+    failedHint: (count: number) => `Есть ошибки доставки: ${count}`,
+  },
   actions: {
     exportCsv: 'Экспорт CSV',
     exportJson: 'Экспорт JSON',
-    clearAll: 'Очистить все',
+    clearAll: 'Скрыть все',
+  },
+  toolbar: {
+    title: 'Рабочий список заявок',
+    subtitle: 'Фильтруйте поток, выгружайте данные и быстро открывайте лог доставки.',
   },
   chips: {
     search: (value: string) => `Поиск: ${value}`,
@@ -89,6 +105,13 @@ const ru = {
     sourceLabel: 'Источник',
     sourceAll: 'Все источники',
   },
+  table: {
+    client: 'Клиент',
+    contacts: 'Контакты',
+    request: 'Запрос',
+    delivery: 'Доставка',
+    actions: 'Действия',
+  },
   empty: {
     noLeadsTitle: 'Заявок пока нет',
     noLeadsDescription: 'После первой отправки формы здесь появятся карточки заявок и журнал доставки.',
@@ -96,8 +119,8 @@ const ru = {
     notFoundDescription: 'Измените поисковый запрос или сбросьте фильтры.',
   },
   toasts: {
-    clearSuccess: 'Заявки удалены',
-    clearError: 'Не удалось удалить заявки',
+    clearSuccess: 'Заявки скрыты',
+    clearError: 'Не удалось скрыть заявки',
     exportJsonSuccess: 'JSON экспорт готов',
     exportJsonError: 'Ошибка экспорта JSON',
     exportCsvSuccess: 'CSV экспорт готов',
@@ -176,12 +199,14 @@ const en: typeof ru = {
       lastStep: 'Last step',
       details: 'Estimate details',
       comment: 'Comment',
+      noDetails: 'No extra details',
+      noLog: 'Delivery log is empty',
     },
   },
   confirm: {
-    clearTitle: 'Clear all leads?',
-    clearDescription: 'All records from the leads table will be deleted. This action is irreversible.',
-    clearConfirm: 'Clear',
+    clearTitle: 'Hide all leads?',
+    clearDescription: 'All active leads will be hidden from the list. Records will remain in the database as archived entries.',
+    clearConfirm: 'Hide',
     cancel: 'Cancel',
   },
   loading: {
@@ -194,10 +219,24 @@ const en: typeof ru = {
   summary: {
     shown: (filtered: number, total: number) => `Shown: ${filtered} of ${total}`,
   },
+  stats: {
+    total: 'Total leads',
+    today: 'Today',
+    todayHint: 'New requests today',
+    sources: 'Sources',
+    sourcesHint: 'Active entry points',
+    contactRate: 'Contact rate',
+    contactRateHint: 'Email or Telegram exists',
+    failedHint: (count: number) => `Delivery errors: ${count}`,
+  },
   actions: {
     exportCsv: 'Export CSV',
     exportJson: 'Export JSON',
-    clearAll: 'Clear all',
+    clearAll: 'Hide all',
+  },
+  toolbar: {
+    title: 'Leads workspace',
+    subtitle: 'Filter the flow, export data, and open delivery logs quickly.',
   },
   chips: {
     search: (value: string) => `Search: ${value}`,
@@ -210,6 +249,13 @@ const en: typeof ru = {
     sourceLabel: 'Source',
     sourceAll: 'All sources',
   },
+  table: {
+    client: 'Client',
+    contacts: 'Contacts',
+    request: 'Request',
+    delivery: 'Delivery',
+    actions: 'Actions',
+  },
   empty: {
     noLeadsTitle: 'No leads yet',
     noLeadsDescription: 'After the first form submission, lead cards and delivery logs will appear here.',
@@ -217,8 +263,8 @@ const en: typeof ru = {
     notFoundDescription: 'Change your search query or reset filters.',
   },
   toasts: {
-    clearSuccess: 'Leads deleted',
-    clearError: 'Failed to delete leads',
+    clearSuccess: 'Leads hidden',
+    clearError: 'Failed to hide leads',
     exportJsonSuccess: 'JSON export is ready',
     exportJsonError: 'JSON export failed',
     exportCsvSuccess: 'CSV export is ready',
