@@ -40,6 +40,25 @@ const ru = {
     },
     empty: 'Подробный лог еще не записан.',
   },
+  detailsDrawer: {
+    title: 'Карточка заявки',
+    close: 'Закрыть',
+    sections: {
+      contacts: 'Контакты',
+      origin: 'Откуда пришла',
+      request: 'Запрос',
+      extra: 'Дополнительные поля',
+      delivery: 'Доставка',
+    },
+    fields: {
+      created: 'Создана',
+      pagePath: 'Страница',
+      referrer: 'Переход',
+    },
+    actions: {
+      openLog: 'Полный лог',
+    },
+  },
   leadCard: {
     actions: {
       log: 'Лог',
@@ -186,6 +205,25 @@ const en: typeof ru = {
       steps: 'Steps',
     },
     empty: 'Detailed log has not been recorded yet.',
+  },
+  detailsDrawer: {
+    title: 'Lead card',
+    close: 'Close',
+    sections: {
+      contacts: 'Contacts',
+      origin: 'Origin',
+      request: 'Request',
+      extra: 'Extra fields',
+      delivery: 'Delivery',
+    },
+    fields: {
+      created: 'Created',
+      pagePath: 'Page',
+      referrer: 'Referrer',
+    },
+    actions: {
+      openLog: 'Full log',
+    },
   },
   leadCard: {
     actions: {
