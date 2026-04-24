@@ -109,6 +109,7 @@ const ru = {
   actions: {
     exportCsv: 'Экспорт CSV',
     exportJson: 'Экспорт JSON',
+    markAllRead: 'Прочитать все',
     clearAll: 'Скрыть все',
   },
   toolbar: {
@@ -141,6 +142,8 @@ const ru = {
     notFoundDescription: 'Измените поисковый запрос или сбросьте фильтры.',
   },
   toasts: {
+    markAllReadSuccess: 'Все заявки прочитаны',
+    markAllReadError: 'Не удалось отметить заявки',
     clearSuccess: 'Заявки скрыты',
     clearError: 'Не удалось скрыть заявки',
     exportJsonSuccess: 'JSON экспорт готов',
@@ -275,6 +278,7 @@ const en: typeof ru = {
   actions: {
     exportCsv: 'Export CSV',
     exportJson: 'Export JSON',
+    markAllRead: 'Mark all read',
     clearAll: 'Hide all',
   },
   toolbar: {
@@ -307,6 +311,8 @@ const en: typeof ru = {
     notFoundDescription: 'Change your search query or reset filters.',
   },
   toasts: {
+    markAllReadSuccess: 'All leads marked as read',
+    markAllReadError: 'Failed to mark leads',
     clearSuccess: 'Leads hidden',
     clearError: 'Failed to hide leads',
     exportJsonSuccess: 'JSON export is ready',

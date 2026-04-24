@@ -266,6 +266,7 @@ export type Database = {
           name: string
           page_path: string | null
           phone: string
+          read_at: string | null
           referrer: string | null
           request_id: string | null
           source: string
@@ -286,6 +287,7 @@ export type Database = {
           name: string
           page_path?: string | null
           phone: string
+          read_at?: string | null
           referrer?: string | null
           request_id?: string | null
           source: string
@@ -306,6 +308,7 @@ export type Database = {
           name?: string
           page_path?: string | null
           phone?: string
+          read_at?: string | null
           referrer?: string | null
           request_id?: string | null
           source?: string

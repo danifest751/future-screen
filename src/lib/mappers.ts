@@ -210,6 +210,7 @@ export function mapLeadFromDB(row: LeadRow): LeadLog {
     pagePath: row.page_path ?? undefined,
     referrer: row.referrer ?? undefined,
     status: row.status ?? undefined,
+    readAt: row.read_at ?? undefined,
     deliveryLog,
   };
 }
@@ -272,6 +273,7 @@ export function mapLeadToDB(lead: LeadLog): Record<string, unknown> {
     page_path: lead.pagePath,
     referrer: lead.referrer,
     status: lead.status,
+    read_at: lead.readAt,
     delivery_log: lead.deliveryLog,
   };
 }

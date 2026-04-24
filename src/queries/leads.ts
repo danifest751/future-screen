@@ -65,6 +65,50 @@ export function useClearLeadsMutation() {
 }
 
 /**
+ * Отметить все активные заявки как прочитанные.
+ */
+export function useMarkAllLeadsReadMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('leads')
+        .update({ read_at: new Date().toISOString() })
+        .is('deleted_at', null)
+        .is('read_at', null);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.leads.all });
+    },
+  });
+}
+
+/**
+ * Отметить одну заявку как прочитанную.
+ */
+export function useMarkLeadReadMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('leads')
+        .update({ read_at: new Date().toISOString() })
+        .eq('id', id)
+        .is('read_at', null);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.leads.all });
+    },
+  });
+}
+
+/**
  * Удалить одну заявку по id (soft-delete).
  */
 export function useDeleteLeadMutation() {

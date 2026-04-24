@@ -29,5 +29,6 @@ export type LeadLog = {
   pagePath?: string;
   referrer?: string;
   status?: string;
+  readAt?: string;
   deliveryLog?: LeadDeliveryLogEntry[];
 };

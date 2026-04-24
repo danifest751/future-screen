@@ -101,6 +101,10 @@ const formatTime = (value: string) =>
     minute: '2-digit',
   });
 
+const notifyLeadReadStateChanged = () => {
+  window.dispatchEvent(new Event('future-screen:leads-read-state-changed'));
+};
+
 const LeadLogModal = ({
   log,
   onClose,
@@ -568,12 +572,13 @@ const AdminLeadsPage = () => {
   const { adminLocale } = useI18n();
   adminLeadsContent = getAdminLeadsContent(adminLocale);
   localeTag = adminLocale === 'ru' ? 'ru-RU' : 'en-US';
-  const { leads, loading, error: leadsError, clearLeads, deleteLead } = useLeads();
+  const { leads, loading, error: leadsError, clearLeads, deleteLead, markAllRead, markRead } = useLeads();
   const [filter, setFilter] = useState('');
   const [debouncedFilter, setDebouncedFilter] = useState(filter);
   const [selectedSource, setSelectedSource] = useState<string>('all');
   const [clearModalOpen, setClearModalOpen] = useState(false);
   const [clearSubmitting, setClearSubmitting] = useState(false);
+  const [markAllReadSubmitting, setMarkAllReadSubmitting] = useState(false);
   const [selectedLog, setSelectedLog] = useState<LeadLog | null>(null);
   const [selectedLead, setSelectedLead] = useState<LeadLog | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<LeadLog | null>(null);
@@ -630,6 +635,39 @@ const AdminLeadsPage = () => {
       }
     } finally {
       setDeleteSubmitting(false);
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    setMarkAllReadSubmitting(true);
+    try {
+      const ok = await markAllRead();
+      if (ok) {
+        toast.success(adminLeadsContent.toasts.markAllReadSuccess);
+        notifyLeadReadStateChanged();
+      } else {
+        toast.error(adminLeadsContent.toasts.markAllReadError);
+      }
+    } finally {
+      setMarkAllReadSubmitting(false);
+    }
+  };
+
+  const handleOpenDetails = (log: LeadLog) => {
+    setSelectedLead(log);
+    if (!log.readAt) {
+      void markRead(log.id).then((ok) => {
+        if (ok) notifyLeadReadStateChanged();
+      });
+    }
+  };
+
+  const handleOpenLog = (log: LeadLog) => {
+    setSelectedLog(log);
+    if (!log.readAt) {
+      void markRead(log.id).then((ok) => {
+        if (ok) notifyLeadReadStateChanged();
+      });
     }
   };
 
@@ -719,6 +757,8 @@ const AdminLeadsPage = () => {
       contactRate: leads.length > 0 ? Math.round((withContacts / leads.length) * 100) : 0,
     };
   }, [leads]);
+
+  const unreadCount = useMemo(() => leads.filter((lead) => !lead.readAt).length, [leads]);
 
   const filteredLogs = useMemo(
     () =>
@@ -828,6 +868,16 @@ const AdminLeadsPage = () => {
             <Button variant="secondary" size="sm" leftIcon={<FileJson size={14} />} onClick={exportLogs}>
               {adminLeadsContent.actions.exportJson}
             </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              leftIcon={<Inbox size={14} />}
+              onClick={() => void handleMarkAllRead()}
+              loading={markAllReadSubmitting}
+              disabled={unreadCount === 0}
+            >
+              {adminLeadsContent.actions.markAllRead}
+            </Button>
             <Button variant="danger" size="sm" onClick={() => setClearModalOpen(true)}>
               {adminLeadsContent.actions.clearAll}
             </Button>
@@ -915,8 +965,8 @@ const AdminLeadsPage = () => {
                   <LeadCard
                     key={log.id}
                     log={log}
-                    onOpenDetails={setSelectedLead}
-                    onOpenLog={setSelectedLog}
+                    onOpenDetails={handleOpenDetails}
+                    onOpenLog={handleOpenLog}
                     onDelete={setDeleteTarget}
                     deleteTitle={deleteCopy.action}
                   />

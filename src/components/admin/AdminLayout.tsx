@@ -110,7 +110,7 @@ const AdminLayout = ({ title, subtitle, children, contentLocale, onContentLocale
   const navSections = useMemo(() => createNavSections(adminLayoutContent), [adminLayoutContent]);
   const navItems = useMemo(() => navSections.flatMap((section) => section.items), [navSections]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [leadCount, setLeadCount] = useState<number>(0);
+  const [unreadLeadCount, setUnreadLeadCount] = useState<number>(0);
 
   const activeNavItem = useMemo(
     () =>
@@ -142,23 +142,26 @@ const AdminLayout = ({ title, subtitle, children, contentLocale, onContentLocale
   useEffect(() => {
     let mounted = true;
 
-    const loadLeadCount = async () => {
+    const loadUnreadLeadCount = async () => {
       const { count, error } = await supabase
         .from('leads')
         .select('id', { count: 'exact', head: true })
-        .is('deleted_at', null);
+        .is('deleted_at', null)
+        .is('read_at', null);
 
       if (!mounted) return;
       if (error) {
-        setLeadCount(0);
+        setUnreadLeadCount(0);
         return;
       }
-      setLeadCount(count ?? 0);
+      setUnreadLeadCount(count ?? 0);
     };
 
-    void loadLeadCount();
+    void loadUnreadLeadCount();
+    window.addEventListener('future-screen:leads-read-state-changed', loadUnreadLeadCount);
     return () => {
       mounted = false;
+      window.removeEventListener('future-screen:leads-read-state-changed', loadUnreadLeadCount);
     };
   }, [location.pathname]);
 
@@ -240,9 +243,9 @@ const AdminLayout = ({ title, subtitle, children, contentLocale, onContentLocale
                           <span className="truncate">{item.label}</span>
                         </div>
                         <div className="ml-2 flex items-center gap-2">
-                          {item.badge && item.to === '/admin/leads' && leadCount > 0 && (
+                          {item.badge && item.to === '/admin/leads' && unreadLeadCount > 0 && (
                             <span className="flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-rose-500 px-1 text-xs font-bold text-white">
-                              {leadCount}
+                              {unreadLeadCount}
                             </span>
                           )}
                           {item.external && <ExternalLink size={13} className={isActive ? 'text-brand-300' : 'text-slate-500'} />}

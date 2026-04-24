@@ -339,6 +339,7 @@ describe('mapLeadFromDB', () => {
       status: 'new',
       delivery_log: [],
       deleted_at: null,
+      read_at: null,
     };
 
     const result = mapLeadFromDB(row);
@@ -375,6 +376,7 @@ describe('mapLeadFromDB', () => {
       status: null,
       delivery_log: null,
       deleted_at: null,
+      read_at: null,
     };
 
     const result = mapLeadFromDB(row);

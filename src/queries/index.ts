@@ -42,6 +42,8 @@ export {
   useLeadsQuery,
   useInvalidateLeads,
   useClearLeadsMutation,
+  useMarkAllLeadsReadMutation,
+  useMarkLeadReadMutation,
   useDeleteLeadMutation,
 } from './leads';
 
