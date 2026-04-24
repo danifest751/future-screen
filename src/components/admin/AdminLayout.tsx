@@ -149,41 +149,44 @@ const AdminLayout = ({ title, subtitle, children, contentLocale, onContentLocale
   };
 
   return (
-    <div className="admin-shell min-h-screen bg-[#f4f7fb] text-slate-950">
+    <div className="admin-shell min-h-screen bg-transparent">
       <Toaster
         position="top-right"
         toastOptions={{
-          className: 'border border-slate-200 bg-white text-slate-950 shadow-lg',
-          success: { iconTheme: { primary: '#059669', secondary: 'white' } },
-          error: { iconTheme: { primary: '#dc2626', secondary: 'white' } },
+          className: 'border border-white/10 bg-slate-800 text-white',
+          success: { iconTheme: { primary: '#10b981', secondary: 'white' } },
+          error: { iconTheme: { primary: '#ef4444', secondary: 'white' } },
         }}
       />
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
         aria-label={sidebarOpen ? adminLayoutContent.menu.close : adminLayoutContent.menu.open}
         aria-expanded={sidebarOpen}
-        className="fixed left-4 top-4 z-50 flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-900 shadow-sm lg:hidden"
+        className="fixed left-4 top-4 z-50 flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-slate-800 text-white lg:hidden"
       >
         {sidebarOpen ? <X size={18} /> : <Menu size={18} />}
       </button>
 
-      {sidebarOpen && <div className="fixed inset-0 z-40 bg-slate-950/40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
+      {sidebarOpen && <div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={() => setSidebarOpen(false)} />}
 
       <aside
-        className={`fixed left-0 top-0 z-40 h-full w-[280px] transform border-r border-slate-200 bg-white transition-transform duration-300 lg:translate-x-0 ${
+        className={`fixed left-0 top-0 z-40 h-full w-[280px] transform border-r border-white/10 bg-slate-800 transition-transform duration-300 lg:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         <div className="flex h-full flex-col">
-          <div className="border-b border-slate-200 px-5 py-5">
+          <div className="border-b border-white/10 px-5 py-5">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-950 text-sm font-bold text-white">
+              <div
+                className="flex h-10 w-10 items-center justify-center rounded-lg text-sm font-bold text-white"
+                style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)' }}
+              >
                 FS
               </div>
               <div className="min-w-0">
-                <div className="truncate text-sm font-semibold leading-none text-slate-950">{adminLayoutContent.brand.name}</div>
-                <div className="mt-1 flex items-center gap-1 text-xs text-slate-500">
-                  <Zap size={12} className="text-amber-500" />
+                <div className="truncate text-sm font-semibold leading-none text-white">{adminLayoutContent.brand.name}</div>
+                <div className="mt-1 flex items-center gap-1 text-xs text-slate-400">
+                  <Zap size={12} className="text-brand-400" />
                   {adminLayoutContent.brand.adminPanel}
                 </div>
               </div>
@@ -193,7 +196,7 @@ const AdminLayout = ({ title, subtitle, children, contentLocale, onContentLocale
           <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-5">
             {navSections.map((section) => (
               <div key={section.id}>
-                <div className="px-3 pb-2 text-[11px] font-semibold uppercase text-slate-400">
+                <div className="px-3 pb-2 text-[11px] font-semibold uppercase text-slate-500">
                   {section.label}
                 </div>
                 <div className="space-y-1">
@@ -208,13 +211,13 @@ const AdminLayout = ({ title, subtitle, children, contentLocale, onContentLocale
                         onClick={() => setSidebarOpen(false)}
                         className={`group flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition ${
                           isActive
-                            ? 'bg-slate-950 text-white shadow-sm'
-                            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-950'
+                            ? 'bg-white/10 text-white shadow-sm ring-1 ring-brand-500/30'
+                            : 'text-slate-400 hover:bg-white/5 hover:text-white'
                         }`}
                         aria-current={isActive ? 'page' : undefined}
                       >
                         <div className="flex min-w-0 items-center gap-3">
-                          <Icon size={16} className={isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-700'} />
+                          <Icon size={16} className={isActive ? 'text-brand-400' : 'text-slate-500 group-hover:text-slate-300'} />
                           <span className="truncate">{item.label}</span>
                         </div>
                         <div className="ml-2 flex items-center gap-2">
@@ -223,7 +226,7 @@ const AdminLayout = ({ title, subtitle, children, contentLocale, onContentLocale
                               {leadCount}
                             </span>
                           )}
-                          {item.external && <ExternalLink size={13} className={isActive ? 'text-white/70' : 'text-slate-400'} />}
+                          {item.external && <ExternalLink size={13} className={isActive ? 'text-brand-300' : 'text-slate-500'} />}
                         </div>
                       </Link>
                     );
@@ -233,12 +236,12 @@ const AdminLayout = ({ title, subtitle, children, contentLocale, onContentLocale
             ))}
           </nav>
 
-          <div className="border-t border-slate-200 p-3">
+          <div className="border-t border-white/10 p-3">
             <button
               onClick={handleLogout}
-              className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-950"
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-400 transition hover:bg-white/5 hover:text-white"
             >
-              <LogOut size={16} className="text-slate-400" />
+              <LogOut size={16} className="text-slate-500" />
               <span>{adminLayoutContent.actions.logout}</span>
             </button>
           </div>
@@ -247,32 +250,32 @@ const AdminLayout = ({ title, subtitle, children, contentLocale, onContentLocale
 
       <main className="lg:ml-[280px]">
         <div className="min-h-screen">
-          <header className="border-b border-slate-200 bg-white">
+          <header className="border-b border-white/10 bg-slate-800/50 backdrop-blur">
             <div className="flex min-h-20 flex-col gap-4 px-5 py-4 md:flex-row md:items-center md:justify-between lg:px-8">
               <div className="min-w-0">
                 {breadcrumbs.length > 1 && (
-                  <div className="mb-2 text-xs text-slate-500">
+                  <div className="mb-2 text-xs text-slate-400">
                     {breadcrumbs.map((breadcrumb, index) => (
                       <span key={`${breadcrumb.label}-${index}`}>
-                        {index > 0 ? <span className="mx-2 text-slate-300">/</span> : null}
+                        {index > 0 ? <span className="mx-2 text-slate-600">/</span> : null}
                         {breadcrumb.to ? (
-                          <Link to={breadcrumb.to} className="hover:text-slate-950">
+                          <Link to={breadcrumb.to} className="hover:text-white">
                             {breadcrumb.label}
                           </Link>
                         ) : (
-                          <span className="text-slate-700">{breadcrumb.label}</span>
+                          <span className="text-slate-200">{breadcrumb.label}</span>
                         )}
                       </span>
                     ))}
                   </div>
                 )}
-                <h1 className="text-2xl font-semibold text-slate-950">{title}</h1>
-                {subtitle && <p className="mt-1 max-w-3xl text-sm text-slate-500">{subtitle}</p>}
+                <h1 className="text-2xl font-semibold text-white">{title}</h1>
+                {subtitle && <p className="mt-1 max-w-3xl text-sm text-slate-400">{subtitle}</p>}
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 <div className="hidden text-right sm:block">
-                  <div className="text-sm font-medium text-slate-900">{adminLayoutContent.profile.role}</div>
-                  <div className="text-xs text-slate-500">
+                  <div className="text-sm font-medium text-white">{adminLayoutContent.profile.role}</div>
+                  <div className="text-xs text-slate-400">
                     {new Date().toLocaleDateString(adminLocale === 'ru' ? 'ru-RU' : 'en-US', {
                       day: 'numeric',
                       month: 'long',
@@ -281,7 +284,7 @@ const AdminLayout = ({ title, subtitle, children, contentLocale, onContentLocale
                 </div>
                 <div className="flex items-end gap-3">
                   <div className="flex flex-col items-start gap-1 sm:items-end">
-                    <span className="text-[10px] font-semibold uppercase text-slate-400">
+                    <span className="text-[10px] font-semibold uppercase text-slate-500">
                       {adminLayoutContent.locale.adminLabel}
                     </span>
                     <LocaleSwitch
@@ -292,7 +295,7 @@ const AdminLayout = ({ title, subtitle, children, contentLocale, onContentLocale
                   </div>
                   {contentLocale && onContentLocaleChange ? (
                     <div className="flex flex-col items-start gap-1 sm:items-end">
-                      <span className="text-[10px] font-semibold uppercase text-slate-400">
+                      <span className="text-[10px] font-semibold uppercase text-slate-500">
                         {adminLayoutContent.locale.contentLabel}
                       </span>
                       <LocaleSwitch
@@ -303,15 +306,15 @@ const AdminLayout = ({ title, subtitle, children, contentLocale, onContentLocale
                     </div>
                   ) : null}
                 </div>
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-950 text-sm font-bold text-white">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-500 text-sm font-bold text-white">
                   A
                 </div>
               </div>
             </div>
           </header>
 
-          <div className="border-b border-slate-200 bg-white/70 px-5 py-3 lg:px-8">
-            <div className="flex items-center gap-2 overflow-x-auto text-xs text-slate-500">
+          <div className="border-b border-white/10 bg-slate-900/40 px-5 py-3 lg:px-8">
+            <div className="flex items-center gap-2 overflow-x-auto text-xs text-slate-300">
               <span className="whitespace-nowrap font-medium">{adminLayoutContent.quickLinks.label}</span>
               {navItems.slice(0, 7).map((item) => {
                 const isActive = item.to === '/admin' ? location.pathname === '/admin' : location.pathname.startsWith(item.to);
@@ -323,8 +326,8 @@ const AdminLayout = ({ title, subtitle, children, contentLocale, onContentLocale
                     to={item.to}
                     className={`flex items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1.5 transition ${
                       isActive
-                        ? 'border-slate-950 bg-slate-950 text-white'
-                        : 'border-slate-200 bg-white hover:border-slate-300 hover:text-slate-950'
+                        ? 'border-brand-500/50 bg-brand-500/10 text-white'
+                        : 'border-white/10 bg-white/5 hover:border-white/25 hover:text-white'
                     }`}
                     aria-current={isActive ? 'page' : undefined}
                   >
