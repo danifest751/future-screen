@@ -205,13 +205,14 @@ const LeadCard = ({
   const lastEntry = log.deliveryLog?.[log.deliveryLog.length - 1];
   const statusClass = statusClasses[log.status ?? 'default'] ?? statusClasses.default;
   const hasDetails = Boolean(log.city || log.date || log.format || log.comment || (log.extra && Object.keys(log.extra).length > 0));
+  const origin = log.pagePath || log.referrer || '';
 
   return (
-    <article className="overflow-hidden rounded-xl border border-white/10 bg-slate-800/90 shadow-sm transition hover:border-brand-500/30">
-      <div className="grid gap-4 p-4 xl:grid-cols-[minmax(220px,1.2fr)_minmax(220px,1fr)_minmax(260px,1.25fr)_minmax(180px,0.9fr)_132px] xl:items-center">
+    <article className="overflow-hidden rounded-lg border border-white/10 bg-slate-800/90 shadow-sm transition hover:border-brand-500/30">
+      <div className="grid gap-3 px-3 py-2.5 xl:grid-cols-[minmax(170px,1fr)_minmax(190px,1fr)_minmax(180px,0.9fr)_minmax(230px,1.2fr)_minmax(170px,0.9fr)_76px] xl:items-center">
         <div className="min-w-0">
-          <div className="truncate text-base font-semibold text-white">{log.name}</div>
-          <div className="mt-1 flex flex-wrap items-center gap-2">
+          <div className="truncate text-sm font-semibold text-white">{log.name}</div>
+          <div className="mt-1 flex flex-wrap items-center gap-1.5">
             <span className="rounded-md bg-brand-500/10 px-2 py-0.5 text-[11px] text-brand-100">{log.source}</span>
             <span className="text-xs text-slate-500">{formatShortDate(log.timestamp)} · {time}</span>
           </div>
@@ -222,42 +223,51 @@ const LeadCard = ({
           ) : null}
         </div>
 
-        <div className="min-w-0 space-y-1 text-sm">
+        <div className="min-w-0 space-y-0.5 text-xs">
           <a href={`tel:${log.phone}`} className="flex items-center gap-2 text-white hover:text-brand-100">
-            <Phone size={14} className="text-slate-500" />
+            <Phone size={13} className="text-slate-500" />
             <span className="truncate">{log.phone}</span>
           </a>
           {log.email ? (
             <a href={`mailto:${log.email}`} className="flex items-center gap-2 text-slate-300 hover:text-brand-100">
-              <Mail size={14} className="text-slate-500" />
+              <Mail size={13} className="text-slate-500" />
               <span className="truncate">{log.email}</span>
             </a>
           ) : null}
           {log.telegram ? (
             <div className="flex items-center gap-2 text-slate-300">
-              <MessageCircle size={14} className="text-slate-500" />
+              <MessageCircle size={13} className="text-slate-500" />
               <span className="truncate">{log.telegram}</span>
             </div>
           ) : null}
         </div>
 
-        <div className="min-w-0 space-y-1 text-sm">
+        <div className="min-w-0 text-xs">
+          <div className="truncate text-slate-300">{origin || adminLeadsContent.leadCard.fields.noOrigin}</div>
+          {log.referrer && log.pagePath ? (
+            <div className="mt-0.5 truncate text-[11px] text-slate-500">
+              {adminLeadsContent.leadCard.fields.referrer}: {log.referrer}
+            </div>
+          ) : null}
+        </div>
+
+        <div className="min-w-0 space-y-0.5 text-xs">
           {hasDetails ? (
             <>
               {log.city ? (
                 <div className="flex items-center gap-2 text-slate-300">
-                  <MapPin size={14} className="text-slate-500" />
+                  <MapPin size={13} className="text-slate-500" />
                   <span className="truncate">{log.city}</span>
                 </div>
               ) : null}
-              <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-400">
+              <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-slate-400">
                 {log.date ? <span>{adminLeadsContent.leadCard.fields.date}: {log.date}</span> : null}
                 {log.format ? <span>{adminLeadsContent.leadCard.fields.format}: {log.format}</span> : null}
               </div>
-              {log.comment ? <div className="line-clamp-2 text-xs text-slate-400">{log.comment}</div> : null}
+              {log.comment ? <div className="line-clamp-1 text-[11px] text-slate-400">{log.comment}</div> : null}
               {log.extra && Object.keys(log.extra).length > 0 ? (
                 <div className="flex flex-wrap gap-1.5">
-                  {Object.entries(log.extra).slice(0, 4).map(([key, value]) => (
+                  {Object.entries(log.extra).slice(0, 3).map(([key, value]) => (
                     <span key={key} className="rounded-md border border-white/10 bg-white/5 px-2 py-0.5 text-[11px] text-slate-300">
                       {key}: {value}
                     </span>
@@ -266,17 +276,17 @@ const LeadCard = ({
               ) : null}
             </>
           ) : (
-            <span className="text-sm text-slate-500">{adminLeadsContent.leadCard.fields.noDetails}</span>
+            <span className="text-xs text-slate-500">{adminLeadsContent.leadCard.fields.noDetails}</span>
           )}
         </div>
 
         <div className="min-w-0">
-          <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${statusClass}`}>
+          <span className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] font-medium ${statusClass}`}>
             {formatStatusLabel(log.status)}
           </span>
           {lastEntry ? (
-            <div className="mt-2 text-xs">
-              <div className="line-clamp-2 text-slate-300">{lastEntry.message}</div>
+            <div className="mt-1 text-xs">
+              <div className="line-clamp-1 text-slate-300">{lastEntry.message}</div>
               <div className="mt-0.5 text-slate-500">
                 {channelLabels[lastEntry.channel]} · {formatTime(lastEntry.at)}
               </div>
@@ -286,25 +296,20 @@ const LeadCard = ({
           )}
         </div>
 
-        <div className="flex flex-wrap gap-2 xl:justify-end">
-          <Button variant="secondary" size="sm" leftIcon={<ClipboardList size={14} />} onClick={() => onOpenLog(log)}>
-            {adminLeadsContent.leadCard.actions.log}
-          </Button>
-          {log.pagePath ? (
-            <a
-              href={log.pagePath}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-sm font-semibold text-slate-200 hover:bg-white/10"
-            >
-              {adminLeadsContent.leadCard.actions.page}
-            </a>
-          ) : null}
+        <div className="flex flex-wrap gap-1.5 xl:justify-end">
+          <button
+            type="button"
+            onClick={() => onOpenLog(log)}
+            title={adminLeadsContent.leadCard.actions.log}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/15 bg-white/5 text-slate-200 hover:bg-white/10"
+          >
+            <ClipboardList size={14} />
+          </button>
           <button
             type="button"
             onClick={() => onDelete(log)}
             title={deleteTitle}
-            className="inline-flex items-center rounded-lg border border-red-400/30 bg-red-500/10 px-2.5 py-1.5 text-red-100 hover:border-red-400/60"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-red-400/30 bg-red-500/10 text-red-100 hover:border-red-400/60"
           >
             <Trash2 size={14} />
           </button>
@@ -668,14 +673,15 @@ const AdminLeadsPage = () => {
                 <div className="text-sm font-semibold text-slate-300">{date}</div>
                 <div className="text-xs text-slate-500">{dateLogs.length}</div>
               </div>
-              <div className="mb-2 hidden rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-[11px] font-semibold uppercase text-slate-500 xl:grid xl:grid-cols-[minmax(220px,1.2fr)_minmax(220px,1fr)_minmax(260px,1.25fr)_minmax(180px,0.9fr)_132px]">
+              <div className="mb-1.5 hidden rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] font-semibold uppercase text-slate-500 xl:grid xl:grid-cols-[minmax(170px,1fr)_minmax(190px,1fr)_minmax(180px,0.9fr)_minmax(230px,1.2fr)_minmax(170px,0.9fr)_76px]">
                 <span>{adminLeadsContent.table.client}</span>
                 <span>{adminLeadsContent.table.contacts}</span>
+                <span>{adminLeadsContent.table.origin}</span>
                 <span>{adminLeadsContent.table.request}</span>
                 <span>{adminLeadsContent.table.delivery}</span>
                 <span className="text-right">{adminLeadsContent.table.actions}</span>
               </div>
-              <div className="grid gap-3">
+              <div className="grid gap-2">
                 {dateLogs.map((log) => (
                   <LeadCard
                     key={log.id}

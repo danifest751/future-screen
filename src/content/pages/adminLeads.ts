@@ -57,6 +57,8 @@ const ru = {
       comment: 'Комментарий',
       noDetails: 'Без дополнительных деталей',
       noLog: 'Лог доставки пуст',
+      noOrigin: 'Источник не указан',
+      referrer: 'Переход',
     },
   },
   confirm: {
@@ -108,6 +110,7 @@ const ru = {
   table: {
     client: 'Клиент',
     contacts: 'Контакты',
+    origin: 'Откуда',
     request: 'Запрос',
     delivery: 'Доставка',
     actions: 'Действия',
@@ -201,6 +204,8 @@ const en: typeof ru = {
       comment: 'Comment',
       noDetails: 'No extra details',
       noLog: 'Delivery log is empty',
+      noOrigin: 'No origin',
+      referrer: 'Referrer',
     },
   },
   confirm: {
@@ -252,6 +257,7 @@ const en: typeof ru = {
   table: {
     client: 'Client',
     contacts: 'Contacts',
+    origin: 'Origin',
     request: 'Request',
     delivery: 'Delivery',
     actions: 'Actions',
