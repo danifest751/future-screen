@@ -1,4 +1,10 @@
-import { type ReactNode, useId } from 'react';
+import {
+  cloneElement,
+  isValidElement,
+  type AriaAttributes,
+  type ReactNode,
+  useId,
+} from 'react';
 
 export type FieldProps = {
   label?: ReactNode;
@@ -9,6 +15,18 @@ export type FieldProps = {
   /** ID для связи label с input через htmlFor */
   fieldId?: string;
 };
+
+type FieldControlProps = {
+  id?: string;
+  hasError?: boolean;
+  'aria-describedby'?: AriaAttributes['aria-describedby'];
+  'aria-invalid'?: AriaAttributes['aria-invalid'];
+};
+
+const mergeDescribedBy = (
+  current: AriaAttributes['aria-describedby'],
+  next: string | undefined,
+) => [current, next].filter(Boolean).join(' ') || undefined;
 
 /**
  * Компонент Field — обёртка для форм-полей с поддержкой доступности.
@@ -21,32 +39,20 @@ export type FieldProps = {
  */
 export default function Field({ label, hint, error, children, required, fieldId }: FieldProps) {
   const generatedId = useId();
-  const id = fieldId || generatedId;
+  const childId = isValidElement<FieldControlProps>(children) ? children.props.id : undefined;
+  const id = fieldId || childId || generatedId;
   const errorId = error ? `${id}-error` : undefined;
   const hintId = hint ? `${id}-hint` : undefined;
 
-  // Собираем aria-describedby из hint и error
   const describedBy = [hintId, errorId].filter(Boolean).join(' ') || undefined;
 
-  // Клонируем children и добавляем ID + aria-атрибуты
-  const childWithProps = describedBy
-    ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ((child: ReactNode) => {
-        if (!child || typeof child !== 'object') return child;
-        return (
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (child as any).type &&
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          typeof (child as any).type !== 'string' &&
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          typeof (child as any).type === 'function' &&
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (child as any).props
-        )
-          ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            { ...(child as any), props: { ...(child as any).props, id, 'aria-describedby': describedBy } }
-          : child;
-      })(children)
+  const childWithProps = isValidElement<FieldControlProps>(children)
+    ? cloneElement(children, {
+        id,
+        'aria-describedby': mergeDescribedBy(children.props['aria-describedby'], describedBy),
+        'aria-invalid': error ? true : children.props['aria-invalid'],
+        ...(typeof children.type !== 'string' && error ? { hasError: true } : {}),
+      })
     : children;
 
   return (

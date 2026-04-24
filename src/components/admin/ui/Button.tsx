@@ -1,9 +1,9 @@
-import { memo, type ReactNode } from 'react';
+import { memo, type ButtonHTMLAttributes, type ReactNode } from 'react';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
-export type ButtonProps = {
+export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   type?: 'button' | 'submit' | 'reset';
   variant?: ButtonVariant;
   size?: ButtonSize;
@@ -13,7 +13,6 @@ export type ButtonProps = {
   rightIcon?: ReactNode;
   className?: string;
   children?: ReactNode;
-  onClick?: () => void;
 };
 
 const spinner = (
@@ -40,6 +39,7 @@ const Button = memo(function Button({
   className = '',
   children,
   onClick,
+  ...props
 }: ButtonProps) {
   const isDisabled = disabled || loading;
 
@@ -63,8 +63,10 @@ const Button = memo(function Button({
   return (
     <button
       type={type}
+      {...props}
       disabled={isDisabled}
       onClick={isDisabled ? undefined : onClick}
+      aria-busy={loading || props['aria-busy'] || undefined}
       className={[
         'inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',

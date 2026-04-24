@@ -46,6 +46,7 @@ type NavItem = {
   Icon: LucideIcon;
   badge?: boolean;
   external?: boolean;
+  matchPaths?: string[];
 };
 
 type NavSection = {
@@ -79,7 +80,7 @@ const createNavSections = (content: ReturnType<typeof getAdminLayoutContent>): N
       { to: '/admin/cases', label: content.nav.cases, Icon: FolderOpen },
       { to: '/admin/packages', label: content.nav.packages, Icon: Package },
       { to: '/admin/categories', label: content.nav.categories, Icon: Tag },
-      { to: '/admin/rental-categories', label: content.nav.rentalCategories, Icon: ShoppingCart },
+      { to: '/admin/rental-categories', label: content.nav.rentalCategories, Icon: ShoppingCart, matchPaths: ['/admin/rental'] },
     ],
   },
   {
@@ -92,6 +93,14 @@ const createNavSections = (content: ReturnType<typeof getAdminLayoutContent>): N
   },
 ];
 
+const navPathMatches = (path: string, matchPath: string) =>
+  matchPath === '/admin' ? path === '/admin' : path === matchPath || path.startsWith(`${matchPath}/`);
+
+const getNavMatchScore = (item: NavItem, path: string) => {
+  const matches = [item.to, ...(item.matchPaths ?? [])].filter((matchPath) => navPathMatches(path, matchPath));
+  return matches.length > 0 ? Math.max(...matches.map((matchPath) => matchPath.length)) : 0;
+};
+
 const AdminLayout = ({ title, subtitle, children, contentLocale, onContentLocaleChange }: Props) => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -103,9 +112,19 @@ const AdminLayout = ({ title, subtitle, children, contentLocale, onContentLocale
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [leadCount, setLeadCount] = useState<number>(0);
 
-  const activeNavItem = navItems.find((item) =>
-    item.to === '/admin' ? location.pathname === '/admin' : location.pathname.startsWith(item.to),
+  const activeNavItem = useMemo(
+    () =>
+      navItems
+        .map((item) => ({ item, score: getNavMatchScore(item, location.pathname) }))
+        .filter(({ score }) => score > 0)
+        .sort((a, b) => b.score - a.score)[0]?.item,
+    [location.pathname, navItems],
   );
+  const activeNavSection = useMemo(
+    () => navSections.find((section) => section.items.some((item) => item.to === activeNavItem?.to)),
+    [activeNavItem, navSections],
+  );
+  const quickLinkItems = activeNavSection?.items ?? navItems.slice(0, 7);
 
   const breadcrumbs: BreadcrumbItem[] = [
     { label: adminLayoutContent.breadcrumbs.admin, to: '/admin' },
@@ -201,7 +220,7 @@ const AdminLayout = ({ title, subtitle, children, contentLocale, onContentLocale
                 </div>
                 <div className="space-y-1">
                   {section.items.map((item) => {
-                    const isActive = item.to === '/admin' ? location.pathname === '/admin' : location.pathname.startsWith(item.to);
+                    const isActive = activeNavItem?.to === item.to;
                     const { Icon } = item;
 
                     return (
@@ -316,8 +335,8 @@ const AdminLayout = ({ title, subtitle, children, contentLocale, onContentLocale
           <div className="border-b border-white/10 bg-slate-900/40 px-5 py-3 lg:px-8">
             <div className="flex items-center gap-2 overflow-x-auto text-xs text-slate-300">
               <span className="whitespace-nowrap font-medium">{adminLayoutContent.quickLinks.label}</span>
-              {navItems.slice(0, 7).map((item) => {
-                const isActive = item.to === '/admin' ? location.pathname === '/admin' : location.pathname.startsWith(item.to);
+              {quickLinkItems.map((item) => {
+                const isActive = activeNavItem?.to === item.to;
                 const { Icon } = item;
 
                 return (
