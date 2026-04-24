@@ -4,6 +4,8 @@ export const caseMediaSelectorContent = {
     selectedSummary: (total: number, images: number, videos: number) =>
       `Выбрано: ${total} (${images} фото, ${videos} видео)`,
     done: (total: number) => `Готово (${total})`,
+    selectedTitle: 'Выбранные файлы',
+    selectedEmpty: 'Выбранные файлы появятся здесь',
   },
   preview: {
     selectedFiles: (total: number, images: number, videos: number) => {
@@ -16,6 +18,7 @@ export const caseMediaSelectorContent = {
     video: 'Видео',
     photo: 'Фото',
     add: 'Добавить',
+    remove: 'Убрать',
     reorderHint: 'Перетащите файлы для изменения порядка отображения',
     emptyTitle: 'Выберите медиафайлы из библиотеки',
     emptyHint: 'Нажмите для выбора',
