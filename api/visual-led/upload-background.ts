@@ -13,6 +13,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { checkRateLimit } from '../_lib/rateLimit.js';
+import { applyCors } from '../_lib/cors.js';
 
 const BUCKET = 'visual-led-backgrounds';
 const MAX_DATA_URL_BYTES = 10 * 1024 * 1024; // ~10MB raw data URL
@@ -32,16 +33,6 @@ function getSupabase(): SupabaseClient {
   if (!url || !key) throw new Error('Supabase env vars missing for upload-background');
   supabaseAdmin = createClient(url, key, { auth: { persistSession: false } });
   return supabaseAdmin;
-}
-
-function allowCors(req: VercelRequest, res: VercelResponse): void {
-  const origin = String(req.headers.origin || '');
-  if (origin) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Vary', 'Origin');
-  }
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 }
 
 function toJsonBody(body: unknown): unknown {
@@ -80,8 +71,9 @@ function parseDataUrl(dataUrl: string): { mime: string; buffer: Buffer } {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  allowCors(req, res);
-  if (req.method === 'OPTIONS') return res.status(200).end();
+  const cors = applyCors(req, res, { methods: 'POST, OPTIONS' });
+  if (cors === 'reject') return res.status(403).json({ error: 'Forbidden origin' });
+  if (cors === 'preflight') return;
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const ip = getClientIp(req);

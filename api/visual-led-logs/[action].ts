@@ -86,7 +86,16 @@ function applyCors(req: VercelRequest, res: VercelResponse): boolean {
   const origin = String(req.headers.origin || '').replace(/\/$/, '');
   const normalizedAllowed = allowedOrigins.map((item) => item.replace(/\/$/, '').toLowerCase());
   const normalizedOrigin = origin.toLowerCase();
+  // Reject when:
+  //   - Origin is set but not in the allow-list, OR
+  //   - method is a write (POST/OPTIONS) and Origin is missing entirely
+  //     (curl / non-browser callers shouldn't be able to write).
+  const isWrite = req.method === 'POST' || req.method === 'OPTIONS';
   if (origin && !normalizedAllowed.includes(normalizedOrigin)) {
+    res.status(403).json({ error: 'Forbidden origin' });
+    return false;
+  }
+  if (!origin && isWrite) {
     res.status(403).json({ error: 'Forbidden origin' });
     return false;
   }

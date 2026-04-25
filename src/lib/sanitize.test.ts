@@ -28,6 +28,17 @@ describe('sanitizeHtml', () => {
     expect(result).not.toContain('javascript:');
   });
 
+  it('удаляет data: URL из <a> и <img> (защита от data:text/html,...)', () => {
+    expect(sanitizeHtml('<a href="data:text/html,<script>alert(1)</script>">x</a>'))
+      .not.toContain('data:');
+    expect(sanitizeHtml('<img src="data:text/html,<script>alert(1)</script>">'))
+      .not.toContain('data:');
+  });
+
+  it('удаляет vbscript: URL', () => {
+    expect(sanitizeHtml('<a href="vbscript:msgbox(1)">x</a>')).not.toContain('vbscript:');
+  });
+
   it('сохраняет безопасный HTML', () => {
     const input = '<p><strong>Жирный</strong> и <em>курсив</em></p>';
     const result = sanitizeHtml(input);

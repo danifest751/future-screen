@@ -106,6 +106,13 @@ const transporter = nodemailer.createTransport({
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
   },
+  // Bound the connection / TLS handshake / send phases. Without these,
+  // an SMTP server hang would hold the Vercel invocation until the 60s
+  // platform kill, and the user would see an opaque 504 instead of a
+  // proper "email failed, but lead was saved" path.
+  connectionTimeout: 8000,
+  greetingTimeout: 8000,
+  socketTimeout: 10000,
 });
 
 // PR #5a (C5): server is now the single writer for the `leads` table.
@@ -153,6 +160,10 @@ const sendTelegram = async (message: string, logDelivery?: DeliveryLogger): Prom
 
     const url = `https://api.telegram.org/bot${token}/sendMessage`;
     await retryAsync(async () => {
+      // 8s per-attempt timeout: Vercel function caps at 60s and retryAsync
+      // does up to 2 attempts → without this an unresponsive api.telegram.org
+      // would burn the entire invocation and surface as opaque 504 to the
+      // user.
       const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -161,6 +172,7 @@ const sendTelegram = async (message: string, logDelivery?: DeliveryLogger): Prom
           text: message,
           parse_mode: 'HTML',
         }),
+        signal: AbortSignal.timeout(8000),
       });
 
       if (!response.ok) {

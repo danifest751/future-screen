@@ -84,6 +84,13 @@ export async function saveSiteContent(
   locale: Locale,
   fallbackToRu = true
 ): Promise<SiteContent> {
+  // Concurrency note: supabase-js upsert translates to
+  //   INSERT … ON CONFLICT (key) DO UPDATE SET col = EXCLUDED.col, …
+  // and the SET list is built ONLY from the columns we actually pass.
+  // mapToDB() drops undefined values, so an EN-only payload (e.g.
+  // title_en) never touches RU columns. Two admins editing different
+  // locales in parallel therefore don't trample each other; same-column
+  // concurrent edits are intentionally last-write-wins.
   const { data, error } = await supabase
     .from('site_content')
     .upsert({ key, ...mapToDB(input, locale) }, { onConflict: 'key' })

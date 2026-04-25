@@ -156,6 +156,24 @@ describe('saveSiteContent', () => {
     expect(payload.meta_title).toBeUndefined();
   });
 
+  it('игнорирует undefined поля во входе (контракт concurrent-safety)', async () => {
+    // Без этого ON CONFLICT DO UPDATE мог бы стереть колонки которые
+    // другой админ только что записал. mapToDB обязан пропускать undefined.
+    const { builder, calls } = makeChain({ data: rowFull, error: null });
+    fromMock.mockReturnValue(builder);
+
+    await saveSiteContent('home_hero', {
+      title: 'Only this',
+      content: undefined,
+      metaTitle: undefined,
+      isPublished: undefined,
+      fontSize: undefined,
+    }, 'ru');
+
+    const payload = calls.find((c) => c.name === 'upsert')?.args[0] as Record<string, unknown>;
+    expect(Object.keys(payload).sort()).toEqual(['key', 'title']);
+  });
+
   it('пробрасывает ошибку upsert', async () => {
     const { builder } = makeChain({ data: null, error: { message: 'unique violation' } });
     fromMock.mockReturnValue(builder);

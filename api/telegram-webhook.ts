@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { timingSafeEqual } from 'node:crypto';
 import {
   START_HELP_MESSAGE,
   handleStart,
@@ -85,8 +86,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.error('[TelegramWebhook] TELEGRAM_WEBHOOK_SECRET is not configured — refusing POST');
     return res.status(500).json({ error: 'Webhook secret not configured on server' });
   }
+  // Constant-time compare to avoid leaking the secret via response timing.
+  // We pre-check length so timingSafeEqual cannot throw on size mismatch
+  // (which would itself be observable).
   const secret = req.headers['x-telegram-bot-api-secret-token'];
-  if (secret !== webhookSecret) {
+  const provided = typeof secret === 'string' ? secret : '';
+  const expected = webhookSecret;
+  const providedBuf = Buffer.from(provided);
+  const expectedBuf = Buffer.from(expected);
+  const ok =
+    providedBuf.length === expectedBuf.length &&
+    timingSafeEqual(providedBuf, expectedBuf);
+  if (!ok) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 

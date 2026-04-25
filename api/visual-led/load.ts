@@ -10,6 +10,7 @@
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { applyCors } from '../_lib/cors.js';
 
 let supabaseAdmin: SupabaseClient | null = null;
 
@@ -20,16 +21,6 @@ function getSupabase(): SupabaseClient {
   if (!url || !key) throw new Error('Supabase env vars missing for visual-led/load');
   supabaseAdmin = createClient(url, key, { auth: { persistSession: false } });
   return supabaseAdmin;
-}
-
-function allowCors(req: VercelRequest, res: VercelResponse): void {
-  const origin = String(req.headers.origin || '');
-  if (origin) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Vary', 'Origin');
-  }
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 }
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -67,8 +58,9 @@ async function resolveBackgroundSrcUrls(
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  allowCors(req, res);
-  if (req.method === 'OPTIONS') return res.status(200).end();
+  const cors = applyCors(req, res, { methods: 'GET, OPTIONS' });
+  if (cors === 'reject') return res.status(403).json({ error: 'Forbidden origin' });
+  if (cors === 'preflight') return;
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
   const rawId = req.query.id;

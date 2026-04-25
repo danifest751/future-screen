@@ -2,14 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { z } from 'zod';
 import { analyzeAssistFromImageData, buildAssistFromFallback } from '../../src/lib/visualLedAssist';
 import { checkRateLimit } from '../_lib/rateLimit.js';
-
-const allowedOrigins = (
-  process.env.ALLOWED_ORIGINS ||
-  'https://future-screen.ru,https://future-screen.vercel.app,http://localhost:5173,http://127.0.0.1:5173'
-)
-  .split(',')
-  .map((value) => value.trim())
-  .filter(Boolean);
+import { applyCors } from '../_lib/cors.js';
 
 const MAX_RGBA_VALUES = 8_388_608; // ~8.4M ints ~= 2M px frame (rgba)
 
@@ -30,24 +23,6 @@ function toJsonBody(body: unknown): unknown {
   return body ?? {};
 }
 
-const normalizeOrigin = (origin?: string): string => origin?.replace(/\/$/, '') || '';
-
-const isOriginAllowed = (origin: string | undefined, requireOrigin: boolean): boolean => {
-  if (!origin) return !requireOrigin;
-  const normalizedOrigin = origin.replace(/\/$/, '').toLowerCase();
-  const normalizedAllowed = allowedOrigins.map((item) => item.replace(/\/$/, '').toLowerCase());
-  return normalizedAllowed.includes(normalizedOrigin);
-};
-
-function allowCors(origin: string, res: VercelResponse): void {
-  if (origin) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Vary', 'Origin');
-  }
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-}
-
 function getClientIp(req: VercelRequest): string {
   const forwarded = req.headers['x-forwarded-for'];
   const raw = Array.isArray(forwarded) ? forwarded[0] : String(forwarded || '');
@@ -56,16 +31,9 @@ function getClientIp(req: VercelRequest): string {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const origin = normalizeOrigin(req.headers.origin);
-  const method = req.method || '';
-  const requireOrigin = method === 'POST' || method === 'OPTIONS';
-
-  if (!isOriginAllowed(origin || undefined, requireOrigin)) {
-    return res.status(403).json({ error: 'Forbidden origin' });
-  }
-
-  allowCors(origin, res);
-  if (req.method === 'OPTIONS') return res.status(200).end();
+  const cors = applyCors(req, res, { methods: 'POST, OPTIONS' });
+  if (cors === 'reject') return res.status(403).json({ error: 'Forbidden origin' });
+  if (cors === 'preflight') return;
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const ip = getClientIp(req);

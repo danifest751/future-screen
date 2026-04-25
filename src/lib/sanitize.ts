@@ -13,9 +13,16 @@ import DOMPurify from 'dompurify';
  * <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(content) }} />
  * ```
  */
+// Restrict URI schemes for both sanitizeHtml and sanitizeMarkdown. Without
+// this, DOMPurify's default URI regex still permits `data:` for <a>/<img>
+// (and historically `vbscript:` on older engines), which is enough to
+// smuggle in `<a href="data:text/html,<script>...">` from CMS-controlled
+// content. Same allowlist as src/lib/safeHref.ts so the policies match.
+const ALLOWED_URI_REGEXP = /^(?:(?:https?|mailto|tel|ftp):|[#/?]|$)/i;
+
 export function sanitizeHtml(html: string | null | undefined): string {
   if (!html) return '';
-  return DOMPurify.sanitize(html);
+  return DOMPurify.sanitize(html, { ALLOWED_URI_REGEXP });
 }
 
 /**
@@ -71,6 +78,7 @@ export function sanitizeMarkdown(
     ),
     ALLOW_DATA_ATTR: false,
     ALLOW_UNKNOWN_PROTOCOLS: false,
+    ALLOWED_URI_REGEXP,
     SANITIZE_DOM: true,
   });
 

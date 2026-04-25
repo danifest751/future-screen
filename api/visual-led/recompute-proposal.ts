@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { z } from 'zod';
 import { orderQuadPoints } from '../../src/lib/visualLedAssist';
+import { applyCors } from '../_lib/cors.js';
 
 const pointSchema = z.object({
   x: z.number(),
@@ -24,19 +25,10 @@ function toJsonBody(body: unknown): unknown {
   return body ?? {};
 }
 
-function allowCors(req: VercelRequest, res: VercelResponse): void {
-  const origin = String(req.headers.origin || '');
-  if (origin) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Vary', 'Origin');
-  }
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-}
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  allowCors(req, res);
-  if (req.method === 'OPTIONS') return res.status(200).end();
+  const cors = applyCors(req, res, { methods: 'POST, OPTIONS' });
+  if (cors === 'reject') return res.status(403).json({ error: 'Forbidden origin' });
+  if (cors === 'preflight') return;
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const parsed = payloadSchema.safeParse(toJsonBody(req.body));
