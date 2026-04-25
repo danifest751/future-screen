@@ -254,7 +254,7 @@ const AdminVisualLedSessionPage = () => {
   const device = deviceKindFromUserAgent(session?.user_agent ?? null);
 
   const tabButtonClass = (active: boolean) =>
-    `rounded-t-lg border-b-2 px-3 py-2 text-sm font-medium transition ${
+    `rounded-t-lg border-b-2 px-2.5 py-1.5 text-sm font-medium transition ${
       active
         ? 'border-brand-400 text-white'
         : 'border-transparent text-slate-400 hover:border-white/20 hover:text-white'
@@ -262,7 +262,7 @@ const AdminVisualLedSessionPage = () => {
 
   return (
     <AdminLayout title={title} subtitle={subtitle}>
-      <div className="mb-4 flex items-center justify-between gap-3">
+      <div className="sticky top-4 z-20 mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-slate-900/95 px-3 py-2 shadow-xl shadow-black/20 backdrop-blur">
         <Link
           to="/admin/visual-led-logs"
           className="inline-flex items-center gap-1 text-sm text-slate-300 hover:text-white"
@@ -274,7 +274,7 @@ const AdminVisualLedSessionPage = () => {
           <button
             type="button"
             onClick={() => setConfirmDelete(true)}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-1.5 text-sm font-medium text-red-200 hover:border-red-400 hover:bg-red-500/20"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-red-500/40 bg-red-500/10 px-2.5 py-1.5 text-sm font-medium text-red-200 hover:border-red-400 hover:bg-red-500/20"
           >
             <Trash2 className="h-3.5 w-3.5" />
             {ui.delete}
@@ -330,10 +330,10 @@ const AdminVisualLedSessionPage = () => {
       {!loading && !session && !error ? <EmptyState title={ui.notFound} /> : null}
 
       {session && !loading ? (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {/* Identity block — everything we know about the session */}
-          <div className="rounded-xl border border-white/10 bg-slate-900/50 p-4">
-            <div className="mb-3 flex items-center justify-between">
+          <div className="rounded-xl border border-white/10 bg-slate-900/50 p-3">
+            <div className="mb-2 flex items-center justify-between">
               <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-300">
                 {ui.identity.heading}
               </h2>
@@ -349,7 +349,7 @@ const AdminVisualLedSessionPage = () => {
                 )}
               </div>
             </div>
-            <dl className="grid gap-x-8 md:grid-cols-2">
+            <dl className="grid gap-x-6 md:grid-cols-2">
               <div>
                 <IdentityRow label={ui.identity.shortId}>
                   <span className="font-mono text-sm font-semibold text-sky-200">
@@ -489,7 +489,7 @@ const AdminVisualLedSessionPage = () => {
 
           {tab === 'overview' && insights && (
             <div className="space-y-3">
-              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
                 <StatCard label={ui.cards.screens} value={insights.screens ?? '—'} />
                 <StatCard label={ui.cards.scenes} value={insights.scenes ?? '—'} />
                 <StatCard
@@ -516,7 +516,7 @@ const AdminVisualLedSessionPage = () => {
               </div>
 
               {insights.reportUrl ? (
-                <div className="rounded-xl border border-white/10 bg-slate-900/50 p-4 text-sm">
+                <div className="rounded-xl border border-white/10 bg-slate-900/50 p-3 text-sm">
                   <div className="mb-1 text-xs uppercase tracking-wide text-slate-400">
                     {ui.cards.reportLink}
                   </div>
@@ -585,7 +585,7 @@ const AdminVisualLedSessionPage = () => {
               ) : (
                 <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                   {assets.map((asset) => (
-                    <div key={asset.id} className="rounded-xl border border-white/10 bg-slate-900/50 p-2">
+                    <div key={asset.id} className="rounded-lg border border-white/10 bg-slate-900/50 p-2">
                       {asset.preview_url ? (
                         <img
                           src={asset.preview_url}
@@ -622,7 +622,7 @@ const AdminVisualLedSessionPage = () => {
               ) : (
                 <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                   {insights.reportShares.map((share) => (
-                    <div key={share.id} className="rounded-xl border border-white/10 bg-slate-900/50 p-3">
+                    <div key={share.id} className="rounded-lg border border-white/10 bg-slate-900/50 p-3">
                       {share.previewImage ? (
                         <img
                           src={share.previewImage}
@@ -675,9 +675,9 @@ const AdminVisualLedSessionPage = () => {
 };
 
 const StatCard = ({ label, value }: { label: string; value: string | number }) => (
-  <div className="rounded-xl border border-white/10 bg-slate-900/50 p-3">
+  <div className="rounded-lg border border-white/10 bg-slate-900/50 p-2.5">
     <div className="text-[10px] uppercase tracking-wide text-slate-500">{label}</div>
-    <div className="mt-0.5 text-lg font-semibold text-white">{value}</div>
+    <div className="mt-0.5 text-base font-semibold text-white">{value}</div>
   </div>
 );
 
@@ -694,7 +694,7 @@ const EventRow = ({
   const meta = getEventMeta(entry.event_type);
   const label = adminLocale === 'ru' ? meta.labelRu : meta.labelEn;
   return (
-    <div id={`event-row-${entry.id}`} className="rounded-xl border border-white/10 bg-slate-900/50 transition-shadow">
+    <div id={`event-row-${entry.id}`} className="rounded-lg border border-white/10 bg-slate-900/50 transition-shadow">
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}

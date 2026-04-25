@@ -113,7 +113,7 @@ const FilterChip = ({
   <button
     type="button"
     onClick={onClick}
-    className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs transition ${
+    className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] transition ${
       active
         ? 'border-brand-400 bg-brand-500/15 text-white'
         : 'border-white/10 bg-slate-900/40 text-slate-300 hover:border-white/30 hover:text-white'
@@ -237,17 +237,17 @@ const AdminVisualLedLogsPage = () => {
 
   return (
     <AdminLayout title={ui.title} subtitle={ui.subtitle}>
-      <div className="space-y-4">
+      <div className="space-y-3">
         {/* Search + filters toolbar */}
-        <div className="rounded-xl border border-white/10 bg-slate-900/50 p-4">
+        <div className="rounded-xl border border-white/10 bg-slate-900/50 p-3">
           <div className="flex flex-wrap items-center gap-3">
             <Input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder={ui.search}
-              className="max-w-md flex-1 min-w-[240px]"
+              className="min-w-[220px] max-w-md flex-1 py-1.5"
             />
-            <Button onClick={() => void reset()} disabled={loading}>
+            <Button onClick={() => void reset()} disabled={loading} size="sm">
               <RefreshCcw className="mr-1 inline h-3.5 w-3.5" />
               {ui.reload}
             </Button>
@@ -256,7 +256,7 @@ const AdminVisualLedLogsPage = () => {
             </div>
           </div>
 
-          <div className="mt-3 flex flex-wrap items-center gap-2">
+          <div className="mt-2 flex flex-wrap items-center gap-2">
             <span className="text-[10px] uppercase tracking-wide text-slate-500">
               {ui.filters.heading}:
             </span>
@@ -307,13 +307,13 @@ const AdminVisualLedLogsPage = () => {
         ) : filtered.length === 0 ? (
           <EmptyState title={ui.noSessions} />
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {(Object.keys(grouped) as DateBucket[]).map((bucket) => {
               const items = grouped[bucket];
               if (items.length === 0) return null;
               return (
                 <section key={bucket}>
-                  <header className="mb-2 flex items-baseline gap-2">
+                  <header className="mb-1.5 flex items-baseline gap-2">
                     <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-400">
                       {ui.buckets[bucket]}
                     </h3>
@@ -337,7 +337,7 @@ const AdminVisualLedLogsPage = () => {
 
         {sessions.length < total ? (
           <div className="flex justify-center pt-2">
-            <Button onClick={() => void loadMore()} disabled={loadingMore}>
+            <Button onClick={() => void loadMore()} disabled={loadingMore} size="sm">
               {loadingMore ? '…' : ui.loadMore}
             </Button>
           </div>
@@ -386,10 +386,10 @@ const SessionRow = ({
   return (
     <Link
       to={`/admin/visual-led-logs/${encodeURIComponent(session.id)}`}
-      className="group flex items-center gap-3 rounded-xl border border-white/10 bg-slate-900/30 p-3 text-sm transition hover:border-white/25 hover:bg-slate-900/60"
+      className="group flex items-center gap-3 rounded-lg border border-white/10 bg-slate-900/30 px-3 py-2 text-sm transition hover:border-white/25 hover:bg-slate-900/60"
     >
       {/* Time + short id */}
-      <div className="flex w-28 shrink-0 flex-col">
+      <div className="flex w-24 shrink-0 flex-col">
         <span className="font-mono text-xs text-slate-400">{timeLabel}</span>
         <span className="font-mono text-xs font-semibold text-sky-200">
           #{shortSessionId(session.session_key)}
@@ -445,12 +445,12 @@ const SessionRow = ({
 };
 
 const MetricPill = ({ children }: { children: React.ReactNode }) => (
-  <span className="rounded bg-slate-800/60 px-1.5 py-0.5 font-mono text-slate-300">{children}</span>
+  <span className="rounded bg-slate-800/60 px-1.5 py-px font-mono text-slate-300">{children}</span>
 );
 
 const TagPill = ({ className, children }: { className: string; children: React.ReactNode }) => (
   <span
-    className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${className}`}
+    className={`rounded-full border px-1.5 py-px text-[10px] font-semibold uppercase tracking-wide ${className}`}
   >
     {children}
   </span>
