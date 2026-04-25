@@ -18,15 +18,25 @@ export const useFormDraftPersistence = <TValues extends FieldValues>({
   const [hasDraft, setHasDraft] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
   const hydratedRef = useRef(false);
-  const suppressNextWriteRef = useRef(false);
+  // Time-window suppression instead of "next single write": reset() can fire
+  // multiple change events in one tick, and a one-shot ref would only swallow
+  // the first, letting the rest re-persist a partial draft. 250ms covers the
+  // entire cascade (rAF + microtask flush) without holding back legitimate
+  // edits the user makes after.
+  const suppressUntilRef = useRef<number>(0);
   const isWritingRef = useRef(false);
   const previousStorageKeyRef = useRef<string | null>(null);
+
+  const now = () =>
+    typeof performance !== 'undefined' && typeof performance.now === 'function'
+      ? performance.now()
+      : Date.now();
 
   const clearDraft = useCallback(async () => {
     if (typeof window === 'undefined' || !isStorageAvailable()) return;
 
     await asyncRemoveItem(storageKey);
-    suppressNextWriteRef.current = true;
+    suppressUntilRef.current = now() + 250;
     setHasDraft(false);
   }, [storageKey]);
 
@@ -81,8 +91,7 @@ export const useFormDraftPersistence = <TValues extends FieldValues>({
     if (!enabled || typeof window === 'undefined' || !hydratedRef.current || !isStorageAvailable()) return undefined;
 
     const subscription = watch((values) => {
-      if (suppressNextWriteRef.current) {
-        suppressNextWriteRef.current = false;
+      if (now() < suppressUntilRef.current) {
         return;
       }
 

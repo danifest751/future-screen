@@ -133,6 +133,44 @@ describe('useFormDraftPersistence', () => {
     expect(result.current.hasDraft).toBe(false);
   });
 
+  it('clearDraft гасит ВСЕ последующие watch-события в окне 250 мс (не только первое)', async () => {
+    // Regression: ранее suppressNextWriteRef глотал ровно одну запись,
+    // и каскад change-событий от reset() возвращал частичный draft в storage.
+    let watchCallback: ((values: FormValues) => void) | null = null;
+    const watchMock = vi.fn((cb: (values: FormValues) => void) => {
+      watchCallback = cb;
+      return { unsubscribe: vi.fn() };
+    });
+    const resetMock = vi.fn();
+
+    const { result } = renderHook(() =>
+      useFormDraftPersistence<FormValues>({
+        enabled: true,
+        storageKey: 'draft-burst',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        reset: resetMock as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        watch: watchMock as any,
+      }),
+    );
+    await flushAsync();
+
+    await act(async () => {
+      await result.current.clearDraft();
+    });
+    asyncSetJsonMock.mockClear();
+
+    // Имитируем каскад: 3 change-события сразу после reset()
+    act(() => {
+      watchCallback?.({ name: 'a' });
+      watchCallback?.({ name: 'b' });
+      watchCallback?.({ name: 'c' });
+    });
+    await flushAsync();
+
+    expect(asyncSetJsonMock).not.toHaveBeenCalled();
+  });
+
   it('handles read errors by removing corrupted draft', async () => {
     asyncGetJsonMock.mockRejectedValueOnce(new Error('broken json'));
     const { result } = renderHook(() => useHarness(true, 'draft-broken'));

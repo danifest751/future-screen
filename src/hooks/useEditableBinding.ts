@@ -53,7 +53,19 @@ export function useEditableBinding({
   const active = isEditing && !disabled;
 
   const ref = useRef<HTMLElement | null>(null);
+  const mountedRef = useRef(true);
   const [draft, setDraft] = useState<string | null>(null);
+
+  // Track unmount so we don't touch DOM/state from a save that resolves
+  // after the user navigated away. Without this, a slow save followed by
+  // SPA navigation would call setDraft on an unmounted component (React
+  // 18 warning) and could write the resolved value into a stale element.
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   // Keep contentEditable DOM in sync with the persisted value when not
   // actively editing (otherwise cursor position gets nuked on every rerender).
@@ -76,6 +88,9 @@ export function useEditableBinding({
         await onSave(cleaned);
         return true;
       });
+      // If we unmounted while the save was in-flight, don't touch DOM or
+      // state — the element is gone and the next mount will read fresh data.
+      if (!mountedRef.current) return;
       // On failure, revert the DOM to the persisted value so the user sees the rejection.
       if (!result && ref.current) {
         ref.current.textContent = value;

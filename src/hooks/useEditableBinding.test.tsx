@@ -245,5 +245,42 @@ describe('useEditableBinding', () => {
     expect(toastErrorMock).toHaveBeenCalledTimes(1);
     expect(toastErrorMock.mock.calls[0][0]).toBe('«CTA primary» не сохранилось: save failed hard');
   });
+
+  it('после unmount во время save не пытается тронуть DOM или dispatch state', async () => {
+    editModeMock.isEditing = true;
+    let resolveSave: (() => void) | null = null;
+    const onSave = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveSave = () => resolve();
+        }),
+    );
+
+    const el = { textContent: 'old', blur: vi.fn() } as unknown as HTMLElement;
+    const { result, unmount } = renderHook(() =>
+      useEditableBinding({ value: 'old', onSave, label: 'Edit unmount' }),
+    );
+    act(() => {
+      const ref = result.current.bindProps.ref as (node: HTMLElement | null) => void;
+      ref(el);
+    });
+
+    act(() => {
+      const onBlur = result.current.bindProps.onBlur as (e: { currentTarget: { textContent: string } }) => void;
+      onBlur({ currentTarget: { textContent: 'new value' } });
+    });
+
+    // Unmount BEFORE save resolves.
+    unmount();
+
+    await act(async () => {
+      resolveSave?.();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    // Element textContent must NOT have been touched after unmount.
+    expect(el.textContent).toBe('old');
+  });
 });
 

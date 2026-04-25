@@ -1,6 +1,13 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient, type SupabaseClient, type User } from '@supabase/supabase-js';
 import { z } from 'zod';
+import { randomBytes } from 'node:crypto';
+import { checkRateLimit } from '../_lib/rateLimit.js';
+
+// Match the dedicated /api/visual-led/upload-background endpoint so the
+// two background-upload paths can't be played against each other.
+const MAX_DATA_URL_BYTES = 10 * 1024 * 1024;
+const ALLOWED_UPLOAD_MIME = /^image\/(png|jpe?g|webp)$/i;
 
 const allowedOrigins = (
   process.env.ALLOWED_ORIGINS ||
@@ -299,14 +306,48 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (action === 'background-upload') {
       if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+      // Rate-limit shared with the dedicated upload endpoint — both paths
+      // hit the same Storage bucket and quota.
+      const ip = ((): string => {
+        const forwarded = req.headers['x-forwarded-for'];
+        const raw = Array.isArray(forwarded) ? forwarded[0] : String(forwarded || '');
+        return raw.split(',')[0]?.trim() || 'unknown';
+      })();
+      const rl = await checkRateLimit('visualLedSave', ip);
+      if (!rl.allowed) {
+        res.setHeader('Retry-After', Math.max(1, Math.ceil((rl.reset - Date.now()) / 1000)).toString());
+        return res.status(429).json({ error: 'Too many uploads, try again later' });
+      }
+
       const parsed = uploadSchema.safeParse(toJsonBody(req.body));
       if (!parsed.success) return res.status(400).json({ error: 'Invalid payload', details: parsed.error.errors });
       const payload = parsed.data;
+
+      // Cheap pre-check on the raw data_url string before base64-decoding.
+      // base64 expands ~33%, so the budget for the resulting buffer is 4/3 of
+      // MAX_DATA_URL_BYTES. Without this an attacker could ship 50MB of
+      // base64 and we'd allocate the full Buffer before catching it.
+      if (payload.data_url.length > MAX_DATA_URL_BYTES * 1.4) {
+        return res.status(413).json({ error: 'Upload too large', maxBytes: MAX_DATA_URL_BYTES });
+      }
+
       const parsedUrl = parseDataUrl(payload.data_url);
+      if (parsedUrl.buffer.length > MAX_DATA_URL_BYTES) {
+        return res.status(413).json({ error: 'Upload too large', maxBytes: MAX_DATA_URL_BYTES });
+      }
+
       const mimeType = payload.mime_type || parsedUrl.mime || 'image/jpeg';
+      if (!ALLOWED_UPLOAD_MIME.test(mimeType)) {
+        return res.status(400).json({ error: 'Unsupported MIME type', mime: mimeType });
+      }
+
       const ext = mimeType.includes('png') ? 'png' : mimeType.includes('webp') ? 'webp' : 'jpg';
       const safeName = sanitizeStorageName(payload.file_name.replace(/\.[^.]+$/, ''));
-      const storagePath = `${payload.session_key}/${Date.now()}-${safeName}.${ext}`;
+      // Cryptographic random suffix (vs Date.now()) so two near-simultaneous
+      // uploads from different sessions can't collide on the same path.
+      const suffix = randomBytes(8).toString('hex');
+      const storagePath = `${payload.session_key}/${suffix}-${safeName}.${ext}`;
 
       const { data: uploaded, error: uploadError } = await supabase.storage
         .from(bucket)

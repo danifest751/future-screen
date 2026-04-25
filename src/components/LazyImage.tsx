@@ -67,33 +67,3 @@ export const LazyImage = ({
     </div>
   );
 };
-
-/**
- * Hook for lazy loading images
- */
-// eslint-disable-next-line react-refresh/only-export-components, @typescript-eslint/no-unused-vars
-export const useLazyImage = (src: string) => {
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [shouldLoad, setShouldLoad] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setShouldLoad(true);
-          observer.disconnect();
-        }
-      },
-      { rootMargin: '50px', threshold: 0.01 }
-    );
-
-    if (ref.current) {
-      observer.observe(ref.current);
-    }
-
-    return () => observer.disconnect();
-  }, []);
-
-  return { ref, shouldLoad, isLoaded, setIsLoaded };
-};

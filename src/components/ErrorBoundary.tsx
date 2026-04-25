@@ -96,18 +96,4 @@ function DefaultErrorFallback({
   );
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
-export function withErrorBoundary<P extends object>(
-  WrappedComponent: React.ComponentType<P>,
-  errorBoundaryProps?: Omit<ErrorBoundaryProps, 'children'>
-): React.ComponentType<P> {
-  return function WithErrorBoundary(props: P): JSX.Element {
-    return (
-      <ErrorBoundary {...errorBoundaryProps}>
-        <WrappedComponent {...props} />
-      </ErrorBoundary>
-    );
-  };
-}
-
 export default ErrorBoundary;

@@ -12,6 +12,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
+import { randomBytes } from 'node:crypto';
 import { checkRateLimit } from '../_lib/rateLimit.js';
 import { applyCors } from '../_lib/cors.js';
 
@@ -113,7 +114,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ? 'webp'
       : 'jpg';
   const safeName = sanitizeStorageName(payload.file_name.replace(/\.[^.]+$/, ''));
-  const storagePath = `projects/${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${safeName}.${ext}`;
+  // Cryptographic random suffix avoids predictable storage paths and
+  // race-driven collisions on Math.random().
+  const suffix = randomBytes(8).toString('hex');
+  const storagePath = `projects/${suffix}-${safeName}.${ext}`;
 
   try {
     const supabase = getSupabase();
