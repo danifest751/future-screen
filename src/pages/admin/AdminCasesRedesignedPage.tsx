@@ -421,10 +421,10 @@ const AdminCasesRedesignedPage = () => {
       contentLocale={adminContentLocale}
       onContentLocaleChange={setAdminContentLocale}
     >
-      <div className="mb-6 flex justify-end gap-2">
+      <div className="mb-4 flex justify-end gap-2">
         <button
           onClick={() => setActiveTab('cases')}
-          className={`flex items-center gap-2 rounded-lg border px-4 py-2 text-sm transition-colors ${
+          className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm transition-colors ${
             activeTab === 'cases'
               ? 'border-brand-500 bg-brand-500/20 text-brand-300'
               : 'border-white/10 bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white'
@@ -435,7 +435,7 @@ const AdminCasesRedesignedPage = () => {
         </button>
         <button
           onClick={() => setActiveTab('media')}
-          className={`flex items-center gap-2 rounded-lg border px-4 py-2 text-sm transition-colors ${
+          className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm transition-colors ${
             activeTab === 'media'
               ? 'border-brand-500 bg-brand-500/20 text-brand-300'
               : 'border-white/10 bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white'
@@ -469,19 +469,133 @@ const AdminCasesRedesignedPage = () => {
       />
 
       {activeTab === 'media' ? (
-        <div className="rounded-xl border border-white/10 bg-slate-800 p-6">
+        <div className="rounded-xl border border-white/10 bg-slate-800 p-4">
           <div className="mb-4">
-            <h2 className="text-xl font-semibold text-white">{adminCasesRedesignedContent.mediaSection.title}</h2>
+            <h2 className="text-lg font-semibold text-white">{adminCasesRedesignedContent.mediaSection.title}</h2>
             <p className="text-sm text-slate-400">{adminCasesRedesignedContent.mediaSection.description}</p>
           </div>
           <MediaLibrary />
         </div>
       ) : (
-        <div className="grid gap-6 lg:grid-cols-2">
-          <div className="rounded-xl border border-white/10 bg-slate-800 p-6">
-            <div className="mb-4 flex items-center justify-between">
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(380px,0.9fr)]">
+          <div className="order-2 rounded-xl border border-white/10 bg-slate-800 p-4 lg:order-1">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <h2 className="text-lg font-semibold text-white">{adminCasesRedesignedContent.list.title}</h2>
+              <button
+                type="button"
+                onClick={() => setResetModalOpen(true)}
+                className="shrink-0 text-sm text-slate-300 hover:text-white"
+              >
+                {adminCasesRedesignedContent.list.resetAction}
+              </button>
+            </div>
+
+            <div className="relative mb-3">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={adminCasesRedesignedContent.list.searchPlaceholder}
+                className="w-full rounded-lg border border-white/10 bg-slate-900 py-2 pl-10 pr-9 text-sm text-white placeholder:text-slate-500 focus:border-brand-500 focus:outline-none"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-slate-500 hover:bg-slate-800 hover:text-white"
+                >
+                  <Plus size={14} className="rotate-45" />
+                </button>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              {filteredCases.map((c) => {
+                const { imageCount, videoCount } = getCaseMediaCount(c);
+
+                return (
+                  <div key={c.slug} className="rounded-lg border border-white/10 bg-slate-900/45 px-3 py-2.5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                          <h3 className="max-w-full truncate text-sm font-semibold text-white">{c.title}</h3>
+                          <FallbackDot visible={adminContentLocale === 'en' && !!fallbackBySlug[c.slug]} adminLocale={adminLocale} />
+                          <span className="truncate text-[11px] text-slate-500">({c.slug})</span>
+                        </div>
+                        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-slate-400">
+                          {c.city && <span>{c.city}</span>}
+                          {c.city && c.date && <span>{adminCasesRedesignedContent.list.separator}</span>}
+                          {c.date && <span>{c.date}</span>}
+                          {(c.city || c.date) && c.format && <span>{adminCasesRedesignedContent.list.separator}</span>}
+                          {c.format && <span>{c.format}</span>}
+                        </div>
+                        <p className="mt-1 line-clamp-1 text-xs text-slate-300">{c.summary}</p>
+
+                        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+                          {imageCount > 0 && (
+                            <span className="flex items-center gap-1 text-[11px] text-slate-400">
+                              <Image size={12} />
+                              {imageCount} {adminCasesRedesignedContent.list.photosSuffix}
+                            </span>
+                          )}
+                          {videoCount > 0 && (
+                            <span className="flex items-center gap-1 text-[11px] text-slate-400">
+                              <Film size={12} />
+                              {videoCount} {adminCasesRedesignedContent.list.videosSuffix}
+                            </span>
+                          )}
+                          {c.services.slice(0, 4).map((s) => (
+                            <span key={s} className="rounded bg-slate-700/80 px-1.5 py-0.5 text-[10px] uppercase text-slate-300">
+                              {s}
+                            </span>
+                          ))}
+                          {c.services.length > 4 && (
+                            <span className="text-[11px] text-slate-500">+{c.services.length - 4}</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => startEdit(c)}
+                          className="flex h-8 w-8 items-center justify-center rounded border border-white/20 text-white transition-colors hover:border-white/40"
+                          title={adminCasesRedesignedContent.list.editAction}
+                          aria-label={adminCasesRedesignedContent.list.editAction}
+                        >
+                          <Edit2 size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDeleteTarget({ slug: c.slug, title: c.title })}
+                          className="flex h-8 w-8 items-center justify-center rounded border border-red-400/40 text-red-200 transition-colors hover:border-red-400"
+                          title={adminCasesRedesignedContent.list.deleteAction}
+                          aria-label={adminCasesRedesignedContent.list.deleteAction}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+              {filteredCases.length === 0 && (
+                <EmptyState
+                  icon={<FolderOpen size={32} className="text-brand-400" />}
+                  title={adminCasesRedesignedContent.list.emptyTitle}
+                  description={
+                    searchQuery
+                      ? adminCasesRedesignedContent.list.emptySearchDescription
+                      : adminCasesRedesignedContent.list.emptyDefaultDescription
+                  }
+                />
+              )}
+            </div>
+          </div>
+
+          <div className="order-1 rounded-xl border border-white/10 bg-slate-800 p-4 lg:order-2 lg:sticky lg:top-6 lg:self-start">
+            <div className="mb-3 flex items-start justify-between gap-3">
               <div className="flex items-center gap-2">
-                <h2 className="text-xl font-semibold text-white">
+                <h2 className="text-lg font-semibold text-white">
                   {caseEditing ? adminCasesRedesignedContent.form.editTitle : adminCasesRedesignedContent.form.newTitle}
                 </h2>
                 <FallbackDot visible={editingFallbackUsed} adminLocale={adminLocale} />
@@ -503,7 +617,7 @@ const AdminCasesRedesignedPage = () => {
               </div>
             </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
               <div className="grid gap-3 sm:grid-cols-2">
                 <label className="text-sm text-slate-200">
                   <span className="flex items-center gap-1">
@@ -568,14 +682,14 @@ const AdminCasesRedesignedPage = () => {
                 </select>
               </label>
 
-              <label className="text-sm text-slate-200">
-                {adminCasesRedesignedContent.form.summaryLabel}
-                <textarea
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
-                  rows={3}
-                  {...register('summary')}
-                  placeholder={adminCasesRedesignedContent.form.summaryPlaceholder}
-                />
+                <label className="text-sm text-slate-200">
+                  {adminCasesRedesignedContent.form.summaryLabel}
+                  <textarea
+                    className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                    rows={2}
+                    {...register('summary')}
+                    placeholder={adminCasesRedesignedContent.form.summaryPlaceholder}
+                  />
                 <AdminFieldError message={errors.summary?.message} />
               </label>
 
@@ -616,118 +730,6 @@ const AdminCasesRedesignedPage = () => {
                     : adminCasesRedesignedContent.form.submitCreate}
               </button>
             </form>
-          </div>
-
-          <div className="rounded-xl border border-white/10 bg-slate-800 p-6">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-white">{adminCasesRedesignedContent.list.title}</h2>
-              <button
-                type="button"
-                onClick={() => setResetModalOpen(true)}
-                className="text-sm text-slate-300 hover:text-white"
-              >
-                {adminCasesRedesignedContent.list.resetAction}
-              </button>
-            </div>
-
-            <div className="relative mb-4">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={adminCasesRedesignedContent.list.searchPlaceholder}
-                className="w-full rounded-lg border border-white/10 bg-slate-900 py-2 pl-10 pr-9 text-sm text-white placeholder:text-slate-500 focus:border-brand-500 focus:outline-none"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-slate-500 hover:bg-slate-800 hover:text-white"
-                >
-                  <Plus size={14} className="rotate-45" />
-                </button>
-              )}
-            </div>
-
-            <div className="space-y-3">
-              {filteredCases.map((c) => {
-                const { imageCount, videoCount } = getCaseMediaCount(c);
-
-                return (
-                  <div key={c.slug} className="rounded-lg border border-white/10 bg-slate-900/50 p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <h3 className="truncate font-semibold text-white">{c.title}</h3>
-                          <FallbackDot visible={adminContentLocale === 'en' && !!fallbackBySlug[c.slug]} adminLocale={adminLocale} />
-                          <span className="text-xs text-slate-500">({c.slug})</span>
-                        </div>
-                        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400">
-                          <span>{c.city}</span>
-                          <span>{adminCasesRedesignedContent.list.separator}</span>
-                          <span>{c.date}</span>
-                          <span>{adminCasesRedesignedContent.list.separator}</span>
-                          <span>{c.format}</span>
-                        </div>
-                        <p className="mt-1 line-clamp-2 text-xs text-slate-300">{c.summary}</p>
-
-                        <div className="mt-2 flex items-center gap-3">
-                          {imageCount > 0 && (
-                            <span className="flex items-center gap-1 text-xs text-slate-400">
-                              <Image size={12} />
-                              {imageCount} {adminCasesRedesignedContent.list.photosSuffix}
-                            </span>
-                          )}
-                          {videoCount > 0 && (
-                            <span className="flex items-center gap-1 text-xs text-slate-400">
-                              <Film size={12} />
-                              {videoCount} {adminCasesRedesignedContent.list.videosSuffix}
-                            </span>
-                          )}
-                        </div>
-
-                        <div className="mt-2 flex flex-wrap gap-1">
-                          {c.services.map((s) => (
-                            <span key={s} className="rounded bg-slate-700 px-2 py-0.5 text-[10px] uppercase text-slate-300">
-                              {s}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                      <div className="flex flex-col gap-2">
-                        <button
-                          type="button"
-                          onClick={() => startEdit(c)}
-                          className="flex items-center justify-center gap-1 rounded border border-white/20 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:border-white/40"
-                        >
-                          <Edit2 size={12} />
-                          {adminCasesRedesignedContent.list.editAction}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setDeleteTarget({ slug: c.slug, title: c.title })}
-                          className="flex items-center justify-center gap-1 rounded border border-red-400/40 px-3 py-1.5 text-xs font-semibold text-red-200 transition-colors hover:border-red-400"
-                        >
-                          <Trash2 size={12} />
-                          {adminCasesRedesignedContent.list.deleteAction}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-              {filteredCases.length === 0 && (
-                <EmptyState
-                  icon={<FolderOpen size={32} className="text-brand-400" />}
-                  title={adminCasesRedesignedContent.list.emptyTitle}
-                  description={
-                    searchQuery
-                      ? adminCasesRedesignedContent.list.emptySearchDescription
-                      : adminCasesRedesignedContent.list.emptyDefaultDescription
-                  }
-                />
-              )}
-            </div>
           </div>
         </div>
       )}
