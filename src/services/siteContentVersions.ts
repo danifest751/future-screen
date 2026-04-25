@@ -24,6 +24,24 @@ export interface SiteContentVersion {
   isPublished: boolean | null;
 }
 
+export interface SiteContentSnapshot {
+  id: string;
+  key: string;
+  title: string | null;
+  content: string | null;
+  contentHtml: string | null;
+  metaTitle: string | null;
+  metaDescription: string | null;
+  fontSize: string | null;
+  titleEn: string | null;
+  contentEn: string | null;
+  contentHtmlEn: string | null;
+  metaTitleEn: string | null;
+  metaDescriptionEn: string | null;
+  fontSizeEn: string | null;
+  isPublished: boolean | null;
+}
+
 interface SiteContentVersionRow {
   id: string;
   site_content_id: string;
@@ -46,6 +64,24 @@ interface SiteContentVersionRow {
   is_published: boolean | null;
 }
 
+interface SiteContentSnapshotRow {
+  id: string;
+  key: string;
+  title: string | null;
+  content: string | null;
+  content_html: string | null;
+  meta_title: string | null;
+  meta_description: string | null;
+  font_size: string | null;
+  title_en: string | null;
+  content_en: string | null;
+  content_html_en: string | null;
+  meta_title_en: string | null;
+  meta_description_en: string | null;
+  font_size_en: string | null;
+  is_published: boolean | null;
+}
+
 const mapRow = (row: SiteContentVersionRow): SiteContentVersion => ({
   id: row.id,
   siteContentId: row.site_content_id,
@@ -53,6 +89,24 @@ const mapRow = (row: SiteContentVersionRow): SiteContentVersion => ({
   operation: row.operation as SiteContentVersionOperation,
   editedBy: row.edited_by,
   editedAt: row.edited_at,
+  title: row.title,
+  content: row.content,
+  contentHtml: row.content_html,
+  metaTitle: row.meta_title,
+  metaDescription: row.meta_description,
+  fontSize: row.font_size,
+  titleEn: row.title_en,
+  contentEn: row.content_en,
+  contentHtmlEn: row.content_html_en,
+  metaTitleEn: row.meta_title_en,
+  metaDescriptionEn: row.meta_description_en,
+  fontSizeEn: row.font_size_en,
+  isPublished: row.is_published,
+});
+
+const mapSnapshotRow = (row: SiteContentSnapshotRow): SiteContentSnapshot => ({
+  id: row.id,
+  key: row.key,
   title: row.title,
   content: row.content,
   contentHtml: row.content_html,
@@ -121,6 +175,40 @@ export async function loadSiteContentKeys(): Promise<
   return Array.from(seen.entries())
     .map(([key, meta]) => ({ key, ...meta }))
     .sort((a, b) => b.lastEditedAt.localeCompare(a.lastEditedAt));
+}
+
+/**
+ * Load the current raw site_content row for restore previews.
+ * Reads both locales without public fallback mapping, so the diff is exact.
+ */
+export async function loadCurrentSiteContentSnapshot(key: string): Promise<SiteContentSnapshot | null> {
+  const { data, error } = await supabase
+    .from('site_content')
+    .select(
+      [
+        'id',
+        'key',
+        'title',
+        'content',
+        'content_html',
+        'meta_title',
+        'meta_description',
+        'font_size',
+        'title_en',
+        'content_en',
+        'content_html_en',
+        'meta_title_en',
+        'meta_description_en',
+        'font_size_en',
+        'is_published',
+      ].join(', ')
+    )
+    .eq('key', key)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  if (!data) return null;
+  return mapSnapshotRow(data as unknown as SiteContentSnapshotRow);
 }
 
 /**
