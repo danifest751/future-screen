@@ -6,6 +6,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import { StructuredData } from './components/StructuredData';
 import { getGlobalContent } from './content/global';
 import { useI18n } from './context/I18nContext';
+import { isAssetScriptError, recoverFromChunkLoadError } from './lib/chunkLoadRecovery';
 
 const HomePage = lazy(() => import('./pages/HomePage'));
 const LedPage = lazy(() => import('./pages/LedPage'));
@@ -49,20 +50,23 @@ const PageLoader = () => (
 function ChunkErrorHandler() {
   useEffect(() => {
     const handleError = (event: ErrorEvent) => {
-      const message = event.message || '';
-      const target = event.target as HTMLElement | null;
-      const isScript = target?.tagName === 'SCRIPT';
-      const isChunkError =
-        message.includes('Failed to fetch dynamically') ||
-        (isScript && target?.getAttribute('src')?.includes('/assets/'));
+      const source = isAssetScriptError(event.target)
+        ? 'loading chunk'
+        : event.error ?? event.message;
+      void recoverFromChunkLoadError(source);
+    };
 
-      if (isChunkError) {
-        setTimeout(() => window.location.reload(), 500);
-      }
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      void recoverFromChunkLoadError(event.reason);
     };
 
     window.addEventListener('error', handleError);
-    return () => window.removeEventListener('error', handleError);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+
+    return () => {
+      window.removeEventListener('error', handleError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    };
   }, []);
 
   return null;
