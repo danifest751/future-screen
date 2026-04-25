@@ -34,21 +34,21 @@ const AdminRentalCategoriesPage = () => {
       contentLocale={adminContentLocale}
       onContentLocaleChange={setAdminContentLocale}
     >
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-slate-400">
+      <div className="space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-sm text-slate-300">
             {adminRentalCategoriesContent.state.count(items.length)}
           </p>
-          <div className="flex gap-3">
+          <div className="flex gap-2">
             <button
               onClick={reload}
-              className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm text-white transition hover:bg-white/10"
+              className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-white transition hover:bg-white/10"
             >
               {adminRentalCategoriesContent.actions.refresh}
             </button>
             <Link
               to="/admin/rental/new"
-              className="flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-brand-400"
+              className="flex items-center gap-2 rounded-lg bg-brand-500 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-brand-400"
             >
               <Plus size={16} />
               {adminRentalCategoriesContent.actions.add}
@@ -70,25 +70,28 @@ const AdminRentalCategoriesPage = () => {
             <table className="w-full text-sm">
               <thead className="border-b border-white/10 bg-slate-800/60">
                 <tr>
-                  <th className="px-4 py-3 text-left font-medium text-slate-300">{adminRentalCategoriesContent.table.name}</th>
-                  <th className="px-4 py-3 text-left font-medium text-slate-300">{adminRentalCategoriesContent.table.slug}</th>
-                  <th className="px-4 py-3 text-center font-medium text-slate-300">{adminRentalCategoriesContent.table.order}</th>
-                  <th className="px-4 py-3 text-center font-medium text-slate-300">{adminRentalCategoriesContent.table.status}</th>
-                  <th className="px-4 py-3 text-right font-medium text-slate-300">{adminRentalCategoriesContent.table.actions}</th>
+                  <th className="px-3 py-2 text-left font-medium text-slate-300">{adminRentalCategoriesContent.table.name}</th>
+                  <th className="px-3 py-2 text-left font-medium text-slate-300">{adminRentalCategoriesContent.table.slug}</th>
+                  <th className="px-3 py-2 text-center font-medium text-slate-300">{adminRentalCategoriesContent.table.order}</th>
+                  <th className="px-3 py-2 text-center font-medium text-slate-300">{adminRentalCategoriesContent.table.status}</th>
+                  <th className="px-3 py-2 text-right font-medium text-slate-300">{adminRentalCategoriesContent.table.actions}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5 bg-slate-800/30">
                 {items.map((cat) => (
                   <tr key={cat.id} className="transition hover:bg-white/5">
-                    <td className="px-4 py-3 font-medium text-white">
-                      <span className="inline-flex items-center gap-2">
-                        <span>{cat.name}</span>
-                        <FallbackDot visible={adminContentLocale === 'en' && !!cat.isFallbackFromRu} adminLocale={adminLocale} />
-                      </span>
+                    <td className="px-3 py-2 font-medium text-white">
+                      <div className="min-w-0">
+                        <span className="inline-flex max-w-full items-center gap-2">
+                          <span className="truncate">{cat.name}</span>
+                          <FallbackDot visible={adminContentLocale === 'en' && !!cat.isFallbackFromRu} adminLocale={adminLocale} />
+                        </span>
+                        <div className="mt-0.5 truncate text-xs font-normal text-slate-500">{cat.shortName}</div>
+                      </div>
                     </td>
-                    <td className="px-4 py-3 font-mono text-xs text-slate-400">/rent/{cat.slug}</td>
-                    <td className="px-4 py-3 text-center text-slate-300">{cat.sortOrder}</td>
-                    <td className="px-4 py-3 text-center">
+                    <td className="px-3 py-2 font-mono text-xs text-slate-400">/rent/{cat.slug}</td>
+                    <td className="px-3 py-2 text-center text-slate-300">{cat.sortOrder}</td>
+                    <td className="px-3 py-2 text-center">
                       {cat.isPublished ? (
                         <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-400">
                           <Eye size={12} /> {adminRentalCategoriesContent.table.published}
@@ -99,12 +102,12 @@ const AdminRentalCategoriesPage = () => {
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex items-center justify-end gap-2">
+                    <td className="px-3 py-2 text-right">
+                      <div className="flex items-center justify-end gap-1">
                         <button
                           onClick={() => handleToggleBlurTitle(cat.id, !!(cat.hero as Record<string, unknown>)?.showBlurTitle)}
                           disabled={togglingId === cat.id}
-                          className={`rounded p-1 transition ${
+                          className={`rounded p-1.5 transition ${
                             (cat.hero as Record<string, unknown>)?.showBlurTitle
                               ? 'text-brand-400'
                               : 'text-slate-600 hover:text-slate-400'
@@ -116,14 +119,14 @@ const AdminRentalCategoriesPage = () => {
                         <Link
                           to={`/rent/${cat.slug}`}
                           target="_blank"
-                          className="rounded p-1 text-slate-400 transition hover:text-white"
+                          className="rounded p-1.5 text-slate-400 transition hover:text-white"
                           title={adminRentalCategoriesContent.table.openPage}
                         >
                           <Eye size={16} />
                         </Link>
                         <Link
                           to={`/admin/rental/${cat.id}`}
-                          className="rounded p-1 text-slate-400 transition hover:text-brand-400"
+                          className="rounded p-1.5 text-slate-400 transition hover:text-brand-400"
                           title={adminRentalCategoriesContent.table.edit}
                         >
                           <Edit2 size={16} />

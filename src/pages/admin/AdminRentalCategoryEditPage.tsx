@@ -102,12 +102,12 @@ const Section = ({
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex w-full items-center justify-between px-5 py-4 text-left transition hover:bg-white/5"
+        className="flex w-full items-center justify-between px-4 py-3 text-left transition hover:bg-white/5"
       >
-        <span className="text-lg font-semibold text-white">{title}</span>
+        <span className="text-base font-semibold text-white">{title}</span>
         {open ? <ChevronUp size={18} className="text-slate-400" /> : <ChevronDown size={18} className="text-slate-400" />}
       </button>
-      {open && <div className="space-y-4 border-t border-white/5 px-5 py-5">{children}</div>}
+      {open && <div className="space-y-3 border-t border-white/5 px-4 py-4">{children}</div>}
     </div>
   );
 };
@@ -132,7 +132,7 @@ const Field = ({
 );
 
 const inputClass =
-  'w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-slate-500 focus:border-brand-500 focus:outline-none';
+  'w-full rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-white placeholder-slate-500 focus:border-brand-500 focus:outline-none';
 const textareaClass = `${inputClass} resize-y`;
 
 const AdminRentalCategoryEditPage = () => {
@@ -344,9 +344,9 @@ const AdminRentalCategoryEditPage = () => {
       contentLocale={adminContentLocale}
       onContentLocaleChange={setAdminContentLocale}
     >
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <div className="sticky top-4 z-20 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-slate-900/95 px-4 py-3 shadow-xl shadow-black/20 backdrop-blur">
+          <div className="flex flex-wrap items-center gap-3">
             <button
               type="button"
               onClick={() => navigate('/admin/rental-categories')}
@@ -364,7 +364,7 @@ const AdminRentalCategoryEditPage = () => {
               </span>
             )}
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <label className="flex items-center gap-2 text-sm text-slate-300">
               <input
                 type="checkbox"
@@ -376,7 +376,7 @@ const AdminRentalCategoryEditPage = () => {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="rounded-lg bg-brand-500 px-5 py-2 text-sm font-semibold text-white hover:bg-brand-400 disabled:opacity-60"
+              className="rounded-lg bg-brand-500 px-4 py-1.5 text-sm font-semibold text-white hover:bg-brand-400 disabled:opacity-60"
             >
               {isSubmitting
                 ? adminRentalCategoryEditContent.topBar.saving
@@ -387,8 +387,8 @@ const AdminRentalCategoryEditPage = () => {
           </div>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-2">
-          <div className="space-y-6">
+        <div className="grid gap-4 lg:grid-cols-2">
+          <div className="space-y-4">
             <Section title={adminRentalCategoryEditContent.sections.basics.title} defaultOpen>
               <Field label={adminRentalCategoryEditContent.sections.basics.name} error={errors.name?.message}>
                 <input className={inputClass} {...register('name')} placeholder={adminRentalCategoryEditContent.sections.basics.namePlaceholder} />
@@ -445,7 +445,7 @@ const AdminRentalCategoryEditPage = () => {
                 </Field>
               </div>
               <Field label={adminRentalCategoryEditContent.sections.hero.highlights} hint={adminRentalCategoryEditContent.sections.hero.highlightsHint}>
-                <textarea className={textareaClass} rows={4} {...register('heroHighlightsText')} placeholder={adminRentalCategoryEditContent.sections.hero.highlightsPlaceholder} />
+                <textarea className={textareaClass} rows={3} {...register('heroHighlightsText')} placeholder={adminRentalCategoryEditContent.sections.hero.highlightsPlaceholder} />
               </Field>
             </Section>
 
@@ -454,10 +454,10 @@ const AdminRentalCategoryEditPage = () => {
                 <input className={inputClass} {...register('aboutTitle')} placeholder={adminRentalCategoryEditContent.sections.about.sectionTitlePlaceholder} />
               </Field>
               <Field label={adminRentalCategoryEditContent.sections.about.text}>
-                <textarea className={textareaClass} rows={4} {...register('aboutText')} />
+                <textarea className={textareaClass} rows={3} {...register('aboutText')} />
               </Field>
               <Field label={adminRentalCategoryEditContent.sections.about.items} hint={adminRentalCategoryEditContent.sections.about.itemsHint}>
-                <textarea className={textareaClass} rows={4} {...register('aboutItemsText')} />
+                <textarea className={textareaClass} rows={3} {...register('aboutItemsText')} />
               </Field>
             </Section>
 
@@ -468,7 +468,7 @@ const AdminRentalCategoryEditPage = () => {
               <Field label={adminRentalCategoryEditContent.sections.useCases.rows} hint={adminRentalCategoryEditContent.sections.useCases.rowsHint}>
                 <textarea
                   className={textareaClass}
-                  rows={8}
+                  rows={5}
                   {...register('useCasesText')}
                   placeholder={adminRentalCategoryEditContent.sections.useCases.rowsPlaceholder}
                 />
@@ -476,7 +476,7 @@ const AdminRentalCategoryEditPage = () => {
             </Section>
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-4">
             <Section title={adminRentalCategoryEditContent.sections.serviceIncludes.title}>
               <Field label={adminRentalCategoryEditContent.sections.serviceIncludes.sectionTitle}>
                 <input className={inputClass} {...register('serviceIncludesTitle')} placeholder={adminRentalCategoryEditContent.sections.serviceIncludes.sectionTitlePlaceholder} />
@@ -484,7 +484,7 @@ const AdminRentalCategoryEditPage = () => {
               <Field label={adminRentalCategoryEditContent.sections.serviceIncludes.items} hint={adminRentalCategoryEditContent.sections.serviceIncludes.itemsHint}>
                 <textarea
                   className={textareaClass}
-                  rows={6}
+                  rows={4}
                   {...register('serviceIncludesText')}
                   placeholder={adminRentalCategoryEditContent.sections.serviceIncludes.itemsPlaceholder}
                 />
@@ -498,7 +498,7 @@ const AdminRentalCategoryEditPage = () => {
               <Field label={adminRentalCategoryEditContent.sections.benefits.rows} hint={adminRentalCategoryEditContent.sections.benefits.rowsHint}>
                 <textarea
                   className={textareaClass}
-                  rows={6}
+                  rows={4}
                   {...register('benefitsText')}
                   placeholder={adminRentalCategoryEditContent.sections.benefits.rowsPlaceholder}
                 />
@@ -509,7 +509,7 @@ const AdminRentalCategoryEditPage = () => {
               <Field label={adminRentalCategoryEditContent.sections.gallery.rows} hint={adminRentalCategoryEditContent.sections.gallery.rowsHint}>
                 <textarea
                   className={textareaClass}
-                  rows={6}
+                  rows={4}
                   {...register('galleryText')}
                   placeholder={adminRentalCategoryEditContent.sections.gallery.rowsPlaceholder}
                 />
@@ -523,7 +523,7 @@ const AdminRentalCategoryEditPage = () => {
               <Field label={adminRentalCategoryEditContent.sections.faq.rows} hint={adminRentalCategoryEditContent.sections.faq.rowsHint}>
                 <textarea
                   className={textareaClass}
-                  rows={8}
+                  rows={5}
                   {...register('faqText')}
                   placeholder={adminRentalCategoryEditContent.sections.faq.rowsPlaceholder}
                 />
@@ -549,18 +549,18 @@ const AdminRentalCategoryEditPage = () => {
           </div>
         </div>
 
-        <div className="flex justify-end gap-3 border-t border-white/10 pt-4">
+        <div className="flex justify-end gap-2 border-t border-white/10 pt-3">
           <button
             type="button"
             onClick={() => navigate('/admin/rental-categories')}
-            className="rounded-lg border border-white/10 px-5 py-2 text-sm text-slate-300 hover:bg-white/5"
+            className="rounded-lg border border-white/10 px-4 py-1.5 text-sm text-slate-300 hover:bg-white/5"
           >
             {adminRentalCategoryEditContent.footer.cancel}
           </button>
           <button
             type="submit"
             disabled={isSubmitting}
-            className="rounded-lg bg-brand-500 px-5 py-2 text-sm font-semibold text-white hover:bg-brand-400 disabled:opacity-60"
+            className="rounded-lg bg-brand-500 px-4 py-1.5 text-sm font-semibold text-white hover:bg-brand-400 disabled:opacity-60"
           >
             {isSubmitting
               ? adminRentalCategoryEditContent.footer.saving
