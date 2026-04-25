@@ -4,15 +4,15 @@ import * as React from 'react';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Tag } from 'lucide-react';
-import toast from 'react-hot-toast';
 import AdminLayout from '../../components/admin/AdminLayout';
-import { Button, ConfirmModal, EmptyState, FallbackDot, Field, Input, Textarea } from '../../components/admin/ui';
+import { AdminEditPanelHeader, Button, ConfirmModal, EmptyState, FallbackDot, Field, Input, Textarea } from '../../components/admin/ui';
 import { useI18n } from '../../context/I18nContext';
 import { getAdminCategoriesPageContent } from '../../content/pages/adminCategories';
 import type { Category } from '../../data/categories';
 import { useCategories } from '../../hooks/useCategories';
 import { useFormDraftPersistence } from '../../hooks/useFormDraftPersistence';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
+import { useAdminCrudHandlers } from '../../hooks/useAdminCrudHandlers';
 import { getAdminSourceLabel } from '../../lib/i18n/adminSourceLabel';
 
 const createSchema = (content: ReturnType<typeof getAdminCategoriesPageContent>) =>
@@ -111,26 +111,37 @@ const AdminCategoriesPage = () => {
     });
   }, [editingId, getEditorCategory, reset]);
 
-  const onSubmit = async (values: FormValues) => {
-    const payload: Category = {
+  const { onSubmit, cancelEdit, handleDelete, handleResetDefaults } = useAdminCrudHandlers<
+    Category,
+    FormValues,
+    Category,
+    Category['id']
+  >({
+    editingId,
+    setEditingId,
+    deleteTarget,
+    buildPayload: (values) => ({
       id: values.id,
       title: values.title.trim(),
       shortDescription: values.shortDescription.trim(),
       bullets: splitList(values.bulletsText),
       pagePath: values.pagePath.trim(),
-    };
-
-    const ok = await upsert(payload);
-    if (!ok) {
-      toast.error(adminCategoriesPageContent.toast.saveError);
-      return;
-    }
-
-    toast.success(editingId ? adminCategoriesPageContent.toast.updated : adminCategoriesPageContent.toast.created);
-    setEditingId(null);
-    reset(defaultValues);
-    clearCategoryDraft();
-  };
+    }),
+    upsert,
+    remove,
+    resetToDefault,
+    reset,
+    defaultValues,
+    clearDraft: clearCategoryDraft,
+    toastCopy: {
+      created: adminCategoriesPageContent.toast.created,
+      updated: adminCategoriesPageContent.toast.updated,
+      saveError: adminCategoriesPageContent.toast.saveError,
+      deleted: adminCategoriesPageContent.toast.deleted,
+      deleteError: adminCategoriesPageContent.toast.deleteError,
+      resetSuccess: adminCategoriesPageContent.toast.resetSuccess,
+    },
+  });
 
   const startEdit = (item: Category) => {
     const editorItem = getEditorCategory(item.id) ?? item;
@@ -142,28 +153,6 @@ const AdminCategoriesPage = () => {
       bulletsText: editorItem.bullets.join('\n'),
       pagePath: editorItem.pagePath,
     });
-  };
-
-  const cancelEdit = () => {
-    setEditingId(null);
-    reset(defaultValues);
-    clearCategoryDraft();
-  };
-
-  const handleDelete = async () => {
-    if (!deleteTarget) return;
-    const ok = await remove(deleteTarget.id);
-    if (ok) {
-      toast.success(adminCategoriesPageContent.toast.deleted);
-    } else {
-      toast.error(adminCategoriesPageContent.toast.deleteError);
-    }
-  };
-
-  const handleResetDefaults = async () => {
-    await resetToDefault();
-    toast.success(adminCategoriesPageContent.toast.resetSuccess);
-    clearCategoryDraft();
   };
 
   const filteredCategories = useMemo(() => {
@@ -218,46 +207,23 @@ const AdminCategoriesPage = () => {
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1.45fr)_minmax(340px,0.8fr)]">
         <div className="rounded-xl border border-white/10 bg-slate-800 p-4 lg:order-2 lg:sticky lg:top-6 lg:self-start">
-          <div className="mb-3 flex items-start justify-between gap-3">
-            <div>
-              <h2 className="text-base font-semibold text-white">
-                {editingId ? adminCategoriesPageContent.form.editTitle : adminCategoriesPageContent.form.createTitle}
-              </h2>
-              <p className="mt-1 text-xs text-slate-400">
-                {editingId
-                  ? adminCategoriesPageContent.form.editDescription(editingId)
-                  : adminCategoriesPageContent.form.createDescription}
-              </p>
-              {isHydrated && hasCategoryDraft && !editingId && (
-                <p className="mt-2 text-xs text-amber-200">{adminCategoriesPageContent.form.restoredDraft}</p>
-              )}
-            </div>
-            <div className="flex shrink-0 flex-col items-end gap-1.5">
-              <span className="rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-xs text-slate-300">
-                {sourceLabel}
-              </span>
-              {editingId && (
-                <span className="rounded-full border border-brand-500/40 bg-brand-500/10 px-2 py-0.5 text-xs text-brand-100">
-                  {adminCategoriesPageContent.form.editMode}
-                </span>
-              )}
-              {isDirty && (
-                <span className="rounded-full border border-amber-400/40 bg-amber-500/10 px-2 py-0.5 text-xs text-amber-200">
-                  {adminCategoriesPageContent.form.unsavedChanges}
-                </span>
-              )}
-              {editingId && (
-                <button
-                  type="button"
-                  onClick={cancelEdit}
-                  disabled={isSubmitting}
-                  className="text-sm text-slate-300 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {adminCategoriesPageContent.form.cancel}
-                </button>
-              )}
-            </div>
-          </div>
+          <AdminEditPanelHeader
+            title={editingId ? adminCategoriesPageContent.form.editTitle : adminCategoriesPageContent.form.createTitle}
+            description={
+              editingId
+                ? adminCategoriesPageContent.form.editDescription(editingId)
+                : adminCategoriesPageContent.form.createDescription
+            }
+            draftHint={isHydrated && hasCategoryDraft && !editingId ? adminCategoriesPageContent.form.restoredDraft : undefined}
+            sourceLabel={sourceLabel}
+            isEditing={Boolean(editingId)}
+            isDirty={isDirty}
+            editModeLabel={adminCategoriesPageContent.form.editMode}
+            unsavedLabel={adminCategoriesPageContent.form.unsavedChanges}
+            cancelLabel={adminCategoriesPageContent.form.cancel}
+            onCancel={cancelEdit}
+            cancelDisabled={isSubmitting}
+          />
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-2.5">
             <Field label={adminCategoriesPageContent.form.idLabel} required error={errors.id?.message}>

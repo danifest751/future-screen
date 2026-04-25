@@ -28,3 +28,6 @@ export type { FilterPillsProps, FilterPill } from './FilterPills';
 export { default as AdminPageToolbar } from './AdminPageToolbar';
 export type { AdminPageToolbarProps } from './AdminPageToolbar';
 
+export { default as AdminEditPanelHeader } from './AdminEditPanelHeader';
+export type { AdminEditPanelHeaderProps } from './AdminEditPanelHeader';
+

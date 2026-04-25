@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Check, X } from 'lucide-react';
 import { useOptionalEditMode } from '../../context/EditModeContext';
+import { useEditableSave } from '../../hooks/useEditableSave';
 import { HOME_ICON_KEYS, HomeIcon } from '../../data/homeIcons';
 import type { HomeIconKey } from '../../content/pages/home';
 
@@ -18,11 +19,9 @@ interface EditableIconProps {
  * an editable wrapper and clicking opens a grid-of-icons modal.
  */
 const EditableIcon = ({ iconKey, onSave, label, className }: EditableIconProps) => {
-  const { isEditing, reportSaveStart, reportSaveEnd, reportSaveSucceeded } =
-    useOptionalEditMode();
+  const { isEditing } = useOptionalEditMode();
+  const { isSaving: saving, error, runSave } = useEditableSave({ label });
   const [isOpen, setIsOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const close = useCallback(() => setIsOpen(false), []);
 
@@ -41,21 +40,13 @@ const EditableIcon = ({ iconKey, onSave, label, className }: EditableIconProps) 
         close();
         return;
       }
-      setSaving(true);
-      setError(null);
-      reportSaveStart();
-      try {
+      const result = await runSave(async () => {
         await onSave(next);
-        reportSaveSucceeded();
-        close();
-      } catch (e) {
-        setError(e instanceof Error ? e.message : 'save failed');
-      } finally {
-        setSaving(false);
-        reportSaveEnd();
-      }
+        return true;
+      });
+      if (result) close();
     },
-    [close, iconKey, onSave, reportSaveEnd, reportSaveStart, reportSaveSucceeded],
+    [close, iconKey, onSave, runSave],
   );
 
   const iconEl = <HomeIcon iconKey={iconKey} className={className} />;

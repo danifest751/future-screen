@@ -3,16 +3,16 @@ import { useForm } from 'react-hook-form';
 import * as React from 'react';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import toast from 'react-hot-toast';
 import { Package as PackageIcon } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout';
-import { Button, ConfirmModal, EmptyState, FallbackDot, Field, Input, Textarea } from '../../components/admin/ui';
+import { AdminEditPanelHeader, Button, ConfirmModal, EmptyState, FallbackDot, Field, Input, Textarea } from '../../components/admin/ui';
 import { useI18n } from '../../context/I18nContext';
 import { getAdminPackagesPageContent } from '../../content/pages/adminPackages';
 import type { Package } from '../../data/packages';
 import { useFormDraftPersistence } from '../../hooks/useFormDraftPersistence';
 import { usePackages } from '../../hooks/usePackages';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
+import { useAdminCrudHandlers } from '../../hooks/useAdminCrudHandlers';
 import { getAdminSourceLabel } from '../../lib/i18n/adminSourceLabel';
 
 const createSchema = (content: ReturnType<typeof getAdminPackagesPageContent>) =>
@@ -115,27 +115,38 @@ const AdminPackagesPage = () => {
     });
   }, [editingId, getEditorPackage, reset]);
 
-  const onSubmit = async (values: FormValues) => {
-    const payload: Package = {
+  const { onSubmit, cancelEdit, handleDelete, handleResetDefaults } = useAdminCrudHandlers<
+    Package,
+    FormValues,
+    Package,
+    Package['id']
+  >({
+    editingId,
+    setEditingId,
+    deleteTarget,
+    buildPayload: (values) => ({
       id: values.id,
       name: values.name.trim(),
       forFormats: splitList(values.forFormatsText),
       includes: splitList(values.includesText),
       options: values.optionsText ? splitList(values.optionsText) : [],
       priceHint: values.priceHint?.trim() || '',
-    };
-
-    const ok = await upsert(payload);
-    if (!ok) {
-      toast.error(adminPackagesPageContent.toast.saveError);
-      return;
-    }
-
-    toast.success(editingId ? adminPackagesPageContent.toast.updated : adminPackagesPageContent.toast.created);
-    setEditingId(null);
-    reset(defaultValues);
-    clearPackageDraft();
-  };
+    }),
+    upsert,
+    remove,
+    resetToDefault,
+    reset,
+    defaultValues,
+    clearDraft: clearPackageDraft,
+    toastCopy: {
+      created: adminPackagesPageContent.toast.created,
+      updated: adminPackagesPageContent.toast.updated,
+      saveError: adminPackagesPageContent.toast.saveError,
+      deleted: adminPackagesPageContent.toast.deleted,
+      deleteError: adminPackagesPageContent.toast.deleteError,
+      resetSuccess: adminPackagesPageContent.toast.resetSuccess,
+    },
+  });
 
   const startEdit = (item: Package) => {
     const editorItem = getEditorPackage(item.id) ?? item;
@@ -148,29 +159,6 @@ const AdminPackagesPage = () => {
       optionsText: (editorItem.options ?? []).join('\n'),
       priceHint: editorItem.priceHint ?? '',
     });
-  };
-
-  const cancelEdit = () => {
-    setEditingId(null);
-    reset(defaultValues);
-    clearPackageDraft();
-  };
-
-  const handleDelete = async () => {
-    if (!deleteTarget) return;
-
-    const ok = await remove(deleteTarget.id);
-    if (ok) {
-      toast.success(adminPackagesPageContent.toast.deleted);
-    } else {
-      toast.error(adminPackagesPageContent.toast.deleteError);
-    }
-  };
-
-  const handleResetDefaults = async () => {
-    await resetToDefault();
-    toast.success(adminPackagesPageContent.toast.resetSuccess);
-    clearPackageDraft();
   };
 
   const filteredPackages = useMemo(() => {
@@ -232,46 +220,23 @@ const AdminPackagesPage = () => {
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1.45fr)_minmax(340px,0.8fr)]">
         <div className="rounded-xl border border-white/10 bg-slate-800 p-4 lg:order-2 lg:sticky lg:top-6 lg:self-start">
-          <div className="mb-3 flex items-start justify-between gap-3">
-            <div>
-              <h2 className="text-base font-semibold text-white">
-                {editingId ? adminPackagesPageContent.form.editTitle : adminPackagesPageContent.form.createTitle}
-              </h2>
-              <p className="mt-1 text-xs text-slate-400">
-                {editingId
-                  ? adminPackagesPageContent.form.editDescription(editingId)
-                  : adminPackagesPageContent.form.createDescription}
-              </p>
-              {isHydrated && hasPackageDraft && !editingId && (
-                <p className="mt-2 text-xs text-amber-200">{adminPackagesPageContent.form.restoredDraft}</p>
-              )}
-            </div>
-            <div className="flex shrink-0 flex-col items-end gap-1.5">
-              <span className="rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-xs text-slate-300">
-                {sourceLabel}
-              </span>
-              {editingId && (
-                <span className="rounded-full border border-brand-500/40 bg-brand-500/10 px-2 py-0.5 text-xs text-brand-100">
-                  {adminPackagesPageContent.form.editMode}
-                </span>
-              )}
-              {isDirty && (
-                <span className="rounded-full border border-amber-400/40 bg-amber-500/10 px-2 py-0.5 text-xs text-amber-200">
-                  {adminPackagesPageContent.form.unsavedChanges}
-                </span>
-              )}
-              {editingId && (
-                <button
-                  type="button"
-                  onClick={cancelEdit}
-                  disabled={isSubmitting}
-                  className="text-sm text-slate-300 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {adminPackagesPageContent.form.cancel}
-                </button>
-              )}
-            </div>
-          </div>
+          <AdminEditPanelHeader
+            title={editingId ? adminPackagesPageContent.form.editTitle : adminPackagesPageContent.form.createTitle}
+            description={
+              editingId
+                ? adminPackagesPageContent.form.editDescription(editingId)
+                : adminPackagesPageContent.form.createDescription
+            }
+            draftHint={isHydrated && hasPackageDraft && !editingId ? adminPackagesPageContent.form.restoredDraft : undefined}
+            sourceLabel={sourceLabel}
+            isEditing={Boolean(editingId)}
+            isDirty={isDirty}
+            editModeLabel={adminPackagesPageContent.form.editMode}
+            unsavedLabel={adminPackagesPageContent.form.unsavedChanges}
+            cancelLabel={adminPackagesPageContent.form.cancel}
+            onCancel={cancelEdit}
+            cancelDisabled={isSubmitting}
+          />
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-2.5">
             <Field label={adminPackagesPageContent.form.idLabel} required error={errors.id?.message}>

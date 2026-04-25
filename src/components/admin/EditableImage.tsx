@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { MediaLibrary } from './media/MediaLibrary';
 import { useOptionalEditMode } from '../../context/EditModeContext';
+import { useEditableSave } from '../../hooks/useEditableSave';
 import type { MediaItem } from '../../types/media';
 
 interface EditableImageProps {
@@ -42,13 +43,15 @@ const EditableImage = ({
   children,
   altEditor,
 }: EditableImageProps) => {
-  const { isEditing, reportSaveStart, reportSaveEnd, reportSaveSucceeded } =
-    useOptionalEditMode();
+  const { isEditing } = useOptionalEditMode();
+  const imageSave = useEditableSave({ label });
+  const altSave = useEditableSave({ label, suffix: ' (alt)' });
   const [isPickerOpen, setIsPickerOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [altDraft, setAltDraft] = useState<string>(altEditor?.value ?? '');
-  const [altSaving, setAltSaving] = useState(false);
+
+  const saving = imageSave.isSaving;
+  const altSaving = altSave.isSaving;
+  const error = imageSave.error ?? altSave.error;
 
   // Reset the draft whenever the modal opens or the persisted alt changes.
   useEffect(() => {
@@ -58,43 +61,27 @@ const EditableImage = ({
   const handleAltSave = useCallback(async () => {
     if (!altEditor) return;
     if (altDraft === altEditor.value) return;
-    setAltSaving(true);
-    setError(null);
-    reportSaveStart();
-    try {
-      await altEditor.onSave(altDraft);
-      reportSaveSucceeded();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'alt save failed');
-    } finally {
-      setAltSaving(false);
-      reportSaveEnd();
-    }
-  }, [altDraft, altEditor, reportSaveEnd, reportSaveStart, reportSaveSucceeded]);
+    await altSave.runSave(async () => altEditor.onSave(altDraft));
+  }, [altDraft, altEditor, altSave]);
 
   const closePicker = useCallback(() => setIsPickerOpen(false), []);
 
   const handleSelect = useCallback(
     async (media: MediaItem) => {
       if (!media.public_url) {
-        setError('Selected media has no URL');
+        // Synthesise an error via the save hook so it shows in the toolbar.
+        await imageSave.runSave(async () => {
+          throw new Error('Selected media has no URL');
+        });
         return;
       }
-      setSaving(true);
-      setError(null);
-      reportSaveStart();
-      try {
+      const result = await imageSave.runSave(async () => {
         await onSave({ url: media.public_url, mediaId: media.id ?? null });
-        reportSaveSucceeded();
-        closePicker();
-      } catch (e) {
-        setError(e instanceof Error ? e.message : 'save failed');
-      } finally {
-        setSaving(false);
-        reportSaveEnd();
-      }
+        return true;
+      });
+      if (result) closePicker();
     },
-    [closePicker, onSave, reportSaveEnd, reportSaveStart, reportSaveSucceeded],
+    [closePicker, imageSave, onSave],
   );
 
   // Esc closes the picker.

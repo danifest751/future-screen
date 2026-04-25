@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import toast from 'react-hot-toast';
 import AdminLayout from '../../components/admin/AdminLayout';
-import { Button, EmptyState, FallbackDot, Field, Input, Textarea } from '../../components/admin/ui';
+import { Button, EmptyState, FallbackDot, Field, Input, LoadingState, Textarea } from '../../components/admin/ui';
 import { FileText } from 'lucide-react';
 import { usePrivacyPolicy } from '../../hooks/usePrivacyPolicy';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
@@ -125,9 +125,7 @@ const AdminPrivacyPolicyPage = () => {
         contentLocale={adminContentLocale}
         onContentLocaleChange={setAdminContentLocale}
       >
-        <div className="flex h-64 items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />
-        </div>
+        <LoadingState />
       </AdminLayout>
     );
   }

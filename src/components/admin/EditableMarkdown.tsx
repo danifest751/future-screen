@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import Markdown from 'markdown-to-jsx';
 import { Check, X } from 'lucide-react';
 import { useOptionalEditMode } from '../../context/EditModeContext';
+import { useEditableSave } from '../../hooks/useEditableSave';
 import { sanitizeMarkdown } from '../../lib/sanitize';
 
 interface EditableMarkdownProps {
@@ -21,21 +22,19 @@ interface EditableMarkdownProps {
  * live preview modal.
  */
 const EditableMarkdown = ({ value, onSave, label, render }: EditableMarkdownProps) => {
-  const { isEditing, reportSaveStart, reportSaveEnd, reportSaveSucceeded } =
-    useOptionalEditMode();
+  const { isEditing } = useOptionalEditMode();
+  const { isSaving: saving, error, clearError, runSave } = useEditableSave({ label });
   const [isOpen, setIsOpen] = useState(false);
   const [draft, setDraft] = useState(value);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (isOpen) {
       setDraft(value);
-      setError(null);
+      clearError();
       queueMicrotask(() => textareaRef.current?.focus());
     }
-  }, [isOpen, value]);
+  }, [clearError, isOpen, value]);
 
   const close = useCallback(() => setIsOpen(false), []);
 
@@ -44,20 +43,12 @@ const EditableMarkdown = ({ value, onSave, label, render }: EditableMarkdownProp
       close();
       return;
     }
-    setSaving(true);
-    setError(null);
-    reportSaveStart();
-    try {
+    const result = await runSave(async () => {
       await onSave(draft);
-      reportSaveSucceeded();
-      close();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'save failed');
-    } finally {
-      setSaving(false);
-      reportSaveEnd();
-    }
-  }, [close, draft, onSave, reportSaveEnd, reportSaveStart, reportSaveSucceeded, value]);
+      return true;
+    });
+    if (result) close();
+  }, [close, draft, onSave, runSave, value]);
 
   // Esc / Cmd+S keyboard shortcuts inside modal.
   useEffect(() => {

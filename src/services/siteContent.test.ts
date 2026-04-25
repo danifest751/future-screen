@@ -56,11 +56,11 @@ const rowFull = {
 beforeEach(() => fromMock.mockReset());
 
 describe('loadSiteContent', () => {
-  it('возвращает RU поля по умолчанию', async () => {
+  it('возвращает RU поля при locale=ru', async () => {
     const { builder } = makeChain({ data: rowFull, error: null });
     fromMock.mockReturnValue(builder);
 
-    const result = await loadSiteContent('home_hero');
+    const result = await loadSiteContent('home_hero', 'ru');
     expect(result).toMatchObject({
       title: 'Заголовок RU',
       content: 'Контент RU',
@@ -111,13 +111,13 @@ describe('loadSiteContent', () => {
     const { builder } = makeChain({ data: null, error: null });
     fromMock.mockReturnValue(builder);
 
-    expect(await loadSiteContent('missing')).toBeNull();
+    expect(await loadSiteContent('missing', 'ru')).toBeNull();
   });
 
   it('пробрасывает ошибку supabase', async () => {
     const { builder } = makeChain({ data: null, error: { message: 'rls denied' } });
     fromMock.mockReturnValue(builder);
-    await expect(loadSiteContent('home_hero')).rejects.toThrow('rls denied');
+    await expect(loadSiteContent('home_hero', 'ru')).rejects.toThrow('rls denied');
   });
 });
 
@@ -131,7 +131,7 @@ describe('saveSiteContent', () => {
       content: '{"badge":"new"}',
       isPublished: true,
       fontSize: '16',
-    });
+    }, 'ru');
 
     const upsertCall = calls.find((c) => c.name === 'upsert');
     expect(upsertCall?.args[1]).toEqual({ onConflict: 'key' });
@@ -160,14 +160,14 @@ describe('saveSiteContent', () => {
     const { builder } = makeChain({ data: null, error: { message: 'unique violation' } });
     fromMock.mockReturnValue(builder);
 
-    await expect(saveSiteContent('home_hero', { title: 'x' })).rejects.toThrow('unique violation');
+    await expect(saveSiteContent('home_hero', { title: 'x' }, 'ru')).rejects.toThrow('unique violation');
   });
 
   it('бросает если data пустой после upsert', async () => {
     const { builder } = makeChain({ data: null, error: null });
     fromMock.mockReturnValue(builder);
 
-    await expect(saveSiteContent('home_hero', { title: 'x' })).rejects.toThrow(
+    await expect(saveSiteContent('home_hero', { title: 'x' }, 'ru')).rejects.toThrow(
       'Content was not returned after upsert'
     );
   });

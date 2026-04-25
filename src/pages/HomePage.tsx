@@ -1036,41 +1036,41 @@ const HomePage = () => {
   const heroBadgeEdit = useEditableBinding({
     value: hero.badge,
     onSave: (next) => saveHeroField({ badge: next }),
-    label: 'Hero — badge',
+    label: 'Home hero — badge',
   });
   const heroLine0Edit = useEditableBinding({
     value: hero.titleLines[0] ?? '',
     onSave: (next) =>
       saveHeroField({ titleLines: [next, hero.titleLines[1] ?? '', hero.titleLines[2] ?? ''] }),
-    label: 'Hero — title line 1',
+    label: 'Home hero — title line 1',
   });
   const heroLine1Edit = useEditableBinding({
     value: hero.titleLines[1] ?? '',
     onSave: (next) =>
       saveHeroField({ titleLines: [hero.titleLines[0] ?? '', next, hero.titleLines[2] ?? ''] }),
-    label: 'Hero — title line 2 (accent)',
+    label: 'Home hero — title line 2 (accent)',
   });
   const heroLine2Edit = useEditableBinding({
     value: hero.titleLines[2] ?? '',
     onSave: (next) =>
       saveHeroField({ titleLines: [hero.titleLines[0] ?? '', hero.titleLines[1] ?? '', next] }),
-    label: 'Hero — title line 3',
+    label: 'Home hero — title line 3',
   });
   const heroSubtitleEdit = useEditableBinding({
     value: hero.subtitle,
     onSave: (next) => saveHeroField({ subtitle: next }),
-    label: 'Hero — subtitle',
+    label: 'Home hero — subtitle',
     kind: 'multiline',
   });
   const heroPrimaryCtaEdit = useEditableBinding({
     value: hero.primaryCta,
     onSave: (next) => saveHeroField({ primaryCta: next }),
-    label: 'Hero — primary CTA',
+    label: 'Home hero — primary CTA',
   });
   const heroSecondaryCtaEdit = useEditableBinding({
     value: hero.secondaryCta,
     onSave: (next) => saveHeroField({ secondaryCta: next }),
-    label: 'Hero — secondary CTA',
+    label: 'Home hero — secondary CTA',
   });
 
   // Works section (migrated in Phase 5b).

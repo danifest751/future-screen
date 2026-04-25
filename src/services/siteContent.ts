@@ -31,7 +31,7 @@ export type SiteContentInput = {
 
 const hasText = (value: string | null | undefined): boolean => typeof value === 'string' && value.trim().length > 0;
 
-const mapFromDB = (row: SiteContentRow, locale: Locale = 'ru', fallbackToRu = true): SiteContent => ({
+const mapFromDB = (row: SiteContentRow, locale: Locale, fallbackToRu = true): SiteContent => ({
   id: row.id,
   key: row.key,
   title: locale === 'en' ? row.title_en ?? (fallbackToRu ? row.title : null) : row.title,
@@ -62,7 +62,7 @@ const mapFromDB = (row: SiteContentRow, locale: Locale = 'ru', fallbackToRu = tr
 
 export async function loadSiteContent(
   key: string,
-  locale: Locale = 'ru',
+  locale: Locale,
   fallbackToRu = true
 ): Promise<SiteContent | null> {
   const { data, error } = await supabase
@@ -81,7 +81,7 @@ export async function loadSiteContent(
 export async function saveSiteContent(
   key: string,
   input: SiteContentInput,
-  locale: Locale = 'ru',
+  locale: Locale,
   fallbackToRu = true
 ): Promise<SiteContent> {
   const { data, error } = await supabase
@@ -95,7 +95,7 @@ export async function saveSiteContent(
   return mapFromDB(data as SiteContentRow, locale, fallbackToRu);
 }
 
-const mapToDB = (input: SiteContentInput, locale: Locale = 'ru'): Record<string, unknown> => {
+const mapToDB = (input: SiteContentInput, locale: Locale): Record<string, unknown> => {
   const result: Record<string, unknown> = {};
   if (input.title !== undefined) result[locale === 'en' ? 'title_en' : 'title'] = input.title;
   if (input.content !== undefined) result[locale === 'en' ? 'content_en' : 'content'] = input.content;

@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type FocusEvent } from 'react';
-import toast from 'react-hot-toast';
 import { useOptionalEditMode } from '../context/EditModeContext';
-import { useOptionalI18n } from '../context/I18nContext';
+import { useEditableSave } from './useEditableSave';
 
 export type EditableKind = 'text' | 'multiline';
 
@@ -49,15 +48,12 @@ export function useEditableBinding({
   disabled,
   label,
 }: UseEditableBindingArgs): EditableBindingResult {
-  const { isEditing, reportSaveSucceeded, reportSaveStart, reportSaveEnd } =
-    useOptionalEditMode();
-  const { siteLocale, adminLocale } = useOptionalI18n();
+  const { isEditing } = useOptionalEditMode();
+  const { isSaving, error, clearError, runSave } = useEditableSave({ label });
   const active = isEditing && !disabled;
 
   const ref = useRef<HTMLElement | null>(null);
   const [draft, setDraft] = useState<string | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   // Keep contentEditable DOM in sync with the persisted value when not
   // actively editing (otherwise cursor position gets nuked on every rerender).
@@ -76,48 +72,25 @@ export function useEditableBinding({
         setDraft(null);
         return;
       }
-      setIsSaving(true);
-      setError(null);
-      reportSaveStart();
-      try {
+      const result = await runSave(async () => {
         await onSave(cleaned);
-        reportSaveSucceeded();
-        // Confirm visually what was saved and into which language. Without
-        // this it's easy for an admin to "save in EN mode" and not realise
-        // they overwrote the EN copy of a Hero block, not the RU one.
-        if (label) {
-          const localeTag = siteLocale.toUpperCase();
-          const text = adminLocale === 'ru'
-            ? `«${label}» сохранено · ${localeTag}`
-            : `"${label}" saved · ${localeTag}`;
-          toast.success(text, { id: `editable:${label}`, duration: 2200 });
-        }
-      } catch (e) {
-        const message = e instanceof Error ? e.message : 'save failed';
-        setError(message);
-        if (label) {
-          const text = adminLocale === 'ru'
-            ? `«${label}» не сохранилось: ${message}`
-            : `"${label}" save failed: ${message}`;
-          toast.error(text, { id: `editable:${label}:err` });
-        }
-        // Revert DOM to persisted value so the user sees the rejection.
-        if (ref.current) ref.current.textContent = value;
-      } finally {
-        setIsSaving(false);
-        setDraft(null);
-        reportSaveEnd();
+        return true;
+      });
+      // On failure, revert the DOM to the persisted value so the user sees the rejection.
+      if (!result && ref.current) {
+        ref.current.textContent = value;
       }
+      setDraft(null);
     },
-    [adminLocale, kind, label, onSave, reportSaveSucceeded, reportSaveStart, reportSaveEnd, siteLocale, value],
+    [kind, onSave, runSave, value],
   );
 
   const cancel = useCallback(() => {
     if (ref.current) ref.current.textContent = value;
     setDraft(null);
-    setError(null);
+    clearError();
     ref.current?.blur();
-  }, [value]);
+  }, [clearError, value]);
 
   const handleBlur = useCallback(
     (e: FocusEvent<HTMLElement>) => {

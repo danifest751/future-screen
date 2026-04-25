@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Check, X } from 'lucide-react';
 import { useOptionalEditMode } from '../../context/EditModeContext';
+import { useEditableSave } from '../../hooks/useEditableSave';
 
 interface EditableListProps {
   items: string[];
@@ -19,21 +20,19 @@ interface EditableListProps {
  * with a textarea — one item per line — that saves as an array.
  */
 const EditableList = ({ items, onSave, children, label, placeholder }: EditableListProps) => {
-  const { isEditing, reportSaveStart, reportSaveEnd, reportSaveSucceeded } =
-    useOptionalEditMode();
+  const { isEditing } = useOptionalEditMode();
+  const { isSaving: saving, error, clearError, runSave } = useEditableSave({ label });
   const [isOpen, setIsOpen] = useState(false);
   const [draft, setDraft] = useState(items.join('\n'));
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (isOpen) {
       setDraft(items.join('\n'));
-      setError(null);
+      clearError();
       queueMicrotask(() => textareaRef.current?.focus());
     }
-  }, [isOpen, items]);
+  }, [clearError, isOpen, items]);
 
   const close = useCallback(() => setIsOpen(false), []);
 
@@ -46,20 +45,12 @@ const EditableList = ({ items, onSave, children, label, placeholder }: EditableL
       close();
       return;
     }
-    setSaving(true);
-    setError(null);
-    reportSaveStart();
-    try {
+    const result = await runSave(async () => {
       await onSave(next);
-      reportSaveSucceeded();
-      close();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'save failed');
-    } finally {
-      setSaving(false);
-      reportSaveEnd();
-    }
-  }, [close, draft, items, onSave, reportSaveEnd, reportSaveStart, reportSaveSucceeded]);
+      return true;
+    });
+    if (result) close();
+  }, [close, draft, items, onSave, runSave]);
 
   useEffect(() => {
     if (!isOpen) return;

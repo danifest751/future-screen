@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Phone } from 'lucide-react';
 import toast from 'react-hot-toast';
 import AdminLayout from '../../components/admin/AdminLayout';
-import { Button, ConfirmModal, EmptyState, FallbackDot, Field, Input, Textarea } from '../../components/admin/ui';
+import { Button, ConfirmModal, EmptyState, FallbackDot, Field, Input, LoadingState, Textarea } from '../../components/admin/ui';
 import { useI18n } from '../../context/I18nContext';
 import { adminContactsPageContent as adminContactsPageContentStatic, getAdminContactsPageContent } from '../../content/pages/adminContacts';
 import { useContacts } from '../../hooks/useContacts';
@@ -133,9 +133,7 @@ const AdminContactsPage = () => {
         contentLocale={adminContentLocale}
         onContentLocaleChange={setAdminContentLocale}
       >
-        <div className="flex h-64 items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />
-        </div>
+        <LoadingState />
       </AdminLayout>
     );
   }

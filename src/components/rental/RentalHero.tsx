@@ -44,26 +44,26 @@ const RentalHero = memo(function RentalHero({
   const titleEdit = useEditableBinding({
     value: title,
     onSave: async (next) => onPatch?.({ title: next }),
-    label: 'Hero — title',
+    label: 'Rental hero — title',
     disabled,
   });
   const subtitleEdit = useEditableBinding({
     value: subtitle ?? '',
     onSave: async (next) => onPatch?.({ subtitle: next }),
-    label: 'Hero — subtitle',
+    label: 'Rental hero — subtitle',
     disabled,
     kind: 'multiline',
   });
   const ctaEdit = useEditableBinding({
     value: primaryCtaText ?? '',
     onSave: async (next) => onPatch?.({ cta: next }),
-    label: 'Hero — primary CTA',
+    label: 'Rental hero — primary CTA',
     disabled,
   });
   const secondaryCtaEdit = useEditableBinding({
     value: secondaryCtaText ?? '',
     onSave: async (next) => onPatch?.({ secondaryCta: next }),
-    label: 'Hero — secondary CTA',
+    label: 'Rental hero — secondary CTA',
     disabled,
   });
 

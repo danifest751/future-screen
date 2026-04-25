@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import toast from 'react-hot-toast';
 import AdminLayout from '../../components/admin/AdminLayout';
-import { Button, FallbackDot, Field, Input, Textarea } from '../../components/admin/ui';
+import { Button, FallbackDot, Field, Input, LoadingState, Textarea } from '../../components/admin/ui';
 import { useI18n } from '../../context/I18nContext';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 import { useHomeEquipmentSection } from '../../hooks/useHomeEquipmentSection';
@@ -163,9 +163,7 @@ const AdminHomeEquipmentSectionPage = () => {
         contentLocale={adminContentLocale}
         onContentLocaleChange={setAdminContentLocale}
       >
-        <div className="flex h-64 items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />
-        </div>
+        <LoadingState />
       </AdminLayout>
     );
   }

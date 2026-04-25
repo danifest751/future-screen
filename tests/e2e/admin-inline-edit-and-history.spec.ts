@@ -142,19 +142,30 @@ test.describe('Admin inline edit and content history', () => {
     await expect(page.getByRole('toolbar', { name: 'Inline edit toolbar' })).toBeVisible();
     await expect(page.locator('[data-editable="true"]').first()).toBeVisible();
 
+    // Locale indicator: starts at the persisted siteLocale and updates with switch.
+    const localeBadge = page.getByTestId('edit-locale-indicator');
+    await expect(localeBadge).toBeVisible();
+
     await page.getByRole('button', { name: 'EN', exact: true }).click();
     await expect
       .poll(() => page.evaluate(() => document.documentElement.lang))
       .toBe('en');
+    await expect(localeBadge).toContainText('EN');
+    await expect(page.locator('body[data-edit-locale="en"]')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'EN', exact: true })).toHaveAttribute('aria-pressed', 'true');
 
     await page.getByRole('button', { name: 'RU', exact: true }).click();
     await expect
       .poll(() => page.evaluate(() => document.documentElement.lang))
       .toBe('ru');
+    await expect(localeBadge).toContainText('RU');
+    await expect(page.locator('body[data-edit-locale="ru"]')).toBeVisible();
 
     await page.getByRole('button', { name: 'Done', exact: true }).click();
     await expect(page.getByRole('toolbar', { name: 'Inline edit toolbar' })).toHaveCount(0);
     await expect(page.locator('body[data-edit-mode="on"]')).toHaveCount(0);
+    // The data-edit-locale attribute is cleared when leaving edit mode.
+    await expect(page.locator('body[data-edit-locale]')).toHaveCount(0);
   });
 
   test('shows audit trail rows and filters by selected content key', async ({ page }) => {
