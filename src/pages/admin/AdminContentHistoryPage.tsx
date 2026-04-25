@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { History, RotateCcw, Filter, Check, X } from 'lucide-react';
+import { History, RotateCcw, Filter, Check, X, Eye } from 'lucide-react';
 import toast from 'react-hot-toast';
 import AdminLayout from '../../components/admin/AdminLayout';
 import { useI18n } from '../../context/I18nContext';
@@ -60,6 +60,7 @@ const summarizeSnapshot = (v: SiteContentVersion): string => {
 };
 
 type RestorePreviewFieldKey = Exclude<keyof SiteContentSnapshot, 'id' | 'key'>;
+type PreviewSnapshot = SiteContentSnapshot | SiteContentVersion | null;
 
 const restorePreviewFields: Array<{ key: RestorePreviewFieldKey; labelKey: RestorePreviewFieldKey }> = [
   { key: 'title', labelKey: 'title' },
@@ -78,9 +79,16 @@ const restorePreviewFields: Array<{ key: RestorePreviewFieldKey; labelKey: Resto
 ];
 
 const isSamePreviewValue = (
-  currentValue: SiteContentSnapshot[RestorePreviewFieldKey] | undefined,
-  nextValue: SiteContentVersion[RestorePreviewFieldKey] | undefined
+  currentValue: ReturnType<typeof getPreviewValue>,
+  nextValue: ReturnType<typeof getPreviewValue>
 ): boolean => (currentValue ?? null) === (nextValue ?? null);
+
+const getPreviewValue = (
+  snapshot: PreviewSnapshot,
+  key: RestorePreviewFieldKey
+): SiteContentSnapshot[RestorePreviewFieldKey] | SiteContentVersion[RestorePreviewFieldKey] | undefined => (
+  snapshot ? snapshot[key] : null
+);
 
 const formatPreviewValue = (
   value: SiteContentSnapshot[RestorePreviewFieldKey] | SiteContentVersion[RestorePreviewFieldKey] | undefined,
@@ -108,7 +116,16 @@ const AdminContentHistoryPage = () => {
         restoreSuccess: 'Восстановлено',
         restoreError: 'Не удалось восстановить',
         previewLoadError: 'Не удалось загрузить текущий контент для предпросмотра',
+        diffLoadError: 'Не удалось загрузить снимки для диффа',
         previousVersionMissing: 'Не найден предыдущий снимок для отката этой правки',
+        showDiff: 'Показать дифф',
+        diffTitle: 'Дифф изменения',
+        diffIntro: 'Просмотр того, что изменилось в этой записи истории. Здесь ничего не восстанавливается.',
+        diffBefore: 'До изменения',
+        diffAfter: 'После изменения',
+        diffClose: 'Закрыть',
+        diffNoChanges: 'В этой записи не найдено отличий по сохраняемым полям.',
+        diffChangedCount: (n: number) => `Изменено полей: ${n}`,
         previewRestoreTitle: 'Предпросмотр восстановления',
         previewRollbackTitle: 'Предпросмотр отката правки',
         previewRestoreIntro: 'Сравнение показывает, какие поля текущей записи будут заменены значениями из выбранной версии.',
@@ -175,7 +192,16 @@ const AdminContentHistoryPage = () => {
         restoreSuccess: 'Restored',
         restoreError: 'Restore failed',
         previewLoadError: 'Failed to load current content for preview',
+        diffLoadError: 'Failed to load snapshots for diff',
         previousVersionMissing: 'Previous snapshot for this edit was not found',
+        showDiff: 'Show diff',
+        diffTitle: 'Change diff',
+        diffIntro: 'Read-only view of what changed in this history entry. Nothing is restored here.',
+        diffBefore: 'Before change',
+        diffAfter: 'After change',
+        diffClose: 'Close',
+        diffNoChanges: 'No differences were found in saved fields for this entry.',
+        diffChangedCount: (n: number) => `${n} fields changed`,
         previewRestoreTitle: 'Restore preview',
         previewRollbackTitle: 'Undo edit preview',
         previewRestoreIntro: 'The comparison shows which fields of the current record will be replaced by the selected snapshot.',
@@ -243,6 +269,11 @@ const AdminContentHistoryPage = () => {
   const [currentSnapshot, setCurrentSnapshot] = useState<SiteContentSnapshot | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
+  const [diffTarget, setDiffTarget] = useState<SiteContentVersion | null>(null);
+  const [diffBefore, setDiffBefore] = useState<PreviewSnapshot>(null);
+  const [diffAfter, setDiffAfter] = useState<PreviewSnapshot>(null);
+  const [diffLoading, setDiffLoading] = useState(false);
+  const [diffError, setDiffError] = useState<string | null>(null);
   const [restoring, setRestoring] = useState(false);
 
   const reload = useCallback(async () => {
@@ -319,6 +350,46 @@ const AdminContentHistoryPage = () => {
     setPreviewLoading(false);
   }, [restoring]);
 
+  const handleOpenDiff = useCallback(async (version: SiteContentVersion) => {
+    setDiffTarget(version);
+    setDiffBefore(null);
+    setDiffAfter(null);
+    setDiffError(null);
+
+    if (version.operation === 'INSERT') {
+      setDiffAfter(version);
+      return;
+    }
+
+    if (version.operation === 'DELETE') {
+      setDiffBefore(version);
+      return;
+    }
+
+    setDiffLoading(true);
+    try {
+      const previousVersion = await loadPreviousSiteContentVersion(version);
+      if (!previousVersion) {
+        setDiffError(copy.previousVersionMissing);
+        return;
+      }
+      setDiffBefore(previousVersion);
+      setDiffAfter(version);
+    } catch (err) {
+      setDiffError(err instanceof Error ? err.message : copy.diffLoadError);
+    } finally {
+      setDiffLoading(false);
+    }
+  }, [copy.diffLoadError, copy.previousVersionMissing]);
+
+  const handleCloseDiff = useCallback(() => {
+    setDiffTarget(null);
+    setDiffBefore(null);
+    setDiffAfter(null);
+    setDiffError(null);
+    setDiffLoading(false);
+  }, []);
+
   const keysIndex = useMemo(() => {
     const m = new Map<string, (typeof keys)[number]>();
     keys.forEach((k) => m.set(k.key, k));
@@ -356,6 +427,25 @@ const AdminContentHistoryPage = () => {
   const changedRestorePreviewRows = useMemo(
     () => restorePreviewRows.filter((row) => row.changed),
     [restorePreviewRows]
+  );
+
+  const diffRows = useMemo(() => {
+    if (!diffTarget) return [];
+    return restorePreviewFields.map((field) => {
+      const beforeValue = getPreviewValue(diffBefore, field.key);
+      const afterValue = getPreviewValue(diffAfter, field.key);
+      return {
+        ...field,
+        beforeValue,
+        afterValue,
+        changed: !isSamePreviewValue(beforeValue, afterValue),
+      };
+    });
+  }, [diffAfter, diffBefore, diffTarget]);
+
+  const changedDiffRows = useMemo(
+    () => diffRows.filter((row) => row.changed),
+    [diffRows]
   );
 
   return (
@@ -467,14 +557,23 @@ const AdminContentHistoryPage = () => {
                     <td className="px-3 py-2 text-xs text-slate-400">
                       <span className="block max-w-2xl truncate font-mono">{summarizeSnapshot(v)}</span>
                     </td>
-                    <td className="px-3 py-2 text-right">
-                      <button
-                        onClick={() => void handleOpenRestorePreview(v)}
-                        className="inline-flex items-center gap-1 rounded-lg border border-amber-500/40 bg-amber-500/10 px-2 py-1 text-xs font-medium text-amber-200 hover:border-amber-400 hover:bg-amber-500/20"
-                      >
-                        <RotateCcw className="h-3 w-3" />
-                        {copy.rowActions[v.operation]}
-                      </button>
+                    <td className="px-3 py-2">
+                      <div className="flex justify-end gap-1.5">
+                        <button
+                          onClick={() => void handleOpenDiff(v)}
+                          className="inline-flex items-center gap-1 rounded-lg border border-sky-500/35 bg-sky-500/10 px-2 py-1 text-xs font-medium text-sky-200 hover:border-sky-400 hover:bg-sky-500/20"
+                        >
+                          <Eye className="h-3 w-3" />
+                          {copy.showDiff}
+                        </button>
+                        <button
+                          onClick={() => void handleOpenRestorePreview(v)}
+                          className="inline-flex items-center gap-1 rounded-lg border border-amber-500/40 bg-amber-500/10 px-2 py-1 text-xs font-medium text-amber-200 hover:border-amber-400 hover:bg-amber-500/20"
+                        >
+                          <RotateCcw className="h-3 w-3" />
+                          {copy.rowActions[v.operation]}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -483,6 +582,120 @@ const AdminContentHistoryPage = () => {
           </table>
         </div>
       </div>
+
+      {diffTarget && (
+        <div
+          className="fixed inset-0 z-[10002] flex items-center justify-center bg-black/70 p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) handleCloseDiff();
+          }}
+        >
+          <div className="flex max-h-[90vh] w-full max-w-5xl flex-col rounded-2xl border border-white/15 bg-slate-900 shadow-2xl">
+            <div className="border-b border-white/10 p-5">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-lg font-semibold text-white">{copy.diffTitle}</h3>
+                  <p className="mt-1 max-w-3xl text-sm text-slate-300">{copy.diffIntro}</p>
+                </div>
+                <button
+                  onClick={handleCloseDiff}
+                  className="rounded-lg border border-white/10 bg-slate-800 p-2 text-slate-300 hover:border-white/30 hover:text-white"
+                  aria-label={copy.previewClose}
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <dl className="mt-4 grid gap-2 rounded-lg border border-white/10 bg-slate-950/50 p-3 text-xs sm:grid-cols-2 lg:grid-cols-4">
+                <div className="flex gap-2">
+                  <dt className="shrink-0 font-mono text-slate-500">key</dt>
+                  <dd className="truncate font-mono text-slate-200">{diffTarget.key}</dd>
+                </div>
+                <div className="flex gap-2">
+                  <dt className="shrink-0 font-mono text-slate-500">when</dt>
+                  <dd className="text-slate-200">{formatTimestamp(diffTarget.editedAt, localeTag)}</dd>
+                </div>
+                <div className="flex gap-2">
+                  <dt className="shrink-0 font-mono text-slate-500">op</dt>
+                  <dd className="text-slate-200">{copy.operationLabels[diffTarget.operation]}</dd>
+                </div>
+                <div className="flex gap-2">
+                  <dt className="shrink-0 font-mono text-slate-500">by</dt>
+                  <dd className="font-mono text-slate-200">{truncateEditorId(diffTarget.editedBy)}</dd>
+                </div>
+              </dl>
+            </div>
+
+            <div className="min-h-0 flex-1 overflow-auto p-5">
+              {diffLoading ? (
+                <div className="flex items-center justify-center gap-3 rounded-xl border border-white/10 bg-slate-950/50 p-8 text-sm text-slate-300">
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-sky-400 border-t-transparent" />
+                  {copy.previewLoading}
+                </div>
+              ) : diffError ? (
+                <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300">
+                  {diffError}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <span className="inline-flex rounded-full border border-sky-500/30 bg-sky-500/10 px-2.5 py-1 text-xs font-medium text-sky-200">
+                    {copy.diffChangedCount(changedDiffRows.length)}
+                  </span>
+
+                  {changedDiffRows.length === 0 ? (
+                    <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-200">
+                      {copy.diffNoChanges}
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {changedDiffRows.map((row) => (
+                        <section
+                          key={row.key}
+                          className="rounded-xl border border-white/10 bg-slate-950/45 p-3"
+                        >
+                          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                            <h4 className="text-sm font-semibold text-white">{copy.fieldLabels[row.labelKey]}</h4>
+                            <span className="rounded-full border border-sky-500/30 bg-sky-500/10 px-2 py-0.5 text-xs text-sky-200">
+                              {copy.previewChanged}
+                            </span>
+                          </div>
+                          <div className="grid gap-2 md:grid-cols-2">
+                            <div className="min-w-0 rounded-lg border border-red-500/20 bg-red-500/10 p-3">
+                              <div className="mb-1 text-[11px] font-semibold uppercase text-red-200/80">
+                                {copy.diffBefore}
+                              </div>
+                              <pre className="max-h-40 whitespace-pre-wrap break-words font-mono text-xs leading-relaxed text-red-50">
+                                {formatPreviewValue(row.beforeValue, adminLocale)}
+                              </pre>
+                            </div>
+                            <div className="min-w-0 rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-3">
+                              <div className="mb-1 text-[11px] font-semibold uppercase text-emerald-200/80">
+                                {copy.diffAfter}
+                              </div>
+                              <pre className="max-h-40 whitespace-pre-wrap break-words font-mono text-xs leading-relaxed text-emerald-50">
+                                {formatPreviewValue(row.afterValue, adminLocale)}
+                              </pre>
+                            </div>
+                          </div>
+                        </section>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end border-t border-white/10 p-5">
+              <button
+                onClick={handleCloseDiff}
+                className="flex items-center gap-1 rounded-lg border border-white/10 bg-slate-800 px-4 py-2 text-sm font-medium text-slate-200 hover:border-white/30 hover:text-white"
+              >
+                <X className="h-4 w-4" />
+                {copy.diffClose}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {confirmTarget && (
         <div
