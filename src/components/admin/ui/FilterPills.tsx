@@ -4,6 +4,7 @@ export interface FilterPill<TValue extends string> {
   value: TValue;
   label: ReactNode;
   count?: number;
+  icon?: ReactNode;
 }
 
 export interface FilterPillsProps<TValue extends string> {
@@ -43,12 +44,13 @@ const FilterPills = <TValue extends string>({
           type="button"
           onClick={() => onChange(pill.value)}
           aria-pressed={pressed}
-          className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 transition ${
+          className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 transition ${
             pressed
               ? 'border-brand-500 bg-brand-500/20 text-white'
               : 'border-white/10 bg-slate-900 text-slate-300 hover:border-white/30 hover:text-white'
           }`}
         >
+          {pill.icon}
           {pill.label}
           {pill.count !== undefined && (
             <span className="font-mono text-[10px] text-slate-400">{pill.count}</span>

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { ChevronRight, RefreshCcw, UserCog, Image as ImageIcon, Share2, Wand2 } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout';
-import { Button, EmptyState, Input, LoadingState } from '../../components/admin/ui';
+import { AdminPageToolbar, Button, EmptyState, FilterPills, Input, LoadingState } from '../../components/admin/ui';
 import { useI18n } from '../../context/I18nContext';
 import { useVisualLedSessionsQuery } from '../../queries/visualLedLogs';
 import {
@@ -98,31 +98,6 @@ const copy = {
     },
   },
 } as const;
-
-const FilterChip = ({
-  active,
-  onClick,
-  icon,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  icon?: JSX.Element;
-  children: React.ReactNode;
-}) => (
-  <button
-    type="button"
-    onClick={onClick}
-    className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] transition ${
-      active
-        ? 'border-brand-400 bg-brand-500/15 text-white'
-        : 'border-white/10 bg-slate-900/40 text-slate-300 hover:border-white/30 hover:text-white'
-    }`}
-  >
-    {icon}
-    {children}
-  </button>
-);
 
 const AdminVisualLedLogsPage = () => {
   const { adminLocale } = useI18n();
@@ -238,69 +213,59 @@ const AdminVisualLedLogsPage = () => {
   return (
     <AdminLayout title={ui.title} subtitle={ui.subtitle}>
       <div className="space-y-3">
-        {/* Search + filters toolbar */}
-        <div className="rounded-xl border border-white/10 bg-slate-900/50 p-3">
-          <div className="flex flex-wrap items-center gap-3">
+        <AdminPageToolbar
+          hint={ui.stats.shown(filtered.length, total)}
+          filters={
             <Input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder={ui.search}
               className="min-w-[220px] max-w-md flex-1 py-1.5"
             />
+          }
+          actions={
             <Button onClick={() => void reset()} disabled={loading} size="sm">
               <RefreshCcw className="mr-1 inline h-3.5 w-3.5" />
               {ui.reload}
             </Button>
-            <div className="ml-auto text-xs text-slate-400">
-              {ui.stats.shown(filtered.length, total)}
+          }
+          secondary={
+            <div className="flex flex-wrap items-center gap-2">
+              <FilterPills
+                title={ui.filters.heading}
+                active={[
+                  ...(filterAdmin ? ['admin'] : []),
+                  ...(filterBackgrounds ? ['backgrounds'] : []),
+                  ...(filterReport ? ['report'] : []),
+                  ...(filterAssist ? ['assist'] : []),
+                ]}
+                onChange={(value) => {
+                  if (value === 'admin') setFilterAdmin((v) => !v);
+                  else if (value === 'backgrounds') setFilterBackgrounds((v) => !v);
+                  else if (value === 'report') setFilterReport((v) => !v);
+                  else if (value === 'assist') setFilterAssist((v) => !v);
+                }}
+                pills={[
+                  { value: 'admin', label: ui.filters.adminOnly, icon: <UserCog className="h-3 w-3" /> },
+                  { value: 'backgrounds', label: ui.filters.hasBackgrounds, icon: <ImageIcon className="h-3 w-3" /> },
+                  { value: 'report', label: ui.filters.hasReport, icon: <Share2 className="h-3 w-3" /> },
+                  { value: 'assist', label: ui.filters.hasAssist, icon: <Wand2 className="h-3 w-3" /> },
+                ]}
+              />
+              {activeFilters > 0 || search ? (
+                <button
+                  type="button"
+                  onClick={resetFilters}
+                  className="ml-1 text-xs text-slate-400 underline-offset-2 hover:text-white hover:underline"
+                >
+                  {ui.filters.resetAll}
+                </button>
+              ) : null}
             </div>
-          </div>
+          }
+        />
 
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            <span className="text-[10px] uppercase tracking-wide text-slate-500">
-              {ui.filters.heading}:
-            </span>
-            <FilterChip
-              active={filterAdmin}
-              onClick={() => setFilterAdmin((v) => !v)}
-              icon={<UserCog className="h-3 w-3" />}
-            >
-              {ui.filters.adminOnly}
-            </FilterChip>
-            <FilterChip
-              active={filterBackgrounds}
-              onClick={() => setFilterBackgrounds((v) => !v)}
-              icon={<ImageIcon className="h-3 w-3" />}
-            >
-              {ui.filters.hasBackgrounds}
-            </FilterChip>
-            <FilterChip
-              active={filterReport}
-              onClick={() => setFilterReport((v) => !v)}
-              icon={<Share2 className="h-3 w-3" />}
-            >
-              {ui.filters.hasReport}
-            </FilterChip>
-            <FilterChip
-              active={filterAssist}
-              onClick={() => setFilterAssist((v) => !v)}
-              icon={<Wand2 className="h-3 w-3" />}
-            >
-              {ui.filters.hasAssist}
-            </FilterChip>
-            {activeFilters > 0 || search ? (
-              <button
-                type="button"
-                onClick={resetFilters}
-                className="ml-1 text-xs text-slate-400 underline-offset-2 hover:text-white hover:underline"
-              >
-                {ui.filters.resetAll}
-              </button>
-            ) : null}
-          </div>
-
-          {error ? <div className="mt-3 text-sm text-red-300">{error}</div> : null}
-        </div>
+        {error ? <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300">{error}</div> : null}
 
         {loading && sessions.length === 0 ? (
           <LoadingState title={ui.title} />
