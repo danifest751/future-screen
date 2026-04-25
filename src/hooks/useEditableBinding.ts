@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type FocusEvent } from 'react';
+import toast from 'react-hot-toast';
 import { useOptionalEditMode } from '../context/EditModeContext';
+import { useOptionalI18n } from '../context/I18nContext';
 
 export type EditableKind = 'text' | 'multiline';
 
@@ -49,6 +51,7 @@ export function useEditableBinding({
 }: UseEditableBindingArgs): EditableBindingResult {
   const { isEditing, reportSaveSucceeded, reportSaveStart, reportSaveEnd } =
     useOptionalEditMode();
+  const { siteLocale, adminLocale } = useOptionalI18n();
   const active = isEditing && !disabled;
 
   const ref = useRef<HTMLElement | null>(null);
@@ -79,8 +82,25 @@ export function useEditableBinding({
       try {
         await onSave(cleaned);
         reportSaveSucceeded();
+        // Confirm visually what was saved and into which language. Without
+        // this it's easy for an admin to "save in EN mode" and not realise
+        // they overwrote the EN copy of a Hero block, not the RU one.
+        if (label) {
+          const localeTag = siteLocale.toUpperCase();
+          const text = adminLocale === 'ru'
+            ? `«${label}» сохранено · ${localeTag}`
+            : `"${label}" saved · ${localeTag}`;
+          toast.success(text, { id: `editable:${label}`, duration: 2200 });
+        }
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'save failed');
+        const message = e instanceof Error ? e.message : 'save failed';
+        setError(message);
+        if (label) {
+          const text = adminLocale === 'ru'
+            ? `«${label}» не сохранилось: ${message}`
+            : `"${label}" save failed: ${message}`;
+          toast.error(text, { id: `editable:${label}:err` });
+        }
         // Revert DOM to persisted value so the user sees the rejection.
         if (ref.current) ref.current.textContent = value;
       } finally {
@@ -89,7 +109,7 @@ export function useEditableBinding({
         reportSaveEnd();
       }
     },
-    [kind, onSave, reportSaveSucceeded, reportSaveStart, reportSaveEnd, value],
+    [adminLocale, kind, label, onSave, reportSaveSucceeded, reportSaveStart, reportSaveEnd, siteLocale, value],
   );
 
   const cancel = useCallback(() => {

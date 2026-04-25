@@ -1,6 +1,7 @@
 ﻿import { memo, useState } from 'react';
-import { Check, Edit2, Film, ImageIcon, Play, Trash2, X as CloseIcon } from 'lucide-react';
+import { Check, Edit2, Film, ImageIcon, Info, Play, Trash2, X as CloseIcon } from 'lucide-react';
 import { mediaCardContent } from '../../../content/components/mediaCard';
+import { mediaLibraryContent } from '../../../content/components/mediaLibrary';
 import { formatFileSize } from '../../../lib/imageCompression';
 import type { MediaItem } from '../../../types/media';
 
@@ -10,6 +11,7 @@ interface MediaCardProps {
   onToggleSelect: () => void;
   onEdit?: (media: MediaItem) => void;
   onDelete?: (media: MediaItem) => void;
+  onShowDetails?: (media: MediaItem) => void;
   selectable?: boolean;
   showActions?: boolean;
 }
@@ -20,6 +22,7 @@ export const MediaCard = memo(function MediaCard({
   onToggleSelect,
   onEdit,
   onDelete,
+  onShowDetails,
   selectable = true,
   showActions = true,
 }: MediaCardProps) {
@@ -62,6 +65,18 @@ export const MediaCard = memo(function MediaCard({
 
       {showActions && (
         <div className="absolute right-1.5 top-1.5 z-30 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+          {onShowDetails && (
+            <button
+              onClick={(event) => {
+                event.stopPropagation();
+                onShowDetails(media);
+              }}
+              className="flex h-6 w-6 items-center justify-center rounded bg-slate-700/90 text-slate-300 transition-colors hover:bg-sky-500 hover:text-white"
+              title={mediaLibraryContent.details.triggerTitle}
+            >
+              <Info size={14} />
+            </button>
+          )}
           {onEdit && (
             <button
               onClick={(event) => {

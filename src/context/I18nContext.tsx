@@ -80,3 +80,15 @@ export const useI18n = () => {
   if (!ctx) throw new Error('useI18n must be used within I18nProvider');
   return ctx;
 };
+
+/**
+ * Non-throwing variant for utilities (hooks shared across public + admin)
+ * that need to render outside the provider in tests. Returns inert RU/RU
+ * defaults — callers should treat it as a fallback, not the source of truth.
+ */
+// eslint-disable-next-line react-refresh/only-export-components
+export const useOptionalI18n = (): Pick<I18nContextValue, 'siteLocale' | 'adminLocale'> => {
+  const ctx = useContext(I18nContext);
+  if (!ctx) return { siteLocale: 'ru', adminLocale: 'ru' };
+  return { siteLocale: ctx.siteLocale, adminLocale: ctx.adminLocale };
+};

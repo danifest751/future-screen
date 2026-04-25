@@ -13,8 +13,22 @@ const editModeMock = {
   reportSaveEnd: vi.fn(),
 };
 
+const toastSuccessMock = vi.fn();
+const toastErrorMock = vi.fn();
+
+vi.mock('react-hot-toast', () => ({
+  default: {
+    success: (...args: unknown[]) => toastSuccessMock(...args),
+    error: (...args: unknown[]) => toastErrorMock(...args),
+  },
+}));
+
 vi.mock('../context/EditModeContext', () => ({
   useOptionalEditMode: () => editModeMock,
+}));
+
+vi.mock('../context/I18nContext', () => ({
+  useOptionalI18n: () => ({ siteLocale: 'en', adminLocale: 'ru' }),
 }));
 
 describe('useEditableBinding', () => {
@@ -23,6 +37,8 @@ describe('useEditableBinding', () => {
     editModeMock.reportSaveSucceeded.mockClear();
     editModeMock.reportSaveStart.mockClear();
     editModeMock.reportSaveEnd.mockClear();
+    toastSuccessMock.mockClear();
+    toastErrorMock.mockClear();
   });
 
   it('is inert outside edit mode', () => {
@@ -157,6 +173,39 @@ describe('useEditableBinding', () => {
     expect(target.blur).toHaveBeenCalledTimes(1);
   });
 
+  it('shows a localised toast naming the field and editor language on success', async () => {
+    editModeMock.isEditing = true;
+    const onSave = vi.fn(async () => undefined);
+    const { result } = renderHook(() =>
+      useEditableBinding({ value: 'Old', onSave, label: 'Hero badge' }),
+    );
+
+    await act(async () => {
+      const onBlur = result.current.bindProps.onBlur as (e: { currentTarget: { textContent: string } }) => void;
+      onBlur({ currentTarget: { textContent: 'New' } });
+      await Promise.resolve();
+    });
+
+    await waitFor(() => expect(toastSuccessMock).toHaveBeenCalledTimes(1));
+    expect(toastSuccessMock.mock.calls[0][0]).toBe('«Hero badge» сохранено · EN');
+    expect(toastSuccessMock.mock.calls[0][1]).toMatchObject({ id: 'editable:Hero badge' });
+  });
+
+  it('does not toast when label is omitted', async () => {
+    editModeMock.isEditing = true;
+    const onSave = vi.fn(async () => undefined);
+    const { result } = renderHook(() => useEditableBinding({ value: 'Old', onSave }));
+
+    await act(async () => {
+      const onBlur = result.current.bindProps.onBlur as (e: { currentTarget: { textContent: string } }) => void;
+      onBlur({ currentTarget: { textContent: 'New' } });
+      await Promise.resolve();
+    });
+
+    await waitFor(() => expect(onSave).toHaveBeenCalled());
+    expect(toastSuccessMock).not.toHaveBeenCalled();
+  });
+
   it('exposes save error and restores persisted text when save fails', async () => {
     editModeMock.isEditing = true;
     const onSave = vi.fn(async () => {
@@ -167,6 +216,7 @@ describe('useEditableBinding', () => {
       useEditableBinding({
         value: 'Stable',
         onSave,
+        label: 'CTA primary',
       }),
     );
 
@@ -192,6 +242,8 @@ describe('useEditableBinding', () => {
     });
     expect(el.textContent).toBe('Stable');
     expect(editModeMock.reportSaveEnd).toHaveBeenCalledTimes(1);
+    expect(toastErrorMock).toHaveBeenCalledTimes(1);
+    expect(toastErrorMock.mock.calls[0][0]).toBe('«CTA primary» не сохранилось: save failed hard');
   });
 });
 

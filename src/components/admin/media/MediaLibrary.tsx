@@ -1,5 +1,5 @@
 ﻿import { useEffect, useMemo, useState } from 'react';
-import { Edit2, Film, Grid, Image, List, Play, Search, Trash2, Upload, X } from 'lucide-react';
+import { Edit2, Film, Grid, Image, Info, List, Play, Search, Trash2, Upload, X } from 'lucide-react';
 import { mediaLibraryContent } from '../../../content/components/mediaLibrary';
 import { useMediaLibrary } from '../../../hooks/useMediaLibrary';
 import type { MediaFilter, MediaItem } from '../../../types/media';
@@ -8,6 +8,7 @@ import MediaBulkActions from './MediaBulkActions';
 import MediaCard from './MediaCard';
 import MediaTagFilter from './MediaTagFilter';
 import MediaUploadModal from './MediaUploadModal';
+import MediaDetailsModal from './MediaDetailsModal';
 import { loadMediaUsage, type MediaUsageEntry } from '../../../services/mediaUsage';
 
 interface MediaLibraryProps {
@@ -37,6 +38,7 @@ export const MediaLibrary = ({
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [deleteUsage, setDeleteUsage] = useState<MediaUsageEntry[] | null>(null);
   const [deleteUsageLoading, setDeleteUsageLoading] = useState(false);
+  const [detailsMedia, setDetailsMedia] = useState<MediaItem | null>(null);
 
   useEffect(() => {
     if (!deletingMedia) {
@@ -143,6 +145,13 @@ export const MediaLibrary = ({
           setIsUploadModalOpen(false);
         }}
         defaultTags={filter.tags}
+      />
+
+      <MediaDetailsModal
+        media={detailsMedia}
+        onClose={() => setDetailsMedia(null)}
+        copy={mediaLibraryContent.details}
+        formatDate={(iso) => new Date(iso).toLocaleString('ru-RU', { dateStyle: 'medium', timeStyle: 'short' })}
       />
 
       <ConfirmModal
@@ -415,6 +424,7 @@ export const MediaLibrary = ({
                 onToggleSelect={() => handleToggleSelect(media.id)}
                 onEdit={!selectable ? setEditingMedia : undefined}
                 onDelete={!selectable ? setDeletingMedia : undefined}
+                onShowDetails={!selectable ? setDetailsMedia : undefined}
                 selectable
                 showActions={!selectable}
               />
@@ -467,9 +477,20 @@ export const MediaLibrary = ({
                         type="button"
                         onClick={(event) => {
                           event.stopPropagation();
-                          setEditingMedia(media);
+                          setDetailsMedia(media);
                         }}
                         className="ml-2 rounded p-1 text-slate-400 transition-colors hover:bg-slate-700 hover:text-white"
+                        title={mediaLibraryContent.details.triggerTitle}
+                      >
+                        <Info size={14} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setEditingMedia(media);
+                        }}
+                        className="rounded p-1 text-slate-400 transition-colors hover:bg-slate-700 hover:text-white"
                         title={mediaLibraryContent.editModal.title}
                       >
                         <Edit2 size={14} />

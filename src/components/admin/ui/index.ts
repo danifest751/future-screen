@@ -25,3 +25,6 @@ export type { MetricCardProps } from './MetricCard';
 export { default as FilterPills } from './FilterPills';
 export type { FilterPillsProps, FilterPill } from './FilterPills';
 
+export { default as AdminPageToolbar } from './AdminPageToolbar';
+export type { AdminPageToolbarProps } from './AdminPageToolbar';
+

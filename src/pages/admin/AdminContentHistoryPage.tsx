@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { History, RotateCcw, Filter, Check, X, Eye, Search } from 'lucide-react';
 import toast from 'react-hot-toast';
 import AdminLayout from '../../components/admin/AdminLayout';
+import { AdminPageToolbar } from '../../components/admin/ui';
 import { useI18n } from '../../context/I18nContext';
 import {
   loadCurrentSiteContentSnapshot,
@@ -744,26 +745,56 @@ const AdminContentHistoryPage = () => {
 
   return (
     <AdminLayout title={copy.title} subtitle={copy.subtitle}>
-      <div className="mb-4 rounded-xl border border-white/10 bg-slate-900/50 p-3">
-        <div className="flex flex-wrap items-end gap-3">
-          <label className="flex flex-col gap-1 text-sm text-slate-300">
-            <span className="flex items-center gap-1.5">
-              <Filter className="h-3.5 w-3.5" />
-              {copy.filterLabel}
-            </span>
-            <select
-              value={selectedKey ?? ''}
-              onChange={(e) => setSelectedKey(e.target.value || null)}
-              className="min-w-[220px] rounded-lg border border-white/10 bg-slate-950 px-3 py-1.5 text-sm text-white focus:border-brand-500 focus:outline-none"
-            >
-              <option value="">{copy.allKeys}</option>
-              {keys.map((k) => (
-                <option key={k.key} value={k.key}>
-                  {k.key} · {formatTimestamp(k.lastEditedAt, localeTag)}
-                </option>
-              ))}
-            </select>
-          </label>
+      <AdminPageToolbar
+        hint={copy.keyStats(keys.length)}
+        filters={
+          <>
+            <label className="flex flex-col gap-1 text-sm text-slate-300">
+              <span className="flex items-center gap-1.5">
+                <Filter className="h-3.5 w-3.5" />
+                {copy.filterLabel}
+              </span>
+              <select
+                value={selectedKey ?? ''}
+                onChange={(e) => setSelectedKey(e.target.value || null)}
+                className="min-w-[220px] rounded-lg border border-white/10 bg-slate-950 px-3 py-1.5 text-sm text-white focus:border-brand-500 focus:outline-none"
+              >
+                <option value="">{copy.allKeys}</option>
+                {keys.map((k) => (
+                  <option key={k.key} value={k.key}>
+                    {k.key} · {formatTimestamp(k.lastEditedAt, localeTag)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex flex-1 min-w-[220px] flex-col gap-1 text-sm text-slate-300">
+              <span className="flex items-center gap-1.5">
+                <Search className="h-3.5 w-3.5" />
+                {copy.searchLabel}
+              </span>
+              <div className="relative">
+                <input
+                  type="search"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder={copy.searchPlaceholder}
+                  className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-1.5 pr-8 text-sm text-white focus:border-brand-500 focus:outline-none"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    aria-label={copy.searchClear}
+                    className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-1 text-slate-500 hover:bg-slate-800 hover:text-white"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+            </label>
+          </>
+        }
+        actions={
           <button
             onClick={() => void reload()}
             disabled={loading}
@@ -772,59 +803,35 @@ const AdminContentHistoryPage = () => {
             <History className="mr-1 inline h-4 w-4" />
             {copy.refresh}
           </button>
-          <label className="flex flex-1 min-w-[220px] flex-col gap-1 text-sm text-slate-300">
-            <span className="flex items-center gap-1.5">
-              <Search className="h-3.5 w-3.5" />
-              {copy.searchLabel}
-            </span>
-            <div className="relative">
-              <input
-                type="search"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={copy.searchPlaceholder}
-                className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-1.5 pr-8 text-sm text-white focus:border-brand-500 focus:outline-none"
-              />
-              {searchQuery && (
+        }
+        secondary={
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[11px] uppercase tracking-wide text-slate-500">{copy.opFilterHint}:</span>
+            {(['INSERT', 'UPDATE', 'DELETE'] as SiteContentVersionOperation[]).map((operation) => {
+              const enabled = enabledOps.has(operation);
+              return (
                 <button
+                  key={operation}
                   type="button"
-                  onClick={() => setSearchQuery('')}
-                  aria-label={copy.searchClear}
-                  className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-1 text-slate-500 hover:bg-slate-800 hover:text-white"
+                  onClick={() => toggleOp(operation)}
+                  aria-pressed={enabled}
+                  className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition ${
+                    enabled
+                      ? operationColor[operation]
+                      : 'border-white/10 bg-slate-900 text-slate-500 hover:border-white/20 hover:text-slate-300'
+                  }`}
                 >
-                  <X className="h-3.5 w-3.5" />
+                  {copy.operationLabels[operation]}
+                  <span className="font-mono">{operationStats[operation]}</span>
                 </button>
-              )}
-            </div>
-          </label>
-          <div className="ml-auto text-xs text-slate-500">{copy.keyStats(keys.length)}</div>
-        </div>
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <span className="text-[11px] uppercase tracking-wide text-slate-500">{copy.opFilterHint}:</span>
-          {(['INSERT', 'UPDATE', 'DELETE'] as SiteContentVersionOperation[]).map((operation) => {
-            const enabled = enabledOps.has(operation);
-            return (
-              <button
-                key={operation}
-                type="button"
-                onClick={() => toggleOp(operation)}
-                aria-pressed={enabled}
-                className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition ${
-                  enabled
-                    ? operationColor[operation]
-                    : 'border-white/10 bg-slate-900 text-slate-500 hover:border-white/20 hover:text-slate-300'
-                }`}
-              >
-                {copy.operationLabels[operation]}
-                <span className="font-mono">{operationStats[operation]}</span>
-              </button>
-            );
-          })}
-          <span className="ml-auto text-[11px] text-slate-500">
-            {copy.showingFiltered(visibleVersions.length, versions.length)}
-          </span>
-        </div>
-      </div>
+              );
+            })}
+            <span className="ml-auto text-[11px] text-slate-500">
+              {copy.showingFiltered(visibleVersions.length, versions.length)}
+            </span>
+          </div>
+        }
+      />
 
       {loadError && (
         <div className="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300">

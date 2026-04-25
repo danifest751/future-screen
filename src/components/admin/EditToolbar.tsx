@@ -27,7 +27,25 @@ const EditToolbar = () => {
     return () => window.removeEventListener('keydown', onKey);
   }, [isEditing, setEditing]);
 
+  // Mirror the editing locale on <body> so CSS / e2e tests can tell which
+  // language the inline editor is currently writing into.
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    if (!isEditing) {
+      document.body.removeAttribute('data-edit-locale');
+      return;
+    }
+    document.body.setAttribute('data-edit-locale', siteLocale);
+    return () => {
+      document.body.removeAttribute('data-edit-locale');
+    };
+  }, [isEditing, siteLocale]);
+
   if (!isEditing) return null;
+
+  const localeAccent = siteLocale === 'ru'
+    ? 'border-sky-400/60 bg-sky-500/15 text-sky-100'
+    : 'border-emerald-400/60 bg-emerald-500/15 text-emerald-100';
 
   const content = (
     <div
@@ -45,12 +63,22 @@ const EditToolbar = () => {
           <span className="text-slate-400">— changes save on blur</span>
         </div>
 
+        <div
+          className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider ${localeAccent}`}
+          aria-live="polite"
+          data-testid="edit-locale-indicator"
+        >
+          <span aria-hidden="true">●</span>
+          <span>Editing {siteLocale.toUpperCase()}</span>
+        </div>
+
         <div className="flex items-center gap-1 rounded-lg border border-white/10 bg-slate-800 p-0.5">
           {locales.map(({ code, label }) => (
             <button
               key={code}
               type="button"
               onClick={() => setSiteLocale(code)}
+              aria-pressed={siteLocale === code}
               className={`rounded-md px-2.5 py-1 text-xs font-semibold transition ${
                 siteLocale === code
                   ? 'bg-brand-500 text-white'
