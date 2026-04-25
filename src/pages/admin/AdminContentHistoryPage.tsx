@@ -38,25 +38,35 @@ const truncateEditorId = (id: string | null): string => {
   return id.length > 10 ? `${id.slice(0, 8)}…` : id;
 };
 
-// Compact single-line summary of what's in a snapshot.
-const summarizeSnapshot = (v: SiteContentVersion): string => {
+const summarizeSnapshot = (v: SiteContentVersion, adminLocale: 'ru' | 'en'): string => {
   const pieces: string[] = [];
-  if (v.title) pieces.push(`title=${JSON.stringify(v.title.slice(0, 40))}`);
+  const charsLabel = adminLocale === 'ru' ? 'симв.' : 'chars';
+  const yesLabel = adminLocale === 'ru' ? 'да' : 'yes';
+  const noLabel = adminLocale === 'ru' ? 'нет' : 'no';
+  const emptyLabel = adminLocale === 'ru' ? 'пусто' : 'empty';
+
+  if (v.title) {
+    pieces.push(`${adminLocale === 'ru' ? 'Заголовок RU' : 'Title RU'}: ${JSON.stringify(v.title.slice(0, 40))}`);
+  }
   if (v.content) {
-    const len = v.content.length;
-    pieces.push(`content(${len}ch)`);
+    pieces.push(`RU: ${v.content.length} ${charsLabel}`);
   }
-  if (v.metaTitle) pieces.push(`meta=${JSON.stringify(v.metaTitle.slice(0, 32))}`);
-  if (v.titleEn) pieces.push(`title_en=${JSON.stringify(v.titleEn.slice(0, 40))}`);
+  if (v.metaTitle) {
+    pieces.push(`Meta RU: ${JSON.stringify(v.metaTitle.slice(0, 32))}`);
+  }
+  if (v.titleEn) {
+    pieces.push(`${adminLocale === 'ru' ? 'Заголовок EN' : 'Title EN'}: ${JSON.stringify(v.titleEn.slice(0, 40))}`);
+  }
   if (v.contentEn) {
-    const len = v.contentEn.length;
-    pieces.push(`content_en(${len}ch)`);
+    pieces.push(`EN: ${v.contentEn.length} ${charsLabel}`);
   }
-  if (v.metaTitleEn) pieces.push(`meta_en=${JSON.stringify(v.metaTitleEn.slice(0, 32))}`);
+  if (v.metaTitleEn) {
+    pieces.push(`Meta EN: ${JSON.stringify(v.metaTitleEn.slice(0, 32))}`);
+  }
   if (v.isPublished !== null && v.isPublished !== undefined) {
-    pieces.push(`published=${v.isPublished}`);
+    pieces.push(`${adminLocale === 'ru' ? 'Опубликовано' : 'Published'}: ${v.isPublished ? yesLabel : noLabel}`);
   }
-  return pieces.join(' · ') || '— empty —';
+  return pieces.join(' · ') || `— ${emptyLabel} —`;
 };
 
 type RestorePreviewFieldKey = Exclude<keyof SiteContentSnapshot, 'id' | 'key'>;
@@ -555,7 +565,7 @@ const AdminContentHistoryPage = () => {
                       {truncateEditorId(v.editedBy)}
                     </td>
                     <td className="px-3 py-2 text-xs text-slate-400">
-                      <span className="block max-w-2xl truncate font-mono">{summarizeSnapshot(v)}</span>
+                      <span className="block max-w-2xl truncate">{summarizeSnapshot(v, adminLocale)}</span>
                     </td>
                     <td className="px-3 py-2">
                       <div className="flex justify-end gap-1.5">
