@@ -86,7 +86,7 @@ export async function saveSiteContent(
 ): Promise<SiteContent> {
   const { data, error } = await supabase
     .from('site_content')
-    .upsert({ key, ...mapToDB(input, locale) })
+    .upsert({ key, ...mapToDB(input, locale) }, { onConflict: 'key' })
     .select()
     .single();
 

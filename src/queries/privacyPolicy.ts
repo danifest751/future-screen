@@ -77,7 +77,7 @@ export function useSavePrivacyPolicyMutation(locale: Locale = 'ru') {
 
       const { data, error } = await supabase
         .from('site_content')
-        .upsert(payload)
+        .upsert(payload, { onConflict: 'key' })
         .select()
         .single();
 
