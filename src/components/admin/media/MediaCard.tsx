@@ -41,11 +41,11 @@ export const MediaCard = memo(function MediaCard({
   return (
     <div
       className={`group relative overflow-hidden rounded-lg border transition-all duration-200 ${
-        isSelected ? 'border-brand-500 bg-brand-500/10 ring-2 ring-brand-500/50' : 'border-white/10 bg-slate-800 hover:border-white/20'
+        isSelected ? 'border-brand-500 bg-brand-500/10 ring-1 ring-brand-500/50' : 'border-white/10 bg-slate-800 hover:border-white/20'
       }`}
     >
       {selectable && (
-        <div className="absolute left-2 top-2 z-30">
+        <div className="absolute left-1.5 top-1.5 z-30">
           <button
             onClick={(event) => {
               event.stopPropagation();
@@ -61,14 +61,14 @@ export const MediaCard = memo(function MediaCard({
       )}
 
       {showActions && (
-        <div className="absolute right-2 top-2 z-30 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+        <div className="absolute right-1.5 top-1.5 z-30 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
           {onEdit && (
             <button
               onClick={(event) => {
                 event.stopPropagation();
                 onEdit(media);
               }}
-              className="flex h-7 w-7 items-center justify-center rounded bg-slate-700/90 text-slate-300 transition-colors hover:bg-brand-500 hover:text-white"
+              className="flex h-6 w-6 items-center justify-center rounded bg-slate-700/90 text-slate-300 transition-colors hover:bg-brand-500 hover:text-white"
               title={mediaCardContent.actions.editTitle}
             >
               <Edit2 size={14} />
@@ -80,7 +80,7 @@ export const MediaCard = memo(function MediaCard({
                 event.stopPropagation();
                 onDelete(media);
               }}
-              className="flex h-7 w-7 items-center justify-center rounded bg-slate-700/90 text-slate-300 transition-colors hover:bg-red-500 hover:text-white"
+              className="flex h-6 w-6 items-center justify-center rounded bg-slate-700/90 text-slate-300 transition-colors hover:bg-red-500 hover:text-white"
               title={mediaCardContent.actions.deleteTitle}
             >
               <Trash2 size={14} />
@@ -89,7 +89,7 @@ export const MediaCard = memo(function MediaCard({
         </div>
       )}
 
-      <div className="relative aspect-square overflow-hidden bg-slate-900">
+      <div className="relative aspect-[4/3] overflow-hidden bg-slate-900">
         {isVideo ? (
           <>
             {media.thumbnail_url && !imageError ? (
@@ -105,7 +105,7 @@ export const MediaCard = memo(function MediaCard({
               </>
             ) : (
               <div className="flex h-full w-full cursor-pointer flex-col items-center justify-center gap-2 bg-slate-800" onClick={onToggleSelect}>
-                <Film size={48} className="text-slate-500" />
+                <Film size={36} className="text-slate-500" />
                 <span className="text-xs text-slate-500">{mediaCardContent.labels.video}</span>
               </div>
             )}
@@ -114,8 +114,8 @@ export const MediaCard = memo(function MediaCard({
               className="absolute inset-0 z-20 flex cursor-pointer items-center justify-center"
               title={mediaCardContent.actions.previewVideoTitle}
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm transition-transform hover:scale-110">
-                <Play size={20} fill="currentColor" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm transition-transform hover:scale-110">
+                <Play size={18} fill="currentColor" />
               </div>
             </button>
           </>
@@ -137,30 +137,30 @@ export const MediaCard = memo(function MediaCard({
           </div>
         )}
 
-        <div className="absolute bottom-2 left-2">
-          <span className={`rounded px-2 py-0.5 text-[10px] font-medium uppercase ${isVideo ? 'bg-purple-500/80 text-white' : 'bg-slate-700/80 text-slate-300'}`}>
+        <div className="absolute bottom-1.5 left-1.5">
+          <span className={`rounded px-1.5 py-px text-[10px] font-medium uppercase ${isVideo ? 'bg-purple-500/80 text-white' : 'bg-slate-700/80 text-slate-300'}`}>
             {isVideo ? mediaCardContent.labels.video : mediaCardContent.labels.photo}
           </span>
         </div>
 
-        <div className="absolute bottom-2 right-2">
-          <span className="rounded bg-black/60 px-2 py-0.5 text-[10px] text-slate-300">{formatFileSize(media.size_bytes)}</span>
+        <div className="absolute bottom-1.5 right-1.5">
+          <span className="rounded bg-black/60 px-1.5 py-px text-[10px] text-slate-300">{formatFileSize(media.size_bytes)}</span>
         </div>
       </div>
 
-      <div className="p-2">
+      <div className="p-1.5">
         <p className="truncate text-xs text-slate-400" title={media.name}>
           {media.name}
         </p>
 
         {media.tags.length > 0 && (
           <div className="mt-1 flex flex-wrap gap-1">
-            {media.tags.slice(0, 3).map((tag) => (
-              <span key={tag} className="rounded bg-slate-700 px-1.5 py-0.5 text-[10px] text-slate-300">
+            {media.tags.slice(0, 2).map((tag) => (
+              <span key={tag} className="rounded bg-slate-700 px-1.5 py-px text-[10px] text-slate-300">
                 {tag}
               </span>
             ))}
-            {media.tags.length > 3 && <span className="rounded bg-slate-700 px-1.5 py-0.5 text-[10px] text-slate-400">+{media.tags.length - 3}</span>}
+            {media.tags.length > 2 && <span className="rounded bg-slate-700 px-1.5 py-px text-[10px] text-slate-400">+{media.tags.length - 2}</span>}
           </div>
         )}
 

@@ -40,7 +40,7 @@ export const MediaTagFilter = ({
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex w-full items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${
+        className={`flex w-full items-center justify-between gap-2 rounded-lg border px-3 py-1.5 text-sm transition-colors ${
           isOpen || selectedTags.length > 0
             ? 'border-brand-500 bg-brand-500/10 text-white'
             : 'border-white/10 bg-slate-800 text-slate-300 hover:border-white/20'
@@ -54,9 +54,9 @@ export const MediaTagFilter = ({
       </button>
 
       {selectedTags.length > 0 && (
-        <div className="mt-2 flex flex-wrap gap-1">
+        <div className="mt-1.5 flex flex-wrap gap-1">
           {selectedTags.map((tag) => (
-            <span key={tag} className="inline-flex items-center gap-1 rounded-full bg-brand-500/20 px-2 py-1 text-xs text-brand-200">
+            <span key={tag} className="inline-flex items-center gap-1 rounded-full bg-brand-500/20 px-2 py-0.5 text-xs text-brand-200">
               {tag}
               <button onClick={() => toggleTag(tag)} className="hover:text-white">
                 <X size={12} />
@@ -84,7 +84,7 @@ export const MediaTagFilter = ({
               />
             </div>
 
-            <div className="max-h-60 overflow-y-auto p-2">
+            <div className="max-h-56 overflow-y-auto p-2">
               {filteredTags.length === 0 ? (
                 <p className="py-4 text-center text-sm text-slate-500">
                   {search ? mediaTagFilterContent.notFound : mediaTagFilterContent.empty}
@@ -97,7 +97,7 @@ export const MediaTagFilter = ({
                       <button
                         key={tag}
                         onClick={() => toggleTag(tag)}
-                        className={`flex w-full items-center justify-between rounded px-2 py-1.5 text-left text-sm transition-colors ${
+                        className={`flex w-full items-center justify-between rounded px-2 py-1 text-left text-sm transition-colors ${
                           isSelected ? 'bg-brand-500/20 text-brand-200' : 'text-slate-300 hover:bg-slate-700'
                         }`}
                       >

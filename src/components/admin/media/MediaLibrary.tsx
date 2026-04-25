@@ -1,5 +1,5 @@
 ﻿import { useMemo, useState } from 'react';
-import { Film, Grid, Image, List, Play, Search, Upload, X } from 'lucide-react';
+import { Edit2, Film, Grid, Image, List, Play, Search, Trash2, Upload, X } from 'lucide-react';
 import { mediaLibraryContent } from '../../../content/components/mediaLibrary';
 import { useMediaLibrary } from '../../../hooks/useMediaLibrary';
 import type { MediaFilter, MediaItem } from '../../../types/media';
@@ -34,6 +34,12 @@ export const MediaLibrary = ({
   const [deletingMedia, setDeletingMedia] = useState<MediaItem | null>(null);
   const [viewingMedia, setViewingMedia] = useState<MediaItem | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const queryFilter = useMemo<MediaFilter>(() => ({
+    search: '',
+    tags: filter.tags,
+    type: filter.type,
+    sortBy: filter.sortBy,
+  }), [filter.sortBy, filter.tags, filter.type]);
 
   const {
     mediaItems,
@@ -45,11 +51,12 @@ export const MediaLibrary = ({
     selectAll,
     deselectAll,
     deleteSelected,
+    deleteMediaItems,
     addTagsToSelected,
     removeTagsFromSelected,
     updateMediaItem,
     refetch,
-  } = useMediaLibrary(filter);
+  } = useMediaLibrary(queryFilter);
 
   const effectiveSelectedIds = selectable ? new Set(selectedIds) : localSelectedIds;
 
@@ -66,7 +73,7 @@ export const MediaLibrary = ({
 
   const handleDeleteSingle = async () => {
     if (!deletingMedia) return;
-    await deleteSelected();
+    await deleteMediaItems([deletingMedia.id]);
     setDeletingMedia(null);
   };
 
@@ -176,8 +183,8 @@ export const MediaLibrary = ({
         </div>
       )}
 
-      <div className="space-y-4">
-        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-white/10 bg-slate-800 p-3">
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-start gap-2 rounded-lg border border-white/10 bg-slate-800 p-2">
           <div className="relative min-w-[200px] flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
             <input
@@ -185,7 +192,7 @@ export const MediaLibrary = ({
               value={filter.search}
               onChange={(event) => setFilter({ ...filter, search: event.target.value })}
               placeholder={mediaLibraryContent.toolbar.searchPlaceholder}
-              className="w-full rounded-lg border border-white/10 bg-slate-900 py-2 pl-10 pr-9 text-sm text-white placeholder:text-slate-500 focus:border-brand-500 focus:outline-none"
+              className="w-full rounded-lg border border-white/10 bg-slate-900 py-1.5 pl-10 pr-9 text-sm text-white placeholder:text-slate-500 focus:border-brand-500 focus:outline-none"
             />
             {filter.search && (
               <button
@@ -204,7 +211,7 @@ export const MediaLibrary = ({
           <div className="flex rounded-lg border border-white/10 bg-slate-900 p-1">
             <button
               onClick={() => setFilter({ ...filter, type: 'all' })}
-              className={`rounded px-3 py-1.5 text-sm transition-colors ${
+              className={`rounded px-2.5 py-1 text-sm transition-colors ${
                 filter.type === 'all' ? 'bg-brand-500 text-white' : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -212,7 +219,7 @@ export const MediaLibrary = ({
             </button>
             <button
               onClick={() => setFilter({ ...filter, type: 'image' })}
-              className={`rounded px-3 py-1.5 text-sm transition-colors ${
+              className={`rounded px-2.5 py-1 text-sm transition-colors ${
                 filter.type === 'image' ? 'bg-brand-500 text-white' : 'text-slate-400 hover:text-white'
               }`}
               title={mediaLibraryContent.toolbar.imagesOnlyTitle}
@@ -221,7 +228,7 @@ export const MediaLibrary = ({
             </button>
             <button
               onClick={() => setFilter({ ...filter, type: 'video' })}
-              className={`rounded px-3 py-1.5 text-sm transition-colors ${
+              className={`rounded px-2.5 py-1 text-sm transition-colors ${
                 filter.type === 'video' ? 'bg-brand-500 text-white' : 'text-slate-400 hover:text-white'
               }`}
               title={mediaLibraryContent.toolbar.videosOnlyTitle}
@@ -233,7 +240,7 @@ export const MediaLibrary = ({
           <select
             value={filter.sortBy}
             onChange={(event) => setFilter({ ...filter, sortBy: event.target.value as MediaFilter['sortBy'] })}
-            className="rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-sm text-slate-300 focus:border-brand-500 focus:outline-none"
+            className="rounded-lg border border-white/10 bg-slate-900 px-3 py-1.5 text-sm text-slate-300 focus:border-brand-500 focus:outline-none"
           >
             <option value="newest">{mediaLibraryContent.toolbar.sortNewest}</option>
             <option value="oldest">{mediaLibraryContent.toolbar.sortOldest}</option>
@@ -244,13 +251,13 @@ export const MediaLibrary = ({
           <div className="flex rounded-lg border border-white/10 bg-slate-900 p-1">
             <button
               onClick={() => setViewMode('grid')}
-              className={`rounded p-1.5 transition-colors ${viewMode === 'grid' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'}`}
+              className={`rounded p-1 transition-colors ${viewMode === 'grid' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'}`}
             >
               <Grid size={16} />
             </button>
             <button
               onClick={() => setViewMode('list')}
-              className={`rounded p-1.5 transition-colors ${viewMode === 'list' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'}`}
+              className={`rounded p-1 transition-colors ${viewMode === 'list' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'}`}
             >
               <List size={16} />
             </button>
@@ -259,7 +266,7 @@ export const MediaLibrary = ({
           {showUploadButton && (
             <button
               onClick={() => setIsUploadModalOpen(true)}
-              className="flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-400"
+              className="flex items-center gap-2 rounded-lg bg-brand-500 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-brand-400"
             >
               <Upload size={16} />
               {mediaLibraryContent.toolbar.upload}
@@ -272,7 +279,7 @@ export const MediaLibrary = ({
             selectedCount={effectiveSelectedIds.size}
             totalCount={filteredItems.length}
             allTags={allTags}
-            onSelectAll={selectAll}
+            onSelectAll={() => selectAll(filteredItems.map((item) => item.id))}
             onDeselectAll={deselectAll}
             onDelete={deleteSelected}
             onAddTags={addTagsToSelected}
@@ -301,7 +308,7 @@ export const MediaLibrary = ({
             </p>
           </div>
         ) : viewMode === 'grid' ? (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">
             {filteredItems.map((media) => (
               <MediaCard
                 key={media.id}
@@ -316,24 +323,24 @@ export const MediaLibrary = ({
             ))}
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             {filteredItems.map((media) => (
               <div
                 key={media.id}
                 onClick={() => handleToggleSelect(media.id)}
-                className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors ${
+                className={`flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 transition-colors ${
                   effectiveSelectedIds.has(media.id) ? 'border-brand-500 bg-brand-500/10' : 'border-white/10 bg-slate-800 hover:border-white/20'
                 }`}
               >
                 {media.type === 'image' ? (
-                  <img src={media.public_url} alt={media.name} className="h-12 w-12 rounded object-cover" />
+                  <img src={media.public_url} alt={media.name} className="h-10 w-12 rounded object-cover" />
                 ) : (
                   <button
                     onClick={(event) => {
                       event.stopPropagation();
                       setViewingMedia(media);
                     }}
-                    className="group relative flex h-12 w-12 items-center justify-center rounded bg-slate-700 transition-colors hover:bg-slate-600"
+                    className="group relative flex h-10 w-12 items-center justify-center rounded bg-slate-700 transition-colors hover:bg-slate-600"
                   >
                     <Film size={20} className="text-slate-400" />
                     <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100">
@@ -355,6 +362,33 @@ export const MediaLibrary = ({
                       {tag}
                     </span>
                   ))}
+                  {media.tags.length > 3 && <span className="text-xs text-slate-500">+{media.tags.length - 3}</span>}
+                  {!selectable && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setEditingMedia(media);
+                        }}
+                        className="ml-2 rounded p-1 text-slate-400 transition-colors hover:bg-slate-700 hover:text-white"
+                        title={mediaLibraryContent.editModal.title}
+                      >
+                        <Edit2 size={14} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setDeletingMedia(media);
+                        }}
+                        className="rounded p-1 text-red-300 transition-colors hover:bg-red-500/20 hover:text-red-100"
+                        title={mediaLibraryContent.deleteModal.title}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             ))}

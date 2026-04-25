@@ -27,7 +27,12 @@ export const useMediaLibrary = (filter: MediaFilter = {}) => {
     });
   }, []);
 
-  const selectAll = useCallback(() => {
+  const selectAll = useCallback((ids?: string[]) => {
+    if (ids) {
+      setSelectedIds(new Set(ids));
+      return;
+    }
+
     if (mediaItems) {
       setSelectedIds(new Set(mediaItems.map((item) => item.id)));
     }
@@ -42,6 +47,16 @@ export const useMediaLibrary = (filter: MediaFilter = {}) => {
     await deleteMutation.mutateAsync(Array.from(selectedIds));
     setSelectedIds(new Set());
   }, [selectedIds, deleteMutation]);
+
+  const deleteMediaItems = useCallback(async (ids: string[]) => {
+    if (ids.length === 0) return;
+    await deleteMutation.mutateAsync(ids);
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      ids.forEach((id) => next.delete(id));
+      return next;
+    });
+  }, [deleteMutation]);
 
   const addTagsToSelected = useCallback(async (tags: string[]) => {
     if (selectedIds.size === 0 || tags.length === 0) return;
@@ -69,6 +84,7 @@ export const useMediaLibrary = (filter: MediaFilter = {}) => {
     selectAll,
     deselectAll,
     deleteSelected,
+    deleteMediaItems,
     addTagsToSelected,
     removeTagsFromSelected,
     updateMediaItem,

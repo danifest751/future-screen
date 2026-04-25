@@ -152,7 +152,7 @@ export const MediaBulkActions = ({
         }}
       />
 
-      <div className="flex flex-wrap items-center gap-2 rounded-lg border border-brand-500/30 bg-brand-500/10 px-4 py-2">
+      <div className="flex flex-wrap items-center gap-1.5 rounded-lg border border-brand-500/30 bg-brand-500/10 px-3 py-1.5">
         <span className="text-sm text-brand-200">
           {mediaBulkActionsContent.toolbar.selected(selectedCount, totalCount)}
         </span>
