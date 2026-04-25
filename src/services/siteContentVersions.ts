@@ -212,6 +212,25 @@ export async function loadCurrentSiteContentSnapshot(key: string): Promise<SiteC
 }
 
 /**
+ * For UPDATE history rows, the stored snapshot is the state after the edit.
+ * This loads the previous snapshot so admins can undo that specific edit.
+ */
+export async function loadPreviousSiteContentVersion(version: SiteContentVersion): Promise<SiteContentVersion | null> {
+  const { data, error } = await supabase
+    .from('site_content_versions')
+    .select('*')
+    .eq('key', version.key)
+    .lt('edited_at', version.editedAt)
+    .order('edited_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  if (!data) return null;
+  return mapRow(data as unknown as SiteContentVersionRow);
+}
+
+/**
  * Restore a version by upserting its snapshot values back onto
  * public.site_content. Leaves id/key unchanged; writes both locales.
  * Note: this will itself append a new UPDATE version to the audit log.
@@ -219,23 +238,26 @@ export async function loadCurrentSiteContentSnapshot(key: string): Promise<SiteC
 export async function restoreSiteContentVersion(version: SiteContentVersion): Promise<void> {
   const { error } = await supabase
     .from('site_content')
-    .upsert({
-      id: version.siteContentId,
-      key: version.key,
-      title: version.title,
-      content: version.content,
-      content_html: version.contentHtml,
-      meta_title: version.metaTitle,
-      meta_description: version.metaDescription,
-      font_size: version.fontSize,
-      title_en: version.titleEn,
-      content_en: version.contentEn,
-      content_html_en: version.contentHtmlEn,
-      meta_title_en: version.metaTitleEn,
-      meta_description_en: version.metaDescriptionEn,
-      font_size_en: version.fontSizeEn,
-      is_published: version.isPublished,
-    });
+    .upsert(
+      {
+        id: version.siteContentId,
+        key: version.key,
+        title: version.title,
+        content: version.content,
+        content_html: version.contentHtml,
+        meta_title: version.metaTitle,
+        meta_description: version.metaDescription,
+        font_size: version.fontSize,
+        title_en: version.titleEn,
+        content_en: version.contentEn,
+        content_html_en: version.contentHtmlEn,
+        meta_title_en: version.metaTitleEn,
+        meta_description_en: version.metaDescriptionEn,
+        font_size_en: version.fontSizeEn,
+        is_published: version.isPublished,
+      },
+      { onConflict: 'key' }
+    );
 
   if (error) throw new Error(error.message);
 }

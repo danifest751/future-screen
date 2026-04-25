@@ -5,6 +5,7 @@ import AdminLayout from '../../components/admin/AdminLayout';
 import { useI18n } from '../../context/I18nContext';
 import {
   loadCurrentSiteContentSnapshot,
+  loadPreviousSiteContentVersion,
   loadSiteContentKeys,
   loadSiteContentVersions,
   restoreSiteContentVersion,
@@ -97,25 +98,39 @@ const AdminContentHistoryPage = () => {
   const copy = adminLocale === 'ru'
     ? {
         title: 'История изменений контента',
-        subtitle: 'Audit-trail правок site_content. Клик «Восстановить» откатывает к выбранному снепшоту (создаёт новую запись в истории).',
+        subtitle: 'Audit-trail правок site_content. Для UPDATE кнопка откатывает выбранную правку к предыдущему снимку, восстановление создаёт новую запись истории.',
         filterLabel: 'Ключ',
         allKeys: 'Все ключи',
         refresh: 'Обновить',
         restoreConfirm: 'Восстановить эту версию? Текущий контент будет перезаписан (новая запись в истории).',
+        rollbackConfirm: 'Откатить эту правку? Текущий контент будет заменён состоянием до выбранного изменения.',
         restoring: 'Восстанавливаю…',
         restoreSuccess: 'Восстановлено',
         restoreError: 'Не удалось восстановить',
         previewLoadError: 'Не удалось загрузить текущий контент для предпросмотра',
-        previewTitle: 'Предпросмотр восстановления',
-        previewIntro: 'Сравнение показывает, какие поля текущей записи будут заменены значениями из выбранной версии.',
+        previousVersionMissing: 'Не найден предыдущий снимок для отката этой правки',
+        previewRestoreTitle: 'Предпросмотр восстановления',
+        previewRollbackTitle: 'Предпросмотр отката правки',
+        previewRestoreIntro: 'Сравнение показывает, какие поля текущей записи будут заменены значениями из выбранной версии.',
+        previewRollbackIntro: 'Сравнение показывает, какие поля вернутся к состоянию до выбранного изменения.',
         previewLoading: 'Загружаю текущую версию…',
         previewCurrent: 'Сейчас',
         previewRestored: 'Станет после восстановления',
         previewChanged: 'Изменится',
         previewClose: 'Закрыть предпросмотр',
         previewNoCurrent: 'Текущая запись не найдена. Восстановление создаст запись из выбранного снепшота.',
-        previewNoChanges: 'Выбранный снепшот совпадает с текущим контентом. Восстановление создаст новую запись истории без визуальных изменений.',
+        previewNoChanges: 'Целевой снимок совпадает с текущим контентом. Новая запись истории будет без визуальных изменений.',
         previewChangedCount: (n: number) => `Изменится полей: ${n}`,
+        rowActions: {
+          INSERT: 'Восстановить',
+          UPDATE: 'Откатить',
+          DELETE: 'Восстановить',
+        },
+        primaryActions: {
+          INSERT: 'Восстановить',
+          UPDATE: 'Откатить правку',
+          DELETE: 'Восстановить',
+        },
         loadError: 'Не удалось загрузить историю',
         noVersions: 'Правок пока нет',
         fieldLabels: {
@@ -150,25 +165,39 @@ const AdminContentHistoryPage = () => {
       }
     : {
         title: 'Content change history',
-        subtitle: 'site_content audit trail. "Restore" rolls back to the selected snapshot (creates a new history entry).',
+        subtitle: 'site_content audit trail. UPDATE rows can be undone to the previous snapshot; restore writes a new history entry.',
         filterLabel: 'Key',
         allKeys: 'All keys',
         refresh: 'Refresh',
         restoreConfirm: 'Restore this version? Current content will be overwritten (new history entry).',
+        rollbackConfirm: 'Undo this edit? Current content will be replaced with the state before the selected change.',
         restoring: 'Restoring…',
         restoreSuccess: 'Restored',
         restoreError: 'Restore failed',
         previewLoadError: 'Failed to load current content for preview',
-        previewTitle: 'Restore preview',
-        previewIntro: 'The comparison shows which fields of the current record will be replaced by the selected snapshot.',
+        previousVersionMissing: 'Previous snapshot for this edit was not found',
+        previewRestoreTitle: 'Restore preview',
+        previewRollbackTitle: 'Undo edit preview',
+        previewRestoreIntro: 'The comparison shows which fields of the current record will be replaced by the selected snapshot.',
+        previewRollbackIntro: 'The comparison shows which fields will return to the state before the selected edit.',
         previewLoading: 'Loading current version…',
         previewCurrent: 'Current',
         previewRestored: 'After restore',
         previewChanged: 'Will change',
         previewClose: 'Close preview',
         previewNoCurrent: 'Current record was not found. Restore will create the record from this snapshot.',
-        previewNoChanges: 'The selected snapshot matches current content. Restore will create a new history entry without visible changes.',
+        previewNoChanges: 'The target snapshot matches current content. Restore will create a new history entry without visible changes.',
         previewChangedCount: (n: number) => `${n} fields will change`,
+        rowActions: {
+          INSERT: 'Restore',
+          UPDATE: 'Undo',
+          DELETE: 'Restore',
+        },
+        primaryActions: {
+          INSERT: 'Restore',
+          UPDATE: 'Undo edit',
+          DELETE: 'Restore',
+        },
         loadError: 'Failed to load history',
         noVersions: 'No edits yet',
         fieldLabels: {
@@ -210,6 +239,7 @@ const AdminContentHistoryPage = () => {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [confirmTarget, setConfirmTarget] = useState<SiteContentVersion | null>(null);
+  const [restoreTarget, setRestoreTarget] = useState<SiteContentVersion | null>(null);
   const [currentSnapshot, setCurrentSnapshot] = useState<SiteContentSnapshot | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
@@ -237,38 +267,53 @@ const AdminContentHistoryPage = () => {
   }, [reload]);
 
   const handleRestore = useCallback(async () => {
-    if (!confirmTarget) return;
+    if (!restoreTarget) return;
     setRestoring(true);
     try {
-      await restoreSiteContentVersion(confirmTarget);
+      await restoreSiteContentVersion(restoreTarget);
       toast.success(copy.restoreSuccess);
       setConfirmTarget(null);
+      setRestoreTarget(null);
       await reload();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : copy.restoreError);
     } finally {
       setRestoring(false);
     }
-  }, [confirmTarget, copy.restoreError, copy.restoreSuccess, reload]);
+  }, [copy.restoreError, copy.restoreSuccess, reload, restoreTarget]);
 
   const handleOpenRestorePreview = useCallback(async (version: SiteContentVersion) => {
     setConfirmTarget(version);
+    setRestoreTarget(null);
     setCurrentSnapshot(null);
     setPreviewError(null);
     setPreviewLoading(true);
     try {
-      const snapshot = await loadCurrentSiteContentSnapshot(version.key);
+      const [snapshot, previousVersion] = await Promise.all([
+        loadCurrentSiteContentSnapshot(version.key),
+        version.operation === 'UPDATE' ? loadPreviousSiteContentVersion(version) : Promise.resolve(null),
+      ]);
       setCurrentSnapshot(snapshot);
+      if (version.operation === 'UPDATE') {
+        if (!previousVersion) {
+          setPreviewError(copy.previousVersionMissing);
+          return;
+        }
+        setRestoreTarget(previousVersion);
+        return;
+      }
+      setRestoreTarget(version);
     } catch (err) {
       setPreviewError(err instanceof Error ? err.message : copy.previewLoadError);
     } finally {
       setPreviewLoading(false);
     }
-  }, [copy.previewLoadError]);
+  }, [copy.previewLoadError, copy.previousVersionMissing]);
 
   const handleCloseRestorePreview = useCallback(() => {
     if (restoring) return;
     setConfirmTarget(null);
+    setRestoreTarget(null);
     setCurrentSnapshot(null);
     setPreviewError(null);
     setPreviewLoading(false);
@@ -293,10 +338,10 @@ const AdminContentHistoryPage = () => {
   }, [versions]);
 
   const restorePreviewRows = useMemo(() => {
-    if (!confirmTarget) return [];
+    if (!restoreTarget) return [];
     return restorePreviewFields.map((field) => {
       const currentValue = currentSnapshot?.[field.key];
-      const nextValue = confirmTarget[field.key];
+      const nextValue = restoreTarget[field.key];
       return {
         ...field,
         currentValue,
@@ -304,7 +349,9 @@ const AdminContentHistoryPage = () => {
         changed: !currentSnapshot || !isSamePreviewValue(currentValue, nextValue),
       };
     });
-  }, [confirmTarget, currentSnapshot]);
+  }, [currentSnapshot, restoreTarget]);
+
+  const isRollbackPreview = confirmTarget?.operation === 'UPDATE';
 
   const changedRestorePreviewRows = useMemo(
     () => restorePreviewRows.filter((row) => row.changed),
@@ -421,15 +468,13 @@ const AdminContentHistoryPage = () => {
                       <span className="block max-w-2xl truncate font-mono">{summarizeSnapshot(v)}</span>
                     </td>
                     <td className="px-3 py-2 text-right">
-                      {v.operation !== 'DELETE' && (
-                        <button
-                          onClick={() => void handleOpenRestorePreview(v)}
-                          className="inline-flex items-center gap-1 rounded-lg border border-amber-500/40 bg-amber-500/10 px-2 py-1 text-xs font-medium text-amber-200 hover:border-amber-400 hover:bg-amber-500/20"
-                        >
-                          <RotateCcw className="h-3 w-3" />
-                          {adminLocale === 'ru' ? 'Восстановить' : 'Restore'}
-                        </button>
-                      )}
+                      <button
+                        onClick={() => void handleOpenRestorePreview(v)}
+                        className="inline-flex items-center gap-1 rounded-lg border border-amber-500/40 bg-amber-500/10 px-2 py-1 text-xs font-medium text-amber-200 hover:border-amber-400 hover:bg-amber-500/20"
+                      >
+                        <RotateCcw className="h-3 w-3" />
+                        {copy.rowActions[v.operation]}
+                      </button>
                     </td>
                   </tr>
                 ))
@@ -450,8 +495,12 @@ const AdminContentHistoryPage = () => {
             <div className="border-b border-white/10 p-5">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <h3 className="text-lg font-semibold text-white">{copy.previewTitle}</h3>
-                  <p className="mt-1 max-w-3xl text-sm text-slate-300">{copy.previewIntro}</p>
+                  <h3 className="text-lg font-semibold text-white">
+                    {isRollbackPreview ? copy.previewRollbackTitle : copy.previewRestoreTitle}
+                  </h3>
+                  <p className="mt-1 max-w-3xl text-sm text-slate-300">
+                    {isRollbackPreview ? copy.previewRollbackIntro : copy.previewRestoreIntro}
+                  </p>
                 </div>
                 <button
                   onClick={handleCloseRestorePreview}
@@ -547,7 +596,9 @@ const AdminContentHistoryPage = () => {
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/10 p-5">
-              <p className="max-w-2xl text-xs text-slate-400">{copy.restoreConfirm}</p>
+              <p className="max-w-2xl text-xs text-slate-400">
+                {isRollbackPreview ? copy.rollbackConfirm : copy.restoreConfirm}
+              </p>
               <div className="flex items-center justify-end gap-2">
                 <button
                   onClick={handleCloseRestorePreview}
@@ -559,15 +610,11 @@ const AdminContentHistoryPage = () => {
                 </button>
                 <button
                   onClick={() => void handleRestore()}
-                  disabled={restoring || previewLoading || Boolean(previewError)}
+                  disabled={restoring || previewLoading || Boolean(previewError) || !restoreTarget}
                   className="flex items-center gap-1 rounded-lg bg-amber-500/90 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-500 disabled:opacity-60"
                 >
                   <Check className="h-4 w-4" />
-                  {restoring
-                    ? copy.restoring
-                    : adminLocale === 'ru'
-                      ? 'Восстановить'
-                      : 'Restore'}
+                  {restoring ? copy.restoring : copy.primaryActions[confirmTarget.operation]}
                 </button>
               </div>
             </div>
