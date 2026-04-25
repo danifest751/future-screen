@@ -19,3 +19,9 @@ export { default as ConfirmModal } from './ConfirmModal';
 export type { ConfirmModalProps } from './ConfirmModal';
 export { default as FallbackDot } from './FallbackDot';
 
+export { default as MetricCard } from './MetricCard';
+export type { MetricCardProps } from './MetricCard';
+
+export { default as FilterPills } from './FilterPills';
+export type { FilterPillsProps, FilterPill } from './FilterPills';
+

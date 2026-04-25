@@ -38,4 +38,16 @@ export const mediaLibraryContent = {
     video: 'Видео',
     separator: '•',
   },
+  quickTags: {
+    title: 'Быстрые категории',
+    clear: 'Сбросить',
+  },
+  usage: {
+    checking: 'Проверяю использование…',
+    inUseSingular: (count: number) => `Используется в ${count} кейсе:`,
+    inUsePlural: (count: number) =>
+      count >= 5 ? `Используется в ${count} кейсах:` : `Используется в ${count} кейсах:`,
+    notUsed: 'Файл не привязан к кейсам.',
+    cascadeWarning: 'Связь с кейсом будет разорвана автоматически.',
+  },
 } as const;

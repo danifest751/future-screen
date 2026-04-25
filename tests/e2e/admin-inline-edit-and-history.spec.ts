@@ -74,6 +74,11 @@ const json = (body: unknown, status = 200) => ({
   body: JSON.stringify(body),
 });
 
+const editorProfilesFixture: Record<string, { email: string; display_name: string | null }> = {
+  'user-admin-1': { email: 'alice@example.com', display_name: 'Алиса Админ' },
+  'user-admin-2': { email: 'bob@example.com', display_name: null },
+};
+
 async function installSiteContentVersionsMock(page: Page) {
   await page.route('**/rest/v1/site_content_versions**', async (route: Route) => {
     const url = new URL(route.request().url());
@@ -99,6 +104,23 @@ async function installSiteContentVersionsMock(page: Page) {
     }
 
     await route.fulfill(json(filtered));
+  });
+
+  await page.route('**/rest/v1/rpc/editor_profiles**', async (route: Route) => {
+    let ids: string[] = [];
+    try {
+      const body = JSON.parse(route.request().postData() ?? '{}') as { ids?: string[] };
+      ids = body.ids ?? [];
+    } catch {
+      ids = [];
+    }
+    const rows = ids
+      .map((id) => {
+        const profile = editorProfilesFixture[id];
+        return profile ? { id, email: profile.email, display_name: profile.display_name } : null;
+      })
+      .filter(Boolean);
+    await route.fulfill(json(rows));
   });
 }
 
@@ -145,6 +167,9 @@ test.describe('Admin inline edit and content history', () => {
     await page.locator('select').first().selectOption('home_hero');
     await expect(rows).toHaveCount(1);
     await expect(page.locator('tbody tr td').nth(1)).toContainText('home_hero');
+
+    // Editor display name resolved via editor_profiles RPC, not the raw uuid.
+    await expect(page.locator('tbody tr').first()).toContainText('Алиса Админ');
   });
 });
 

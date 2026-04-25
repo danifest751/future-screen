@@ -16,13 +16,13 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout';
 import { useLeads } from '../../hooks/useLeads';
 import type { LeadDeliveryLogEntry, LeadLog } from '../../types/leads';
-import { Button, ConfirmModal, EmptyState, Input, LoadingState } from '../../components/admin/ui';
+import { Button, ConfirmModal, EmptyState, FilterPills, Input, LoadingState, MetricCard } from '../../components/admin/ui';
 import { useI18n } from '../../context/I18nContext';
 import { adminLeadsContent as adminLeadsContentStatic, getAdminLeadsContent } from '../../content/pages/adminLeads';
+import { countByPreset, humanizeLeadSource, matchesPreset, type LeadQuickPreset, type SourceLabelDict } from '../../lib/leadFilters';
 
 let adminLeadsContent = adminLeadsContentStatic;
 let localeTag = 'ru-RU';
@@ -400,12 +400,18 @@ const LeadCard = ({
   onOpenLog,
   onDelete,
   deleteTitle,
+  selected,
+  onToggleSelect,
+  channelLabel,
 }: {
   log: LeadLog;
   onOpenDetails: (log: LeadLog) => void;
   onOpenLog: (log: LeadLog) => void;
   onDelete: (log: LeadLog) => void;
   deleteTitle: string;
+  selected: boolean;
+  onToggleSelect: (id: string) => void;
+  channelLabel: string;
 }) => {
   const time = formatTime(log.timestamp);
   const lastEntry = log.deliveryLog?.[log.deliveryLog.length - 1];
@@ -415,7 +421,11 @@ const LeadCard = ({
 
   return (
     <article
-      className="cursor-pointer overflow-hidden rounded-lg border border-white/10 bg-slate-800/90 shadow-sm transition hover:border-brand-500/30 hover:bg-slate-800 focus-within:border-brand-500/30"
+      className={`cursor-pointer overflow-hidden rounded-lg border shadow-sm transition focus-within:border-brand-500/30 ${
+        selected
+          ? 'border-brand-500/60 bg-slate-800'
+          : 'border-white/10 bg-slate-800/90 hover:border-brand-500/30 hover:bg-slate-800'
+      }`}
       role="button"
       tabIndex={0}
       onClick={() => onOpenDetails(log)}
@@ -427,7 +437,19 @@ const LeadCard = ({
         }
       }}
     >
-      <div className="grid gap-3 px-3 py-2.5 xl:grid-cols-[minmax(170px,1fr)_minmax(190px,1fr)_minmax(180px,0.9fr)_minmax(230px,1.2fr)_minmax(170px,0.9fr)_76px] xl:items-center">
+      <div className="grid gap-3 px-3 py-2.5 xl:grid-cols-[28px_minmax(170px,1fr)_minmax(190px,1fr)_minmax(180px,0.9fr)_minmax(230px,1.2fr)_minmax(170px,0.9fr)_76px] xl:items-center">
+        <label
+          className="flex h-full items-start pt-0.5"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <input
+            type="checkbox"
+            className="h-4 w-4 cursor-pointer accent-brand-500"
+            checked={selected}
+            onChange={() => onToggleSelect(log.id)}
+            aria-label={`select ${log.name}`}
+          />
+        </label>
         <div className="min-w-0">
           <div className="truncate text-sm font-semibold text-white">{log.name}</div>
           <div className="mt-1 flex flex-wrap items-center gap-1.5">
@@ -461,9 +483,12 @@ const LeadCard = ({
         </div>
 
         <div className="min-w-0 text-xs">
-          <div className="truncate text-slate-300">{origin || adminLeadsContent.leadCard.fields.noOrigin}</div>
+          <div className="truncate font-medium text-slate-200">{channelLabel}</div>
+          <div className="mt-0.5 truncate text-[11px] text-slate-500">
+            {origin || adminLeadsContent.leadCard.fields.noOrigin}
+          </div>
           {log.referrer && log.pagePath ? (
-            <div className="mt-0.5 truncate text-[11px] text-slate-500">
+            <div className="truncate text-[11px] text-slate-500">
               {adminLeadsContent.leadCard.fields.referrer}: {log.referrer}
             </div>
           ) : null}
@@ -543,31 +568,6 @@ const LeadCard = ({
   );
 };
 
-const LeadMetricCard = ({
-  label,
-  value,
-  hint,
-  Icon,
-}: {
-  label: string;
-  value: string | number;
-  hint: string;
-  Icon: LucideIcon;
-}) => (
-  <div className="rounded-xl border border-white/10 bg-slate-800 p-4">
-    <div className="flex items-start justify-between gap-3">
-      <div>
-        <div className="text-xs font-medium text-slate-400">{label}</div>
-        <div className="mt-1 text-2xl font-bold text-white">{value}</div>
-        <div className="mt-1 text-xs text-slate-500">{hint}</div>
-      </div>
-      <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-brand-500/20 bg-brand-500/10">
-        <Icon size={18} className="text-brand-300" />
-      </div>
-    </div>
-  </div>
-);
-
 const AdminLeadsPage = () => {
   const { adminLocale } = useI18n();
   adminLeadsContent = getAdminLeadsContent(adminLocale);
@@ -583,6 +583,53 @@ const AdminLeadsPage = () => {
   const [selectedLead, setSelectedLead] = useState<LeadLog | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<LeadLog | null>(null);
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
+  const [quickPreset, setQuickPreset] = useState<LeadQuickPreset>('all');
+  const [bulkSelected, setBulkSelected] = useState<Set<string>>(() => new Set());
+  const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false);
+  const [bulkSubmitting, setBulkSubmitting] = useState(false);
+
+  const sourceDict: SourceLabelDict = useMemo(() => {
+    const ru = adminLocale === 'ru';
+    return {
+      paths: ru
+        ? {
+            '/': 'Главная',
+            '/services': 'Услуги',
+            '/about': 'О нас',
+            '/contacts': 'Контакты',
+            '/cases': 'Кейсы',
+            '/prices': 'Цены',
+            '/rent': 'Аренда',
+          }
+        : {
+            '/': 'Home',
+            '/services': 'Services',
+            '/about': 'About',
+            '/contacts': 'Contacts',
+            '/cases': 'Cases',
+            '/prices': 'Prices',
+            '/rent': 'Rent',
+          },
+      sources: ru
+        ? {
+            hero_form: 'Форма Hero',
+            cta_form: 'CTA-форма',
+            callback: 'Обратный звонок',
+            footer_form: 'Футер',
+            header_button: 'Хедер',
+            consult_form: 'Консультация',
+          }
+        : {
+            hero_form: 'Hero form',
+            cta_form: 'CTA form',
+            callback: 'Callback',
+            footer_form: 'Footer',
+            header_button: 'Header',
+            consult_form: 'Consult form',
+          },
+      fallback: (raw) => raw || (ru ? 'Не указано' : 'Unknown'),
+    };
+  }, [adminLocale]);
 
   const deleteCopy = adminLocale === 'ru'
     ? {
@@ -773,10 +820,69 @@ const AdminLeadsPage = () => {
           lead.requestId?.toLowerCase().includes(query);
 
         const matchesSource = selectedSource === 'all' || lead.source === selectedSource;
-        return matchesQuery && matchesSource;
+        return matchesQuery && matchesSource && matchesPreset(lead, quickPreset);
       }),
-    [debouncedFilter, leads, selectedSource],
+    [debouncedFilter, leads, selectedSource, quickPreset],
   );
+
+  const presetCounts = useMemo(() => countByPreset(leads), [leads]);
+
+  // Drop selections that no longer match the visible set after filters change.
+  useEffect(() => {
+    setBulkSelected((prev) => {
+      if (prev.size === 0) return prev;
+      const visible = new Set(filteredLogs.map((l) => l.id));
+      const next = new Set<string>();
+      prev.forEach((id) => visible.has(id) && next.add(id));
+      return next.size === prev.size ? prev : next;
+    });
+  }, [filteredLogs]);
+
+  const toggleBulk = (id: string) => {
+    setBulkSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const selectAllVisible = () => setBulkSelected(new Set(filteredLogs.map((l) => l.id)));
+  const clearBulk = () => setBulkSelected(new Set());
+
+  const handleBulkMarkRead = async () => {
+    const targets = filteredLogs.filter((l) => bulkSelected.has(l.id) && !l.readAt);
+    if (targets.length === 0) return;
+    setBulkSubmitting(true);
+    try {
+      const results = await Promise.all(targets.map((l) => markRead(l.id)));
+      const ok = results.filter(Boolean).length;
+      if (ok > 0) {
+        toast.success(adminLeadsContent.bulk.markedRead(ok));
+        notifyLeadReadStateChanged();
+      }
+      if (ok < targets.length) {
+        toast.error(adminLeadsContent.bulk.error);
+      }
+    } finally {
+      setBulkSubmitting(false);
+    }
+  };
+
+  const handleBulkDeleteConfirm = async () => {
+    const ids = Array.from(bulkSelected);
+    if (ids.length === 0) return;
+    setBulkSubmitting(true);
+    try {
+      const results = await Promise.all(ids.map((id) => deleteLead(id)));
+      const ok = results.filter(Boolean).length;
+      if (ok > 0) toast.success(adminLeadsContent.bulk.success(ok));
+      if (ok < ids.length) toast.error(adminLeadsContent.bulk.error);
+      setBulkSelected(new Set());
+      setBulkConfirmOpen(false);
+    } finally {
+      setBulkSubmitting(false);
+    }
+  };
 
   const logsByDate = filteredLogs.reduce<Record<string, LeadLog[]>>((acc, lead) => {
     const date = formatDate(lead.timestamp);
@@ -829,25 +935,25 @@ const AdminLeadsPage = () => {
       {leadsError ? <div className="mb-4 text-sm text-red-400">{adminLeadsContent.errors.prefix}: {leadsError}</div> : null}
 
       <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <LeadMetricCard
+        <MetricCard
           label={adminLeadsContent.stats.total}
           value={stats.total}
           hint={adminLeadsContent.summary.shown(filteredLogs.length, leads.length)}
           Icon={Inbox}
         />
-        <LeadMetricCard
+        <MetricCard
           label={adminLeadsContent.stats.today}
           value={stats.today}
           hint={adminLeadsContent.stats.todayHint}
           Icon={CalendarDays}
         />
-        <LeadMetricCard
+        <MetricCard
           label={adminLeadsContent.stats.sources}
           value={stats.sources}
           hint={adminLeadsContent.stats.sourcesHint}
           Icon={SlidersHorizontal}
         />
-        <LeadMetricCard
+        <MetricCard
           label={adminLeadsContent.stats.contactRate}
           value={`${stats.contactRate}%`}
           hint={stats.failed > 0 ? adminLeadsContent.stats.failedHint(stats.failed) : adminLeadsContent.stats.contactRateHint}
@@ -932,7 +1038,71 @@ const AdminLeadsPage = () => {
             </button>
           ) : null}
         </div>
+
+        <FilterPills
+          className="mt-3"
+          title={adminLeadsContent.quickPresets.title}
+          active={quickPreset}
+          onChange={(preset) => setQuickPreset(preset)}
+          pills={[
+            { value: 'all', label: adminLeadsContent.quickPresets.all, count: presetCounts.all },
+            { value: 'unread', label: adminLeadsContent.quickPresets.unread, count: presetCounts.unread },
+            { value: 'today', label: adminLeadsContent.quickPresets.today, count: presetCounts.today },
+            { value: 'week', label: adminLeadsContent.quickPresets.week, count: presetCounts.week },
+            { value: 'failed', label: adminLeadsContent.quickPresets.failed, count: presetCounts.failed },
+          ]}
+        />
       </div>
+
+      {bulkSelected.size > 0 && (
+        <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-brand-500/30 bg-brand-500/10 px-3 py-2 text-xs text-brand-100">
+          <span>{adminLeadsContent.bulk.selected(bulkSelected.size)}</span>
+          <button
+            type="button"
+            onClick={selectAllVisible}
+            className="rounded-full border border-white/10 bg-slate-900/50 px-2 py-0.5 text-slate-200 hover:border-white/30 hover:text-white"
+          >
+            {adminLeadsContent.bulk.selectAllVisible}
+          </button>
+          <button
+            type="button"
+            onClick={clearBulk}
+            className="rounded-full border border-white/10 bg-slate-900/50 px-2 py-0.5 text-slate-200 hover:border-white/30 hover:text-white"
+          >
+            {adminLeadsContent.bulk.clear}
+          </button>
+          <div className="ml-auto flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => void handleBulkMarkRead()}
+              disabled={bulkSubmitting}
+              className="rounded bg-slate-700 px-2.5 py-1 text-white hover:bg-slate-600 disabled:opacity-60"
+            >
+              {adminLeadsContent.bulk.markRead}
+            </button>
+            <button
+              type="button"
+              onClick={() => setBulkConfirmOpen(true)}
+              disabled={bulkSubmitting}
+              className="rounded bg-red-500/80 px-2.5 py-1 font-medium text-white hover:bg-red-500 disabled:opacity-60"
+            >
+              {adminLeadsContent.bulk.delete}
+            </button>
+          </div>
+        </div>
+      )}
+
+      <ConfirmModal
+        open={bulkConfirmOpen}
+        danger
+        title={adminLeadsContent.bulk.confirmTitle(bulkSelected.size)}
+        description={adminLeadsContent.bulk.confirmDescription}
+        confirmText={adminLeadsContent.bulk.delete}
+        cancelText={adminLeadsContent.confirm.cancel}
+        confirmDisabled={bulkSubmitting}
+        onCancel={() => setBulkConfirmOpen(false)}
+        onConfirm={handleBulkDeleteConfirm}
+      />
 
       {filteredLogs.length === 0 ? (
         <EmptyState
@@ -952,10 +1122,11 @@ const AdminLeadsPage = () => {
                 <div className="text-sm font-semibold text-slate-300">{date}</div>
                 <div className="text-xs text-slate-500">{dateLogs.length}</div>
               </div>
-              <div className="mb-1.5 hidden rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] font-semibold uppercase text-slate-500 xl:grid xl:grid-cols-[minmax(170px,1fr)_minmax(190px,1fr)_minmax(180px,0.9fr)_minmax(230px,1.2fr)_minmax(170px,0.9fr)_76px]">
+              <div className="mb-1.5 hidden rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] font-semibold uppercase text-slate-500 xl:grid xl:grid-cols-[28px_minmax(170px,1fr)_minmax(190px,1fr)_minmax(180px,0.9fr)_minmax(230px,1.2fr)_minmax(170px,0.9fr)_76px]">
+                <span />
                 <span>{adminLeadsContent.table.client}</span>
                 <span>{adminLeadsContent.table.contacts}</span>
-                <span>{adminLeadsContent.table.origin}</span>
+                <span>{adminLeadsContent.channelLabel}</span>
                 <span>{adminLeadsContent.table.request}</span>
                 <span>{adminLeadsContent.table.delivery}</span>
                 <span className="text-right">{adminLeadsContent.table.actions}</span>
@@ -969,6 +1140,9 @@ const AdminLeadsPage = () => {
                     onOpenLog={handleOpenLog}
                     onDelete={setDeleteTarget}
                     deleteTitle={deleteCopy.action}
+                    selected={bulkSelected.has(log.id)}
+                    onToggleSelect={toggleBulk}
+                    channelLabel={humanizeLeadSource(log, sourceDict)}
                   />
                 ))}
               </div>

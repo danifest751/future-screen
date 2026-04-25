@@ -125,10 +125,16 @@ const mapSnapshotRow = (row: SiteContentSnapshotRow): SiteContentSnapshot => ({
 /**
  * Load the most recent versions, optionally filtered by content key.
  * Admin-only via RLS on site_content_versions.
+ *
+ * `before` enables keyset pagination: pass the `editedAt` of the last
+ * row you already have to fetch the next older page. We use keyset
+ * (lt edited_at) rather than offset so concurrent inserts don't shift
+ * the window between pages.
  */
 export async function loadSiteContentVersions(options?: {
   key?: string;
   limit?: number;
+  before?: string;
 }): Promise<SiteContentVersion[]> {
   let query = supabase
     .from('site_content_versions')
@@ -138,6 +144,9 @@ export async function loadSiteContentVersions(options?: {
 
   if (options?.key) {
     query = query.eq('key', options.key);
+  }
+  if (options?.before) {
+    query = query.lt('edited_at', options.before);
   }
 
   const { data, error } = await query;
@@ -228,6 +237,31 @@ export async function loadPreviousSiteContentVersion(version: SiteContentVersion
   if (error) throw new Error(error.message);
   if (!data) return null;
   return mapRow(data as unknown as SiteContentVersionRow);
+}
+
+export interface EditorProfile {
+  id: string;
+  email: string | null;
+  displayName: string | null;
+}
+
+/**
+ * Resolve auth.users email + display_name for a set of editor ids.
+ * Backed by the public.editor_profiles RPC (admin-only via inline role
+ * check). Returns an empty array if `ids` is empty; missing ids are
+ * silently dropped.
+ */
+export async function loadEditorProfiles(ids: string[]): Promise<EditorProfile[]> {
+  const unique = Array.from(new Set(ids.filter(Boolean)));
+  if (unique.length === 0) return [];
+
+  const { data, error } = await supabase.rpc('editor_profiles', { ids: unique });
+  if (error) throw new Error(error.message);
+  return ((data ?? []) as Array<{ id: string; email: string | null; display_name: string | null }>).map((row) => ({
+    id: row.id,
+    email: row.email ?? null,
+    displayName: row.display_name ?? null,
+  }));
 }
 
 /**

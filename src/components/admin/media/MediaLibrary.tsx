@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import { Edit2, Film, Grid, Image, List, Play, Search, Trash2, Upload, X } from 'lucide-react';
 import { mediaLibraryContent } from '../../../content/components/mediaLibrary';
 import { useMediaLibrary } from '../../../hooks/useMediaLibrary';
@@ -8,6 +8,7 @@ import MediaBulkActions from './MediaBulkActions';
 import MediaCard from './MediaCard';
 import MediaTagFilter from './MediaTagFilter';
 import MediaUploadModal from './MediaUploadModal';
+import { loadMediaUsage, type MediaUsageEntry } from '../../../services/mediaUsage';
 
 interface MediaLibraryProps {
   onSelect?: (media: MediaItem) => void;
@@ -34,6 +35,35 @@ export const MediaLibrary = ({
   const [deletingMedia, setDeletingMedia] = useState<MediaItem | null>(null);
   const [viewingMedia, setViewingMedia] = useState<MediaItem | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [deleteUsage, setDeleteUsage] = useState<MediaUsageEntry[] | null>(null);
+  const [deleteUsageLoading, setDeleteUsageLoading] = useState(false);
+
+  useEffect(() => {
+    if (!deletingMedia) {
+      setDeleteUsage(null);
+      setDeleteUsageLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setDeleteUsageLoading(true);
+    loadMediaUsage([deletingMedia.id])
+      .then((map) => {
+        if (cancelled) return;
+        setDeleteUsage(map.get(deletingMedia.id) ?? []);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        // Best-effort: missing usage info shouldn't block delete; we just
+        // don't surface a warning.
+        setDeleteUsage(null);
+      })
+      .finally(() => {
+        if (!cancelled) setDeleteUsageLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [deletingMedia]);
   const queryFilter = useMemo<MediaFilter>(() => ({
     search: '',
     tags: filter.tags,
@@ -162,7 +192,37 @@ export const MediaLibrary = ({
         open={!!deletingMedia}
         danger
         title={mediaLibraryContent.deleteModal.title}
-        description={mediaLibraryContent.deleteModal.description(deletingMedia?.name ?? '')}
+        description={
+          deletingMedia ? (
+            <div className="space-y-3">
+              <p>{mediaLibraryContent.deleteModal.description(deletingMedia.name)}</p>
+              {deleteUsageLoading ? (
+                <p className="text-xs text-slate-400">{mediaLibraryContent.usage.checking}</p>
+              ) : deleteUsage && deleteUsage.length > 0 ? (
+                <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm">
+                  <div className="font-medium text-amber-100">
+                    {mediaLibraryContent.usage.inUsePlural(deleteUsage.length)}
+                  </div>
+                  <ul className="mt-1.5 list-disc space-y-0.5 pl-5 text-xs text-amber-100/90">
+                    {deleteUsage.slice(0, 5).map((entry) => (
+                      <li key={entry.caseId}>
+                        {entry.caseTitle ?? entry.caseSlug ?? `case #${entry.caseId}`}
+                      </li>
+                    ))}
+                    {deleteUsage.length > 5 && (
+                      <li>+{deleteUsage.length - 5}…</li>
+                    )}
+                  </ul>
+                  <div className="mt-1.5 text-[11px] text-amber-200/80">
+                    {mediaLibraryContent.usage.cascadeWarning}
+                  </div>
+                </div>
+              ) : deleteUsage !== null ? (
+                <p className="text-xs text-emerald-300">{mediaLibraryContent.usage.notUsed}</p>
+              ) : null}
+            </div>
+          ) : ''
+        }
         confirmText={mediaLibraryContent.deleteModal.confirmText}
         cancelText={mediaLibraryContent.deleteModal.cancelText}
         onCancel={() => setDeletingMedia(null)}
@@ -273,6 +333,44 @@ export const MediaLibrary = ({
             </button>
           )}
         </div>
+
+        {allTags.length > 0 && (
+          <div className="flex flex-wrap items-center gap-1.5 rounded-lg border border-white/10 bg-slate-800/60 px-2 py-1.5 text-xs">
+            <span className="text-slate-500">{mediaLibraryContent.quickTags.title}:</span>
+            {allTags.slice(0, 8).map((tag) => {
+              const active = (filter.tags ?? []).includes(tag);
+              return (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => {
+                    const current = filter.tags ?? [];
+                    setFilter({
+                      ...filter,
+                      tags: active ? current.filter((t) => t !== tag) : [...current, tag],
+                    });
+                  }}
+                  className={`rounded-full border px-2 py-0.5 transition ${
+                    active
+                      ? 'border-brand-500 bg-brand-500/20 text-white'
+                      : 'border-white/10 bg-slate-900 text-slate-300 hover:border-white/30 hover:text-white'
+                  }`}
+                >
+                  {tag}
+                </button>
+              );
+            })}
+            {(filter.tags?.length ?? 0) > 0 && (
+              <button
+                type="button"
+                onClick={() => setFilter({ ...filter, tags: [] })}
+                className="ml-auto rounded-full border border-white/10 bg-slate-900 px-2 py-0.5 text-slate-400 hover:border-white/30 hover:text-white"
+              >
+                {mediaLibraryContent.quickTags.clear}
+              </button>
+            )}
+          </div>
+        )}
 
         {!selectable && (
           <MediaBulkActions
