@@ -59,9 +59,8 @@ test.describe('Admin access control', () => {
     await page.locator('#login-password').fill('password');
     await page.locator('[role="dialog"] form button[type="submit"]').click();
 
-    await expect(page).toHaveURL(/\/admin\/content$/);
-
-    await page.goto('/admin');
+    // Login redirects to the dashboard now that the standalone /admin/content
+    // hub was retired (its section cards moved into the dashboard itself).
     await expect(page).toHaveURL(/\/admin$/);
     await expect(page.getByRole('heading', { name: /дашборд|dashboard/i })).toBeVisible();
 
@@ -69,8 +68,8 @@ test.describe('Admin access control', () => {
     await expect(page).toHaveURL(/\/admin\/leads$/);
     await expect(page.getByRole('heading', { name: /лента заявок|leads feed/i })).toBeVisible();
 
-    await page.locator('a[href="/admin/content"]').first().click();
-    await expect(page).toHaveURL(/\/admin\/content$/);
-    await expect(page.getByRole('heading', { name: /все настройки|all settings/i })).toBeVisible();
+    // Content history still has its own nav item under "Контент" group.
+    await page.locator('a[href="/admin/content/history"]').first().click();
+    await expect(page).toHaveURL(/\/admin\/content\/history$/);
   });
 });

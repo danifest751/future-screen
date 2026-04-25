@@ -61,7 +61,7 @@ const AdminGearButton = () => {
             <div className="absolute bottom-12 right-0 w-44 rounded-xl border border-white/10 bg-slate-900 p-2 shadow-xl">
               <button
                 onClick={() => {
-                  navigate('/admin/content');
+                  navigate('/admin');
                   setShowMenu(false);
                 }}
                 className="w-full rounded-lg px-3 py-2 text-left text-sm text-slate-200 hover:bg-white/5"

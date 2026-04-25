@@ -9,7 +9,6 @@ type AdminLayoutContent = {
     categories: string;
     rentalCategories: string;
     contacts: string;
-    settings: string;
     visualLed: string;
     visualLedLogs: string;
     contentHistory: string;
@@ -55,7 +54,6 @@ const ru: AdminLayoutContent = {
     categories: 'Категории',
     rentalCategories: 'Аренда',
     contacts: 'Контакты',
-    settings: 'Настройки',
     visualLed: 'Визуализатор экрана',
     visualLedLogs: 'Логи visual-led',
     contentHistory: 'История контента',
@@ -101,7 +99,6 @@ const en: AdminLayoutContent = {
     categories: 'Categories',
     rentalCategories: 'Rental',
     contacts: 'Contacts',
-    settings: 'Settings',
     visualLed: 'Screen visualizer',
     visualLedLogs: 'Visual LED logs',
     contentHistory: 'Content history',

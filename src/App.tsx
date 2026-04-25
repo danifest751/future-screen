@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect } from 'react';
-import { useLocation, useRoutes } from 'react-router-dom';
+import { Navigate, useLocation, useRoutes } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -20,7 +20,6 @@ const AboutPage = lazy(() => import('./pages/AboutPage'));
 const ContactsPage = lazy(() => import('./pages/ContactsPage'));
 const ConsultPage = lazy(() => import('./pages/ConsultPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
-const AdminContentPage = lazy(() => import('./pages/admin/AdminContentIndexPage'));
 const AdminLeadsPage = lazy(() => import('./pages/admin/AdminLeadsPage'));
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
 const AdminCasesPage = lazy(() => import('./pages/admin/AdminCasesRedesignedPage'));
@@ -95,7 +94,10 @@ const App = () => {
     { path: '/contacts', element: <ContactsPage /> },
     { path: '/consult', element: <ConsultPage /> },
     { path: '/privacy', element: <PrivacyPolicyPage /> },
-    { path: '/admin/content', element: <ProtectedRoute requiredRole="admin"><AdminContentPage /></ProtectedRoute> },
+    // /admin/content was a hub of section-cards; the same cards now live on
+    // the dashboard, so the standalone hub was retired. Redirect kept so old
+    // bookmarks and the post-login destination still land somewhere useful.
+    { path: '/admin/content', element: <Navigate to="/admin" replace /> },
     { path: '/admin/leads', element: <ProtectedRoute requiredRole="admin"><AdminLeadsPage /></ProtectedRoute> },
     { path: '/admin/cases', element: <ProtectedRoute requiredRole="admin"><AdminCasesPage /></ProtectedRoute> },
     { path: '/admin/packages', element: <ProtectedRoute requiredRole="admin"><AdminPackagesPage /></ProtectedRoute> },

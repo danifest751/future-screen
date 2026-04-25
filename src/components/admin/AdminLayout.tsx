@@ -12,7 +12,6 @@ import {
   Monitor,
   Package,
   Phone,
-  Settings,
   ShoppingCart,
   Tag,
   X,
@@ -68,7 +67,6 @@ const createNavSections = (content: ReturnType<typeof getAdminLayoutContent>): N
     id: 'content',
     label: content.navGroups.content,
     items: [
-      { to: '/admin/content', label: content.nav.settings, Icon: Settings },
       { to: '/admin/content/history', label: content.nav.contentHistory, Icon: History },
       { to: '/admin/contacts', label: content.nav.contacts, Icon: Phone },
     ],

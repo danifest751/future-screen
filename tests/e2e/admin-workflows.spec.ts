@@ -16,8 +16,8 @@ test.describe('Admin workflows', () => {
   test.beforeEach(async ({ page }) => {
     await installSupabaseMock(page, { authenticated: true });
     await seedAuthSession(page);
-    await page.goto('/admin/content');
-    await expect(page).toHaveURL(/\/admin\/content$/);
+    await page.goto('/admin');
+    await expect(page).toHaveURL(/\/admin$/);
   });
 
   test('filters leads and exports with the current dataset', async ({ page }) => {
@@ -51,18 +51,25 @@ test.describe('Admin workflows', () => {
     await expect(page.getByText(/заявки удалены|leads deleted/i)).toBeVisible();
   });
 
-  test('navigates through the content hub cards', async ({ page }) => {
-    await page.goto('/admin/content');
+  test('navigates through the dashboard content cards', async ({ page }) => {
+    // The standalone /admin/content hub was retired (the same cards live
+    // inside the dashboard now); this test exercises the dashboard
+    // section-card grid as the new home for those entry points.
+    await page.goto('/admin');
 
-    await expect(page.getByRole('heading', { name: /все настройки|all settings/i })).toBeVisible();
     await page.locator('a[href="/admin/packages"]').first().click();
     await expect(page).toHaveURL(/\/admin\/packages$/);
     await expect(page.getByRole('heading', { name: /пакеты|packages/i })).toBeVisible();
 
-    await page.locator('a[href="/admin/content"]').first().click();
+    await page.goto('/admin');
     await page.locator('a[href="/admin/categories"]').first().click();
     await expect(page).toHaveURL(/\/admin\/categories$/);
     await expect(page.getByRole('heading', { name: /категории|categories/i })).toBeVisible();
+  });
+
+  test('legacy /admin/content URL redirects to dashboard', async ({ page }) => {
+    await page.goto('/admin/content');
+    await expect(page).toHaveURL(/\/admin$/);
   });
 
   test('loads contacts form from data source and ignores stale draft', async ({ page }) => {

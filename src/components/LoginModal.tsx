@@ -40,7 +40,7 @@ const LoginModal = ({ open, onClose }: Props) => {
       setEmail('');
       setPassword('');
       onClose();
-      navigate('/admin/content');
+      navigate('/admin');
       return;
     }
 
