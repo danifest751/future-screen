@@ -120,6 +120,7 @@ const AdminCategoriesPage = () => {
     editingId,
     setEditingId,
     deleteTarget,
+    setDeleteTarget,
     buildPayload: (values) => ({
       id: values.id,
       title: values.title.trim(),

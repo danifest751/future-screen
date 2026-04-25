@@ -16,6 +16,9 @@ export interface UseAdminCrudHandlersArgs<TPayload, TFormValues, TItem, TId exte
   setEditingId: (id: TId | null) => void;
   /** Item targeted for deletion (typically a confirm modal selection). */
   deleteTarget: TItem | null;
+  /** Clear the deleteTarget after a successful delete (so the modal closes
+   *  and a second confirm-click cannot fire a no-op DELETE). */
+  setDeleteTarget?: (target: TItem | null) => void;
   /** Build the persistence payload from form values (id-trimming, splitList, etc.). */
   buildPayload: (values: TFormValues) => TPayload;
   /** CRUD adapters, usually wrappers around the React Query mutations. */
@@ -57,6 +60,7 @@ export function useAdminCrudHandlers<TPayload, TFormValues, TItem, TId extends s
   editingId,
   setEditingId,
   deleteTarget,
+  setDeleteTarget,
   buildPayload,
   upsert,
   remove,
@@ -106,10 +110,14 @@ export function useAdminCrudHandlers<TPayload, TFormValues, TItem, TId extends s
     const ok = await remove(id);
     if (ok) {
       toast.success(toastCopy.deleted);
+      // Close the confirm modal — without this the modal stays open and
+      // a second click fires DELETE on an already-deleted row, surfacing
+      // a misleading "delete error".
+      setDeleteTarget?.(null);
     } else {
       toast.error(toastCopy.deleteError);
     }
-  }, [deleteIdField, deleteTarget, remove, toastCopy.deleteError, toastCopy.deleted]);
+  }, [deleteIdField, deleteTarget, remove, setDeleteTarget, toastCopy.deleteError, toastCopy.deleted]);
 
   const handleResetDefaults = useCallback(async () => {
     await resetToDefault();

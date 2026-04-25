@@ -3,6 +3,7 @@ import type { Locale } from '../i18n/types';
 import { errorBoundaryContent } from '../content/components/errorBoundary';
 import { getHomePageContent } from '../content/pages/home';
 import { loadSiteContent, saveSiteContent } from '../services/siteContent';
+import { useOptionalEditMode } from '../context/EditModeContext';
 import {
   HOME_EQUIPMENT_SECTION_KEY,
   HOME_EQUIPMENT_SECTION_LEGACY_HEADER_KEY,
@@ -24,6 +25,7 @@ export function useHomeEquipmentSection(locale: Locale = 'ru', fallbackToRu = tr
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { savesVersion } = useOptionalEditMode();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -128,7 +130,7 @@ export function useHomeEquipmentSection(locale: Locale = 'ru', fallbackToRu = tr
 
   useEffect(() => {
     void load();
-  }, [load]);
+  }, [load, savesVersion]);
 
   return {
     data,

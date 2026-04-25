@@ -127,6 +127,34 @@ describe('useAdminCrudHandlers', () => {
       expect(toastSuccess).toHaveBeenCalledWith('Удалено');
     });
 
+    it('после успешного delete сбрасывает deleteTarget', async () => {
+      const setDeleteTarget = vi.fn();
+      const args = buildArgs({ deleteTarget: { id: 'x', title: 'X' }, setDeleteTarget });
+      const { result } = renderHook(() => useAdminCrudHandlers<Payload, Form, Item, string>(args));
+
+      await act(async () => {
+        await result.current.handleDelete();
+      });
+
+      expect(setDeleteTarget).toHaveBeenCalledWith(null);
+    });
+
+    it('после неудачного delete НЕ сбрасывает deleteTarget (модалка остаётся для повторной попытки)', async () => {
+      const setDeleteTarget = vi.fn();
+      const args = buildArgs({
+        deleteTarget: { id: 'x', title: 'X' },
+        remove: vi.fn(async () => false),
+        setDeleteTarget,
+      });
+      const { result } = renderHook(() => useAdminCrudHandlers<Payload, Form, Item, string>(args));
+
+      await act(async () => {
+        await result.current.handleDelete();
+      });
+
+      expect(setDeleteTarget).not.toHaveBeenCalled();
+    });
+
     it('remove вернул false — тост ошибки', async () => {
       const args = buildArgs({
         deleteTarget: { id: 'x', title: 'X' },

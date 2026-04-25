@@ -124,6 +124,7 @@ const AdminPackagesPage = () => {
     editingId,
     setEditingId,
     deleteTarget,
+    setDeleteTarget,
     buildPayload: (values) => ({
       id: values.id,
       name: values.name.trim(),

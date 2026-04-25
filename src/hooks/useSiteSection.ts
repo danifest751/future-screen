@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { loadSiteContent, saveSiteContent } from '../services/siteContent';
+import { useOptionalEditMode } from '../context/EditModeContext';
 import type { Locale } from '../i18n/types';
 
 type Parse<T> = (raw: string | null | undefined) => T | null;
@@ -38,6 +39,11 @@ export function useSiteSectionJson<T>(
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Subscribe to inline-edit save events so a save originating from a
+  // sibling Editable* (e.g. EditableImage in another card) refetches
+  // this section. Reading from the optional ctx makes the hook safe to
+  // use on public pages that don't mount EditModeProvider in tests.
+  const { savesVersion } = useOptionalEditMode();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -88,7 +94,7 @@ export function useSiteSectionJson<T>(
 
   useEffect(() => {
     void load();
-  }, [load]);
+  }, [load, savesVersion]);
 
   return { data, hasDbRecord, loading, saving, error, save, reload: load };
 }

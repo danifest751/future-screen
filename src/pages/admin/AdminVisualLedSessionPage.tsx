@@ -4,6 +4,7 @@ import { ArrowLeft, Copy, ExternalLink, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import AdminLayout from '../../components/admin/AdminLayout';
 import { EmptyState, LoadingState } from '../../components/admin/ui';
+import { safeHref } from '../../lib/safeHref';
 import EventTimeline from '../../components/admin/EventTimeline';
 import { useI18n } from '../../context/I18nContext';
 import {
@@ -370,7 +371,7 @@ const AdminVisualLedSessionPage = () => {
                 <IdentityRow label={ui.identity.pageUrl}>
                   {session.page_url ? (
                     <a
-                      href={session.page_url}
+                      href={safeHref(session.page_url)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1 break-all text-sky-300 hover:text-sky-200"
@@ -521,7 +522,7 @@ const AdminVisualLedSessionPage = () => {
                     {ui.cards.reportLink}
                   </div>
                   <a
-                    href={insights.reportUrl}
+                    href={safeHref(insights.reportUrl)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 break-all text-sky-300 hover:text-sky-200"
@@ -643,7 +644,7 @@ const AdminVisualLedSessionPage = () => {
                         </div>
                       </div>
                       <a
-                        href={share.url}
+                        href={safeHref(share.url)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="mt-2 inline-flex items-center gap-1 rounded-md border border-white/15 bg-white/5 px-2 py-1 text-xs text-slate-200 hover:bg-white/10"

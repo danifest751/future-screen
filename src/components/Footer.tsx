@@ -3,6 +3,7 @@ import { useI18n } from '../context/I18nContext';
 import { useGlobalFooter } from '../hooks/useGlobalFooter';
 import { useGlobalBrand } from '../hooks/useGlobalBrand';
 import { useEditableBinding } from '../hooks/useEditableBinding';
+import { safeHref } from '../lib/safeHref';
 import type { GlobalFooterContent, GlobalFooterLink } from '../lib/content/globalFooter';
 import type { GlobalBrandContent } from '../lib/content/globalBrand';
 
@@ -30,10 +31,11 @@ const FooterNavLink = ({ link, index, labelPrefix, onSaveLabel, hashNav }: Foote
     label: `${labelPrefix} ${index + 1} — label`,
   });
   const inner = <span {...labelEdit.bindProps}>{labelEdit.value}</span>;
+  const href = safeHref(link.to);
   if (hashNav && link.to.includes('#')) {
     return (
       <a
-        href={link.to}
+        href={href}
         onClick={(event) => handleHashNav(event, link.to)}
         className="text-sm text-gray-400 transition-colors hover:text-white"
       >
@@ -42,7 +44,7 @@ const FooterNavLink = ({ link, index, labelPrefix, onSaveLabel, hashNav }: Foote
     );
   }
   return (
-    <Link to={link.to} className="text-sm text-gray-400 transition-colors hover:text-white">
+    <Link to={href} className="text-sm text-gray-400 transition-colors hover:text-white">
       {inner}
     </Link>
   );

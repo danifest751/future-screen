@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { Locale } from '../i18n/types';
 import { errorBoundaryContent } from '../content/components/errorBoundary';
 import { loadSiteContent, saveSiteContent } from '../services/siteContent';
+import { useOptionalEditMode } from '../context/EditModeContext';
 import {
   parseHomeEquipmentSectionHeader,
   serializeHomeEquipmentSectionHeader,
@@ -17,6 +18,7 @@ export function useHomeEquipmentSectionHeader(locale: Locale = 'ru', fallbackToR
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { savesVersion } = useOptionalEditMode();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -64,7 +66,7 @@ export function useHomeEquipmentSectionHeader(locale: Locale = 'ru', fallbackToR
 
   useEffect(() => {
     void load();
-  }, [load]);
+  }, [load, savesVersion]);
 
   return {
     data,

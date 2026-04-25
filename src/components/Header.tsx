@@ -8,6 +8,7 @@ import LoginModal from './LoginModal';
 import LocaleSwitch from './LocaleSwitch';
 import { useGlobalHeader } from '../hooks/useGlobalHeader';
 import { useGlobalBrand } from '../hooks/useGlobalBrand';
+import { safeHref } from '../lib/safeHref';
 import { useEditableBinding } from '../hooks/useEditableBinding';
 import type { GlobalHeaderContent } from '../lib/content/globalHeader';
 import type { GlobalBrandContent } from '../lib/content/globalBrand';
@@ -209,7 +210,7 @@ const Header = () => {
           {headerContent.navLinks.map((item, i) => (
             <a
               key={`${i}-${item.to}`}
-              href={item.to}
+              href={safeHref(item.to)}
               onClick={(event) => handleHashNav(event, item.to)}
               className="rounded-full px-4 py-2 text-sm font-medium text-gray-300 transition-all duration-200 hover:bg-white/5 hover:text-white"
             >
@@ -316,7 +317,7 @@ const Header = () => {
             {headerContent.navLinks.map((item, i) => (
               <a
                 key={`${i}-${item.to}`}
-                href={item.to}
+                href={safeHref(item.to)}
                 onClick={(event) => handleHashNav(event, item.to)}
                 className="rounded-xl px-3 py-2 text-sm font-medium text-gray-300 transition hover:bg-white/5 hover:text-white"
               >
