@@ -252,7 +252,7 @@ describe('visualLedReducer', () => {
     expect(scene.canvasHeight).toBe(1536);
   });
 
-  it('preset/apply: never overwrites an existing user calibration', () => {
+  it('preset/apply: clears an existing user calibration so scale is redone', () => {
     const state = makeState();
     const manualCalib = { realLength: 3, pxLength: 200, pxPerMeter: 200 / 3 };
     const calibrated = visualLedReducer(state, {
@@ -268,7 +268,7 @@ describe('visualLedReducer', () => {
       },
     });
     const scene = next.scenes.find((s) => s.id === next.activeSceneId)!;
-    expect(scene.scaleCalib).toEqual(manualCalib);
+    expect(scene.scaleCalib).toBeNull();
   });
 
   it('preset/apply: leaves scaleCalib null for "Свой вариант" (no background)', () => {

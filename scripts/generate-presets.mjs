@@ -3,10 +3,9 @@
 // then composite a small "≈ 1.75 м рост" badge in the bottom-right corner so
 // the user immediately sees the in-frame human is the scale reference.
 //
-// Auto-calibration in the visualizer is driven by the in-frame human's
-// pixel height (humanHeightPxApprox in preset-prompts.json), measured
-// once per generation. The badge intentionally has NO ruler bar — having
-// two scale references that disagree confused users.
+// Manual calibration in the visualizer is done against the in-frame
+// human reference. The badge intentionally has NO ruler bar — having two
+// scale references that disagree confused users.
 //
 // Usage:
 //   FAL_KEY=... node scripts/generate-presets.mjs                 # all (skip existing)
@@ -49,7 +48,9 @@ const FAL_ENDPOINT = 'https://fal.run/fal-ai/flux-pro/v1.1-ultra';
 const OUTPUT_DIR = resolve(ROOT, 'public/visual-led-presets');
 const PROMPTS_FILE = resolve(ROOT, 'scripts/preset-prompts.json');
 
-const prompts = JSON.parse(await readFile(PROMPTS_FILE, 'utf8')).prompts;
+const promptConfig = JSON.parse(await readFile(PROMPTS_FILE, 'utf8'));
+const prompts = promptConfig.prompts;
+const sharedNegative = promptConfig._meta?.shared_negative?.trim();
 const targets = onlySlug
   ? prompts.filter((p) => p.slug === onlySlug)
   : prompts;
@@ -105,6 +106,11 @@ async function callFal(prompt) {
   return res.json();
 }
 
+function buildPrompt(item) {
+  if (!sharedNegative) return item.prompt;
+  return `${item.prompt}. Negative constraints: ${sharedNegative}.`;
+}
+
 async function downloadBuffer(url) {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`download ${res.status} for ${url}`);
@@ -115,10 +121,9 @@ async function downloadBuffer(url) {
 /**
  * Bottom-right badge — opaque dark pill with a tiny human silhouette and
  * a "≈ 1.75 м рост" label. No ruler bar, by design: the only authoritative
- * scale reference for the visualizer is the AI human INSIDE the scene
- * (whose pixel height is measured per-preset and stored as
- * defaultCalibration). Having two competing scales (badge bar vs in-frame
- * human) misled users who saw them disagree.
+ * scale reference for the visualizer is the AI human INSIDE the scene.
+ * Having two competing scales (badge bar vs in-frame human) misled users
+ * who saw them disagree.
  *
  * Background alpha is 0.92 so this badge fully covers any earlier badge
  * underneath when re-composited via --composite-only.
@@ -206,14 +211,14 @@ for (const item of targets) {
 
   console.log(`→ ${item.slug}: ${item.title}`);
   if (DRY_RUN) {
-    console.log(`  prompt: ${item.prompt.slice(0, 120)}…`);
+    console.log(`  prompt: ${buildPrompt(item).slice(0, 120)}…`);
     results.push({ slug: item.slug, status: 'dry-run' });
     continue;
   }
 
   try {
     const t0 = Date.now();
-    const result = await callFal(item.prompt);
+    const result = await callFal(buildPrompt(item));
     const url = result?.images?.[0]?.url;
     if (!url) throw new Error(`no image URL in response: ${JSON.stringify(result).slice(0, 200)}`);
     await downloadAndComposite(url, outPath);

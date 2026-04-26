@@ -278,7 +278,12 @@ export function visualLedReducer(state: VisualLedState, action: Action): VisualL
       // slug needs to update so the onboarding gate flips. No background
       // is injected; the canvas stays blank for them to build from scratch.
       if (!action.payload.backgroundUrl.trim()) {
-        return { ...state, selectedPresetSlug: action.payload.slug };
+        return {
+          ...state,
+          selectedPresetSlug: action.payload.slug,
+          scenes: mapActiveScene(state, (scene) => ({ ...scene, scaleCalib: null })),
+          tool: null,
+        };
       }
       const preset = getPreset(action.payload.slug);
       const naturalW = preset?.naturalWidth ?? 1920;
@@ -296,20 +301,20 @@ export function visualLedReducer(state: VisualLedState, action: Action): VisualL
       // system regardless of CSS scaling. Default canvas (1280×720) does
       // not match 2752×1536 hero, hence this dispatch.
       //
-      // We deliberately do NOT auto-seed scaleCalib — a single px/m number
-      // can't honestly describe a 3D scene (perspective: 1 m at the wall
-      // spans fewer pixels than 1 m at foreground), so we let the user
-      // calibrate manually with the scale tool against the visible 1.75 m
-      // human in the hero, at the depth where they're placing the screen.
+      // Preset changes always invalidate the old scale. A calibration is
+      // only truthful for the depth and background it was measured on, so
+      // swapping the venue must force the user back through the scale step.
       return {
         ...state,
         selectedPresetSlug: action.payload.slug,
+        tool: null,
         scenes: mapActiveScene(state, (scene) => ({
           ...scene,
           backgrounds: [...scene.backgrounds, bg],
           activeBackgroundId: bg.id,
           canvasWidth: naturalW,
           canvasHeight: naturalH,
+          scaleCalib: null,
         })),
       };
     }
