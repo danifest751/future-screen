@@ -12,13 +12,33 @@ import { uid } from './state/initialState';
 import { useActiveScene, useSelectedElement, useVisualLed } from './state/VisualLedContext';
 
 /**
+ * Cluster pattern centred at the canvas middle. Index 0 is the centre,
+ * 1-4 are the cardinal neighbours, 5-8 are the diagonals. Beyond
+ * index 8 the offsets repeat with `ring` doubling/tripling the stride,
+ * so a 17th screen lands on the second ring at 3 o'clock instead of
+ * stacking on top of the original.
+ */
+const PLACEMENT_OFFSETS: Array<[number, number]> = [
+  [0, 0],
+  [1, 0],
+  [-1, 0],
+  [0, -1],
+  [0, 1],
+  [1, -1],
+  [-1, 1],
+  [-1, -1],
+  [1, 1],
+];
+
+/**
  * Floating toolbar over the canvas — the "easy mode" entry point.
  *
- * "+ Экран" drops a 2×2-cabinet screen at the canvas centre so a
- * first-time user doesn't have to discover the 4-click placement tool
- * in the (collapsed) ScreensPanel. Auto / Fit are surfaced here too so
- * the same toolbar covers the full create-then-tune flow without
- * opening any sidebar panels.
+ * "+ Экран" drops a 2×2-cabinet screen and walks a spiral around the
+ * canvas centre on every subsequent click (right → left → top → bottom
+ * → 4 diagonals → next ring further out), so a user who taps the
+ * button repeatedly gets a tight cluster instead of N stacked-on-top
+ * screens. Auto / Fit are surfaced here too so the same toolbar covers
+ * the full create-then-tune flow without opening any sidebar panels.
  *
  * The 4-click placement tool stays in ScreensPanel for advanced cases
  * where the user needs to match an angled surface in the photo.
@@ -34,9 +54,17 @@ const QuickAddToolbar = () => {
     // canvas width so the screen is visible even before calibration.
     const pxPerMeter = scene.scaleCalib?.pxPerMeter ?? scene.canvasWidth / 8;
     const sizePx = pxPerMeter * (2 * CABINET_SIDE_M);
+    // Stride between adjacent screens = screen size + 1 cabinet of gap.
+    // Visually separates screens without leaving the cluster sprawling.
+    const stride = sizePx + pxPerMeter * CABINET_SIDE_M;
 
-    const cx = scene.canvasWidth / 2;
-    const cy = scene.canvasHeight / 2;
+    const idx = scene.elements.length;
+    const ringIdx = idx % PLACEMENT_OFFSETS.length;
+    const ring = Math.floor(idx / PLACEMENT_OFFSETS.length) + 1;
+    const [ox, oy] = PLACEMENT_OFFSETS[ringIdx];
+
+    const cx = scene.canvasWidth / 2 + ox * stride * ring;
+    const cy = scene.canvasHeight / 2 + oy * stride * ring;
     const half = sizePx / 2;
     const corners: Quad = [
       { x: cx - half, y: cy - half },
