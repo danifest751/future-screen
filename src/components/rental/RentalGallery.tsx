@@ -4,6 +4,7 @@ import { useOptionalEditMode } from '../../context/EditModeContext';
 import { getRentalComponentContent } from '../../content/components/rental';
 import { useI18n } from '../../context/I18nContext';
 import { useEditableBinding } from '../../hooks/useEditableBinding';
+import OptimizedImage from '../OptimizedImage';
 
 export interface GalleryItem {
   image: string;
@@ -57,11 +58,10 @@ const GalleryCard = ({ item, index, emptyLabel, onSaveItem }: GalleryCardProps) 
           }
         >
           {(src) => (
-            <img
+            <OptimizedImage
               src={src}
               alt={item.alt || ''}
               className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-              loading="lazy"
             />
           )}
         </EditableImage>

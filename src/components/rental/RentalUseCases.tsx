@@ -2,6 +2,7 @@ import { memo } from 'react';
 import { getRentalComponentContent } from '../../content/components/rental';
 import { useI18n } from '../../context/I18nContext';
 import { useEditableBinding } from '../../hooks/useEditableBinding';
+import OptimizedImage from '../OptimizedImage';
 
 export interface UseCase {
   title: string;
@@ -38,11 +39,10 @@ const UseCaseCard = ({ item, index, slug, onSaveItem }: UseCaseCardProps) => {
     <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-slate-900">
       {imgSrc && (
         <div className="relative h-44 w-full overflow-hidden">
-          <img
+          <OptimizedImage
             src={imgSrc}
             alt={item.title}
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-            loading="lazy"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/30 to-transparent" />
         </div>

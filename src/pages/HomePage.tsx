@@ -7,6 +7,7 @@ import { ConsentCheckbox } from '../components/ConsentCheckbox';
 import EditableImage from '../components/admin/EditableImage';
 import EditableList from '../components/admin/EditableList';
 import EditableIcon from '../components/admin/EditableIcon';
+import OptimizedImage from '../components/OptimizedImage';
 import { HomeIcon } from '../data/homeIcons';
 import { useI18n } from '../context/I18nContext';
 import { useOptionalEditMode } from '../context/EditModeContext';
@@ -26,6 +27,7 @@ import type { HomeWorksContent, HomeWorksItem } from '../lib/content/homeWorks';
 import type { HomeEventTypesContent } from '../lib/content/homeEventTypes';
 import type { HomeProcessContent, HomeProcessStep } from '../lib/content/homeProcess';
 import type { HomeCtaContent } from '../lib/content/homeCta';
+import { getOptimizedBackgroundImage } from '../lib/optimizedImages';
 
 type HomeEquipmentItem = HomeEquipmentSectionContent['items'][number];
 type HomeEquipmentExtraItem = HomeEquipmentSectionContent['extraItems'][number];
@@ -87,9 +89,9 @@ const WorkSlide = ({ item, index, onSaveItem }: WorkSlideProps) => {
     disabled,
   });
 
-  const imageContent = (
-    <img
-      src={item.src}
+  const renderImage = (src: string) => (
+    <OptimizedImage
+      src={src}
       alt={item.title}
       className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
     />
@@ -106,10 +108,10 @@ const WorkSlide = ({ item, index, onSaveItem }: WorkSlideProps) => {
             await onSaveItem({ ...item, src: url });
           }}
         >
-          {() => imageContent}
+          {renderImage}
         </EditableImage>
       ) : (
-        imageContent
+        renderImage(item.src)
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent pointer-events-none" />
       <div className="absolute bottom-0 left-0 p-5 transform translate-y-2 transition-transform duration-300 group-hover:translate-y-0">
@@ -236,7 +238,7 @@ function WorksSliderView({
               style={{ width: `${100 / all.length}%` }}
             >
               <div className="relative overflow-hidden rounded-xl" style={{ aspectRatio: '4/5' }}>
-                <img
+                <OptimizedImage
                   src={item.src}
                   alt={item.title}
                   className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
@@ -310,9 +312,9 @@ const EventSlide = ({ item, index, onSaveItem }: EventSlideProps) => {
     kind: 'multiline',
   });
 
-  const imageEl = (
-    <img
-      src={item.photo}
+  const renderImage = (src: string) => (
+    <OptimizedImage
+      src={src}
       alt={item.title}
       className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
       style={{ filter: 'saturate(0.5) brightness(0.6)' }}
@@ -330,10 +332,10 @@ const EventSlide = ({ item, index, onSaveItem }: EventSlideProps) => {
             await onSaveItem({ ...item, photo: url });
           }}
         >
-          {() => imageEl}
+          {renderImage}
         </EditableImage>
       ) : (
-        imageEl
+        renderImage(item.photo)
       )}
       <div className="absolute inset-0 bg-black/50 transition-colors duration-300 group-hover:bg-black/25 pointer-events-none" />
       <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-white pointer-events-none">
@@ -478,7 +480,7 @@ function EventsSliderView({
               style={{ width: `${100 / all.length}%` }}
             >
               <div className="relative overflow-hidden rounded-xl" style={{ aspectRatio: '4/3' }}>
-                <img
+                <OptimizedImage
                   src={item.photo}
                   alt={item.title}
                   className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
@@ -803,9 +805,9 @@ const EquipmentCard = ({ item, index, onSaveItem }: EquipmentCardProps) => {
     kind: 'multiline',
   });
 
-  const imageEl = (
-    <img
-      src={item.photo}
+  const renderImage = (src: string) => (
+    <OptimizedImage
+      src={src}
       alt={item.title}
       className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
     />
@@ -822,10 +824,10 @@ const EquipmentCard = ({ item, index, onSaveItem }: EquipmentCardProps) => {
             await onSaveItem({ ...item, photo: url });
           }}
         >
-          {() => imageEl}
+          {renderImage}
         </EditableImage>
       ) : (
-        imageEl
+        renderImage(item.photo)
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/20 pointer-events-none" />
       <div className="absolute bottom-0 left-0 right-0 z-10 p-6">
@@ -915,9 +917,9 @@ const EquipmentExtraCard = ({ item, index, onSaveItem }: EquipmentExtraCardProps
     disabled,
   });
 
-  const imageEl = (
-    <img
-      src={item.photo}
+  const renderImage = (src: string) => (
+    <OptimizedImage
+      src={src}
       alt={item.title}
       className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
     />
@@ -934,10 +936,10 @@ const EquipmentExtraCard = ({ item, index, onSaveItem }: EquipmentExtraCardProps
             await onSaveItem({ ...item, photo: url });
           }}
         >
-          {() => imageEl}
+          {renderImage}
         </EditableImage>
       ) : (
-        imageEl
+        renderImage(item.photo)
       )}
       <div className="absolute inset-0 bg-black/65 group-hover:bg-black/55 transition-colors pointer-events-none" />
       <div className="absolute bottom-0 left-0 right-0 z-10 flex items-center gap-3 p-5">
@@ -1213,7 +1215,7 @@ const HomePage = () => {
       <section
         className="relative flex h-screen items-center justify-center overflow-hidden -mt-16 lg:-mt-20"
         style={{
-          backgroundImage: 'url(/images/hero-led-wall-2.png)',
+          backgroundImage: getOptimizedBackgroundImage('/images/hero-led-wall-2.png'),
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         }}
