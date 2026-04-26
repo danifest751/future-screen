@@ -44,7 +44,11 @@ const WorkflowSteps = () => {
   return (
     <div className="flex items-center gap-2 overflow-x-auto rounded-xl border border-white/10 bg-slate-900/40 px-3 py-2">
       {steps.map((s, i) => (
-        <div key={s.idx} className="flex shrink-0 items-center gap-2 text-[11px]">
+        <div
+          key={s.idx}
+          className="flex shrink-0 items-center gap-2 text-[11px]"
+          title={s.label}
+        >
           <div
             className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-semibold transition-colors ${
               s.done
@@ -54,10 +58,19 @@ const WorkflowSteps = () => {
           >
             {s.done ? <Check className="h-3 w-3" /> : s.idx}
           </div>
-          <span className={s.done ? 'text-slate-400 line-through' : 'text-slate-200'}>
+          {/* Hide text label on <sm — title attribute keeps it accessible
+              on hover/long-press. Arrow separators also hidden so the
+              row stays a tight number-strip on a phone. */}
+          <span
+            className={`hidden sm:inline ${
+              s.done ? 'text-slate-400 line-through' : 'text-slate-200'
+            }`}
+          >
             {s.label}
           </span>
-          {i < steps.length - 1 ? <span className="text-slate-600">→</span> : null}
+          {i < steps.length - 1 ? (
+            <span className="hidden text-slate-600 sm:inline">→</span>
+          ) : null}
         </div>
       ))}
       <span className="ml-auto shrink-0 font-mono text-[10px] text-slate-500">
