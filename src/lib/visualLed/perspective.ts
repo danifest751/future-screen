@@ -73,6 +73,9 @@ export function drawWarpedSource(
   const h = source.videoHeight || source.naturalHeight || source.height || 0;
   if (!w || !h) return;
 
+  ctx.save();
+  clipToQuad(ctx, corners);
+
   for (let j = 0; j < rows; j += 1) {
     for (let i = 0; i < cols; i += 1) {
       const u0 = i / cols;
@@ -90,10 +93,43 @@ export function drawWarpedSource(
       const s11 = { x: u1 * w, y: v1 * h };
       const s01 = { x: u0 * w, y: v1 * h };
 
-      drawSourceTriangle(ctx, source, s00, s10, s11, d00, d10, d11);
-      drawSourceTriangle(ctx, source, s00, s11, s01, d00, d11, d01);
+      drawSourceTriangle(ctx, source, s00, s10, s11, d00, d10, d11, 0.75);
+      drawSourceTriangle(ctx, source, s00, s11, s01, d00, d11, d01, 0.75);
     }
   }
+
+  ctx.restore();
+}
+
+function clipToQuad(ctx: CanvasRenderingContext2D, corners: Quad): void {
+  const [p0, p1, p2, p3] = corners;
+  ctx.beginPath();
+  ctx.moveTo(p0.x, p0.y);
+  ctx.lineTo(p1.x, p1.y);
+  ctx.lineTo(p2.x, p2.y);
+  ctx.lineTo(p3.x, p3.y);
+  ctx.closePath();
+  ctx.clip();
+}
+
+function expandTriangle(
+  p0: Point,
+  p1: Point,
+  p2: Point,
+  amount: number,
+): [Point, Point, Point] {
+  if (amount <= 0) return [p0, p1, p2];
+  const cx = (p0.x + p1.x + p2.x) / 3;
+  const cy = (p0.y + p1.y + p2.y) / 3;
+  const expand = (p: Point): Point => {
+    const dx = p.x - cx;
+    const dy = p.y - cy;
+    const len = Math.hypot(dx, dy);
+    if (len < 1e-6) return p;
+    const scale = (len + amount) / len;
+    return { x: cx + dx * scale, y: cy + dy * scale };
+  };
+  return [expand(p0), expand(p1), expand(p2)];
 }
 
 /**
@@ -111,14 +147,16 @@ export function drawSourceTriangle(
   d0: Point,
   d1: Point,
   d2: Point,
+  bleedPx = 0,
 ): void {
   const matrix = solveAffineForTriangle(s0, s1, s2, d0, d1, d2);
   if (!matrix) return;
+  const [c0, c1, c2] = expandTriangle(d0, d1, d2, bleedPx);
   ctx.save();
   ctx.beginPath();
-  ctx.moveTo(d0.x, d0.y);
-  ctx.lineTo(d1.x, d1.y);
-  ctx.lineTo(d2.x, d2.y);
+  ctx.moveTo(c0.x, c0.y);
+  ctx.lineTo(c1.x, c1.y);
+  ctx.lineTo(c2.x, c2.y);
   ctx.closePath();
   ctx.clip();
   ctx.transform(matrix.a, matrix.b, matrix.c, matrix.d, matrix.e, matrix.f);
