@@ -1,10 +1,15 @@
 import type { SubmissionRequestBody } from './types.js';
 
+// Telegram HTML mode tolerates raw " and ', but the same util might end
+// up in an attribute context (e.g. inline preview / future email
+// template variables). Escape both so we never bite ourselves later.
 export const escapeHtml = (value = ''): string =>
   String(value)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 
 export const toCleanString = (value: unknown): string => {
   if (value === null || value === undefined) return '';

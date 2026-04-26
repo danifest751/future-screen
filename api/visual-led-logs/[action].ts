@@ -436,25 +436,41 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .order('created_at', { ascending: false });
       if (assetsError) throw assetsError;
 
-      const assetsWithPreview = await Promise.all(
-        (assets ?? []).map(async (asset) => {
+      // Batch signed URLs per bucket. Used to be N round-trips through
+      // Promise.all(createSignedUrl) — for a 50-asset session that's 50
+      // calls, each billed against the Storage rate-limit and adding
+      // visible latency to the page. createSignedUrls accepts a path
+      // array and returns one HTTP call per bucket.
+      const assetsList = assets ?? [];
+      const byBucket = new Map<string, typeof assetsList>();
+      for (const asset of assetsList) {
+        const bucket = asset.storage_bucket;
+        if (!bucket) continue;
+        const list = byBucket.get(bucket) ?? [];
+        list.push(asset);
+        byBucket.set(bucket, list);
+      }
+      const signedByPath = new Map<string, string>();
+      await Promise.all(
+        Array.from(byBucket.entries()).map(async ([bucket, items]) => {
           try {
-            const { data: signedData } = await supabase.storage
-              .from(asset.storage_bucket)
-              .createSignedUrl(asset.storage_path, 60 * 60);
-
-            return {
-              ...asset,
-              preview_url: signedData?.signedUrl || null,
-            };
+            const paths = items.map((a) => a.storage_path);
+            const { data } = await supabase.storage.from(bucket).createSignedUrls(paths, 60 * 60);
+            for (const entry of data ?? []) {
+              if (entry?.path && entry.signedUrl) {
+                signedByPath.set(`${bucket}::${entry.path}`, entry.signedUrl);
+              }
+            }
           } catch {
-            return {
-              ...asset,
-              preview_url: null,
-            };
+            // Per-bucket failure leaves preview_url=null on those assets;
+            // page still renders, just without thumbnails for them.
           }
         }),
       );
+      const assetsWithPreview = assetsList.map((asset) => ({
+        ...asset,
+        preview_url: signedByPath.get(`${asset.storage_bucket}::${asset.storage_path}`) ?? null,
+      }));
 
       return res.status(200).json({
         ok: true,

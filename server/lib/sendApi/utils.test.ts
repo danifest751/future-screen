@@ -28,6 +28,12 @@ describe('sendApi/utils', () => {
     it('coerces non-string input to string before escaping', () => {
       expect(escapeHtml(42 as unknown as string)).toBe('42');
     });
+
+    it('escapes quote characters so attribute contexts stay safe', () => {
+      expect(escapeHtml('say "hi" and \'bye\'')).toBe(
+        'say &quot;hi&quot; and &#39;bye&#39;',
+      );
+    });
   });
 
   describe('toCleanString', () => {

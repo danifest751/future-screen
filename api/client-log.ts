@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { z } from 'zod';
 import { checkRateLimit } from './_lib/rateLimit.js';
+import { stripLogString } from './_lib/stripLogString.js';
 
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'https://future-screen.ru,https://future-screen.vercel.app,http://localhost:5173,http://127.0.0.1:5173')
   .split(',')
@@ -10,10 +11,20 @@ const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'https://future-screen.ru
 // Zod схема валидации
 const ClientLogSchema = z.object({
   level: z.enum(['error', 'warn', 'info', 'debug']).default('error'),
-  message: z.string().min(1).max(1000),
-  stack: z.string().max(5000).optional().nullable(),
+  message: z.string().min(1).max(1000).transform((v) => stripLogString(v, 500)),
+  stack: z
+    .string()
+    .max(5000)
+    .optional()
+    .nullable()
+    .transform((v) => (v ? stripLogString(v, 2000) : v)),
   url: z.string().url().max(2000).optional().nullable(),
-  userAgent: z.string().max(500).optional().nullable(),
+  userAgent: z
+    .string()
+    .max(500)
+    .optional()
+    .nullable()
+    .transform((v) => (v ? stripLogString(v, 500) : v)),
   meta: z.record(z.unknown()).optional().nullable(),
 });
 

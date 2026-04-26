@@ -1,6 +1,12 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
+import { randomBytes } from 'node:crypto';
+
+// preview_image lands in admin's <img src=...> later, so anything other
+// than a real image data-URL would be smuggled HTML/JS. We accept only
+// the four browser-supported raster formats; everything else is rejected.
+const PREVIEW_IMAGE_RE = /^data:image\/(?:png|jpe?g|webp);base64,[A-Za-z0-9+/=]+$/;
 
 const allowedOrigins = (
   process.env.ALLOWED_ORIGINS ||
@@ -23,7 +29,11 @@ const bodySchema = z.object({
   html: z.string().min(1).max(MAX_HTML_LENGTH),
   session_key: z.string().min(8).max(120).optional(),
   export_scope: z.enum(['active', 'all']).optional(),
-  preview_image: z.string().max(1_500_000).optional(),
+  preview_image: z
+    .string()
+    .max(1_500_000)
+    .regex(PREVIEW_IMAGE_RE, 'preview_image must be a data:image/{png,jpeg,webp};base64 URL')
+    .optional(),
   metrics: z
     .object({
       screens_current: z.number().int().min(0).optional(),
@@ -108,12 +118,15 @@ const sanitizeHtml = async (html: string): Promise<string> => {
 };
 
 const randomSlug = (length = 14): string => {
-  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-  let value = '';
-  for (let i = 0; i < length; i += 1) {
-    value += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return value;
+  // crypto.randomBytes vs Math.random: ~80 bits of entropy, no
+  // predictability — anyone who scrapes a few share URLs can't enumerate
+  // the rest. We base64url-encode then strip non-alphanum so the slug
+  // stays URL-safe and lowercase-friendly in /reports/<slug>.
+  return randomBytes(Math.ceil(length))
+    .toString('base64')
+    .replace(/[^a-zA-Z0-9]/g, '')
+    .toLowerCase()
+    .slice(0, length);
 };
 
 const createUniqueSlug = async (supabase: SupabaseClient): Promise<string> => {

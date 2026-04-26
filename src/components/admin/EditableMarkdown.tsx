@@ -5,6 +5,7 @@ import { Check, X } from 'lucide-react';
 import { useOptionalEditMode } from '../../context/EditModeContext';
 import { useEditableSave } from '../../hooks/useEditableSave';
 import { sanitizeMarkdown } from '../../lib/sanitize';
+import ErrorBoundary from '../ErrorBoundary';
 
 interface EditableMarkdownProps {
   value: string;
@@ -69,7 +70,20 @@ const EditableMarkdown = ({ value, onSave, label, render }: EditableMarkdownProp
   }, [isOpen, close, commit]);
 
   const safeValue = sanitizeMarkdown(value || '');
-  const displayRender = render ?? ((v: string) => <Markdown>{v}</Markdown>);
+  // Wrap the markdown render in a local boundary: malformed markdown
+  // (broken table syntax, unclosed fence, etc.) used to crash the whole
+  // page through the global boundary; now it just shows the raw text.
+  const renderMarkdown = render ?? ((v: string) => <Markdown>{v}</Markdown>);
+  const displayRender = (v: string) => (
+    <ErrorBoundary
+      resetKey={v}
+      fallback={
+        <pre className="whitespace-pre-wrap text-sm text-slate-300">{v}</pre>
+      }
+    >
+      {renderMarkdown(v)}
+    </ErrorBoundary>
+  );
 
   if (!isEditing) {
     return displayRender(safeValue);
