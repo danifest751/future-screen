@@ -100,6 +100,11 @@ export interface VideoAsset {
     | 'ripple'
     | 'pulse'
     | 'matrix'
+    | 'aurora'
+    | 'tunnel'
+    | 'particles'
+    | 'kaleidoscope'
+    | 'radar'
     | null;
 }
 

@@ -1,7 +1,6 @@
 import { useRef, type ReactNode } from 'react';
-import { Film, Sparkles, Upload, Trash2, XCircle } from 'lucide-react';
+import { Film, Upload, Trash2, XCircle } from 'lucide-react';
 import { importBackgrounds } from './CanvasStage';
-import { DEMO_SPECS } from './demoVideos';
 import DemoThumbnail from './DemoThumbnail';
 import { fileToDataUrl } from './imageLoader';
 import { uid } from './state/initialState';
@@ -9,8 +8,10 @@ import { useActiveScene, useSelectedElement, useVisualLed } from './state/Visual
 
 /**
  * Right sidebar — backgrounds + videos libraries.
- * Phase 4: videos become functional — upload, assign to selected
- * screen, remove from library.
+ *
+ * Demo videos are auto-seeded in createInitialState / hydrated by
+ * ensureDemoVideos in persistence — no "Демо" button needed. The user's
+ * own uploads coexist with the seeded demos in the same grid.
  */
 const SidebarRight = () => {
   const scene = useActiveScene();
@@ -18,14 +19,6 @@ const SidebarRight = () => {
   const { state, dispatch } = useVisualLed();
   const bgInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
-
-  // Count existing demo instances so we don't add duplicates on repeat
-  // clicks. "Демо" either adds missing kinds, or short-circuits when
-  // all 5 are already present.
-  const existingDemoKinds = new Set(
-    state.videos.map((v) => v.animationKind).filter(Boolean) as string[],
-  );
-  const missingDemoKinds = DEMO_SPECS.filter((s) => !existingDemoKinds.has(s.kind));
 
   const onBackgroundFiles = async (files: FileList | null) => {
     if (!files) return;
@@ -45,20 +38,6 @@ const SidebarRight = () => {
       } catch (err) {
         console.warn('Failed to import video', file.name, err);
       }
-    }
-  };
-
-  const loadDemos = () => {
-    for (const spec of missingDemoKinds) {
-      dispatch({
-        type: 'video/add',
-        payload: {
-          id: uid('vid'),
-          name: spec.name,
-          src: '',
-          animationKind: spec.kind,
-        },
-      });
     }
   };
 
@@ -138,41 +117,25 @@ const SidebarRight = () => {
       </Panel>
 
       <Panel title="Видео">
-        <div className="grid grid-cols-2 gap-1.5">
-          <label className="flex cursor-pointer items-center justify-center gap-1 rounded-lg border border-dashed border-white/15 bg-slate-950/40 py-2 text-xs text-slate-300 hover:border-white/30 hover:text-white">
-            <Upload className="h-3 w-3" />
-            Загрузить
-            <input
-              ref={videoInputRef}
-              type="file"
-              accept="video/mp4,video/webm"
-              multiple
-              className="hidden"
-              onChange={(e) => {
-                void onVideoFiles(e.target.files);
-                if (videoInputRef.current) videoInputRef.current.value = '';
-              }}
-            />
-          </label>
-          <button
-            type="button"
-            onClick={loadDemos}
-            disabled={missingDemoKinds.length === 0}
-            className="flex items-center justify-center gap-1 rounded-lg border border-white/15 bg-slate-900/60 py-2 text-xs text-slate-300 hover:border-white/30 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
-            title={
-              missingDemoKinds.length === 0
-                ? 'Все 5 демо уже в библиотеке'
-                : 'Добавить демо-ролики (Equalizer, Spectrum, Ripple, Pulse, Matrix) — рисуются canvas, seamless loop'
-            }
-          >
-            <Sparkles className="h-3 w-3" />
-            {missingDemoKinds.length === 0 ? 'Демо добавлены' : 'Демо'}
-          </button>
-        </div>
+        <label className="flex cursor-pointer items-center justify-center gap-1 rounded-lg border border-dashed border-white/15 bg-slate-950/40 py-2 text-xs text-slate-300 hover:border-white/30 hover:text-white">
+          <Upload className="h-3 w-3" />
+          Загрузить MP4 / WebM
+          <input
+            ref={videoInputRef}
+            type="file"
+            accept="video/mp4,video/webm"
+            multiple
+            className="hidden"
+            onChange={(e) => {
+              void onVideoFiles(e.target.files);
+              if (videoInputRef.current) videoInputRef.current.value = '';
+            }}
+          />
+        </label>
 
         {state.videos.length === 0 ? (
           <div className="mt-2 rounded-md border border-dashed border-white/10 bg-slate-950/40 p-3 text-center text-[11px] text-slate-500">
-            MP4 / WebM или жми «Демо» для 5 готовых роликов
+            Перетащите MP4 / WebM, чтобы добавить свои клипы.
           </div>
         ) : (
           <>

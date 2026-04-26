@@ -10,11 +10,26 @@ import {
 describe('demoVideos metadata', () => {
   it('has all expected procedural demos and drawers', () => {
     const kinds = DEMO_SPECS.map((s) => s.kind);
-    expect(kinds).toEqual(['equalizer', 'spectrum', 'ripple', 'pulse', 'matrix']);
+    expect(kinds).toEqual([
+      'equalizer',
+      'spectrum',
+      'ripple',
+      'pulse',
+      'matrix',
+      'aurora',
+      'tunnel',
+      'particles',
+      'kaleidoscope',
+      'radar',
+    ]);
 
     for (const kind of kinds) {
       expect(typeof DEMO_DRAWERS[kind]).toBe('function');
     }
+  });
+
+  it('has 10 demos so the seeded library looks rich on first load', () => {
+    expect(DEMO_SPECS).toHaveLength(10);
   });
 
   it('exposes stable demo canvas size', () => {
@@ -36,10 +51,13 @@ describe('DEMO_DRAWERS rendering', () => {
   const createMockCtx = () => {
     const linearGradient = { addColorStop: vi.fn() };
     const radialGradient = { addColorStop: vi.fn() };
+    const conicGradient = { addColorStop: vi.fn() };
     return {
       createLinearGradient: vi.fn(() => linearGradient),
       createRadialGradient: vi.fn(() => radialGradient),
+      createConicGradient: vi.fn(() => conicGradient),
       fillRect: vi.fn(),
+      strokeRect: vi.fn(),
       beginPath: vi.fn(),
       moveTo: vi.fn(),
       lineTo: vi.fn(),
@@ -51,6 +69,8 @@ describe('DEMO_DRAWERS rendering', () => {
       clip: vi.fn(),
       drawImage: vi.fn(),
       transform: vi.fn(),
+      translate: vi.fn(),
+      rotate: vi.fn(),
       save: vi.fn(),
       restore: vi.fn(),
       set fillStyle(_value: unknown) {},

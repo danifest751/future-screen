@@ -1,3 +1,4 @@
+import { ensureDemoVideos } from './initialState';
 import type { VisualLedState } from './types';
 
 const STORAGE_KEY = 'vled-v2-state';
@@ -51,10 +52,10 @@ export function loadPersistedState(): { state: VisualLedState; savedAt: number }
     // are missing the field — coerce to null so reducer paths that depend
     // on it (PriceHeader / onboarding selector) don't crash.
     const stored = parsed.state as VisualLedState;
-    const hydrated: VisualLedState = {
+    const hydrated: VisualLedState = ensureDemoVideos({
       ...stored,
       selectedPresetSlug: stored.selectedPresetSlug ?? null,
-    };
+    });
     return { state: hydrated, savedAt: parsed.savedAt };
   } catch {
     return null;

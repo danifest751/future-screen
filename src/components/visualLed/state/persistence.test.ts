@@ -130,4 +130,37 @@ describe('visualLed persistence', () => {
     });
     expect(() => clearPersistedState()).not.toThrow();
   });
+
+  it('hydrates legacy snapshot without demo videos by re-seeding them', () => {
+    // Simulate an old snapshot that was saved before auto-seed landed.
+    const legacy: VisualLedState = {
+      ...createInitialState(),
+      videos: [],
+    };
+    storageData.set(
+      STORAGE_KEY,
+      JSON.stringify({ version: 1, savedAt: Date.now(), state: legacy }),
+    );
+
+    const loaded = loadPersistedState();
+    expect(loaded).not.toBeNull();
+    expect(loaded!.state.videos.length).toBeGreaterThanOrEqual(10);
+    // All re-seeded videos are demo animations, not user uploads.
+    expect(loaded!.state.videos.every((v) => v.animationKind)).toBe(true);
+  });
+
+  it('does NOT overwrite a user library that contains uploads', () => {
+    const withUpload: VisualLedState = {
+      ...createInitialState(),
+      videos: [{ id: 'user-vid', name: 'my.mp4', src: 'data:video/mp4;base64,...' }],
+    };
+    storageData.set(
+      STORAGE_KEY,
+      JSON.stringify({ version: 1, savedAt: Date.now(), state: withUpload }),
+    );
+
+    const loaded = loadPersistedState();
+    expect(loaded!.state.videos).toHaveLength(1);
+    expect(loaded!.state.videos[0].id).toBe('user-vid');
+  });
 });
