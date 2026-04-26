@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useRef, useState, type Dispatch } from 'react';
 import {
+  autoFillCabinets,
   clamp,
   distance,
   findCornerHit,
+  getElementSizeMeters,
   moveCorner,
   orderQuadPoints,
   pointInQuad,
@@ -13,6 +15,7 @@ import {
 import { fileToDataUrl, loadImage } from './imageLoader';
 import { renderScene } from './canvasRenderer';
 import { getScenePointer } from './pointer';
+import QuickAddToolbar from './QuickAddToolbar';
 import { uid } from './state/initialState';
 import type { Action } from './state/types';
 import { useActiveScene, useVisualLed } from './state/VisualLedContext';
@@ -383,10 +386,32 @@ const CanvasStage = () => {
       if (!el) return;
 
       if (drag.type === 'corner') {
+        const newCorners = moveCorner(el.corners, drag.corner, p);
         dispatch({
           type: 'screen/updateCorners',
-          payload: { id: drag.id, corners: moveCorner(el.corners, drag.corner, p) },
+          payload: { id: drag.id, corners: newCorners },
         });
+        // Live cabinet auto-fill while dragging a corner. Only kicks in
+        // when the screen already has a cabinetPlan AND scale is set —
+        // QuickAddToolbar's "+ Экран" gives every new screen a 2×2 plan
+        // by default, so this gives the user the "stretch and watch
+        // cabinets multiply" feedback loop they asked for. Skipped on
+        // pure translate (drag.type === 'move') because size is unchanged.
+        if (el.cabinetPlan && scene.scaleCalib) {
+          const newSize = getElementSizeMeters(newCorners, scene.scaleCalib);
+          if (newSize) {
+            const fitted = autoFillCabinets(newSize, el.cabinetPlan.pitch);
+            if (
+              fitted.cols !== el.cabinetPlan.cols ||
+              fitted.rows !== el.cabinetPlan.rows
+            ) {
+              dispatch({
+                type: 'screen/update',
+                payload: { id: drag.id, patch: { cabinetPlan: fitted } },
+              });
+            }
+          }
+        }
         return;
       }
       if (drag.type === 'move') {
@@ -399,7 +424,7 @@ const CanvasStage = () => {
         drag.last = p;
       }
     },
-    [dispatch, scene.elements, scene.view],
+    [dispatch, scene.elements, scene.scaleCalib, scene.view],
   );
 
   // Wheel zoom — zoom-at-cursor, clamped to scene view min/max.
@@ -509,6 +534,7 @@ const CanvasStage = () => {
           Отпусти, чтобы загрузить фон
         </div>
       ) : null}
+      <QuickAddToolbar />
     </div>
   );
 };

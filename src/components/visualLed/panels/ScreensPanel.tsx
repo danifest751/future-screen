@@ -23,7 +23,7 @@ const ScreensPanel = () => {
       id="screens"
       title="Экраны"
       icon={<Monitor className="h-3 w-3" />}
-      defaultOpen
+      defaultOpen={false}
     >
       {!placing ? (
         <button
