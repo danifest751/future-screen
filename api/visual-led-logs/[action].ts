@@ -2,20 +2,13 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient, type SupabaseClient, type User } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { randomBytes } from 'node:crypto';
+import { getAllowedOrigins } from '../_lib/cors.js';
 import { checkRateLimit } from '../_lib/rateLimit.js';
 
 // Match the dedicated /api/visual-led/upload-background endpoint so the
 // two background-upload paths can't be played against each other.
 const MAX_DATA_URL_BYTES = 10 * 1024 * 1024;
 const ALLOWED_UPLOAD_MIME = /^image\/(png|jpe?g|webp)$/i;
-
-const allowedOrigins = (
-  process.env.ALLOWED_ORIGINS ||
-  'https://future-screen.ru,https://future-screen.vercel.app,http://localhost:5173,http://127.0.0.1:5173'
-)
-  .split(',')
-  .map((value) => value.trim())
-  .filter(Boolean);
 
 const bucket = 'visual-led-backgrounds';
 
@@ -91,7 +84,12 @@ function resolveRole(user: User): UserRole {
 
 function applyCors(req: VercelRequest, res: VercelResponse): boolean {
   const origin = String(req.headers.origin || '').replace(/\/$/, '');
-  const normalizedAllowed = allowedOrigins.map((item) => item.replace(/\/$/, '').toLowerCase());
+  // Shared allow-list: the source of truth lives in api/_lib/cors.ts so the
+  // dev-default (localhost:5000) and any prod ALLOWED_ORIGINS override stay
+  // in sync between this endpoint and api/send.ts / report-share / etc.
+  const normalizedAllowed = getAllowedOrigins().map((item) =>
+    item.replace(/\/$/, '').toLowerCase(),
+  );
   const normalizedOrigin = origin.toLowerCase();
   // Reject when:
   //   - Origin is set but not in the allow-list, OR
