@@ -17,6 +17,12 @@ import type { Tool } from './state/types';
  */
 export interface RenderOptions {
   showCabinetGrid: boolean;
+  /**
+   * When true, corner handles on the selected screen are drawn ~1.5×
+   * larger so a finger can land on them. CanvasStage flips this on
+   * after any touch pointerdown and back off on a mouse pointerdown.
+   */
+  touchMode?: boolean;
 }
 
 export function renderScene(
@@ -24,7 +30,7 @@ export function renderScene(
   scene: Scene,
   tool: Tool | null,
   imageCache: Map<string, HTMLImageElement>,
-  options: RenderOptions = { showCabinetGrid: true },
+  options: RenderOptions = { showCabinetGrid: true, touchMode: false },
 ): void {
   const canvas = ctx.canvas;
   ctx.save();
@@ -38,7 +44,7 @@ export function renderScene(
   // 2. Screens
   for (const element of scene.elements) {
     const isSelected = element.id === scene.selectedElementId;
-    drawScreen(ctx, element, isSelected);
+    drawScreen(ctx, element, isSelected, options.touchMode ?? false);
     if (options.showCabinetGrid && element.cabinetPlan) {
       drawCabinetGrid(ctx, element, element.cabinetPlan, scene.scaleCalib);
     }
@@ -115,6 +121,7 @@ function drawScreen(
   ctx: CanvasRenderingContext2D,
   element: ScreenElement,
   isSelected: boolean,
+  touchMode: boolean,
 ): void {
   const [p0, p1, p2, p3] = element.corners;
   ctx.beginPath();
@@ -148,10 +155,11 @@ function drawScreen(
   ctx.stroke();
 
   if (isSelected) {
+    const handleRadius = touchMode ? 8 : 5;
     ctx.fillStyle = 'rgba(96, 165, 250, 1)';
     for (const corner of element.corners) {
       ctx.beginPath();
-      ctx.arc(corner.x, corner.y, 5, 0, Math.PI * 2);
+      ctx.arc(corner.x, corner.y, handleRadius, 0, Math.PI * 2);
       ctx.fill();
     }
   }

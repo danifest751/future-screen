@@ -32,6 +32,10 @@ const CanvasStage = () => {
   const scene = useActiveScene();
   const { state, dispatch } = useVisualLed();
   const [dropActive, setDropActive] = useState(false);
+  // Latches to true after any touch pointerdown, back to false on a
+  // mouse pointerdown. Drives larger corner handles + a forgiving hit
+  // radius so a finger can land on them.
+  const [touchMode, setTouchMode] = useState(false);
 
   // Preload the active background image; bump cacheVersion on load so
   // the render effect re-runs.
@@ -62,12 +66,14 @@ const CanvasStage = () => {
     if (!ctx) return;
     renderScene(ctx, scene, state.tool, imageCache.current, {
       showCabinetGrid: state.ui.showCabinetGrid,
+      touchMode,
     });
   }, [
     scene,
     state.tool,
     state.ui.showCabinetGrid,
     cacheVersion,
+    touchMode,
   ]);
 
   // When at least one screen has a video assigned, run a rAF loop so
@@ -201,6 +207,15 @@ const CanvasStage = () => {
         clientY: event.clientY,
       });
 
+      // Latch touch-mode based on the input device. Pen counts as touch
+      // here because it has the same precision concerns (no hover, no
+      // sub-pixel control via wheel).
+      if (event.pointerType === 'touch' || event.pointerType === 'pen') {
+        setTouchMode(true);
+      } else if (event.pointerType === 'mouse') {
+        setTouchMode(false);
+      }
+
       // Two fingers on touch — enter pinch-zoom mode and cancel any
       // single-finger drag in progress. Pinch implicitly handles pan
       // via the midpoint, so we don't need a separate two-finger pan.
@@ -257,7 +272,12 @@ const CanvasStage = () => {
       // No tool — try to select / drag.
       const selected = scene.elements.find((el) => el.id === scene.selectedElementId);
       if (selected) {
-        const cornerIdx = findCornerHit(selected.corners, p, scene.view.scale, 10);
+        const cornerIdx = findCornerHit(
+          selected.corners,
+          p,
+          scene.view.scale,
+          touchMode ? 16 : 10,
+        );
         if (cornerIdx >= 0) {
           canvas.setPointerCapture(event.pointerId);
           dragRef.current = { type: 'corner', id: selected.id, corner: cornerIdx };
@@ -287,7 +307,15 @@ const CanvasStage = () => {
         dragRef.current = { type: 'move', id: picked.id, last: p };
       }
     },
-    [dispatch, finishTool, scene.elements, scene.selectedElementId, scene.view, state.tool],
+    [
+      dispatch,
+      finishTool,
+      scene.elements,
+      scene.selectedElementId,
+      scene.view,
+      state.tool,
+      touchMode,
+    ],
   );
 
   const onCanvasPointerMove = useCallback(
