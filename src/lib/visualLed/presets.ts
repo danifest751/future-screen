@@ -9,6 +9,23 @@
 // Replace `basePrice` / `pricePerM2` / `eventMultiplier` per preset before
 // the public launch. Order of magnitude is intentionally believable so
 // the UI doesn't look broken in screenshots.
+//
+// `defaultCalibration` numbers come from `scripts/generate-presets.mjs`:
+// every hero is rendered at 2752×1536 with a "≈ N м" badge whose bar is
+// exactly 288 px wide. So pxPerMeter = 288 / referenceScaleMeters. The
+// reducer auto-applies this on `preset/apply` so users skip the manual
+// scale tool unless they switch backgrounds.
+
+import type { ScaleCalibration } from './types';
+
+const BADGE_BAR_PX_AT_2752W = 288;
+function calibrationFromBadge(meters: number): ScaleCalibration {
+  return {
+    realLength: meters,
+    pxLength: BADGE_BAR_PX_AT_2752W,
+    pxPerMeter: BADGE_BAR_PX_AT_2752W / meters,
+  };
+}
 
 export type VisualLedPresetSlug =
   | 'compact'
@@ -51,6 +68,13 @@ export interface VisualLedPreset {
   /** Defaults for the visualizer when this preset is applied. */
   defaultPitch: string;
   defaultCabinetSideM: number;
+  /**
+   * Auto-applied scale calibration so the user can draw screens with
+   * real metric sizes immediately, without using the scale tool. Derived
+   * from the composited badge in the hero (see comment at top of file).
+   * `null` means "no auto-calibration" — the user must manually calibrate.
+   */
+  defaultCalibration: ScaleCalibration | null;
 }
 
 export const VISUAL_LED_PRESETS = [
@@ -75,6 +99,7 @@ export const VISUAL_LED_PRESETS = [
     background: '/visual-led-presets/compact-presentation.jpg',
     defaultPitch: '2.6',
     defaultCabinetSideM: 0.5,
+    defaultCalibration: calibrationFromBadge(1),
   },
   {
     slug: 'corporate',
@@ -97,6 +122,7 @@ export const VISUAL_LED_PRESETS = [
     background: '/visual-led-presets/corporate-conference.jpg',
     defaultPitch: '2.6',
     defaultCabinetSideM: 0.5,
+    defaultCalibration: calibrationFromBadge(2),
   },
   {
     slug: 'concert',
@@ -119,6 +145,7 @@ export const VISUAL_LED_PRESETS = [
     background: '/visual-led-presets/concert-stage.jpg',
     defaultPitch: '3.9',
     defaultCabinetSideM: 0.5,
+    defaultCalibration: calibrationFromBadge(5),
   },
   {
     slug: 'festival',
@@ -141,6 +168,7 @@ export const VISUAL_LED_PRESETS = [
     background: '/visual-led-presets/festival-outdoor.jpg',
     defaultPitch: '3.9',
     defaultCabinetSideM: 0.5,
+    defaultCalibration: calibrationFromBadge(10),
   },
   {
     slug: 'flagship',
@@ -163,8 +191,9 @@ export const VISUAL_LED_PRESETS = [
     background: '/visual-led-presets/flagship-arena.jpg',
     defaultPitch: '5.9',
     defaultCabinetSideM: 0.5,
+    defaultCalibration: calibrationFromBadge(15),
   },
-] as const satisfies readonly VisualLedPreset[];
+] satisfies readonly VisualLedPreset[];
 
 export const getPreset = (slug: string | null | undefined): VisualLedPreset | null => {
   if (!slug) return null;

@@ -256,6 +256,42 @@ describe('visualLedReducer', () => {
     expect(scene.activeBackgroundId).toBe(scene.backgrounds[0].id);
     expect(scene.backgrounds[0].src).toBe('/visual-led-presets/concert-stage.jpg');
     expect(scene.backgrounds[0].name).toBe('Концерт / шоу');
+    // Auto-calibration: concert preset seeds scaleCalib from its badge
+    // (5m bar = 288px → ~57.6 px/m). The user can place screens with real
+    // metric sizes immediately, no scale tool needed.
+    expect(scene.scaleCalib).not.toBeNull();
+    expect(scene.scaleCalib?.realLength).toBe(5);
+    expect(scene.scaleCalib?.pxPerMeter).toBeCloseTo(57.6, 1);
+  });
+
+  it('preset/apply: keeps an existing user calibration instead of overriding it', () => {
+    const state = makeState();
+    // Pretend the user already calibrated by hand before picking a preset.
+    const manualCalib = { realLength: 3, pxLength: 200, pxPerMeter: 200 / 3 };
+    const calibrated = visualLedReducer(state, {
+      type: 'scale/set',
+      payload: manualCalib,
+    });
+    const next = visualLedReducer(calibrated, {
+      type: 'preset/apply',
+      payload: {
+        slug: 'concert',
+        backgroundUrl: '/visual-led-presets/concert-stage.jpg',
+        backgroundName: 'Концерт',
+      },
+    });
+    const scene = next.scenes.find((s) => s.id === next.activeSceneId)!;
+    expect(scene.scaleCalib).toEqual(manualCalib);
+  });
+
+  it('preset/apply: leaves scaleCalib null for "Свой вариант" (no background)', () => {
+    const next = visualLedReducer(makeState(), {
+      type: 'preset/apply',
+      payload: { slug: '__custom__', backgroundUrl: '', backgroundName: '' },
+    });
+    const scene = next.scenes.find((s) => s.id === next.activeSceneId)!;
+    expect(scene.scaleCalib).toBeNull();
+    expect(scene.backgrounds).toHaveLength(0);
   });
 
   it('preset/clear: drops the slug but keeps backgrounds', () => {

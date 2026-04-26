@@ -104,34 +104,49 @@ async function downloadBuffer(url) {
 
 /**
  * Build the SVG that gets composited into the bottom-right corner.
- * Scale roughly with image size so the badge stays readable on both
- * 1408×792 (compact) and 2048×1152 (flagship) renders.
  *
- * `meters` comes from preset-prompts.json's `referenceScaleMeters` —
- * it should approximately match the apparent width of the badge if the
- * scene were measured in real life. So a tiny showroom uses 1 м, a
- * stadium uses 15 м. The bar is a visual hint, not a calibration tool;
- * exact calibration in the visualizer remains explicit (scale tool).
+ * Two visual references in one badge:
+ *   1. Horizontal scale bar labeled "≈ N м" — drives auto-calibration
+ *      (the bar pixel length is deterministic, see `BADGE_BAR_PX_AT_2752W`
+ *      below; presets read this and seed `scaleCalib` on apply).
+ *   2. Tiny human icon labeled "1.75 м" — purely decorative UI hint.
+ *      Real perspective-aware scale comes from the AI-generated person
+ *      inside the scene; this icon just reinforces "this badge is about
+ *      physical size".
+ *
+ * Calibration in the visualizer therefore needs ZERO clicks for preset
+ * users — the manual scale tool stays available for fine-tuning or for
+ * users who switched to "Свой вариант".
  */
 function buildScaleBarSvg(imageWidth, imageHeight, meters) {
   // Badge takes ~22% of width; clamp so it doesn't get tiny or huge.
   const badgeW = Math.max(220, Math.min(360, Math.round(imageWidth * 0.22)));
-  const badgeH = Math.round(badgeW * 0.32);
+  const badgeH = Math.round(badgeW * 0.42);
   const barInset = Math.round(badgeW * 0.1);
   const barX1 = barInset;
   const barX2 = badgeW - barInset;
-  const barY = Math.round(badgeH * 0.55);
-  const tickH = Math.round(badgeH * 0.18);
+  const barY = Math.round(badgeH * 0.5);
+  const tickH = Math.round(badgeH * 0.14);
+  // Tiny human silhouette in the lower band — purely visual cue.
+  const personH = Math.round(badgeH * 0.22);
+  const personX = Math.round(badgeW * 0.18);
+  const personY = Math.round(badgeH * 0.78);
+  const headR = Math.round(personH * 0.12);
+  const bodyTop = personY - personH + headR * 2;
+  const bodyW = Math.round(personH * 0.22);
 
   return Buffer.from(`<?xml version="1.0" encoding="UTF-8"?>
 <svg width="${badgeW}" height="${badgeH}" viewBox="0 0 ${badgeW} ${badgeH}" xmlns="http://www.w3.org/2000/svg">
-  <rect x="0" y="0" width="${badgeW}" height="${badgeH}" rx="10" fill="rgba(0,0,0,0.55)"/>
-  <text x="${badgeW / 2}" y="${badgeH * 0.32}" font-family="Inter, system-ui, sans-serif" font-size="${Math.round(badgeH * 0.26)}" font-weight="700" fill="white" text-anchor="middle">≈ ${meters} м</text>
+  <rect x="0" y="0" width="${badgeW}" height="${badgeH}" rx="10" fill="rgba(0,0,0,0.6)"/>
+  <text x="${badgeW / 2}" y="${badgeH * 0.24}" font-family="Inter, system-ui, sans-serif" font-size="${Math.round(badgeH * 0.18)}" font-weight="700" fill="white" text-anchor="middle">≈ ${meters} м</text>
   <line x1="${barX1}" y1="${barY}" x2="${barX2}" y2="${barY}" stroke="white" stroke-width="3" stroke-linecap="round"/>
   <line x1="${barX1}" y1="${barY - tickH / 2}" x2="${barX1}" y2="${barY + tickH / 2}" stroke="white" stroke-width="3" stroke-linecap="round"/>
   <line x1="${barX2}" y1="${barY - tickH / 2}" x2="${barX2}" y2="${barY + tickH / 2}" stroke="white" stroke-width="3" stroke-linecap="round"/>
   <line x1="${badgeW / 2}" y1="${barY - tickH / 3}" x2="${badgeW / 2}" y2="${barY + tickH / 3}" stroke="white" stroke-width="2" stroke-linecap="round"/>
-  <text x="${badgeW / 2}" y="${badgeH * 0.92}" font-family="Inter, system-ui, sans-serif" font-size="${Math.round(badgeH * 0.16)}" fill="rgba(255,255,255,0.75)" text-anchor="middle">визуальный ориентир</text>
+  <circle cx="${personX}" cy="${personY - personH + headR}" r="${headR}" fill="rgba(255,255,255,0.85)"/>
+  <rect x="${personX - bodyW / 2}" y="${bodyTop}" width="${bodyW}" height="${personY - bodyTop}" rx="${bodyW * 0.4}" fill="rgba(255,255,255,0.85)"/>
+  <text x="${personX + personH * 0.45}" y="${personY - personH * 0.15}" font-family="Inter, system-ui, sans-serif" font-size="${Math.round(badgeH * 0.13)}" fill="rgba(255,255,255,0.85)">≈ 1.75 м рост</text>
+  <text x="${badgeW - barInset}" y="${badgeH * 0.94}" font-family="Inter, system-ui, sans-serif" font-size="${Math.round(badgeH * 0.1)}" fill="rgba(255,255,255,0.55)" text-anchor="end">визуальный ориентир</text>
 </svg>`);
 }
 

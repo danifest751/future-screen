@@ -1,4 +1,5 @@
 import type { BackgroundAsset, Scene } from '../../../lib/visualLed';
+import { getPreset } from '../../../lib/visualLed/presets';
 import { createSceneData, uid } from './initialState';
 import type { Action, UiFlags, VisualLedState } from './types';
 
@@ -297,14 +298,21 @@ export function visualLedReducer(state: VisualLedState, action: Action): VisualL
         height: 1080,
         uploadStatus: 'uploaded',
       };
+      // Auto-seed scaleCalib from the preset's known badge geometry so the
+      // user can drop screens in real metric sizes without touching the
+      // scale tool. We only override when the scene is uncalibrated —
+      // otherwise the user's manual calibration wins (preset switch
+      // shouldn't silently re-scale their work).
+      const preset = getPreset(action.payload.slug);
       return {
         ...state,
         selectedPresetSlug: action.payload.slug,
         scenes: mapActiveScene(state, (scene) => ({
           ...scene,
           backgrounds: [...scene.backgrounds, bg],
-          // Make the new preset background the active one immediately.
           activeBackgroundId: bg.id,
+          scaleCalib:
+            scene.scaleCalib ?? preset?.defaultCalibration ?? null,
         })),
       };
     }
