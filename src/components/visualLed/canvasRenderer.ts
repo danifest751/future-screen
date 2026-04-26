@@ -124,12 +124,16 @@ function drawScreen(
   touchMode: boolean,
 ): void {
   const [p0, p1, p2, p3] = element.corners;
-  ctx.beginPath();
-  ctx.moveTo(p0.x, p0.y);
-  ctx.lineTo(p1.x, p1.y);
-  ctx.lineTo(p2.x, p2.y);
-  ctx.lineTo(p3.x, p3.y);
-  ctx.closePath();
+  const buildQuadPath = () => {
+    ctx.beginPath();
+    ctx.moveTo(p0.x, p0.y);
+    ctx.lineTo(p1.x, p1.y);
+    ctx.lineTo(p2.x, p2.y);
+    ctx.lineTo(p3.x, p3.y);
+    ctx.closePath();
+  };
+
+  buildQuadPath();
   ctx.fillStyle = 'rgba(11, 16, 22, 0.92)';
   ctx.fill();
 
@@ -150,6 +154,12 @@ function drawScreen(
     }
   }
 
+  // drawWarpedSource leaves the current path pointing at the last
+  // expanded grid triangle (ctx.save/restore preserves transform/clip
+  // but NOT the current path). Without rebuilding the quad path here,
+  // ctx.stroke() below would outline that last triangle, producing the
+  // small triangular artifact next to the bottom-right corner.
+  buildQuadPath();
   ctx.lineWidth = isSelected ? 2 : 1;
   ctx.strokeStyle = isSelected ? 'rgba(96, 165, 250, 0.95)' : 'rgba(226, 232, 240, 0.7)';
   ctx.stroke();
