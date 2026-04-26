@@ -7,6 +7,9 @@ import {
   orderQuadPoints,
   getCornersBounds,
   findCornerHit,
+  findEdgeHit,
+  resizeQuadEdge,
+  getEdgeMidpoint,
   lineFromPoints,
   lineIntersection,
   lineClipToCanvas,
@@ -182,5 +185,77 @@ describe('quadPoint', () => {
     };
     expect(p.x).toBeCloseTo(expected.x);
     expect(p.y).toBeCloseTo(expected.y);
+  });
+});
+
+describe('edge hit / resize / midpoint', () => {
+  const rect: Quad = [
+    { x: 0, y: 0 }, // TL
+    { x: 100, y: 0 }, // TR
+    { x: 100, y: 60 }, // BR
+    { x: 0, y: 60 }, // BL
+  ];
+
+  it('findEdgeHit returns the right edge index', () => {
+    expect(findEdgeHit(rect, { x: 50, y: 1 })).toBe(0); // top
+    expect(findEdgeHit(rect, { x: 99, y: 30 })).toBe(1); // right
+    expect(findEdgeHit(rect, { x: 50, y: 59 })).toBe(2); // bottom
+    expect(findEdgeHit(rect, { x: 1, y: 30 })).toBe(3); // left
+  });
+
+  it('findEdgeHit ignores points near the corners', () => {
+    // 5% along the top edge — within the 10% near-endpoint exclusion zone.
+    expect(findEdgeHit(rect, { x: 5, y: 0 })).toBe(-1);
+    expect(findEdgeHit(rect, { x: 95, y: 0 })).toBe(-1);
+  });
+
+  it('findEdgeHit returns -1 outside the proximity radius', () => {
+    expect(findEdgeHit(rect, { x: 50, y: 30 })).toBe(-1); // middle of rect
+    expect(findEdgeHit(rect, { x: 50, y: 200 })).toBe(-1); // far below
+  });
+
+  it('findEdgeHit accounts for view scale (zoom)', () => {
+    // At 4× zoom, hit radius shrinks 4×, so a 4-px gap becomes a miss.
+    expect(findEdgeHit(rect, { x: 50, y: 4 }, 1, 8)).toBe(0);
+    expect(findEdgeHit(rect, { x: 50, y: 4 }, 4, 8)).toBe(-1);
+  });
+
+  it('resizeQuadEdge moves the right edge horizontally and keeps the rest', () => {
+    const next = resizeQuadEdge(rect, 1, 20, 0);
+    expect(next[0]).toEqual(rect[0]); // TL stays
+    expect(next[3]).toEqual(rect[3]); // BL stays
+    expect(next[1].x).toBeCloseTo(120); // TR moves right
+    expect(next[2].x).toBeCloseTo(120); // BR moves right
+    expect(next[1].y).toBeCloseTo(0);
+    expect(next[2].y).toBeCloseTo(60);
+  });
+
+  it('resizeQuadEdge projects pointer delta onto the edge perpendicular', () => {
+    // Drag right edge by (10, 30) — only the perpendicular (10) should land.
+    const next = resizeQuadEdge(rect, 1, 10, 30);
+    expect(next[1].x).toBeCloseTo(110);
+    expect(next[2].x).toBeCloseTo(110);
+    expect(next[1].y).toBeCloseTo(0);
+    expect(next[2].y).toBeCloseTo(60);
+  });
+
+  it('resizeQuadEdge moves the top edge vertically', () => {
+    const next = resizeQuadEdge(rect, 0, 0, -15); // pointer up
+    expect(next[0].y).toBeCloseTo(-15);
+    expect(next[1].y).toBeCloseTo(-15);
+    expect(next[2]).toEqual(rect[2]);
+    expect(next[3]).toEqual(rect[3]);
+  });
+
+  it('resizeQuadEdge returns input unchanged on invalid edge index', () => {
+    expect(resizeQuadEdge(rect, 99, 5, 5)).toEqual(rect);
+  });
+
+  it('getEdgeMidpoint returns the midpoint of the requested edge', () => {
+    expect(getEdgeMidpoint(rect, 0)).toEqual({ x: 50, y: 0 });
+    expect(getEdgeMidpoint(rect, 1)).toEqual({ x: 100, y: 30 });
+    expect(getEdgeMidpoint(rect, 2)).toEqual({ x: 50, y: 60 });
+    expect(getEdgeMidpoint(rect, 3)).toEqual({ x: 0, y: 30 });
+    expect(getEdgeMidpoint(rect, 99)).toBeNull();
   });
 });

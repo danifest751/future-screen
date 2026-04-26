@@ -1,4 +1,4 @@
-import { Expand, Plus, Wand2 } from 'lucide-react';
+import { Expand, Lock, Move3D, Plus, Wand2 } from 'lucide-react';
 import {
   CABINET_SIDE_M,
   autoFillCabinets,
@@ -46,7 +46,8 @@ const PLACEMENT_OFFSETS: Array<[number, number]> = [
 const QuickAddToolbar = () => {
   const scene = useActiveScene();
   const selected = useSelectedElement();
-  const { dispatch } = useVisualLed();
+  const { state, dispatch } = useVisualLed();
+  const freeTransform = state.ui.freeTransform;
 
   const addScreenAtCenter = () => {
     // Default footprint: 2×2 cabinets = 1m × 1m. Translates to pixels
@@ -121,7 +122,7 @@ const QuickAddToolbar = () => {
         <Plus className="h-3.5 w-3.5" />
         Экран
       </button>
-      <div className="pointer-events-auto flex gap-1">
+      <div className="pointer-events-auto flex flex-wrap gap-1">
         <button
           type="button"
           onClick={autoFitSelected}
@@ -149,6 +150,29 @@ const QuickAddToolbar = () => {
         >
           <Expand className="h-3 w-3" />
           Fit
+        </button>
+        <button
+          type="button"
+          onClick={() =>
+            dispatch({
+              type: 'ui/toggle',
+              payload: { key: 'freeTransform', value: !freeTransform },
+            })
+          }
+          className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] backdrop-blur transition ${
+            freeTransform
+              ? 'border-amber-400/50 bg-amber-500/15 text-amber-200 hover:border-amber-300'
+              : 'border-white/10 bg-slate-900/80 text-slate-200 hover:border-white/30 hover:text-white'
+          }`}
+          title={
+            freeTransform
+              ? 'Свободная трансформация активна — углы можно тянуть для перспективы. Нажми чтобы вернуть стандартный режим.'
+              : 'Включить свободную трансформацию: угловые точки разблокируются и можно подгонять экран под перспективу на фото.'
+          }
+          aria-pressed={freeTransform}
+        >
+          {freeTransform ? <Move3D className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
+          {freeTransform ? 'Свободно' : 'Прямоуг.'}
         </button>
       </div>
     </div>

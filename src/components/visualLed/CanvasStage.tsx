@@ -4,10 +4,12 @@ import {
   clamp,
   distance,
   findCornerHit,
+  findEdgeHit,
   getElementSizeMeters,
   moveCorner,
   orderQuadPoints,
   pointInQuad,
+  resizeQuadEdge,
   translateQuad,
   type Point,
   type ScreenElement,
@@ -39,6 +41,10 @@ const CanvasStage = () => {
   // mouse pointerdown. Drives larger corner handles + a forgiving hit
   // radius so a finger can land on them.
   const [touchMode, setTouchMode] = useState(false);
+  // Forces the cabinet grid on while the user is interacting with a
+  // screen (corner/edge resize or move). Restored to whatever the
+  // showCabinetGrid checkbox said as soon as the drag releases.
+  const [interactingScreen, setInteractingScreen] = useState(false);
 
   // Preload the active background image; bump cacheVersion on load so
   // the render effect re-runs.
@@ -68,13 +74,16 @@ const CanvasStage = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     renderScene(ctx, scene, state.tool, imageCache.current, {
-      showCabinetGrid: state.ui.showCabinetGrid,
+      showCabinetGrid: state.ui.showCabinetGrid || interactingScreen,
       touchMode,
+      freeTransform: state.ui.freeTransform,
     });
   }, [
     scene,
     state.tool,
     state.ui.showCabinetGrid,
+    state.ui.freeTransform,
+    interactingScreen,
     cacheVersion,
     touchMode,
   ]);
@@ -92,7 +101,9 @@ const CanvasStage = () => {
         const ctx = canvas.getContext('2d');
         if (ctx) {
           renderScene(ctx, scene, state.tool, imageCache.current, {
-            showCabinetGrid: state.ui.showCabinetGrid,
+            showCabinetGrid: state.ui.showCabinetGrid || interactingScreen,
+            touchMode,
+            freeTransform: state.ui.freeTransform,
           });
         }
       }
@@ -105,6 +116,9 @@ const CanvasStage = () => {
     scene,
     state.tool,
     state.ui.showCabinetGrid,
+    state.ui.freeTransform,
+    interactingScreen,
+    touchMode,
   ]);
 
   const onDrop = useCallback(
@@ -122,6 +136,7 @@ const CanvasStage = () => {
 
   const dragRef = useRef<
     | { type: 'corner'; id: string; corner: number }
+    | { type: 'edge'; id: string; edge: number; last: Point }
     | { type: 'move'; id: string; last: Point }
     | { type: 'pan'; lastClientX: number; lastClientY: number }
     | null
@@ -275,20 +290,39 @@ const CanvasStage = () => {
       // No tool — try to select / drag.
       const selected = scene.elements.find((el) => el.id === scene.selectedElementId);
       if (selected) {
-        const cornerIdx = findCornerHit(
+        // Corner drag — perspective distortion. Locked behind freeTransform
+        // so a casual user resizing a screen doesn't accidentally skew it.
+        if (state.ui.freeTransform) {
+          const cornerIdx = findCornerHit(
+            selected.corners,
+            p,
+            scene.view.scale,
+            touchMode ? 16 : 10,
+          );
+          if (cornerIdx >= 0) {
+            canvas.setPointerCapture(event.pointerId);
+            dragRef.current = { type: 'corner', id: selected.id, corner: cornerIdx };
+            setInteractingScreen(true);
+            return;
+          }
+        }
+        // Edge drag — window-style rectangular resize, available in any mode.
+        const edgeIdx = findEdgeHit(
           selected.corners,
           p,
           scene.view.scale,
-          touchMode ? 16 : 10,
+          touchMode ? 14 : 8,
         );
-        if (cornerIdx >= 0) {
+        if (edgeIdx >= 0) {
           canvas.setPointerCapture(event.pointerId);
-          dragRef.current = { type: 'corner', id: selected.id, corner: cornerIdx };
+          dragRef.current = { type: 'edge', id: selected.id, edge: edgeIdx, last: p };
+          setInteractingScreen(true);
           return;
         }
         if (pointInQuad(p, selected.corners)) {
           canvas.setPointerCapture(event.pointerId);
           dragRef.current = { type: 'move', id: selected.id, last: p };
+          setInteractingScreen(true);
           return;
         }
       }
@@ -308,6 +342,7 @@ const CanvasStage = () => {
       if (picked) {
         canvas.setPointerCapture(event.pointerId);
         dragRef.current = { type: 'move', id: picked.id, last: p };
+        setInteractingScreen(true);
       }
     },
     [
@@ -317,6 +352,7 @@ const CanvasStage = () => {
       scene.selectedElementId,
       scene.view,
       state.tool,
+      state.ui.freeTransform,
       touchMode,
     ],
   );
@@ -385,35 +421,47 @@ const CanvasStage = () => {
       const el = scene.elements.find((it) => it.id === drag.id);
       if (!el) return;
 
+      // Live cabinet auto-fill helper: shared by corner and edge drags.
+      // Skipped for pure translate (move), where size is unchanged.
+      const fitCabinetsTo = (newCorners: typeof el.corners) => {
+        if (!el.cabinetPlan || !scene.scaleCalib) return;
+        const newSize = getElementSizeMeters(newCorners, scene.scaleCalib);
+        if (!newSize) return;
+        const fitted = autoFillCabinets(newSize, el.cabinetPlan.pitch);
+        if (fitted.cols !== el.cabinetPlan.cols || fitted.rows !== el.cabinetPlan.rows) {
+          dispatch({
+            type: 'screen/update',
+            payload: { id: drag.id, patch: { cabinetPlan: fitted } },
+          });
+        }
+      };
+
       if (drag.type === 'corner') {
         const newCorners = moveCorner(el.corners, drag.corner, p);
         dispatch({
           type: 'screen/updateCorners',
           payload: { id: drag.id, corners: newCorners },
         });
-        // Live cabinet auto-fill while dragging a corner. Only kicks in
-        // when the screen already has a cabinetPlan AND scale is set —
-        // QuickAddToolbar's "+ Экран" gives every new screen a 2×2 plan
-        // by default, so this gives the user the "stretch and watch
-        // cabinets multiply" feedback loop they asked for. Skipped on
-        // pure translate (drag.type === 'move') because size is unchanged.
-        if (el.cabinetPlan && scene.scaleCalib) {
-          const newSize = getElementSizeMeters(newCorners, scene.scaleCalib);
-          if (newSize) {
-            const fitted = autoFillCabinets(newSize, el.cabinetPlan.pitch);
-            if (
-              fitted.cols !== el.cabinetPlan.cols ||
-              fitted.rows !== el.cabinetPlan.rows
-            ) {
-              dispatch({
-                type: 'screen/update',
-                payload: { id: drag.id, patch: { cabinetPlan: fitted } },
-              });
-            }
-          }
-        }
+        fitCabinetsTo(newCorners);
         return;
       }
+
+      if (drag.type === 'edge') {
+        // Pointer delta in scene space = current p minus last recorded p.
+        const dx = p.x - drag.last.x;
+        const dy = p.y - drag.last.y;
+        const newCorners = resizeQuadEdge(el.corners, drag.edge, dx, dy);
+        dispatch({
+          type: 'screen/updateCorners',
+          payload: { id: drag.id, corners: newCorners },
+        });
+        fitCabinetsTo(newCorners);
+        // Track new pointer position so the next move sample uses an
+        // up-to-date reference point even though the corners shifted.
+        drag.last = p;
+        return;
+      }
+
       if (drag.type === 'move') {
         const dx = p.x - drag.last.x;
         const dy = p.y - drag.last.y;
@@ -470,6 +518,9 @@ const CanvasStage = () => {
       }
       if (activePointersRef.current.size === 0) {
         dragRef.current = null;
+        // Restore the user's "Показывать сетку" setting now that the
+        // drag is over.
+        setInteractingScreen(false);
       }
     },
     [],

@@ -114,6 +114,106 @@ export function findCornerHit(
   return -1;
 }
 
+/**
+ * Edge order for an `orderQuadPoints`-ordered quad (TL, TR, BR, BL):
+ *   0 — top    (corners 0–1)
+ *   1 — right  (corners 1–2)
+ *   2 — bottom (corners 3–2)
+ *   3 — left   (corners 0–3)
+ */
+const QUAD_EDGE_PAIRS: Array<[number, number]> = [
+  [0, 1],
+  [1, 2],
+  [3, 2],
+  [0, 3],
+];
+
+/**
+ * Edge index under the cursor, or -1. Tests proximity to each edge
+ * segment, skipping the 10% closest to either endpoint so corner hits
+ * aren't shadowed by edge hits. `viewScale` compensates for canvas zoom.
+ */
+export function findEdgeHit(
+  corners: Quad,
+  p: Point,
+  viewScale = 1,
+  radius = 8,
+): number {
+  const r = radius / viewScale;
+  let best = -1;
+  let bestDist = r;
+  for (let i = 0; i < QUAD_EDGE_PAIRS.length; i += 1) {
+    const [iA, iB] = QUAD_EDGE_PAIRS[i];
+    const a = corners[iA];
+    const b = corners[iB];
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const len2 = dx * dx + dy * dy;
+    if (len2 < 1e-6) continue;
+    const t = ((p.x - a.x) * dx + (p.y - a.y) * dy) / len2;
+    if (t < 0.1 || t > 0.9) continue;
+    const fx = a.x + t * dx;
+    const fy = a.y + t * dy;
+    const d = Math.hypot(p.x - fx, p.y - fy);
+    if (d < bestDist) {
+      bestDist = d;
+      best = i;
+    }
+  }
+  return best;
+}
+
+/**
+ * Window-style resize: drag edge `edgeIdx` by pointer delta (dx, dy);
+ * the two corners on that edge slide along the edge's perpendicular by
+ * the projected component, while the opposite edge's corners stay put.
+ * Works for any quad orientation — for a true rectangle the result is
+ * a rectangle with a different size; for a perspective-distorted quad
+ * it preserves the slant.
+ */
+export function resizeQuadEdge(
+  corners: Quad,
+  edgeIdx: number,
+  dx: number,
+  dy: number,
+): Quad {
+  const pair = QUAD_EDGE_PAIRS[edgeIdx];
+  if (!pair) return corners;
+  const [iA, iB] = pair;
+  const ex = corners[iB].x - corners[iA].x;
+  const ey = corners[iB].y - corners[iA].y;
+  const len = Math.hypot(ex, ey);
+  if (len < 1e-6) return corners;
+  // Perpendicular to the edge (sign chosen consistently). Pointer
+  // delta projected onto this gives the resize amount; both corners
+  // on the edge translate by `proj * perp`.
+  const px = ey / len;
+  const py = -ex / len;
+  const proj = dx * px + dy * py;
+  const dxA = px * proj;
+  const dyA = py * proj;
+  return corners.map((p, i) => {
+    if (i === iA || i === iB) {
+      return { x: p.x + dxA, y: p.y + dyA };
+    }
+    return p;
+  }) as Quad;
+}
+
+/**
+ * Midpoint of edge `edgeIdx`. Used by the renderer to draw the edge
+ * resize handles between corners.
+ */
+export function getEdgeMidpoint(corners: Quad, edgeIdx: number): Point | null {
+  const pair = QUAD_EDGE_PAIRS[edgeIdx];
+  if (!pair) return null;
+  const [iA, iB] = pair;
+  return {
+    x: (corners[iA].x + corners[iB].x) / 2,
+    y: (corners[iA].y + corners[iB].y) / 2,
+  };
+}
+
 /** Line represented in normal form: nx*x + ny*y = d; angle in [0, π). */
 export interface Line {
   nx: number;

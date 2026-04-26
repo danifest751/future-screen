@@ -1,5 +1,6 @@
 import {
   drawWarpedSource,
+  getEdgeMidpoint,
   getElementSizeMeters,
   quadPoint,
   type CabinetPlan,
@@ -23,6 +24,13 @@ export interface RenderOptions {
    * after any touch pointerdown and back off on a mouse pointerdown.
    */
   touchMode?: boolean;
+  /**
+   * When true, corner handles render at full size (perspective-resize
+   * mode). When false (default), corners are drawn dimmed and edge
+   * midpoint handles take their place — window-style rectangular
+   * resize via the edges only.
+   */
+  freeTransform?: boolean;
 }
 
 export function renderScene(
@@ -30,7 +38,7 @@ export function renderScene(
   scene: Scene,
   tool: Tool | null,
   imageCache: Map<string, HTMLImageElement>,
-  options: RenderOptions = { showCabinetGrid: true, touchMode: false },
+  options: RenderOptions = { showCabinetGrid: true, touchMode: false, freeTransform: false },
 ): void {
   const canvas = ctx.canvas;
   ctx.save();
@@ -44,7 +52,13 @@ export function renderScene(
   // 2. Screens
   for (const element of scene.elements) {
     const isSelected = element.id === scene.selectedElementId;
-    drawScreen(ctx, element, isSelected, options.touchMode ?? false);
+    drawScreen(
+      ctx,
+      element,
+      isSelected,
+      options.touchMode ?? false,
+      options.freeTransform ?? false,
+    );
     if (options.showCabinetGrid && element.cabinetPlan) {
       drawCabinetGrid(ctx, element, element.cabinetPlan, scene.scaleCalib);
     }
@@ -122,6 +136,7 @@ function drawScreen(
   element: ScreenElement,
   isSelected: boolean,
   touchMode: boolean,
+  freeTransform: boolean,
 ): void {
   const [p0, p1, p2, p3] = element.corners;
   const buildQuadPath = () => {
@@ -165,12 +180,34 @@ function drawScreen(
   ctx.stroke();
 
   if (isSelected) {
-    const handleRadius = touchMode ? 8 : 5;
-    ctx.fillStyle = 'rgba(96, 165, 250, 1)';
+    // Corner handles. In free-transform mode they're full size and
+    // bright (perspective drag enabled). In default mode they're
+    // dimmed and smaller — shown as a hint that perspective drag
+    // exists but is locked behind the toolbar toggle.
+    const cornerRadius = freeTransform ? (touchMode ? 8 : 5) : touchMode ? 5 : 3;
+    ctx.fillStyle = freeTransform
+      ? 'rgba(96, 165, 250, 1)'
+      : 'rgba(96, 165, 250, 0.45)';
     for (const corner of element.corners) {
       ctx.beginPath();
-      ctx.arc(corner.x, corner.y, handleRadius, 0, Math.PI * 2);
+      ctx.arc(corner.x, corner.y, cornerRadius, 0, Math.PI * 2);
       ctx.fill();
+    }
+
+    // Edge midpoint handles. Always shown when selected so the user
+    // sees where to grab to resize rectangularly. Filled white-ish so
+    // they read as distinct from the blue corner dots.
+    const edgeRadius = touchMode ? 7 : 4;
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+    ctx.strokeStyle = 'rgba(96, 165, 250, 1)';
+    ctx.lineWidth = 1.5;
+    for (let i = 0; i < 4; i += 1) {
+      const m = getEdgeMidpoint(element.corners, i);
+      if (!m) continue;
+      ctx.beginPath();
+      ctx.arc(m.x, m.y, edgeRadius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
     }
   }
 }

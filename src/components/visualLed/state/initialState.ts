@@ -71,6 +71,7 @@ export function createInitialState(): VisualLedState {
       showCabinetGrid: true,
       showStatsOverlay: true,
       demosPaused: false,
+      freeTransform: false,
     },
     selectedPresetSlug: null,
   };

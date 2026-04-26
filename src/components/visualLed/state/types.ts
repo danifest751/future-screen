@@ -37,6 +37,14 @@ export interface UiFlags {
    * distracted by the constantly-moving demos while measuring.
    */
   demosPaused: boolean;
+  /**
+   * "Свободная трансформация". When false (default), corner handles
+   * are locked — the user resizes a screen by dragging its edges, and
+   * the rectangle stays a rectangle. When true, corner handles drag
+   * individually, allowing perspective distortion to match a slanted
+   * surface in the photo.
+   */
+  freeTransform: boolean;
 }
 
 export interface VisualLedState {

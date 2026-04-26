@@ -183,12 +183,18 @@ function hydrateVideo(raw: unknown): VideoAsset | null {
 
 function hydrateUi(raw: unknown): UiFlags {
   if (!isRecord(raw)) {
-    return { showCabinetGrid: true, showStatsOverlay: true, demosPaused: false };
+    return {
+      showCabinetGrid: true,
+      showStatsOverlay: true,
+      demosPaused: false,
+      freeTransform: false,
+    };
   }
   return {
     showCabinetGrid: asBoolean(raw.showCabinetGrid, true),
     showStatsOverlay: asBoolean(raw.showStatsOverlay, true),
     demosPaused: asBoolean(raw.demosPaused, false),
+    freeTransform: asBoolean(raw.freeTransform, false),
   };
 }
 
