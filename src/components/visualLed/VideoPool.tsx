@@ -30,12 +30,14 @@ const VideoPool = () => {
 
   // rAF loop for procedural demos. Only runs when there's at least
   // one demo asset AND at least one screen has any videoId assigned
-  // (so we don't spin CPU if nothing's showing on screen).
+  // (so we don't spin CPU if nothing's showing on screen). Skipped
+  // entirely when the user has paused demos — last drawn frame stays.
   const hasAnyVideoAssignment = state.scenes.some((s) =>
     s.elements.some((el) => el.videoId),
   );
+  const paused = state.ui.demosPaused;
   useEffect(() => {
-    if (demoVideos.length === 0 || !hasAnyVideoAssignment) return;
+    if (demoVideos.length === 0 || !hasAnyVideoAssignment || paused) return;
     let rafId = 0;
     const tick = () => {
       const t = demoPhase(performance.now());
@@ -50,7 +52,7 @@ const VideoPool = () => {
     };
     rafId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafId);
-  }, [demoVideos, hasAnyVideoAssignment]);
+  }, [demoVideos, hasAnyVideoAssignment, paused]);
 
   return (
     <div

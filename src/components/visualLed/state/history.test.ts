@@ -49,10 +49,10 @@ describe('withHistory', () => {
 
     const next = reducer(initial, {
       type: 'ui/toggle',
-      payload: { key: 'showAssistGuides', value: false },
+      payload: { key: 'showCabinetGrid', value: false },
     });
 
-    expect(next.present.ui.showAssistGuides).toBe(false);
+    expect(next.present.ui.showCabinetGrid).toBe(false);
     expect(next.past).toHaveLength(0);
   });
 

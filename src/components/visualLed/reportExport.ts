@@ -47,7 +47,7 @@ async function renderSceneOffscreen(scene: Scene): Promise<string> {
     { ...scene, view: { ...scene.view, scale: 1, offsetX: 0, offsetY: 0 } },
     null,
     cache,
-    { showCabinetGrid: false, showAssistGuides: false },
+    { showCabinetGrid: false },
   );
   try {
     return canvas.toDataURL('image/jpeg', 0.82);

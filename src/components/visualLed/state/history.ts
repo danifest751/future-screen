@@ -30,10 +30,6 @@ const SKIP_HISTORY: ReadonlySet<string> = new Set([
   'view/reset',
   // UI flag toggles aren't worth an undo entry.
   'ui/toggle',
-  // Assist proposal is ephemeral; its `apply` step dispatches a
-  // screen/updateCorners which IS recorded via drag/begin semantics,
-  // so we skip the `assist/set` bookkeeping itself.
-  'assist/set',
 ]);
 
 const HISTORY_MAX = 30;

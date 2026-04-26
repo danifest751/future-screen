@@ -62,13 +62,11 @@ const CanvasStage = () => {
     if (!ctx) return;
     renderScene(ctx, scene, state.tool, imageCache.current, {
       showCabinetGrid: state.ui.showCabinetGrid,
-      showAssistGuides: state.ui.showAssistGuides,
     });
   }, [
     scene,
     state.tool,
     state.ui.showCabinetGrid,
-    state.ui.showAssistGuides,
     cacheVersion,
   ]);
 
@@ -86,7 +84,6 @@ const CanvasStage = () => {
         if (ctx) {
           renderScene(ctx, scene, state.tool, imageCache.current, {
             showCabinetGrid: state.ui.showCabinetGrid,
-            showAssistGuides: state.ui.showAssistGuides,
           });
         }
       }
@@ -99,7 +96,6 @@ const CanvasStage = () => {
     scene,
     state.tool,
     state.ui.showCabinetGrid,
-    state.ui.showAssistGuides,
   ]);
 
   const onDrop = useCallback(

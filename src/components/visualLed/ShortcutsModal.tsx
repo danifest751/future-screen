@@ -37,7 +37,6 @@ const SHORTCUTS: Array<{ group: string; entries: Entry[] }> = [
       { keys: ['Scale'], label: '2 клика по известной длине' },
       { keys: ['Place'], label: '4 клика по углам экрана' },
       { keys: ['Drag угла'], label: 'Точная подстройка геометрии' },
-      { keys: ['Assist'], label: 'Автодетект рамки по фону' },
     ],
   },
 ];

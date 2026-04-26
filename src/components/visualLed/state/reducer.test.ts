@@ -42,7 +42,6 @@ const makeState = (): VisualLedState => ({
       elements: [],
       selectedElementId: null,
       scaleCalib: null,
-      assist: null,
       view: { scale: 1, minScale: 0.35, maxScale: 6, offsetX: 0, offsetY: 0 },
       canvasWidth: 1280,
       canvasHeight: 720,
@@ -55,7 +54,6 @@ const makeState = (): VisualLedState => ({
       elements: [],
       selectedElementId: null,
       scaleCalib: null,
-      assist: null,
       view: { scale: 1.5, minScale: 0.35, maxScale: 6, offsetX: 10, offsetY: 20 },
       canvasWidth: 640,
       canvasHeight: 360,
@@ -67,8 +65,8 @@ const makeState = (): VisualLedState => ({
   drag: null,
   ui: {
     showCabinetGrid: true,
-    showAssistGuides: true,
     showStatsOverlay: true,
+    demosPaused: false,
   },
   selectedPresetSlug: null,
 });
@@ -152,7 +150,7 @@ describe('visualLedReducer', () => {
     expect(deletedScreen.scenes[0].elements).toHaveLength(0);
   });
 
-  it('handles scale, assist, tool and drag actions', () => {
+  it('handles scale, tool and drag actions', () => {
     const state = makeState();
 
     const scaled = visualLedReducer(state, {
@@ -164,23 +162,10 @@ describe('visualLedReducer', () => {
     const scaleCleared = visualLedReducer(scaled, { type: 'scale/clear' });
     expect(scaleCleared.scenes[0].scaleCalib).toBeNull();
 
-    const assistSet = visualLedReducer(scaleCleared, {
-      type: 'assist/set',
-      payload: {
-        corners: quad,
-        confidence: 'high',
-        score: 0.95,
-        reason: 'ok',
-        source: 'fallback',
-        roi: { x: 0, y: 0, width: 10, height: 10 },
-        guides: [],
-        targetElementId: 's1',
-        analyzedAt: Date.now(),
-      },
+    const toolStarted = visualLedReducer(scaleCleared, {
+      type: 'tool/start',
+      payload: { mode: 'place4', points: [] },
     });
-    expect(assistSet.scenes[0].assist?.confidence).toBe('high');
-
-    const toolStarted = visualLedReducer(assistSet, { type: 'tool/start', payload: { mode: 'place4', points: [] } });
     const toolPoint = visualLedReducer(toolStarted, { type: 'tool/pushPoint', payload: { x: 1, y: 2 } });
     expect(toolPoint.tool?.points).toHaveLength(1);
 
@@ -256,12 +241,13 @@ describe('visualLedReducer', () => {
     expect(scene.activeBackgroundId).toBe(scene.backgrounds[0].id);
     expect(scene.backgrounds[0].src).toBe('/visual-led-presets/concert-stage.jpg');
     expect(scene.backgrounds[0].name).toBe('Концерт / шоу');
-    // Auto-calibration: concert preset seeds scaleCalib from its badge
-    // (5m bar = 288px → ~57.6 px/m). The user can place screens with real
-    // metric sizes immediately, no scale tool needed.
+    // Auto-calibration: concert preset seeds scaleCalib from the AI
+    // human's measured pixel height (~290 px = 1.75 m → ~165.7 px/m).
+    // The user can place screens in real metric sizes immediately, no
+    // scale tool needed.
     expect(scene.scaleCalib).not.toBeNull();
-    expect(scene.scaleCalib?.realLength).toBe(5);
-    expect(scene.scaleCalib?.pxPerMeter).toBeCloseTo(57.6, 1);
+    expect(scene.scaleCalib?.realLength).toBe(1.75);
+    expect(scene.scaleCalib?.pxPerMeter).toBeCloseTo(290 / 1.75, 1);
   });
 
   it('preset/apply: keeps an existing user calibration instead of overriding it', () => {

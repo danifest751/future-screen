@@ -1,9 +1,7 @@
 import {
   drawWarpedSource,
   getElementSizeMeters,
-  lineClipToCanvas,
   quadPoint,
-  type AssistProposal,
   type CabinetPlan,
   type ScaleCalibration,
   type Scene,
@@ -16,13 +14,9 @@ import type { Tool } from './state/types';
  * Render the active scene into the provided 2D context. Pure drawing
  * function — consumes state, produces pixels. Called by `CanvasStage`
  * on every state change.
- *
- * Phase 3a draws background + screens + current tool preview. Cabinet
- * grid, assist overlay, stats HUD come in later phases.
  */
 export interface RenderOptions {
   showCabinetGrid: boolean;
-  showAssistGuides: boolean;
 }
 
 export function renderScene(
@@ -30,7 +24,7 @@ export function renderScene(
   scene: Scene,
   tool: Tool | null,
   imageCache: Map<string, HTMLImageElement>,
-  options: RenderOptions = { showCabinetGrid: true, showAssistGuides: true },
+  options: RenderOptions = { showCabinetGrid: true },
 ): void {
   const canvas = ctx.canvas;
   ctx.save();
@@ -50,10 +44,7 @@ export function renderScene(
     }
   }
 
-  // 3. Assist proposal overlay (dashed outline + optional guides).
-  if (scene.assist) drawAssistOverlay(ctx, scene.assist, options.showAssistGuides, canvas);
-
-  // 4. Tool preview — scale line, placement dots, etc.
+  // 3. Tool preview — scale line, placement dots, etc.
   if (tool) drawToolPreview(ctx, tool);
 
   ctx.restore();
@@ -223,61 +214,6 @@ function drawCabinetGrid(
       ctx.stroke();
     }
   }
-  ctx.restore();
-}
-
-function drawAssistOverlay(
-  ctx: CanvasRenderingContext2D,
-  proposal: AssistProposal,
-  showGuides: boolean,
-  canvas: HTMLCanvasElement,
-): void {
-  ctx.save();
-  // Guides — extended edge lines across the canvas.
-  if (showGuides && proposal.guides.length > 0) {
-    ctx.lineWidth = 1;
-    ctx.strokeStyle = 'rgba(168, 85, 247, 0.45)';
-    ctx.setLineDash([4, 4]);
-    for (const line of proposal.guides) {
-      const seg = lineClipToCanvas(line, canvas.width, canvas.height);
-      if (!seg) continue;
-      ctx.beginPath();
-      ctx.moveTo(seg[0].x, seg[0].y);
-      ctx.lineTo(seg[1].x, seg[1].y);
-      ctx.stroke();
-    }
-    ctx.setLineDash([]);
-  }
-
-  // Proposal quad — amber dashed outline + translucent fill.
-  const confidence = proposal.confidence;
-  const stroke =
-    confidence === 'high'
-      ? 'rgba(16, 185, 129, 0.95)'
-      : confidence === 'medium'
-        ? 'rgba(251, 191, 36, 0.95)'
-        : 'rgba(239, 68, 68, 0.9)';
-  const fill =
-    confidence === 'high'
-      ? 'rgba(16, 185, 129, 0.12)'
-      : confidence === 'medium'
-        ? 'rgba(251, 191, 36, 0.12)'
-        : 'rgba(239, 68, 68, 0.12)';
-
-  const [p0, p1, p2, p3] = proposal.corners;
-  ctx.beginPath();
-  ctx.moveTo(p0.x, p0.y);
-  ctx.lineTo(p1.x, p1.y);
-  ctx.lineTo(p2.x, p2.y);
-  ctx.lineTo(p3.x, p3.y);
-  ctx.closePath();
-  ctx.fillStyle = fill;
-  ctx.fill();
-  ctx.lineWidth = 2;
-  ctx.setLineDash([6, 4]);
-  ctx.strokeStyle = stroke;
-  ctx.stroke();
-  ctx.setLineDash([]);
   ctx.restore();
 }
 

@@ -1,5 +1,4 @@
 import type {
-  AssistProposal,
   BackgroundAsset,
   Quad,
   ScaleCalibration,
@@ -164,7 +163,6 @@ function hydrateScene(raw: unknown): Scene {
     selectedElementId:
       typeof raw.selectedElementId === 'string' ? raw.selectedElementId : null,
     scaleCalib: hydrateScale(raw.scaleCalib),
-    assist: isRecord(raw.assist) ? (raw.assist as unknown as AssistProposal) : null,
     view: hydrateView(raw.view),
     canvasWidth: asNumber(raw.canvasWidth, seed.canvasWidth),
     canvasHeight: asNumber(raw.canvasHeight, seed.canvasHeight),
@@ -185,12 +183,12 @@ function hydrateVideo(raw: unknown): VideoAsset | null {
 
 function hydrateUi(raw: unknown): UiFlags {
   if (!isRecord(raw)) {
-    return { showCabinetGrid: true, showAssistGuides: true, showStatsOverlay: true };
+    return { showCabinetGrid: true, showStatsOverlay: true, demosPaused: false };
   }
   return {
     showCabinetGrid: asBoolean(raw.showCabinetGrid, true),
-    showAssistGuides: asBoolean(raw.showAssistGuides, true),
     showStatsOverlay: asBoolean(raw.showStatsOverlay, true),
+    demosPaused: asBoolean(raw.demosPaused, false),
   };
 }
 

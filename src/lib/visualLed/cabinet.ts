@@ -46,7 +46,14 @@ export function getElementSizeMeters(
 
 /**
  * Derive a cabinet plan (cols × rows of 0.5m squares) that best fits the
- * given physical screen size. Rounds to nearest integer.
+ * given physical screen size. Conservative — uses `floor` so a partial
+ * cabinet that would overflow the declared screen area is dropped (a half
+ * cabinet hanging off the edge isn't physically installable). The user
+ * can still bump cols/rows manually with the +/- buttons if they want.
+ *
+ * `+ FIT_TOLERANCE` lets a screen that's only a few mm short of the next
+ * full cabinet still earn that extra column/row — covers the common case
+ * where the user dragged corners by hand and is 1-2 cm off.
  */
 export function autoFillCabinets(
   size: ScreenSizeMeters,
@@ -54,8 +61,8 @@ export function autoFillCabinets(
   moduleMeters = CABINET_SIDE_M,
 ): CabinetPlan {
   return {
-    cols: Math.max(1, Math.round(size.width / moduleMeters)),
-    rows: Math.max(1, Math.round(size.height / moduleMeters)),
+    cols: Math.max(1, Math.floor((size.width + CABINET_FIT_TOLERANCE_M) / moduleMeters)),
+    rows: Math.max(1, Math.floor((size.height + CABINET_FIT_TOLERANCE_M) / moduleMeters)),
     cabinetSide: moduleMeters,
     pitch: normalizePitch(pitch),
   };

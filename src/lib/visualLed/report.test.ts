@@ -97,7 +97,6 @@ describe('buildSceneReport + buildReportHtml', () => {
     elements: [sampleElement],
     selectedElementId: null,
     scaleCalib: scale,
-    assist: null,
     view: { scale: 1, minScale: 0.35, maxScale: 6, offsetX: 0, offsetY: 0 },
     canvasWidth: 1280,
     canvasHeight: 720,

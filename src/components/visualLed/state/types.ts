@@ -1,5 +1,4 @@
 import type {
-  AssistProposal,
   BackgroundAsset,
   CabinetPlan,
   Point,
@@ -31,8 +30,13 @@ export type Drag =
 
 export interface UiFlags {
   showCabinetGrid: boolean;
-  showAssistGuides: boolean;
   showStatsOverlay: boolean;
+  /**
+   * Freeze procedural demo animations on the canvas + library thumbnails.
+   * Useful when the user wants to take a still snapshot or stops being
+   * distracted by the constantly-moving demos while measuring.
+   */
+  demosPaused: boolean;
 }
 
 export interface VisualLedState {
@@ -80,9 +84,6 @@ export type Action =
   // Scale calibration
   | { type: 'scale/set'; payload: ScaleCalibration }
   | { type: 'scale/clear' }
-
-  // Assist
-  | { type: 'assist/set'; payload: AssistProposal | null }
 
   // Tool flow
   | { type: 'tool/start'; payload: Tool }

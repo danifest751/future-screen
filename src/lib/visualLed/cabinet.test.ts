@@ -51,12 +51,26 @@ describe('getElementSizeMeters', () => {
 });
 
 describe('autoFillCabinets', () => {
-  it('rounds to nearest cabinet count', () => {
+  it('returns the exact full-cabinet count when the screen is a multiple of cabinet side', () => {
     const plan = autoFillCabinets({ width: 4, height: 2 }, '2.6');
     expect(plan.cols).toBe(8);
     expect(plan.rows).toBe(4);
     expect(plan.cabinetSide).toBe(0.5);
     expect(plan.pitch).toBe('2.6');
+  });
+
+  it('drops the partial cabinet that would overflow the declared screen area', () => {
+    // 2.7 m wide → 5 full cabinets (= 2.5 m), NOT 6 (= 3 m would overflow).
+    const plan = autoFillCabinets({ width: 2.7, height: 2.7 }, '2.6');
+    expect(plan.cols).toBe(5);
+    expect(plan.rows).toBe(5);
+  });
+
+  it('absorbs sub-cm slack from manual corner placement (within tolerance)', () => {
+    // 4.99 m → user clearly meant 5 m (10 cabinets), not 9.
+    const plan = autoFillCabinets({ width: 4.99, height: 4.99 }, '2.6');
+    expect(plan.cols).toBe(10);
+    expect(plan.rows).toBe(10);
   });
 
   it('never returns 0 cols/rows for tiny sizes', () => {

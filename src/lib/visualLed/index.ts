@@ -6,6 +6,5 @@ export * from './types';
 export * from './geometry';
 export * from './cabinet';
 export * from './perspective';
-export * from './assist';
 export * from './screenOps';
 export * from './report';

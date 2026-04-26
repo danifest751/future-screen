@@ -1,5 +1,5 @@
 import { useRef, type ReactNode } from 'react';
-import { Film, Upload, Trash2, XCircle } from 'lucide-react';
+import { Film, Pause, Play, Upload, Trash2, XCircle } from 'lucide-react';
 import { importBackgrounds } from './CanvasStage';
 import DemoThumbnail from './DemoThumbnail';
 import { fileToDataUrl } from './imageLoader';
@@ -117,21 +117,47 @@ const SidebarRight = () => {
       </Panel>
 
       <Panel title="Видео">
-        <label className="flex cursor-pointer items-center justify-center gap-1 rounded-lg border border-dashed border-white/15 bg-slate-950/40 py-2 text-xs text-slate-300 hover:border-white/30 hover:text-white">
-          <Upload className="h-3 w-3" />
-          Загрузить MP4 / WebM
-          <input
-            ref={videoInputRef}
-            type="file"
-            accept="video/mp4,video/webm"
-            multiple
-            className="hidden"
-            onChange={(e) => {
-              void onVideoFiles(e.target.files);
-              if (videoInputRef.current) videoInputRef.current.value = '';
-            }}
-          />
-        </label>
+        <div className="mb-2 flex gap-1.5">
+          <label className="flex flex-1 cursor-pointer items-center justify-center gap-1 rounded-lg border border-dashed border-white/15 bg-slate-950/40 py-2 text-xs text-slate-300 hover:border-white/30 hover:text-white">
+            <Upload className="h-3 w-3" />
+            Загрузить MP4 / WebM
+            <input
+              ref={videoInputRef}
+              type="file"
+              accept="video/mp4,video/webm"
+              multiple
+              className="hidden"
+              onChange={(e) => {
+                void onVideoFiles(e.target.files);
+                if (videoInputRef.current) videoInputRef.current.value = '';
+              }}
+            />
+          </label>
+          {state.videos.some((v) => v.animationKind) ? (
+            <button
+              type="button"
+              onClick={() =>
+                dispatch({
+                  type: 'ui/toggle',
+                  payload: { key: 'demosPaused', value: !state.ui.demosPaused },
+                })
+              }
+              className="flex items-center gap-1 rounded-lg border border-white/15 bg-slate-900 px-2 py-1 text-[11px] text-white hover:border-white/30"
+              title={
+                state.ui.demosPaused
+                  ? 'Демо-анимации остановлены — нажмите чтобы запустить'
+                  : 'Остановить демо-анимации (на превью и на канвасе)'
+              }
+            >
+              {state.ui.demosPaused ? (
+                <Play className="h-3 w-3" />
+              ) : (
+                <Pause className="h-3 w-3" />
+              )}
+              {state.ui.demosPaused ? 'Старт' : 'Пауза'}
+            </button>
+          ) : null}
+        </div>
 
         {state.videos.length === 0 ? (
           <div className="mt-2 rounded-md border border-dashed border-white/10 bg-slate-950/40 p-3 text-center text-[11px] text-slate-500">
@@ -157,7 +183,10 @@ const SidebarRight = () => {
                       title={selected ? `Назначить ${video.name}` : 'Выбери экран'}
                     >
                       {video.animationKind ? (
-                        <DemoThumbnail kind={video.animationKind} />
+                        <DemoThumbnail
+                          kind={video.animationKind}
+                          paused={state.ui.demosPaused}
+                        />
                       ) : (
                         <video
                           src={video.src}

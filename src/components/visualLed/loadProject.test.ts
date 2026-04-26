@@ -41,7 +41,6 @@ function minimalRawState() {
           pxLength: 500,
           pxPerMeter: 100,
         },
-        assist: null,
         view: { scale: 1.2, minScale: 0.35, maxScale: 6, offsetX: 10, offsetY: -5 },
         canvasWidth: 1280,
         canvasHeight: 720,
@@ -53,8 +52,8 @@ function minimalRawState() {
     ],
     ui: {
       showCabinetGrid: true,
-      showAssistGuides: false,
       showStatsOverlay: true,
+      demosPaused: false,
     },
   };
 }

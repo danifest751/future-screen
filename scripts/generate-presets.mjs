@@ -1,16 +1,25 @@
 #!/usr/bin/env node
 // Generate Visual LED preset background images via fal.ai Flux 1.1 Pro Ultra,
-// then composite a "≈ 2 м" scale-bar overlay into the bottom-right corner
-// so the user has a built-in size reference when picking a preset.
+// then composite a small "≈ 1.75 м рост" badge in the bottom-right corner so
+// the user immediately sees the in-frame human is the scale reference.
+//
+// Auto-calibration in the visualizer is driven by the in-frame human's
+// pixel height (humanHeightPxApprox in preset-prompts.json), measured
+// once per generation. The badge intentionally has NO ruler bar — having
+// two scale references that disagree confused users.
 //
 // Usage:
-//   FAL_KEY=... node scripts/generate-presets.mjs                 # all prompts (skip existing)
-//   FAL_KEY=... node scripts/generate-presets.mjs concert-stage   # one prompt by slug
-//   FAL_KEY=... node scripts/generate-presets.mjs --dry-run       # print prompts, don't call API
-//   FAL_KEY=... node scripts/generate-presets.mjs --force         # overwrite existing files
+//   FAL_KEY=... node scripts/generate-presets.mjs                 # all (skip existing)
+//   FAL_KEY=... node scripts/generate-presets.mjs concert-stage   # one preset by slug
+//   FAL_KEY=... node scripts/generate-presets.mjs --dry-run       # print prompts only
+//   FAL_KEY=... node scripts/generate-presets.mjs --force         # overwrite existing
+//   node scripts/generate-presets.mjs --composite-only            # repaint badges only
+//   node scripts/generate-presets.mjs --composite-only flagship-arena  # one badge
 //
-// Reads scripts/preset-prompts.json, calls fal.ai sync endpoint,
-// writes results into public/visual-led-presets/<slug>.jpg.
+// `--composite-only` skips the fal.ai call entirely — useful when only
+// the badge SVG changed and you want to repaint without spending API $$.
+// The new badge background is opaque enough to fully cover any old badge
+// underneath.
 
 import { readFile, writeFile, mkdir, access } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
@@ -24,8 +33,14 @@ const ROOT = resolve(HERE, '..');
 loadEnv({ path: resolve(ROOT, '.env.local') });
 loadEnv({ path: resolve(ROOT, '.env') });
 
+const argv = process.argv.slice(2);
+const DRY_RUN = argv.includes('--dry-run');
+const FORCE = argv.includes('--force');
+const COMPOSITE_ONLY = argv.includes('--composite-only');
+const onlySlug = argv.find((a) => !a.startsWith('--'));
+
 const FAL_KEY = process.env.FAL_KEY;
-if (!FAL_KEY) {
+if (!FAL_KEY && !COMPOSITE_ONLY && !DRY_RUN) {
   console.error('FAL_KEY is missing. Put it in .env.local as FAL_KEY=<id>:<secret>.');
   process.exit(1);
 }
@@ -33,11 +48,6 @@ if (!FAL_KEY) {
 const FAL_ENDPOINT = 'https://fal.run/fal-ai/flux-pro/v1.1-ultra';
 const OUTPUT_DIR = resolve(ROOT, 'public/visual-led-presets');
 const PROMPTS_FILE = resolve(ROOT, 'scripts/preset-prompts.json');
-
-const argv = process.argv.slice(2);
-const DRY_RUN = argv.includes('--dry-run');
-const FORCE = argv.includes('--force');
-const onlySlug = argv.find((a) => !a.startsWith('--'));
 
 const prompts = JSON.parse(await readFile(PROMPTS_FILE, 'utf8')).prompts;
 const targets = onlySlug
@@ -103,59 +113,45 @@ async function downloadBuffer(url) {
 }
 
 /**
- * Build the SVG that gets composited into the bottom-right corner.
+ * Bottom-right badge — opaque dark pill with a tiny human silhouette and
+ * a "≈ 1.75 м рост" label. No ruler bar, by design: the only authoritative
+ * scale reference for the visualizer is the AI human INSIDE the scene
+ * (whose pixel height is measured per-preset and stored as
+ * defaultCalibration). Having two competing scales (badge bar vs in-frame
+ * human) misled users who saw them disagree.
  *
- * Two visual references in one badge:
- *   1. Horizontal scale bar labeled "≈ N м" — drives auto-calibration
- *      (the bar pixel length is deterministic, see `BADGE_BAR_PX_AT_2752W`
- *      below; presets read this and seed `scaleCalib` on apply).
- *   2. Tiny human icon labeled "1.75 м" — purely decorative UI hint.
- *      Real perspective-aware scale comes from the AI-generated person
- *      inside the scene; this icon just reinforces "this badge is about
- *      physical size".
- *
- * Calibration in the visualizer therefore needs ZERO clicks for preset
- * users — the manual scale tool stays available for fine-tuning or for
- * users who switched to "Свой вариант".
+ * Background alpha is 0.92 so this badge fully covers any earlier badge
+ * underneath when re-composited via --composite-only.
  */
-function buildScaleBarSvg(imageWidth, imageHeight, meters) {
-  // Badge takes ~22% of width; clamp so it doesn't get tiny or huge.
+function buildBadgeSvg(imageWidth) {
   const badgeW = Math.max(220, Math.min(360, Math.round(imageWidth * 0.22)));
+  // 0.42 height ratio is intentional — fully covers the previous badge
+  // shape so --composite-only never bleeds the old one through.
   const badgeH = Math.round(badgeW * 0.42);
-  const barInset = Math.round(badgeW * 0.1);
-  const barX1 = barInset;
-  const barX2 = badgeW - barInset;
-  const barY = Math.round(badgeH * 0.5);
-  const tickH = Math.round(badgeH * 0.14);
-  // Tiny human silhouette in the lower band — purely visual cue.
-  const personH = Math.round(badgeH * 0.22);
-  const personX = Math.round(badgeW * 0.18);
-  const personY = Math.round(badgeH * 0.78);
-  const headR = Math.round(personH * 0.12);
+  const personH = Math.round(badgeH * 0.55);
+  const personX = Math.round(badgeW * 0.16);
+  const personY = Math.round(badgeH * 0.86);
+  const headR = Math.round(personH * 0.13);
   const bodyTop = personY - personH + headR * 2;
-  const bodyW = Math.round(personH * 0.22);
+  const bodyW = Math.round(personH * 0.24);
 
   return Buffer.from(`<?xml version="1.0" encoding="UTF-8"?>
 <svg width="${badgeW}" height="${badgeH}" viewBox="0 0 ${badgeW} ${badgeH}" xmlns="http://www.w3.org/2000/svg">
-  <rect x="0" y="0" width="${badgeW}" height="${badgeH}" rx="10" fill="rgba(0,0,0,0.6)"/>
-  <text x="${badgeW / 2}" y="${badgeH * 0.24}" font-family="Inter, system-ui, sans-serif" font-size="${Math.round(badgeH * 0.18)}" font-weight="700" fill="white" text-anchor="middle">≈ ${meters} м</text>
-  <line x1="${barX1}" y1="${barY}" x2="${barX2}" y2="${barY}" stroke="white" stroke-width="3" stroke-linecap="round"/>
-  <line x1="${barX1}" y1="${barY - tickH / 2}" x2="${barX1}" y2="${barY + tickH / 2}" stroke="white" stroke-width="3" stroke-linecap="round"/>
-  <line x1="${barX2}" y1="${barY - tickH / 2}" x2="${barX2}" y2="${barY + tickH / 2}" stroke="white" stroke-width="3" stroke-linecap="round"/>
-  <line x1="${badgeW / 2}" y1="${barY - tickH / 3}" x2="${badgeW / 2}" y2="${barY + tickH / 3}" stroke="white" stroke-width="2" stroke-linecap="round"/>
-  <circle cx="${personX}" cy="${personY - personH + headR}" r="${headR}" fill="rgba(255,255,255,0.85)"/>
-  <rect x="${personX - bodyW / 2}" y="${bodyTop}" width="${bodyW}" height="${personY - bodyTop}" rx="${bodyW * 0.4}" fill="rgba(255,255,255,0.85)"/>
-  <text x="${personX + personH * 0.45}" y="${personY - personH * 0.15}" font-family="Inter, system-ui, sans-serif" font-size="${Math.round(badgeH * 0.13)}" fill="rgba(255,255,255,0.85)">≈ 1.75 м рост</text>
-  <text x="${badgeW - barInset}" y="${badgeH * 0.94}" font-family="Inter, system-ui, sans-serif" font-size="${Math.round(badgeH * 0.1)}" fill="rgba(255,255,255,0.55)" text-anchor="end">визуальный ориентир</text>
+  <rect x="0" y="0" width="${badgeW}" height="${badgeH}" rx="10" fill="rgb(8,12,20)"/>
+  <circle cx="${personX}" cy="${personY - personH + headR}" r="${headR}" fill="white"/>
+  <rect x="${personX - bodyW / 2}" y="${bodyTop}" width="${bodyW}" height="${personY - bodyTop}" rx="${bodyW * 0.4}" fill="white"/>
+  <text x="${personX + personH * 0.5}" y="${badgeH * 0.45}" font-family="Inter, system-ui, sans-serif" font-size="${Math.round(badgeH * 0.2)}" font-weight="700" fill="white">≈ 1.75 м</text>
+  <text x="${personX + personH * 0.5}" y="${badgeH * 0.7}" font-family="Inter, system-ui, sans-serif" font-size="${Math.round(badgeH * 0.12)}" fill="rgba(255,255,255,0.75)">рост человека в кадре</text>
+  <text x="${badgeW - 12}" y="${badgeH * 0.94}" font-family="Inter, system-ui, sans-serif" font-size="${Math.round(badgeH * 0.1)}" fill="rgba(255,255,255,0.55)" text-anchor="end">визуальный ориентир</text>
 </svg>`);
 }
 
-async function compositeScaleBar(srcBuffer, meters) {
+async function compositeBadge(srcBuffer) {
   const img = sharp(srcBuffer);
   const meta = await img.metadata();
   const w = meta.width ?? 1408;
   const h = meta.height ?? 792;
-  const overlay = buildScaleBarSvg(w, h, meters);
+  const overlay = buildBadgeSvg(w);
   const overlayMeta = await sharp(overlay).metadata();
   const overlayW = overlayMeta.width ?? 280;
   const overlayH = overlayMeta.height ?? 90;
@@ -168,9 +164,15 @@ async function compositeScaleBar(srcBuffer, meters) {
     .toBuffer();
 }
 
-async function downloadTo(url, path, meters) {
+async function downloadAndComposite(url, path) {
   const buf = await downloadBuffer(url);
-  const composed = await compositeScaleBar(buf, meters);
+  const composed = await compositeBadge(buf);
+  await writeFile(path, composed);
+}
+
+async function recompositeExisting(path) {
+  const src = await readFile(path);
+  const composed = await compositeBadge(src);
   await writeFile(path, composed);
 }
 
@@ -178,6 +180,23 @@ const results = [];
 
 for (const item of targets) {
   const outPath = resolve(OUTPUT_DIR, `${item.slug}.jpg`);
+
+  if (COMPOSITE_ONLY) {
+    if (!(await exists(outPath))) {
+      console.log(`✗ ${item.slug}: no image at ${outPath} — generate it first without --composite-only`);
+      results.push({ slug: item.slug, status: 'missing', path: outPath });
+      continue;
+    }
+    try {
+      await recompositeExisting(outPath);
+      console.log(`  ✓ repainted ${item.slug}`);
+      results.push({ slug: item.slug, status: 'repainted', path: outPath });
+    } catch (err) {
+      console.error(`  ✗ ${item.slug}: ${err.message}`);
+      results.push({ slug: item.slug, status: 'error', error: err.message });
+    }
+    continue;
+  }
 
   if (!FORCE && (await exists(outPath))) {
     console.log(`✓ skip (exists): ${item.slug}  (pass --force to overwrite)`);
@@ -197,8 +216,7 @@ for (const item of targets) {
     const result = await callFal(item.prompt);
     const url = result?.images?.[0]?.url;
     if (!url) throw new Error(`no image URL in response: ${JSON.stringify(result).slice(0, 200)}`);
-    const meters = item.referenceScaleMeters ?? 2;
-    await downloadTo(url, outPath, meters);
+    await downloadAndComposite(url, outPath);
     const seconds = ((Date.now() - t0) / 1000).toFixed(1);
     console.log(`  ✓ saved ${outPath} (${seconds}s)`);
     results.push({ slug: item.slug, status: 'ok', path: outPath, seed: result?.seed });
@@ -210,7 +228,7 @@ for (const item of targets) {
 
 console.log('\nSummary:');
 for (const r of results) {
-  console.log(`  ${r.status.padEnd(8)} ${r.slug}${r.path ? '  →  ' + r.path : ''}`);
+  console.log(`  ${r.status.padEnd(10)} ${r.slug}${r.path ? '  →  ' + r.path : ''}`);
 }
 const failed = results.filter((r) => r.status === 'error').length;
 process.exit(failed > 0 ? 1 : 0);

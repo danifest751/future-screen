@@ -3,16 +3,29 @@ import { VISUAL_LED_PRESETS, type VisualLedPreset } from '../../lib/visualLed/pr
 import { calculatePresetPrice, formatRubPrice } from '../../lib/visualLed/pricing';
 import { useVisualLed } from './state/VisualLedContext';
 
+interface PresetPickerProps {
+  /**
+   * Called after a successful preset pick or skip. The onboarding gate
+   * doesn't pass this (it has nothing to close); the in-editor switcher
+   * passes a callback that closes its modal.
+   */
+  onAfterPick?: () => void;
+  /** Hide the page-level header when rendered inside a modal. */
+  compact?: boolean;
+}
+
 /**
- * First screen of the sales-configurator flow. Replaces the empty-canvas
- * default that used to greet new visitors. Each card applies a preset
- * (loads its hero image as the active background, sets selectedPresetSlug)
- * and the visualizer falls into editing mode automatically.
+ * Preset grid — used in two places:
+ *   1. Onboarding gate (full-page, no `onAfterPick`) — shown when
+ *      `isOnboardingMode` is true on the empty canvas.
+ *   2. In-editor switcher (compact + onAfterPick), wrapped by
+ *      `PresetSwitcherModal` so the user can swap presets without
+ *      losing their work.
  *
  * "Свой вариант" sets a null preset and just clears the gate — same canvas
  * as before, just no preset multiplier.
  */
-const PresetPicker = () => {
+const PresetPicker = ({ onAfterPick, compact = false }: PresetPickerProps) => {
   const { dispatch } = useVisualLed();
 
   const handlePick = (preset: VisualLedPreset) => {
@@ -24,6 +37,7 @@ const PresetPicker = () => {
         backgroundName: preset.title.ru,
       },
     });
+    onAfterPick?.();
   };
 
   const handleSkip = () => {
@@ -39,19 +53,22 @@ const PresetPicker = () => {
         backgroundName: 'Свой вариант',
       },
     });
+    onAfterPick?.();
   };
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-3 py-6">
-      <header className="mb-6">
-        <h1 className="text-2xl font-bold text-white sm:text-3xl">
-          Выберите тип события
-        </h1>
-        <p className="mt-2 max-w-2xl text-sm text-slate-400">
-          Подберите похожий пресет — увидите примерную стоимость и сможете
-          уточнить размеры экрана. Все цены — ориентир, итог уточнит менеджер.
-        </p>
-      </header>
+    <div className={compact ? 'w-full' : 'mx-auto w-full max-w-6xl px-3 py-6'}>
+      {compact ? null : (
+        <header className="mb-6">
+          <h1 className="text-2xl font-bold text-white sm:text-3xl">
+            Выберите тип события
+          </h1>
+          <p className="mt-2 max-w-2xl text-sm text-slate-400">
+            Подберите похожий пресет — увидите примерную стоимость и сможете
+            уточнить размеры экрана. Все цены — ориентир, итог уточнит менеджер.
+          </p>
+        </header>
+      )}
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
         {VISUAL_LED_PRESETS.map((preset) => {
@@ -107,10 +124,12 @@ const PresetPicker = () => {
         </button>
       </div>
 
-      <p className="mt-6 text-center text-[11px] text-slate-500">
-        Иллюстрации — концепция, итоговый вид зависит от площадки. Цена —
-        ориентир для предварительного расчёта.
-      </p>
+      {compact ? null : (
+        <p className="mt-6 text-center text-[11px] text-slate-500">
+          Иллюстрации — концепция, итоговый вид зависит от площадки. Цена —
+          ориентир для предварительного расчёта.
+        </p>
+      )}
     </div>
   );
 };

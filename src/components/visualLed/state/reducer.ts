@@ -198,14 +198,6 @@ export function visualLedReducer(state: VisualLedState, action: Action): VisualL
       };
     }
 
-    // ----- assist -----
-    case 'assist/set': {
-      return {
-        ...state,
-        scenes: mapActiveScene(state, (scene) => ({ ...scene, assist: action.payload })),
-      };
-    }
-
     // ----- tool -----
     case 'tool/start':
       return { ...state, tool: action.payload };

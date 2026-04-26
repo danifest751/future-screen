@@ -10,9 +10,18 @@ import {
 /**
  * Live preview for a procedural demo asset — runs its own rAF loop on
  * a small canvas so the user can see the animation in the library
- * grid before assigning it to a screen.
+ * grid before assigning it to a screen. When `paused` is true the rAF
+ * loop is skipped and the last drawn frame remains visible (we render
+ * one final frame at the current phase before stopping so a freshly
+ * mounted thumbnail doesn't show a black square in the paused state).
  */
-const DemoThumbnail = ({ kind }: { kind: DemoAnimationKind }) => {
+const DemoThumbnail = ({
+  kind,
+  paused = false,
+}: {
+  kind: DemoAnimationKind;
+  paused?: boolean;
+}) => {
   const ref = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -21,6 +30,10 @@ const DemoThumbnail = ({ kind }: { kind: DemoAnimationKind }) => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     const drawer = DEMO_DRAWERS[kind];
+    if (paused) {
+      drawer(ctx, demoPhase(performance.now()));
+      return;
+    }
     let rafId = 0;
     const tick = () => {
       drawer(ctx, demoPhase(performance.now()));
@@ -28,7 +41,7 @@ const DemoThumbnail = ({ kind }: { kind: DemoAnimationKind }) => {
     };
     rafId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafId);
-  }, [kind]);
+  }, [kind, paused]);
 
   return (
     <canvas

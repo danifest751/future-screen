@@ -10,20 +10,22 @@
 // the public launch. Order of magnitude is intentionally believable so
 // the UI doesn't look broken in screenshots.
 //
-// `defaultCalibration` numbers come from `scripts/generate-presets.mjs`:
-// every hero is rendered at 2752×1536 with a "≈ N м" badge whose bar is
-// exactly 288 px wide. So pxPerMeter = 288 / referenceScaleMeters. The
-// reducer auto-applies this on `preset/apply` so users skip the manual
-// scale tool unless they switch backgrounds.
+// `defaultCalibration` is derived from the AI-rendered human inside each
+// hero (≈ 1.75 m tall by prompt). The pixel height of that figure is
+// measured visually per generation and stored in `humanHeightPxApprox`
+// (in scripts/preset-prompts.json). `pxPerMeter = humanPx / 1.75` —
+// match the human you see, get a calibration that matches what the user
+// perceives. Estimates are good to ~10 %; users can fine-tune via the
+// scale tool. Re-measure after every regeneration.
 
 import type { ScaleCalibration } from './types';
 
-const BADGE_BAR_PX_AT_2752W = 288;
-function calibrationFromBadge(meters: number): ScaleCalibration {
+const HUMAN_HEIGHT_M = 1.75;
+function calibrationFromHuman(humanPx: number): ScaleCalibration {
   return {
-    realLength: meters,
-    pxLength: BADGE_BAR_PX_AT_2752W,
-    pxPerMeter: BADGE_BAR_PX_AT_2752W / meters,
+    realLength: HUMAN_HEIGHT_M,
+    pxLength: humanPx,
+    pxPerMeter: humanPx / HUMAN_HEIGHT_M,
   };
 }
 
@@ -99,7 +101,7 @@ export const VISUAL_LED_PRESETS = [
     background: '/visual-led-presets/compact-presentation.jpg',
     defaultPitch: '2.6',
     defaultCabinetSideM: 0.5,
-    defaultCalibration: calibrationFromBadge(1),
+    defaultCalibration: calibrationFromHuman(770),
   },
   {
     slug: 'corporate',
@@ -122,7 +124,7 @@ export const VISUAL_LED_PRESETS = [
     background: '/visual-led-presets/corporate-conference.jpg',
     defaultPitch: '2.6',
     defaultCabinetSideM: 0.5,
-    defaultCalibration: calibrationFromBadge(2),
+    defaultCalibration: calibrationFromHuman(700),
   },
   {
     slug: 'concert',
@@ -145,7 +147,7 @@ export const VISUAL_LED_PRESETS = [
     background: '/visual-led-presets/concert-stage.jpg',
     defaultPitch: '3.9',
     defaultCabinetSideM: 0.5,
-    defaultCalibration: calibrationFromBadge(5),
+    defaultCalibration: calibrationFromHuman(290),
   },
   {
     slug: 'festival',
@@ -168,7 +170,7 @@ export const VISUAL_LED_PRESETS = [
     background: '/visual-led-presets/festival-outdoor.jpg',
     defaultPitch: '3.9',
     defaultCabinetSideM: 0.5,
-    defaultCalibration: calibrationFromBadge(10),
+    defaultCalibration: calibrationFromHuman(440),
   },
   {
     slug: 'flagship',
@@ -191,7 +193,7 @@ export const VISUAL_LED_PRESETS = [
     background: '/visual-led-presets/flagship-arena.jpg',
     defaultPitch: '5.9',
     defaultCabinetSideM: 0.5,
-    defaultCalibration: calibrationFromBadge(15),
+    defaultCalibration: calibrationFromHuman(610),
   },
 ] satisfies readonly VisualLedPreset[];
 

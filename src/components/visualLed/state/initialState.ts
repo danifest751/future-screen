@@ -47,7 +47,6 @@ export function createSceneData(name = 'default'): Scene {
     elements: [],
     selectedElementId: null,
     scaleCalib: null,
-    assist: null,
     view: {
       scale: 1,
       minScale: 0.35,
@@ -70,8 +69,8 @@ export function createInitialState(): VisualLedState {
     drag: null,
     ui: {
       showCabinetGrid: true,
-      showAssistGuides: true,
       showStatsOverlay: true,
+      demosPaused: false,
     },
     selectedPresetSlug: null,
   };
