@@ -119,6 +119,40 @@ const CanvasStage = () => {
   >(null);
   const spaceDownRef = useRef(false);
 
+  // Multi-touch pinch-zoom support. Tracks every active pointer so we
+  // can detect when the user puts a second finger on the canvas. While
+  // pinch is active we also pan with the midpoint, so two-finger drag
+  // works without a separate gesture.
+  const activePointersRef = useRef<Map<number, { clientX: number; clientY: number }>>(
+    new Map(),
+  );
+  const pinchRef = useRef<{
+    startDist: number;
+    startScale: number;
+    worldX: number;
+    worldY: number;
+  } | null>(null);
+
+  const canvasMidpoint = useCallback(
+    (a: { clientX: number; clientY: number }, b: { clientX: number; clientY: number }) => {
+      const canvas = canvasRef.current;
+      if (!canvas) return null;
+      const rect = canvas.getBoundingClientRect();
+      const mx = (a.clientX + b.clientX) / 2;
+      const my = (a.clientY + b.clientY) / 2;
+      return {
+        x: ((mx - rect.left) * canvas.width) / rect.width,
+        y: ((my - rect.top) * canvas.height) / rect.height,
+      };
+    },
+    [],
+  );
+
+  const pointerDistance = (
+    a: { clientX: number; clientY: number },
+    b: { clientX: number; clientY: number },
+  ) => Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+
   const finishTool = useCallback(
     (finalPoint: Point) => {
       const tool = state.tool;
@@ -160,6 +194,34 @@ const CanvasStage = () => {
     (event: React.PointerEvent<HTMLCanvasElement>) => {
       const canvas = canvasRef.current;
       if (!canvas) return;
+
+      // Track every pointer so we can detect 2-finger pinch on touch.
+      activePointersRef.current.set(event.pointerId, {
+        clientX: event.clientX,
+        clientY: event.clientY,
+      });
+
+      // Two fingers on touch — enter pinch-zoom mode and cancel any
+      // single-finger drag in progress. Pinch implicitly handles pan
+      // via the midpoint, so we don't need a separate two-finger pan.
+      if (
+        event.pointerType === 'touch' &&
+        activePointersRef.current.size === 2
+      ) {
+        const [a, b] = Array.from(activePointersRef.current.values());
+        const startDist = pointerDistance(a, b);
+        const mid = canvasMidpoint(a, b);
+        if (mid && startDist > 0) {
+          dragRef.current = null;
+          pinchRef.current = {
+            startDist,
+            startScale: scene.view.scale,
+            worldX: (mid.x - scene.view.offsetX) / scene.view.scale,
+            worldY: (mid.y - scene.view.offsetY) / scene.view.scale,
+          };
+        }
+        return;
+      }
 
       // Pan: right button, middle button, or Space+left.
       const isPanTrigger =
@@ -230,6 +292,38 @@ const CanvasStage = () => {
 
   const onCanvasPointerMove = useCallback(
     (event: React.PointerEvent<HTMLCanvasElement>) => {
+      // Update the tracked pointer position regardless of mode.
+      if (activePointersRef.current.has(event.pointerId)) {
+        activePointersRef.current.set(event.pointerId, {
+          clientX: event.clientX,
+          clientY: event.clientY,
+        });
+      }
+
+      // Pinch-zoom: scale around the midpoint between the two fingers
+      // and pan by following the midpoint, all in one dispatch.
+      if (pinchRef.current && activePointersRef.current.size === 2) {
+        const [a, b] = Array.from(activePointersRef.current.values());
+        const newDist = pointerDistance(a, b);
+        const mid = canvasMidpoint(a, b);
+        if (!mid || newDist <= 0) return;
+        const ratio = newDist / pinchRef.current.startDist;
+        const nextScale = clamp(
+          pinchRef.current.startScale * ratio,
+          scene.view.minScale,
+          scene.view.maxScale,
+        );
+        dispatch({
+          type: 'view/set',
+          payload: {
+            scale: nextScale,
+            offsetX: mid.x - pinchRef.current.worldX * nextScale,
+            offsetY: mid.y - pinchRef.current.worldY * nextScale,
+          },
+        });
+        return;
+      }
+
       const drag = dragRef.current;
       if (!drag) return;
       const canvas = canvasRef.current;
@@ -312,9 +406,21 @@ const CanvasStage = () => {
     [dispatch, scene.view],
   );
 
-  const onCanvasPointerUp = useCallback(() => {
-    dragRef.current = null;
-  }, []);
+  const onCanvasPointerUp = useCallback(
+    (event: React.PointerEvent<HTMLCanvasElement>) => {
+      activePointersRef.current.delete(event.pointerId);
+      // Drop pinch state once we have <2 active pointers. Single-finger
+      // drag is NOT auto-resumed — the user has to lift and re-tap so
+      // we don't surprise them with a screen jumping.
+      if (activePointersRef.current.size < 2) {
+        pinchRef.current = null;
+      }
+      if (activePointersRef.current.size === 0) {
+        dragRef.current = null;
+      }
+    },
+    [],
+  );
 
   // Global keyboard: Delete / Backspace removes the selected element,
   // Space toggles the pan-on-left-drag modifier (LMB+Space = pan).
@@ -360,12 +466,13 @@ const CanvasStage = () => {
         data-vled-canvas="true"
         width={scene.canvasWidth}
         height={scene.canvasHeight}
-        className={`max-h-full max-w-full rounded-lg border border-white/5 shadow-xl ${
+        className={`max-h-full max-w-full touch-none rounded-lg border border-white/5 shadow-xl ${
           state.tool ? 'cursor-crosshair' : 'cursor-default'
         }`}
         onPointerDown={onCanvasPointerDown}
         onPointerMove={onCanvasPointerMove}
         onPointerUp={onCanvasPointerUp}
+        onPointerCancel={onCanvasPointerUp}
         onWheel={onWheel}
         onContextMenu={(e) => e.preventDefault()}
       />
