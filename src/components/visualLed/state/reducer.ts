@@ -280,22 +280,29 @@ export function visualLedReducer(state: VisualLedState, action: Action): VisualL
       if (!action.payload.backgroundUrl.trim()) {
         return { ...state, selectedPresetSlug: action.payload.slug };
       }
+      const preset = getPreset(action.payload.slug);
+      const naturalW = preset?.naturalWidth ?? 1920;
+      const naturalH = preset?.naturalHeight ?? 1080;
       const bg: BackgroundAsset = {
         id: uid('bg'),
         name: action.payload.backgroundName,
         src: action.payload.backgroundUrl,
-        // Hero images are 16:9; precise width/height are recomputed from
-        // the actual <img> on first paint, so these are just safe defaults.
-        width: 1920,
-        height: 1080,
+        width: naturalW,
+        height: naturalH,
         uploadStatus: 'uploaded',
       };
-      // Auto-seed scaleCalib from the preset's known badge geometry so the
-      // user can drop screens in real metric sizes without touching the
-      // scale tool. We only override when the scene is uncalibrated —
-      // otherwise the user's manual calibration wins (preset switch
-      // shouldn't silently re-scale their work).
-      const preset = getPreset(action.payload.slug);
+      // Auto-seed scaleCalib from the preset's measured human-pixel cal
+      // so the user can drop screens in real metric sizes without touching
+      // the scale tool. We override only when the scene is uncalibrated;
+      // a manual calibration set earlier wins (preset switch shouldn't
+      // silently re-scale the user's work).
+      //
+      // Crucially we ALSO resize the canvas to the hero's natural size:
+      // the calibration is measured in those pixel coords, and screen
+      // quads live in canvas coords, so they MUST be the same coordinate
+      // system or pxPerMeter is interpreted at the wrong scale and screens
+      // come out 2-3× off. Default canvas (1280×720) does not match
+      // 2752×1536 hero, hence this dispatch.
       return {
         ...state,
         selectedPresetSlug: action.payload.slug,
@@ -303,6 +310,8 @@ export function visualLedReducer(state: VisualLedState, action: Action): VisualL
           ...scene,
           backgrounds: [...scene.backgrounds, bg],
           activeBackgroundId: bg.id,
+          canvasWidth: naturalW,
+          canvasHeight: naturalH,
           scaleCalib:
             scene.scaleCalib ?? preset?.defaultCalibration ?? null,
         })),

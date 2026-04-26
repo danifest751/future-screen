@@ -248,6 +248,11 @@ describe('visualLedReducer', () => {
     expect(scene.scaleCalib).not.toBeNull();
     expect(scene.scaleCalib?.realLength).toBe(1.75);
     expect(scene.scaleCalib?.pxPerMeter).toBeCloseTo(290 / 1.75, 1);
+    // Canvas MUST be resized to the hero's natural dimensions or the
+    // calibration (measured in image px) would be applied at the wrong
+    // scale and screen sizes would come out 2-3× off.
+    expect(scene.canvasWidth).toBe(2752);
+    expect(scene.canvasHeight).toBe(1536);
   });
 
   it('preset/apply: keeps an existing user calibration instead of overriding it', () => {

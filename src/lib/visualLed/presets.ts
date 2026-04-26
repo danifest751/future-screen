@@ -21,6 +21,13 @@
 import type { ScaleCalibration } from './types';
 
 const HUMAN_HEIGHT_M = 1.75;
+// Native pixel dimensions of every fal.ai-rendered hero. Calibration
+// (humanHeightPxApprox) is measured in these coords, and the reducer
+// resizes the scene canvas to match so screen-quad px → metres uses
+// the same scale.
+export const PRESET_NATURAL_WIDTH = 2752;
+export const PRESET_NATURAL_HEIGHT = 1536;
+
 function calibrationFromHuman(humanPx: number): ScaleCalibration {
   return {
     realLength: HUMAN_HEIGHT_M,
@@ -77,6 +84,15 @@ export interface VisualLedPreset {
    * `null` means "no auto-calibration" — the user must manually calibrate.
    */
   defaultCalibration: ScaleCalibration | null;
+  /**
+   * Natural pixel dimensions of the hero image. The reducer dispatches
+   * canvas resize to these on `preset/apply` so screen-quad coordinates
+   * (canvas px) and the calibration (also in image px) live in the same
+   * coordinate system. Otherwise pxPerMeter is interpreted in the wrong
+   * scale and screen sizes come out 2-3× off (the original wave-1 bug).
+   */
+  naturalWidth: number;
+  naturalHeight: number;
 }
 
 export const VISUAL_LED_PRESETS = [
@@ -102,6 +118,8 @@ export const VISUAL_LED_PRESETS = [
     defaultPitch: '2.6',
     defaultCabinetSideM: 0.5,
     defaultCalibration: calibrationFromHuman(770),
+    naturalWidth: PRESET_NATURAL_WIDTH,
+    naturalHeight: PRESET_NATURAL_HEIGHT,
   },
   {
     slug: 'corporate',
@@ -125,6 +143,8 @@ export const VISUAL_LED_PRESETS = [
     defaultPitch: '2.6',
     defaultCabinetSideM: 0.5,
     defaultCalibration: calibrationFromHuman(700),
+    naturalWidth: PRESET_NATURAL_WIDTH,
+    naturalHeight: PRESET_NATURAL_HEIGHT,
   },
   {
     slug: 'concert',
@@ -148,6 +168,8 @@ export const VISUAL_LED_PRESETS = [
     defaultPitch: '3.9',
     defaultCabinetSideM: 0.5,
     defaultCalibration: calibrationFromHuman(290),
+    naturalWidth: PRESET_NATURAL_WIDTH,
+    naturalHeight: PRESET_NATURAL_HEIGHT,
   },
   {
     slug: 'festival',
@@ -171,6 +193,8 @@ export const VISUAL_LED_PRESETS = [
     defaultPitch: '3.9',
     defaultCabinetSideM: 0.5,
     defaultCalibration: calibrationFromHuman(440),
+    naturalWidth: PRESET_NATURAL_WIDTH,
+    naturalHeight: PRESET_NATURAL_HEIGHT,
   },
   {
     slug: 'flagship',
@@ -194,6 +218,8 @@ export const VISUAL_LED_PRESETS = [
     defaultPitch: '5.9',
     defaultCabinetSideM: 0.5,
     defaultCalibration: calibrationFromHuman(610),
+    naturalWidth: PRESET_NATURAL_WIDTH,
+    naturalHeight: PRESET_NATURAL_HEIGHT,
   },
 ] satisfies readonly VisualLedPreset[];
 
