@@ -169,10 +169,12 @@ TELEGRAM_CHAT_ID=
 
 ## Команды
 ```bash
-npm run dev      # vite dev server (port 5173)
-npm run build    # production build
-npm run test     # vitest
+npm run dev      # vite dev server (port 5000, --host 0.0.0.0)
+npm run dev:all  # vite + local serverless mock (port 3001 для server/index.js)
+npm run build    # tsc + tsc --project tsconfig.api.json + vite build
+npm run test     # vitest run
 npm run preview  # preview production build
+npm run test:e2e # playwright (поднимает dev-сервер на 4174)
 ```
 
 ## Типичные проблемы
