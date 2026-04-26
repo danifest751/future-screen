@@ -1,4 +1,4 @@
-import { Gauge, Grid3x3, Monitor, Ruler, Weight, Zap } from 'lucide-react';
+import { Gauge, Grid3x3, Ruler, Weight, Zap } from 'lucide-react';
 import { collectSceneMetrics, type ScreenMetric } from './state/selectors';
 import { useActiveScene } from './state/VisualLedContext';
 
@@ -46,18 +46,20 @@ const MetricTile = ({
   value,
   icon,
   tone = 'default',
+  className = '',
 }: {
   label: string;
   value: string;
   icon: JSX.Element;
   tone?: 'default' | 'accent';
+  className?: string;
 }) => (
   <div
     className={`rounded-lg border px-3 py-2 ${
       tone === 'accent'
         ? 'border-brand-400/40 bg-brand-500/15'
         : 'border-white/10 bg-slate-950/55'
-    }`}
+    } ${className}`.trim()}
   >
     <div className="mb-1 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
       {icon}
@@ -97,7 +99,6 @@ const ScreenChip = ({ screen }: { screen: ScreenMetric }) => (
 const SceneMetricsBar = () => {
   const scene = useActiveScene();
   const metrics = collectSceneMetrics(scene);
-  const selected = metrics.selected;
 
   if (metrics.screenCount === 0) {
     return (
@@ -109,57 +110,55 @@ const SceneMetricsBar = () => {
 
   return (
     <section className="rounded-xl border border-white/10 bg-slate-900/70 p-2 shadow-lg shadow-black/15">
-      <div className="grid gap-2 md:grid-cols-[minmax(0,1.35fr)_repeat(5,minmax(7rem,0.65fr))]">
-        <MetricTile
-          label={selected ? `Выбран: ${selected.name}` : 'Выбранный экран'}
-          value={
-            selected
-              ? `${screenSizeLabel(selected)} · ${formatMetric(selected.areaM2)} м²`
-              : 'выбери экран'
-          }
-          icon={<Monitor className="h-3.5 w-3.5" />}
-          tone="accent"
-        />
+      {/*
+        5 aggregate tiles. Per-screen "Selected" tile was removed because
+        the chips row below already shows that info — and now it shows
+        unconditionally (even with a single screen) so nothing's lost.
+      */}
+      <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-5">
         <MetricTile
           label="Кабинеты"
           value={
-            selected
-              ? cabinetLabel(selected)
-              : metrics.totalCabinetCount === null
-                ? '—'
-                : `${metrics.totalCabinetCount} шт`
+            metrics.totalCabinetCount === null
+              ? '—'
+              : `${metrics.totalCabinetCount} шт`
           }
           icon={<Grid3x3 className="h-3.5 w-3.5" />}
+          tone="accent"
         />
         <MetricTile
           label="Всего площадь"
           value={`${formatMetric(metrics.totalAreaM2)} м²`}
           icon={<Ruler className="h-3.5 w-3.5" />}
         />
+        {/* Power and weight tiles — desktop and tablet only.
+            On phone (<md) these are hidden to keep the bar from
+            stacking into multiple cards above the canvas. */}
         <MetricTile
+          className="hidden md:block"
           label="Электрика max"
           value={formatPower(metrics.totalMaxPowerW)}
           icon={<Zap className="h-3.5 w-3.5" />}
         />
         <MetricTile
+          className="hidden md:block"
           label="Среднее потребление"
           value={formatPower(metrics.totalAveragePowerW)}
           icon={<Gauge className="h-3.5 w-3.5" />}
         />
         <MetricTile
+          className="hidden md:block"
           label="Вес экранов"
           value={formatWeightRange(metrics.totalWeightMinKg, metrics.totalWeightMaxKg)}
           icon={<Weight className="h-3.5 w-3.5" />}
         />
       </div>
 
-      {metrics.screenCount > 1 ? (
-        <div className="mt-2 flex gap-1.5 overflow-x-auto pb-0.5">
-          {metrics.screens.map((screen) => (
-            <ScreenChip key={screen.id} screen={screen} />
-          ))}
-        </div>
-      ) : null}
+      <div className="mt-2 flex gap-1.5 overflow-x-auto pb-0.5">
+        {metrics.screens.map((screen) => (
+          <ScreenChip key={screen.id} screen={screen} />
+        ))}
+      </div>
     </section>
   );
 };

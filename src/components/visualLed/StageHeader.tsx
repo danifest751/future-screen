@@ -1,5 +1,12 @@
-import { useEffect } from 'react';
-import { HardDriveDownload, Keyboard, Redo2, RotateCcw, Undo2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import {
+  HardDriveDownload,
+  Keyboard,
+  MoreHorizontal,
+  Redo2,
+  RotateCcw,
+  Undo2,
+} from 'lucide-react';
 import ScenesTabs from './ScenesTabs';
 import { useActiveScene, useVisualLed } from './state/VisualLedContext';
 
@@ -15,6 +22,8 @@ interface StageHeaderProps {
 const StageHeader = ({ onOpenShortcuts }: StageHeaderProps) => {
   const scene = useActiveScene();
   const { dispatch, clearPersistence, canUndo, canRedo } = useVisualLed();
+  const [moreOpen, setMoreOpen] = useState(false);
+  const moreRef = useRef<HTMLDivElement>(null);
 
   const resetAll = () => {
     const ok = window.confirm(
@@ -24,6 +33,30 @@ const StageHeader = ({ onOpenShortcuts }: StageHeaderProps) => {
     clearPersistence();
     window.location.reload();
   };
+
+  const resetView = () => {
+    dispatch({ type: 'view/reset' });
+    setMoreOpen(false);
+  };
+
+  // Close "more" menu on outside click. Esc closes it too — handled below.
+  useEffect(() => {
+    if (!moreOpen) return;
+    const onDocClick = (e: MouseEvent) => {
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) {
+        setMoreOpen(false);
+      }
+    };
+    const onEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMoreOpen(false);
+    };
+    document.addEventListener('mousedown', onDocClick);
+    document.addEventListener('keydown', onEsc);
+    return () => {
+      document.removeEventListener('mousedown', onDocClick);
+      document.removeEventListener('keydown', onEsc);
+    };
+  }, [moreOpen]);
 
   // Global keyboard shortcuts: Ctrl+Z / Ctrl+Shift+Z / Cmd+Z / Cmd+Shift+Z / "?"
   useEffect(() => {
@@ -92,18 +125,13 @@ const StageHeader = ({ onOpenShortcuts }: StageHeaderProps) => {
           <HardDriveDownload className="h-3 w-3" />
           autosave
         </span>
-        <span className="rounded-md border border-white/10 bg-slate-900/60 px-2 py-1 font-mono">
-          {scene.canvasWidth} × {scene.canvasHeight}
-        </span>
-        <button
-          type="button"
-          onClick={() => dispatch({ type: 'view/reset' })}
-          className="rounded-md border border-white/10 bg-slate-900/60 px-2 py-1 hover:border-white/30 hover:text-white"
-          title="Сбросить масштаб и pan"
+        {/* Desktop-only: combined view readouts (canvas size + zoom). */}
+        <span
+          className="hidden rounded-md border border-white/10 bg-slate-900/60 px-2 py-1 font-mono text-[11px] lg:inline-flex"
+          title={`Размер канваса: ${scene.canvasWidth} × ${scene.canvasHeight}px · Зум: ${scene.view.scale.toFixed(2)}x`}
         >
-          Сброс view
-        </button>
-        <span className="font-mono text-[11px]">zoom: {scene.view.scale.toFixed(2)}x</span>
+          {scene.canvasWidth}×{scene.canvasHeight} · {scene.view.scale.toFixed(2)}x
+        </span>
         <button
           type="button"
           onClick={onOpenShortcuts}
@@ -114,16 +142,49 @@ const StageHeader = ({ onOpenShortcuts }: StageHeaderProps) => {
           <Keyboard className="h-3 w-3" />
           ?
         </button>
-        <button
-          type="button"
-          onClick={resetAll}
-          className="inline-flex items-center gap-1 rounded-md border border-white/10 bg-slate-900/60 px-2 py-1 text-slate-400 hover:border-red-400/40 hover:text-red-300"
-          title="Стереть сохранённое состояние и начать с чистого листа"
-          aria-label="Сбросить всю сессию"
-        >
-          <RotateCcw className="h-3 w-3" />
-          Сброс сессии
-        </button>
+        <div className="relative" ref={moreRef}>
+          <button
+            type="button"
+            onClick={() => setMoreOpen((v) => !v)}
+            className="inline-flex items-center gap-1 rounded-md border border-white/10 bg-slate-900/60 px-2 py-1 hover:border-white/30 hover:text-white"
+            title="Дополнительно"
+            aria-label="Дополнительные действия"
+            aria-expanded={moreOpen}
+            aria-haspopup="menu"
+          >
+            <MoreHorizontal className="h-3.5 w-3.5" />
+          </button>
+          {moreOpen ? (
+            <div
+              role="menu"
+              className="absolute right-0 top-full z-30 mt-1 w-48 overflow-hidden rounded-md border border-white/10 bg-slate-900 text-xs shadow-xl"
+            >
+              <button
+                type="button"
+                role="menuitem"
+                onClick={resetView}
+                className="flex w-full items-center gap-2 px-3 py-2 text-left text-slate-200 hover:bg-white/5 hover:text-white"
+              >
+                <RotateCcw className="h-3 w-3" />
+                Сброс view
+                <span className="ml-auto text-[10px] text-slate-500">zoom + pan</span>
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setMoreOpen(false);
+                  resetAll();
+                }}
+                className="flex w-full items-center gap-2 border-t border-white/5 px-3 py-2 text-left text-slate-400 hover:bg-red-500/10 hover:text-red-300"
+              >
+                <RotateCcw className="h-3 w-3" />
+                Сброс сессии
+                <span className="ml-auto text-[10px] text-slate-600">опасно</span>
+              </button>
+            </div>
+          ) : null}
+        </div>
       </div>
     </header>
   );
