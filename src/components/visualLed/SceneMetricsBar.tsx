@@ -154,11 +154,15 @@ const SceneMetricsBar = () => {
         />
       </div>
 
-      <div className="mt-2 flex gap-1.5 overflow-x-auto pb-0.5">
-        {metrics.screens.map((screen) => (
-          <ScreenChip key={screen.id} screen={screen} />
-        ))}
-      </div>
+      {/* Chip row is only useful with multiple screens — with one
+          screen it just repeats what the aggregate tiles say. */}
+      {metrics.screenCount > 1 ? (
+        <div className="mt-2 flex gap-1.5 overflow-x-auto pb-0.5">
+          {metrics.screens.map((screen) => (
+            <ScreenChip key={screen.id} screen={screen} />
+          ))}
+        </div>
+      ) : null}
     </section>
   );
 };
