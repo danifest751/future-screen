@@ -10,31 +10,19 @@
 // the public launch. Order of magnitude is intentionally believable so
 // the UI doesn't look broken in screenshots.
 //
-// `defaultCalibration` is derived from the AI-rendered human inside each
-// hero (≈ 1.75 m tall by prompt). The pixel height of that figure is
-// measured visually per generation and stored in `humanHeightPxApprox`
-// (in scripts/preset-prompts.json). `pxPerMeter = humanPx / 1.75` —
-// match the human you see, get a calibration that matches what the user
-// perceives. Estimates are good to ~10 %; users can fine-tune via the
-// scale tool. Re-measure after every regeneration.
+// Auto-calibration was removed: a single px/m number can't honestly
+// describe a 3D scene because perspective makes 1 m at the wall span
+// fewer pixels than 1 m at foreground. The AI-rendered ≈ 1.75 m human
+// stays in every hero as a visible reference; the user calibrates
+// manually with the scale tool (click head + feet, type 1.75) at the
+// depth where they're going to place the screen.
 
-import type { ScaleCalibration } from './types';
-
-const HUMAN_HEIGHT_M = 1.75;
-// Native pixel dimensions of every fal.ai-rendered hero. Calibration
-// (humanHeightPxApprox) is measured in these coords, and the reducer
-// resizes the scene canvas to match so screen-quad px → metres uses
-// the same scale.
+// Native pixel dimensions of every fal.ai-rendered hero. The reducer
+// resizes the scene canvas to match on `preset/apply` so manual
+// calibration and screen-quad coordinates live in the same coord system
+// regardless of zoom/CSS scaling.
 export const PRESET_NATURAL_WIDTH = 2752;
 export const PRESET_NATURAL_HEIGHT = 1536;
-
-function calibrationFromHuman(humanPx: number): ScaleCalibration {
-  return {
-    realLength: HUMAN_HEIGHT_M,
-    pxLength: humanPx,
-    pxPerMeter: humanPx / HUMAN_HEIGHT_M,
-  };
-}
 
 export type VisualLedPresetSlug =
   | 'compact'
@@ -78,18 +66,10 @@ export interface VisualLedPreset {
   defaultPitch: string;
   defaultCabinetSideM: number;
   /**
-   * Auto-applied scale calibration so the user can draw screens with
-   * real metric sizes immediately, without using the scale tool. Derived
-   * from the composited badge in the hero (see comment at top of file).
-   * `null` means "no auto-calibration" — the user must manually calibrate.
-   */
-  defaultCalibration: ScaleCalibration | null;
-  /**
    * Natural pixel dimensions of the hero image. The reducer dispatches
    * canvas resize to these on `preset/apply` so screen-quad coordinates
-   * (canvas px) and the calibration (also in image px) live in the same
-   * coordinate system. Otherwise pxPerMeter is interpreted in the wrong
-   * scale and screen sizes come out 2-3× off (the original wave-1 bug).
+   * and any manual calibration live in the same coord system regardless
+   * of zoom/CSS scaling.
    */
   naturalWidth: number;
   naturalHeight: number;
@@ -117,7 +97,6 @@ export const VISUAL_LED_PRESETS = [
     background: '/visual-led-presets/compact-presentation.jpg',
     defaultPitch: '2.6',
     defaultCabinetSideM: 0.5,
-    defaultCalibration: calibrationFromHuman(770),
     naturalWidth: PRESET_NATURAL_WIDTH,
     naturalHeight: PRESET_NATURAL_HEIGHT,
   },
@@ -142,7 +121,6 @@ export const VISUAL_LED_PRESETS = [
     background: '/visual-led-presets/corporate-conference.jpg',
     defaultPitch: '2.6',
     defaultCabinetSideM: 0.5,
-    defaultCalibration: calibrationFromHuman(700),
     naturalWidth: PRESET_NATURAL_WIDTH,
     naturalHeight: PRESET_NATURAL_HEIGHT,
   },
@@ -167,7 +145,6 @@ export const VISUAL_LED_PRESETS = [
     background: '/visual-led-presets/concert-stage.jpg',
     defaultPitch: '3.9',
     defaultCabinetSideM: 0.5,
-    defaultCalibration: calibrationFromHuman(290),
     naturalWidth: PRESET_NATURAL_WIDTH,
     naturalHeight: PRESET_NATURAL_HEIGHT,
   },
@@ -192,7 +169,6 @@ export const VISUAL_LED_PRESETS = [
     background: '/visual-led-presets/festival-outdoor.jpg',
     defaultPitch: '3.9',
     defaultCabinetSideM: 0.5,
-    defaultCalibration: calibrationFromHuman(440),
     naturalWidth: PRESET_NATURAL_WIDTH,
     naturalHeight: PRESET_NATURAL_HEIGHT,
   },
@@ -217,7 +193,6 @@ export const VISUAL_LED_PRESETS = [
     background: '/visual-led-presets/flagship-arena.jpg',
     defaultPitch: '5.9',
     defaultCabinetSideM: 0.5,
-    defaultCalibration: calibrationFromHuman(610),
     naturalWidth: PRESET_NATURAL_WIDTH,
     naturalHeight: PRESET_NATURAL_HEIGHT,
   },

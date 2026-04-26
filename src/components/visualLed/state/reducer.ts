@@ -291,18 +291,16 @@ export function visualLedReducer(state: VisualLedState, action: Action): VisualL
         height: naturalH,
         uploadStatus: 'uploaded',
       };
-      // Auto-seed scaleCalib from the preset's measured human-pixel cal
-      // so the user can drop screens in real metric sizes without touching
-      // the scale tool. We override only when the scene is uncalibrated;
-      // a manual calibration set earlier wins (preset switch shouldn't
-      // silently re-scale the user's work).
+      // Resize the canvas to the hero's natural pixel size so screen-quad
+      // coordinates and any manual calibration end up in the same coord
+      // system regardless of CSS scaling. Default canvas (1280×720) does
+      // not match 2752×1536 hero, hence this dispatch.
       //
-      // Crucially we ALSO resize the canvas to the hero's natural size:
-      // the calibration is measured in those pixel coords, and screen
-      // quads live in canvas coords, so they MUST be the same coordinate
-      // system or pxPerMeter is interpreted at the wrong scale and screens
-      // come out 2-3× off. Default canvas (1280×720) does not match
-      // 2752×1536 hero, hence this dispatch.
+      // We deliberately do NOT auto-seed scaleCalib — a single px/m number
+      // can't honestly describe a 3D scene (perspective: 1 m at the wall
+      // spans fewer pixels than 1 m at foreground), so we let the user
+      // calibrate manually with the scale tool against the visible 1.75 m
+      // human in the hero, at the depth where they're placing the screen.
       return {
         ...state,
         selectedPresetSlug: action.payload.slug,
@@ -312,8 +310,6 @@ export function visualLedReducer(state: VisualLedState, action: Action): VisualL
           activeBackgroundId: bg.id,
           canvasWidth: naturalW,
           canvasHeight: naturalH,
-          scaleCalib:
-            scene.scaleCalib ?? preset?.defaultCalibration ?? null,
         })),
       };
     }

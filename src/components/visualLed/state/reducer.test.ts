@@ -241,23 +241,19 @@ describe('visualLedReducer', () => {
     expect(scene.activeBackgroundId).toBe(scene.backgrounds[0].id);
     expect(scene.backgrounds[0].src).toBe('/visual-led-presets/concert-stage.jpg');
     expect(scene.backgrounds[0].name).toBe('Концерт / шоу');
-    // Auto-calibration: concert preset seeds scaleCalib from the AI
-    // human's measured pixel height (~290 px = 1.75 m → ~165.7 px/m).
-    // The user can place screens in real metric sizes immediately, no
-    // scale tool needed.
-    expect(scene.scaleCalib).not.toBeNull();
-    expect(scene.scaleCalib?.realLength).toBe(1.75);
-    expect(scene.scaleCalib?.pxPerMeter).toBeCloseTo(290 / 1.75, 1);
-    // Canvas MUST be resized to the hero's natural dimensions or the
-    // calibration (measured in image px) would be applied at the wrong
-    // scale and screen sizes would come out 2-3× off.
+    // Calibration is intentionally NOT auto-seeded — perspective makes a
+    // single px/m number wrong for screens placed away from the foreground
+    // depth. User calibrates manually using the in-frame 1.75 m human.
+    expect(scene.scaleCalib).toBeNull();
+    // But canvas MUST be resized to the hero's natural pixel size so any
+    // future manual calibration and screen-quad coordinates share one
+    // coord system regardless of zoom/CSS scaling.
     expect(scene.canvasWidth).toBe(2752);
     expect(scene.canvasHeight).toBe(1536);
   });
 
-  it('preset/apply: keeps an existing user calibration instead of overriding it', () => {
+  it('preset/apply: never overwrites an existing user calibration', () => {
     const state = makeState();
-    // Pretend the user already calibrated by hand before picking a preset.
     const manualCalib = { realLength: 3, pxLength: 200, pxPerMeter: 200 / 3 };
     const calibrated = visualLedReducer(state, {
       type: 'scale/set',
