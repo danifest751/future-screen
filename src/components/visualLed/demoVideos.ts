@@ -16,6 +16,7 @@
 const CANVAS_W = 320;
 const CANVAS_H = 180;
 const LOOP_MS = 2800;
+const TAU = Math.PI * 2;
 
 export type DemoAnimationKind =
   | 'equalizer'
@@ -71,10 +72,10 @@ const drawEqualizer: DrawFn = (ctx, t) => {
   const bars = 24;
   const gap = 2;
   const barW = (CANVAS_W - gap * (bars + 1)) / bars;
-  const phase = t * Math.PI * 2;
+  const phase = t * TAU;
   for (let i = 0; i < bars; i += 1) {
     const f1 = Math.sin(phase + i * 0.42) * 0.5 + 0.5;
-    const f2 = Math.sin(phase * 1.7 + i * 0.85) * 0.5 + 0.5;
+    const f2 = Math.sin(phase * 2 + i * 0.85) * 0.5 + 0.5;
     const v = Math.max(0.12, (f1 * 0.65 + f2 * 0.35) * 0.9);
     const h = v * (CANVAS_H - 16);
     const x = gap + i * (barW + gap);
@@ -91,11 +92,11 @@ const drawEqualizer: DrawFn = (ctx, t) => {
 /** Spectrum — three overlapping sine waves in neon colours. */
 const drawSpectrum: DrawFn = (ctx, t) => {
   drawBackground(ctx, '#0a0f1e', '#141d36');
-  const phase = t * Math.PI * 2;
+  const phase = t * TAU;
   const waves: Array<{ amp: number; freq: number; offset: number; color: string }> = [
     { amp: 22, freq: 0.03, offset: 0, color: 'rgba(96, 165, 250, 0.75)' },
     { amp: 30, freq: 0.025, offset: phase, color: 'rgba(168, 85, 247, 0.7)' },
-    { amp: 18, freq: 0.045, offset: phase * 1.5, color: 'rgba(236, 72, 153, 0.65)' },
+    { amp: 18, freq: 0.045, offset: phase * 2, color: 'rgba(236, 72, 153, 0.65)' },
   ];
   for (const wave of waves) {
     ctx.beginPath();
@@ -120,7 +121,7 @@ const drawRipple: DrawFn = (ctx, t) => {
   for (let i = 0; i < rings; i += 1) {
     const phase = (t + i / rings) % 1;
     const r = phase * maxR;
-    const alpha = Math.max(0, 1 - phase);
+    const alpha = Math.sin(phase * Math.PI);
     ctx.beginPath();
     ctx.arc(cx, cy, r, 0, Math.PI * 2);
     ctx.strokeStyle = `rgba(56, 189, 248, ${alpha * 0.9})`;
@@ -136,7 +137,7 @@ const drawRipple: DrawFn = (ctx, t) => {
 /** Pulse — breathing radial gradient with bright core. */
 const drawPulse: DrawFn = (ctx, t) => {
   drawBackground(ctx, '#050914', '#0f172a');
-  const phase = Math.sin(t * Math.PI * 2) * 0.5 + 0.5;
+  const phase = Math.sin(t * TAU) * 0.5 + 0.5;
   const cx = CANVAS_W / 2;
   const cy = CANVAS_H / 2;
   const rInner = 20 + phase * 18;
@@ -181,10 +182,11 @@ const drawMatrix: DrawFn = (ctx, t) => {
     const phase = (t + col.offset) % 1;
     const head = phase * (CANVAS_H + 40) - 20;
     const trail = 18;
+    const columnAlpha = Math.sin(phase * Math.PI);
     for (let k = 0; k < trail; k += 1) {
       const y = head - k * 10;
       if (y < -10 || y > CANVAS_H) continue;
-      const alpha = k === 0 ? 1 : Math.max(0, (1 - k / trail) * 0.85);
+      const alpha = (k === 0 ? 1 : Math.max(0, (1 - k / trail) * 0.85)) * columnAlpha;
       const g = k === 0 ? 255 : 180;
       ctx.fillStyle = `rgba(34, ${g}, 94, ${alpha})`;
       ctx.fillText(col.chars[k % col.chars.length], col.x, y);
@@ -195,11 +197,11 @@ const drawMatrix: DrawFn = (ctx, t) => {
 /** Aurora — soft layered horizontal bands drifting like northern lights. */
 const drawAurora: DrawFn = (ctx, t) => {
   drawBackground(ctx, '#020617', '#0b1830');
-  const phase = t * Math.PI * 2;
+  const phase = t * TAU;
   const layers = [
-    { hue: 160, amp: 18, freq: 0.014, offset: 0, alpha: 0.45 },
-    { hue: 200, amp: 26, freq: 0.012, offset: phase * 0.7, alpha: 0.35 },
-    { hue: 280, amp: 22, freq: 0.018, offset: -phase * 0.5, alpha: 0.32 },
+    { hue: 160, amp: 18, freq: 0.014, offset: phase, alpha: 0.45 },
+    { hue: 200, amp: 26, freq: 0.012, offset: -phase, alpha: 0.35 },
+    { hue: 280, amp: 22, freq: 0.018, offset: phase * 2, alpha: 0.32 },
   ];
   for (const layer of layers) {
     ctx.beginPath();
@@ -208,7 +210,7 @@ const drawAurora: DrawFn = (ctx, t) => {
       const y =
         CANVAS_H * 0.45 +
         Math.sin(x * layer.freq + layer.offset) * layer.amp +
-        Math.sin(x * layer.freq * 2.1 + layer.offset * 1.4) * (layer.amp * 0.4);
+        Math.sin(x * layer.freq * 2.1 + layer.offset * 2) * (layer.amp * 0.4);
       ctx.lineTo(x, y);
     }
     ctx.lineTo(CANVAS_W, CANVAS_H);
@@ -229,12 +231,12 @@ const drawTunnel: DrawFn = (ctx, t) => {
   const rings = 14;
   for (let i = 0; i < rings; i += 1) {
     const phase = ((t + i / rings) % 1);
-    const scale = phase * 1.6;
+    const scale = 0.12 + phase * 1.48;
     const w = CANVAS_W * scale;
     const h = CANVAS_H * scale;
-    const angle = (t * Math.PI * 2) + i * 0.18;
-    const alpha = Math.max(0, 1 - phase) * 0.85;
-    const hue = (i * 25 + t * 240) % 360;
+    const angle = (t * TAU) + i * 0.18;
+    const alpha = Math.sin(phase * Math.PI) * 0.85;
+    const hue = (i * 25 + t * 360) % 360;
     ctx.save();
     ctx.translate(cx, cy);
     ctx.rotate(angle);
@@ -249,7 +251,7 @@ const drawTunnel: DrawFn = (ctx, t) => {
 interface Particle {
   x0: number;
   y0: number;
-  speed: number;
+  cycles: number;
   hue: number;
   size: number;
 }
@@ -259,16 +261,17 @@ const drawParticles: DrawFn = (ctx, t) => {
     particleSeed = Array.from({ length: 80 }, (_, i) => ({
       x0: ((i * 53) % 1000) / 1000,
       y0: ((i * 137) % 1000) / 1000,
-      speed: 0.3 + ((i * 17) % 100) / 140,
+      cycles: 1 + ((i * 17) % 4),
       hue: (i * 23) % 360,
       size: 1 + ((i * 7) % 4),
     }));
   }
   drawBackground(ctx, '#020617', '#050b1c');
   for (const p of particleSeed) {
-    const y = ((p.y0 + t * p.speed) % 1) * CANVAS_H;
-    const x = p.x0 * CANVAS_W;
-    const flicker = 0.55 + Math.sin(t * Math.PI * 2 * p.speed * 6 + p.x0 * 17) * 0.3;
+    const phase = t * TAU * p.cycles;
+    const y = p.y0 * CANVAS_H + Math.sin(phase + p.y0 * TAU) * 18;
+    const x = p.x0 * CANVAS_W + Math.cos(phase + p.x0 * TAU) * 10;
+    const flicker = 0.55 + Math.sin(t * TAU * p.cycles + p.x0 * 17) * 0.3;
     ctx.fillStyle = `hsla(${p.hue}, 80%, 65%, ${flicker})`;
     ctx.beginPath();
     ctx.arc(x, y, p.size, 0, Math.PI * 2);
@@ -284,9 +287,9 @@ const drawKaleidoscope: DrawFn = (ctx, t) => {
   const segments = 12;
   ctx.save();
   ctx.translate(cx, cy);
-  ctx.rotate(t * Math.PI * 2);
+  ctx.rotate(t * TAU);
   for (let i = 0; i < segments; i += 1) {
-    const angle = (i / segments) * Math.PI * 2;
+    const angle = (i / segments) * TAU;
     const hue = (i * 30 + t * 360) % 360;
     ctx.fillStyle = `hsla(${hue}, 80%, 55%, 0.6)`;
     ctx.beginPath();
@@ -297,7 +300,7 @@ const drawKaleidoscope: DrawFn = (ctx, t) => {
   }
   ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
   ctx.beginPath();
-  ctx.arc(0, 0, 14, 0, Math.PI * 2);
+  ctx.arc(0, 0, 14, 0, TAU);
   ctx.fill();
   ctx.restore();
 };
@@ -324,7 +327,7 @@ const drawRadar: DrawFn = (ctx, t) => {
   ctx.lineTo(cx, cy + maxR);
   ctx.stroke();
   // sweep
-  const angle = t * Math.PI * 2;
+  const angle = t * TAU;
   const grad = ctx.createConicGradient(angle, cx, cy);
   grad.addColorStop(0, 'rgba(34, 197, 94, 0.7)');
   grad.addColorStop(0.15, 'rgba(34, 197, 94, 0)');
@@ -340,7 +343,7 @@ const drawRadar: DrawFn = (ctx, t) => {
     { angle: 4.2, dist: 0.78 },
   ];
   for (const ping of pings) {
-    const visible = ((angle - ping.angle + Math.PI * 2) % (Math.PI * 2)) / (Math.PI * 2);
+    const visible = ((angle - ping.angle + TAU) % TAU) / TAU;
     const alpha = Math.max(0, 1 - visible * 1.5);
     if (alpha <= 0) continue;
     const px = cx + Math.cos(ping.angle) * ping.dist * maxR;
