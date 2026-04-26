@@ -48,14 +48,16 @@ const MobileSidebarTabs = () => {
   return (
     <>
       {active ? (
-        <div
-          className="fixed inset-0 z-40 bg-black/70 lg:hidden"
-          onClick={() => setActiveKey(null)}
-          aria-hidden="true"
-        >
+        <>
+          {/* Backdrop — leaves the bottom tab bar uncovered so the user
+              can switch tabs (or tap the same one again to close)
+              without the overlay swallowing the click. */}
           <div
-            className="absolute bottom-12 left-0 right-0 max-h-[70vh] overflow-y-auto rounded-t-xl border border-white/10 bg-slate-900 p-3 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-x-0 bottom-12 top-0 z-40 bg-black/70 lg:hidden"
+            onClick={() => setActiveKey(null)}
+          />
+          <div
+            className="fixed bottom-12 left-0 right-0 z-40 max-h-[70vh] overflow-y-auto rounded-t-xl border border-white/10 bg-slate-900 p-3 shadow-2xl lg:hidden"
             role="dialog"
             aria-label={active.label}
           >
@@ -74,7 +76,7 @@ const MobileSidebarTabs = () => {
               <active.Panel />
             </CollapsiblePanelAlwaysOpen>
           </div>
-        </div>
+        </>
       ) : null}
 
       <nav
