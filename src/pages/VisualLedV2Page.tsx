@@ -8,6 +8,7 @@ import PresetPicker from '../components/visualLed/PresetPicker';
 import PriceHeader from '../components/visualLed/PriceHeader';
 import ProjectLoader from '../components/visualLed/ProjectLoader';
 import QuoteRequestModal from '../components/visualLed/QuoteRequestModal';
+import SceneMetricsBar from '../components/visualLed/SceneMetricsBar';
 import ShortcutsModal from '../components/visualLed/ShortcutsModal';
 import SidebarLeft from '../components/visualLed/SidebarLeft';
 import SidebarRight from '../components/visualLed/SidebarRight';
@@ -49,6 +50,7 @@ const VisualLedShell = () => {
         <main className="flex min-h-[70vh] flex-col gap-2">
           <StageHeader onOpenShortcuts={() => setShortcutsOpen(true)} />
           <WorkflowSteps />
+          <SceneMetricsBar />
           <CanvasStage />
         </main>
         <SidebarRight />

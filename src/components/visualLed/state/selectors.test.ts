@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { isOnboardingMode } from './selectors';
+import type { Scene } from '../../../lib/visualLed';
+import { collectSceneMetrics, isOnboardingMode } from './selectors';
 import { createInitialState } from './initialState';
 import type { VisualLedState } from './types';
 
@@ -66,5 +67,54 @@ describe('isOnboardingMode', () => {
       ],
     };
     expect(isOnboardingMode(state, false)).toBe(false);
+  });
+});
+
+describe('collectSceneMetrics', () => {
+  it('summarizes selected and total stats across multiple screens', () => {
+    const base = fresh();
+    const scene: Scene = {
+      ...base.scenes[0],
+      selectedElementId: 'scr-1',
+      scaleCalib: { realLength: 1, pxLength: 100, pxPerMeter: 100 },
+      elements: [
+        {
+          id: 'scr-1',
+          name: 'Main',
+          corners: [
+            { x: 0, y: 0 },
+            { x: 400, y: 0 },
+            { x: 400, y: 250 },
+            { x: 0, y: 250 },
+          ],
+          videoId: null,
+          cabinetPlan: { cols: 8, rows: 5, cabinetSide: 0.5, pitch: '2.6' },
+        },
+        {
+          id: 'scr-2',
+          name: 'Side',
+          corners: [
+            { x: 500, y: 0 },
+            { x: 700, y: 0 },
+            { x: 700, y: 100 },
+            { x: 500, y: 100 },
+          ],
+          videoId: null,
+          cabinetPlan: null,
+        },
+      ],
+    };
+
+    const metrics = collectSceneMetrics(scene);
+
+    expect(metrics.screenCount).toBe(2);
+    expect(metrics.selected?.id).toBe('scr-1');
+    expect(metrics.selected?.widthM).toBeCloseTo(4);
+    expect(metrics.selected?.heightM).toBeCloseTo(2.5);
+    expect(metrics.selected?.areaM2).toBeCloseTo(10);
+    expect(metrics.selected?.cabinetCount).toBe(40);
+    expect(metrics.selected?.resolutionWidth).toBe(1536);
+    expect(metrics.totalAreaM2).toBeCloseTo(12);
+    expect(metrics.totalCabinetCount).toBe(40);
   });
 });

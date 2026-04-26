@@ -1,6 +1,11 @@
 import type { ScreenDimensions } from '../../../lib/visualLed/pricing';
 import { getPreset } from '../../../lib/visualLed/presets';
 import { calculateProjectEstimate } from '../../../lib/visualLed/pricing';
+import {
+  getCabinetStats,
+  getElementSizeMeters,
+  type Scene,
+} from '../../../lib/visualLed';
 import type { VisualLedState } from './types';
 
 /**
@@ -63,3 +68,70 @@ export const selectProjectEstimate = (state: VisualLedState) => {
 /** Convenience for components that need the chosen preset's metadata. */
 export const selectActivePreset = (state: VisualLedState) =>
   getPreset(state.selectedPresetSlug);
+
+export interface ScreenMetric {
+  id: string;
+  name: string;
+  selected: boolean;
+  widthM: number | null;
+  heightM: number | null;
+  areaM2: number | null;
+  cabinetCount: number | null;
+  cabinetCols: number | null;
+  cabinetRows: number | null;
+  resolutionWidth: number | null;
+  resolutionHeight: number | null;
+}
+
+export interface SceneMetrics {
+  screens: ScreenMetric[];
+  selected: ScreenMetric | null;
+  screenCount: number;
+  totalAreaM2: number | null;
+  totalCabinetCount: number | null;
+}
+
+export const collectSceneMetrics = (scene: Scene): SceneMetrics => {
+  let totalArea = 0;
+  let hasAnyArea = false;
+  let totalCabinets = 0;
+  let hasAnyCabinets = false;
+
+  const screens = scene.elements.map<ScreenMetric>((element) => {
+    const size = getElementSizeMeters(element.corners, scene.scaleCalib);
+    const stats = getCabinetStats(element.cabinetPlan, size);
+    const areaM2 = size ? size.width * size.height : null;
+
+    if (areaM2 !== null) {
+      totalArea += areaM2;
+      hasAnyArea = true;
+    }
+
+    if (stats) {
+      totalCabinets += stats.totalCount;
+      hasAnyCabinets = true;
+    }
+
+    return {
+      id: element.id,
+      name: element.name,
+      selected: element.id === scene.selectedElementId,
+      widthM: size?.width ?? null,
+      heightM: size?.height ?? null,
+      areaM2,
+      cabinetCount: stats?.totalCount ?? null,
+      cabinetCols: stats?.cols ?? null,
+      cabinetRows: stats?.rows ?? null,
+      resolutionWidth: stats?.pixelWidth ?? null,
+      resolutionHeight: stats?.pixelHeight ?? null,
+    };
+  });
+
+  return {
+    screens,
+    selected: screens.find((screen) => screen.selected) ?? null,
+    screenCount: screens.length,
+    totalAreaM2: hasAnyArea ? totalArea : null,
+    totalCabinetCount: hasAnyCabinets ? totalCabinets : null,
+  };
+};
