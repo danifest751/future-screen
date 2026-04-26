@@ -63,8 +63,8 @@ const ShortcutsModal = ({ open, onClose }: ShortcutsModalProps) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="w-full max-w-lg rounded-2xl border border-white/15 bg-slate-900 p-5 shadow-2xl">
-        <div className="mb-4 flex items-center justify-between">
+      <div className="flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-white/15 bg-slate-900 shadow-2xl">
+        <div className="flex shrink-0 items-center justify-between border-b border-white/10 p-5">
           <h3 className="text-base font-semibold text-white">Горячие клавиши</h3>
           <button
             type="button"
@@ -76,7 +76,7 @@ const ShortcutsModal = ({ open, onClose }: ShortcutsModalProps) => {
             ESC
           </button>
         </div>
-        <div className="space-y-4">
+        <div className="space-y-4 overflow-y-auto p-5">
           {SHORTCUTS.map((group) => (
             <section key={group.group}>
               <h4 className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
