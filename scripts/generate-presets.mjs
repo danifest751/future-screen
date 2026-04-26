@@ -1,19 +1,22 @@
 #!/usr/bin/env node
-// Generate Visual LED preset background images via fal.ai Flux 1.1 Pro Ultra.
+// Generate Visual LED preset background images via fal.ai Flux 1.1 Pro Ultra,
+// then composite a "≈ 2 м" scale-bar overlay into the bottom-right corner
+// so the user has a built-in size reference when picking a preset.
 //
 // Usage:
-//   FAL_KEY=... node scripts/generate-presets.mjs                 # all prompts
+//   FAL_KEY=... node scripts/generate-presets.mjs                 # all prompts (skip existing)
 //   FAL_KEY=... node scripts/generate-presets.mjs concert-stage   # one prompt by slug
 //   FAL_KEY=... node scripts/generate-presets.mjs --dry-run       # print prompts, don't call API
+//   FAL_KEY=... node scripts/generate-presets.mjs --force         # overwrite existing files
 //
 // Reads scripts/preset-prompts.json, calls fal.ai sync endpoint,
 // writes results into public/visual-led-presets/<slug>.jpg.
-// Skips files that already exist (re-run is idempotent).
 
 import { readFile, writeFile, mkdir, access } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { config as loadEnv } from 'dotenv';
+import sharp from 'sharp';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, '..');
@@ -33,6 +36,7 @@ const PROMPTS_FILE = resolve(ROOT, 'scripts/preset-prompts.json');
 
 const argv = process.argv.slice(2);
 const DRY_RUN = argv.includes('--dry-run');
+const FORCE = argv.includes('--force');
 const onlySlug = argv.find((a) => !a.startsWith('--'));
 
 const prompts = JSON.parse(await readFile(PROMPTS_FILE, 'utf8')).prompts;
@@ -91,11 +95,68 @@ async function callFal(prompt) {
   return res.json();
 }
 
-async function downloadTo(url, path) {
+async function downloadBuffer(url) {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`download ${res.status} for ${url}`);
   const arrayBuffer = await res.arrayBuffer();
-  await writeFile(path, Buffer.from(arrayBuffer));
+  return Buffer.from(arrayBuffer);
+}
+
+/**
+ * Build the SVG that gets composited into the bottom-right corner.
+ * Scale roughly with image size so the badge stays readable on both
+ * 1408×792 (compact) and 2048×1152 (flagship) renders.
+ *
+ * `meters` comes from preset-prompts.json's `referenceScaleMeters` —
+ * it should approximately match the apparent width of the badge if the
+ * scene were measured in real life. So a tiny showroom uses 1 м, a
+ * stadium uses 15 м. The bar is a visual hint, not a calibration tool;
+ * exact calibration in the visualizer remains explicit (scale tool).
+ */
+function buildScaleBarSvg(imageWidth, imageHeight, meters) {
+  // Badge takes ~22% of width; clamp so it doesn't get tiny or huge.
+  const badgeW = Math.max(220, Math.min(360, Math.round(imageWidth * 0.22)));
+  const badgeH = Math.round(badgeW * 0.32);
+  const barInset = Math.round(badgeW * 0.1);
+  const barX1 = barInset;
+  const barX2 = badgeW - barInset;
+  const barY = Math.round(badgeH * 0.55);
+  const tickH = Math.round(badgeH * 0.18);
+
+  return Buffer.from(`<?xml version="1.0" encoding="UTF-8"?>
+<svg width="${badgeW}" height="${badgeH}" viewBox="0 0 ${badgeW} ${badgeH}" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="${badgeW}" height="${badgeH}" rx="10" fill="rgba(0,0,0,0.55)"/>
+  <text x="${badgeW / 2}" y="${badgeH * 0.32}" font-family="Inter, system-ui, sans-serif" font-size="${Math.round(badgeH * 0.26)}" font-weight="700" fill="white" text-anchor="middle">≈ ${meters} м</text>
+  <line x1="${barX1}" y1="${barY}" x2="${barX2}" y2="${barY}" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  <line x1="${barX1}" y1="${barY - tickH / 2}" x2="${barX1}" y2="${barY + tickH / 2}" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  <line x1="${barX2}" y1="${barY - tickH / 2}" x2="${barX2}" y2="${barY + tickH / 2}" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  <line x1="${badgeW / 2}" y1="${barY - tickH / 3}" x2="${badgeW / 2}" y2="${barY + tickH / 3}" stroke="white" stroke-width="2" stroke-linecap="round"/>
+  <text x="${badgeW / 2}" y="${badgeH * 0.92}" font-family="Inter, system-ui, sans-serif" font-size="${Math.round(badgeH * 0.16)}" fill="rgba(255,255,255,0.75)" text-anchor="middle">визуальный ориентир</text>
+</svg>`);
+}
+
+async function compositeScaleBar(srcBuffer, meters) {
+  const img = sharp(srcBuffer);
+  const meta = await img.metadata();
+  const w = meta.width ?? 1408;
+  const h = meta.height ?? 792;
+  const overlay = buildScaleBarSvg(w, h, meters);
+  const overlayMeta = await sharp(overlay).metadata();
+  const overlayW = overlayMeta.width ?? 280;
+  const overlayH = overlayMeta.height ?? 90;
+  const margin = Math.round(Math.min(w, h) * 0.025);
+  const left = w - overlayW - margin;
+  const top = h - overlayH - margin;
+  return img
+    .composite([{ input: overlay, left, top }])
+    .jpeg({ quality: 88, mozjpeg: true })
+    .toBuffer();
+}
+
+async function downloadTo(url, path, meters) {
+  const buf = await downloadBuffer(url);
+  const composed = await compositeScaleBar(buf, meters);
+  await writeFile(path, composed);
 }
 
 const results = [];
@@ -103,8 +164,8 @@ const results = [];
 for (const item of targets) {
   const outPath = resolve(OUTPUT_DIR, `${item.slug}.jpg`);
 
-  if (await exists(outPath)) {
-    console.log(`✓ skip (exists): ${item.slug}`);
+  if (!FORCE && (await exists(outPath))) {
+    console.log(`✓ skip (exists): ${item.slug}  (pass --force to overwrite)`);
     results.push({ slug: item.slug, status: 'skipped', path: outPath });
     continue;
   }
@@ -121,7 +182,8 @@ for (const item of targets) {
     const result = await callFal(item.prompt);
     const url = result?.images?.[0]?.url;
     if (!url) throw new Error(`no image URL in response: ${JSON.stringify(result).slice(0, 200)}`);
-    await downloadTo(url, outPath);
+    const meters = item.referenceScaleMeters ?? 2;
+    await downloadTo(url, outPath, meters);
     const seconds = ((Date.now() - t0) / 1000).toFixed(1);
     console.log(`  ✓ saved ${outPath} (${seconds}s)`);
     results.push({ slug: item.slug, status: 'ok', path: outPath, seed: result?.seed });

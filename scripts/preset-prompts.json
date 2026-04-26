@@ -11,30 +11,35 @@
       "slug": "compact-presentation",
       "category": "compact",
       "title": "Малая презентация / камерный зал",
+      "referenceScaleMeters": 1,
       "prompt": "Completely empty modern indoor presentation room, eye-level frontal view of front wall, dark front wall only, no projection screen, no LED panel, no white surface, no display whatsoever, just dark empty wall ready for screen installation, soft warm overhead lighting, minimalist corporate interior, polished concrete floor, neutral grey walls, professional architectural photography, sharp focus, clean composition, photorealistic, ultra detailed, ABSOLUTELY no people anywhere, no audience, no silhouettes, no human figures, no operators, no chairs in main view, no logos, no text"
     },
     {
       "slug": "corporate-conference",
       "category": "corporate",
       "title": "Корпоратив / конференция",
+      "referenceScaleMeters": 2,
       "prompt": "Completely empty modern corporate conference hall, eye-level frontal view of presentation stage area, dark backdrop wall behind stage, no projection screen, no LED panel, no white surface, no display, just dark empty backdrop wall ready for screen installation, professional event lighting setup with truss above, empty stage floor, dark blue and grey palette, business event atmosphere, photorealistic interior photography, sharp focus, ABSOLUTELY no people anywhere, no audience, no silhouettes, no human figures, no speakers, no operators, no chairs visible in main view, no logos, no text"
     },
     {
       "slug": "concert-stage",
       "category": "concert",
       "title": "Концерт / шоу",
+      "referenceScaleMeters": 5,
       "prompt": "Completely empty concert stage at large indoor venue, eye-level frontal view from front of empty house, dark backdrop wall only, no projection screen, no LED panel, no white surface, no display whatsoever, just dark empty backdrop wall behind stage, professional concert lighting rig with moving heads on truss above, light smoke haze, dramatic atmospheric lighting, photorealistic concert venue interior photography, sharp detail, ABSOLUTELY no people anywhere, no audience, no silhouettes, no human figures in foreground, no human figures in background, no operators, no technicians, no band members, no microphones, no instruments, no text, no logos"
     },
     {
       "slug": "festival-outdoor",
       "category": "festival",
       "title": "Фестиваль / большое шоу",
+      "referenceScaleMeters": 10,
       "prompt": "Completely empty large outdoor festival main stage at dusk, eye-level frontal view from front of empty festival ground, massive dark stage backdrop wall behind stage, no projection screen, no LED panel, no white surface, no display, just dark empty backdrop wall ready for screen installation, professional outdoor stage truss with concert lighting overhead, dramatic sky transitioning from deep blue to orange, empty festival ground in foreground, photorealistic outdoor concert venue photography, ultra wide composition, sharp detail, ABSOLUTELY no people anywhere, no audience, no silhouettes, no human figures, no operators, no banners, no logos, no text"
     },
     {
       "slug": "flagship-arena",
       "category": "flagship",
       "title": "Топ-проект / арена",
+      "referenceScaleMeters": 15,
       "prompt": "Completely empty modern indoor sports arena interior, eye-level view from center floor, massive dark backdrop wall at one end, no projection screen, no LED panel, no white surface, no display, just dark empty backdrop wall ready for huge screen installation, dramatic architectural lighting, polished arena floor, empty seating tiers in soft focus background, dark blue and steel palette, professional architectural photography, ultra wide cinematic composition, photorealistic, ultra detailed, ABSOLUTELY no people anywhere, no audience, no silhouettes, no human figures, no operators, no jersey numbers, no logos, no text"
     }
   ]
