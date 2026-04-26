@@ -114,7 +114,15 @@ describe('collectSceneMetrics', () => {
     expect(metrics.selected?.areaM2).toBeCloseTo(10);
     expect(metrics.selected?.cabinetCount).toBe(40);
     expect(metrics.selected?.resolutionWidth).toBe(1536);
+    expect(metrics.selected?.weightMinKg).toBe(240);
+    expect(metrics.selected?.weightMaxKg).toBe(320);
+    expect(metrics.selected?.maxPowerW).toBe(6400);
+    expect(metrics.selected?.averagePowerW).toBe(2200);
     expect(metrics.totalAreaM2).toBeCloseTo(12);
     expect(metrics.totalCabinetCount).toBe(40);
+    expect(metrics.totalWeightMinKg).toBe(240);
+    expect(metrics.totalWeightMaxKg).toBe(320);
+    expect(metrics.totalMaxPowerW).toBe(6400);
+    expect(metrics.totalAveragePowerW).toBe(2200);
   });
 });

@@ -2,6 +2,7 @@ import type { ScreenDimensions } from '../../../lib/visualLed/pricing';
 import { getPreset } from '../../../lib/visualLed/presets';
 import { calculateProjectEstimate } from '../../../lib/visualLed/pricing';
 import {
+  getCabinetResourceStats,
   getCabinetStats,
   getElementSizeMeters,
   type Scene,
@@ -81,6 +82,10 @@ export interface ScreenMetric {
   cabinetRows: number | null;
   resolutionWidth: number | null;
   resolutionHeight: number | null;
+  weightMinKg: number | null;
+  weightMaxKg: number | null;
+  maxPowerW: number | null;
+  averagePowerW: number | null;
 }
 
 export interface SceneMetrics {
@@ -89,6 +94,10 @@ export interface SceneMetrics {
   screenCount: number;
   totalAreaM2: number | null;
   totalCabinetCount: number | null;
+  totalWeightMinKg: number | null;
+  totalWeightMaxKg: number | null;
+  totalMaxPowerW: number | null;
+  totalAveragePowerW: number | null;
 }
 
 export const collectSceneMetrics = (scene: Scene): SceneMetrics => {
@@ -96,10 +105,19 @@ export const collectSceneMetrics = (scene: Scene): SceneMetrics => {
   let hasAnyArea = false;
   let totalCabinets = 0;
   let hasAnyCabinets = false;
+  let totalWeightMinKg = 0;
+  let totalWeightMaxKg = 0;
+  let totalMaxPowerW = 0;
+  let totalAveragePowerW = 0;
+  let hasAnyResources = false;
 
   const screens = scene.elements.map<ScreenMetric>((element) => {
     const size = getElementSizeMeters(element.corners, scene.scaleCalib);
     const stats = getCabinetStats(element.cabinetPlan, size);
+    const resourceStats = getCabinetResourceStats(element.cabinetPlan);
+    const planCabinetCount = element.cabinetPlan
+      ? element.cabinetPlan.cols * element.cabinetPlan.rows
+      : null;
     const areaM2 = size ? size.width * size.height : null;
 
     if (areaM2 !== null) {
@@ -107,9 +125,17 @@ export const collectSceneMetrics = (scene: Scene): SceneMetrics => {
       hasAnyArea = true;
     }
 
-    if (stats) {
-      totalCabinets += stats.totalCount;
+    if (planCabinetCount !== null) {
+      totalCabinets += planCabinetCount;
       hasAnyCabinets = true;
+    }
+
+    if (resourceStats) {
+      totalWeightMinKg += resourceStats.weightMinKg;
+      totalWeightMaxKg += resourceStats.weightMaxKg;
+      totalMaxPowerW += resourceStats.maxPowerW;
+      totalAveragePowerW += resourceStats.averagePowerW;
+      hasAnyResources = true;
     }
 
     return {
@@ -119,11 +145,15 @@ export const collectSceneMetrics = (scene: Scene): SceneMetrics => {
       widthM: size?.width ?? null,
       heightM: size?.height ?? null,
       areaM2,
-      cabinetCount: stats?.totalCount ?? null,
-      cabinetCols: stats?.cols ?? null,
-      cabinetRows: stats?.rows ?? null,
+      cabinetCount: stats?.totalCount ?? planCabinetCount,
+      cabinetCols: stats?.cols ?? element.cabinetPlan?.cols ?? null,
+      cabinetRows: stats?.rows ?? element.cabinetPlan?.rows ?? null,
       resolutionWidth: stats?.pixelWidth ?? null,
       resolutionHeight: stats?.pixelHeight ?? null,
+      weightMinKg: resourceStats?.weightMinKg ?? null,
+      weightMaxKg: resourceStats?.weightMaxKg ?? null,
+      maxPowerW: resourceStats?.maxPowerW ?? null,
+      averagePowerW: resourceStats?.averagePowerW ?? null,
     };
   });
 
@@ -133,5 +163,9 @@ export const collectSceneMetrics = (scene: Scene): SceneMetrics => {
     screenCount: screens.length,
     totalAreaM2: hasAnyArea ? totalArea : null,
     totalCabinetCount: hasAnyCabinets ? totalCabinets : null,
+    totalWeightMinKg: hasAnyResources ? totalWeightMinKg : null,
+    totalWeightMaxKg: hasAnyResources ? totalWeightMaxKg : null,
+    totalMaxPowerW: hasAnyResources ? totalMaxPowerW : null,
+    totalAveragePowerW: hasAnyResources ? totalAveragePowerW : null,
   };
 };

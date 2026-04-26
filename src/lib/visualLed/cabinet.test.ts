@@ -7,6 +7,8 @@ import {
   tweakCols,
   tweakRows,
   getCabinetStats,
+  getCabinetResourceSpec,
+  getCabinetResourceStats,
   cabinetsToTargetSize,
 } from './cabinet';
 import type { CabinetPlan, Quad, ScaleCalibration } from './types';
@@ -33,6 +35,21 @@ describe('pitch', () => {
     expect(normalizePitch('2.6')).toBe('2.6');
     expect(normalizePitch('3.0')).toBe('2.6');
     expect(normalizePitch(undefined)).toBe('2.6');
+  });
+
+  it('exposes per-cabinet resource specs by pitch', () => {
+    expect(getCabinetResourceSpec('1.9')).toMatchObject({
+      weightMinKg: 7,
+      weightMaxKg: 9,
+      maxPowerW: 200,
+      averagePowerW: 70,
+    });
+    expect(getCabinetResourceSpec('2.6')).toMatchObject({
+      weightMinKg: 6,
+      weightMaxKg: 8,
+      maxPowerW: 160,
+      averagePowerW: 55,
+    });
   });
 });
 
@@ -120,6 +137,10 @@ describe('getCabinetStats', () => {
     expect(stats.pixelHeight).toBe(4 * 192);
     expect(stats.usedWidth).toBe(4);
     expect(stats.usedHeight).toBe(2);
+    expect(stats.weightMinKg).toBe(192);
+    expect(stats.weightMaxKg).toBe(256);
+    expect(stats.maxPowerW).toBe(5120);
+    expect(stats.averagePowerW).toBe(1760);
   });
 
   it('counts overflow when plan exceeds physical size', () => {
@@ -137,6 +158,10 @@ describe('getCabinetStats', () => {
     const stats = getCabinetStats(plan19, { width: 2, height: 1 })!;
     expect(stats.pixelWidth).toBe(4 * 256);
     expect(stats.pixelHeight).toBe(2 * 256);
+    expect(stats.weightMinKg).toBe(56);
+    expect(stats.weightMaxKg).toBe(72);
+    expect(stats.maxPowerW).toBe(1600);
+    expect(stats.averagePowerW).toBe(560);
   });
 
   it('applies 1.5cm tolerance for near-boundary fits', () => {
@@ -146,6 +171,18 @@ describe('getCabinetStats', () => {
     const stats = getCabinetStats(tightPlan, tightSize)!;
     expect(stats.inBoundsCount).toBe(8);
     expect(stats.overflowCount).toBe(0);
+  });
+});
+
+describe('getCabinetResourceStats', () => {
+  it('computes resource totals even without screen metric size', () => {
+    const plan: CabinetPlan = { cols: 3, rows: 2, cabinetSide: 0.5, pitch: '1.9' };
+    expect(getCabinetResourceStats(plan)).toMatchObject({
+      weightMinKg: 42,
+      weightMaxKg: 54,
+      maxPowerW: 1200,
+      averagePowerW: 420,
+    });
   });
 });
 

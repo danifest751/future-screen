@@ -1,4 +1,4 @@
-import { Grid3x3, Monitor, Ruler, Sigma } from 'lucide-react';
+import { Gauge, Grid3x3, Monitor, Ruler, Weight, Zap } from 'lucide-react';
 import { collectSceneMetrics, type ScreenMetric } from './state/selectors';
 import { useActiveScene } from './state/VisualLedContext';
 
@@ -8,6 +8,27 @@ const formatMetric = (value: number | null, digits = 1) => {
     maximumFractionDigits: digits,
     minimumFractionDigits: value % 1 === 0 ? 0 : Math.min(1, digits),
   });
+};
+
+const formatPower = (watts: number | null) => {
+  if (watts === null || !Number.isFinite(watts)) return '—';
+  if (watts >= 1000) return `${formatMetric(watts / 1000, 1)} кВт`;
+  return `${Math.round(watts)} Вт`;
+};
+
+const formatWeight = (kg: number | null) => {
+  if (kg === null || !Number.isFinite(kg)) return '—';
+  if (kg >= 1000) return `${formatMetric(kg / 1000, 1)} т`;
+  return `${Math.round(kg)} кг`;
+};
+
+const formatWeightRange = (minKg: number | null, maxKg: number | null) => {
+  if (minKg === null || maxKg === null) return '—';
+  if (minKg === maxKg) return formatWeight(minKg);
+  if (minKg >= 1000 || maxKg >= 1000) {
+    return `${formatMetric(minKg / 1000, 1)}–${formatMetric(maxKg / 1000, 1)} т`;
+  }
+  return `${Math.round(minKg)}–${Math.round(maxKg)} кг`;
 };
 
 const screenSizeLabel = (screen: ScreenMetric) => {
@@ -40,7 +61,7 @@ const MetricTile = ({
   >
     <div className="mb-1 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
       {icon}
-      {label}
+      <span className="truncate">{label}</span>
     </div>
     <div className="truncate text-sm font-semibold text-white">{value}</div>
   </div>
@@ -53,13 +74,23 @@ const ScreenChip = ({ screen }: { screen: ScreenMetric }) => (
         ? 'border-brand-400/60 bg-brand-500/15 text-white'
         : 'border-white/10 bg-slate-950/45 text-slate-300'
     }`}
-    title={`${screen.name}: ${screenSizeLabel(screen)}, площадь ${formatMetric(screen.areaM2)} м², ${cabinetLabel(screen)}`}
+    title={`${screen.name}: ${screenSizeLabel(screen)}, площадь ${formatMetric(screen.areaM2)} м², ${cabinetLabel(screen)}, электрика ${formatPower(screen.maxPowerW)}, среднее ${formatPower(screen.averagePowerW)}, вес ${formatWeightRange(screen.weightMinKg, screen.weightMaxKg)}`}
   >
     <span className="max-w-[8rem] truncate font-semibold">{screen.name}</span>
     <span className="text-slate-500">·</span>
     <span>{formatMetric(screen.areaM2)} м²</span>
     <span className="text-slate-500">·</span>
     <span>{screen.cabinetCount ?? '—'} каб.</span>
+    <span className="text-slate-500">·</span>
+    <span className="flex items-center gap-1">
+      <Zap className="h-3 w-3 text-amber-300" />
+      {formatPower(screen.maxPowerW)}
+    </span>
+    <span className="text-slate-500">·</span>
+    <span className="flex items-center gap-1">
+      <Weight className="h-3 w-3 text-slate-300" />
+      {formatWeightRange(screen.weightMinKg, screen.weightMaxKg)}
+    </span>
   </div>
 );
 
@@ -71,14 +102,14 @@ const SceneMetricsBar = () => {
   if (metrics.screenCount === 0) {
     return (
       <section className="rounded-xl border border-white/10 bg-slate-900/55 px-3 py-2 text-xs text-slate-400">
-        Добавь экран — здесь появятся размер, площадь и кабинеты.
+        Добавь экран — здесь появятся размер, площадь, кабинеты, электрика и вес.
       </section>
     );
   }
 
   return (
     <section className="rounded-xl border border-white/10 bg-slate-900/70 p-2 shadow-lg shadow-black/15">
-      <div className="grid gap-2 md:grid-cols-[minmax(0,1.25fr)_repeat(3,minmax(8rem,0.65fr))]">
+      <div className="grid gap-2 md:grid-cols-[minmax(0,1.35fr)_repeat(5,minmax(7rem,0.65fr))]">
         <MetricTile
           label={selected ? `Выбран: ${selected.name}` : 'Выбранный экран'}
           value={
@@ -91,7 +122,13 @@ const SceneMetricsBar = () => {
         />
         <MetricTile
           label="Кабинеты"
-          value={selected ? cabinetLabel(selected) : '—'}
+          value={
+            selected
+              ? cabinetLabel(selected)
+              : metrics.totalCabinetCount === null
+                ? '—'
+                : `${metrics.totalCabinetCount} шт`
+          }
           icon={<Grid3x3 className="h-3.5 w-3.5" />}
         />
         <MetricTile
@@ -100,13 +137,19 @@ const SceneMetricsBar = () => {
           icon={<Ruler className="h-3.5 w-3.5" />}
         />
         <MetricTile
-          label="Всего кабинетов"
-          value={
-            metrics.totalCabinetCount === null
-              ? '—'
-              : `${metrics.totalCabinetCount} шт · ${metrics.screenCount} экр.`
-          }
-          icon={<Sigma className="h-3.5 w-3.5" />}
+          label="Электрика max"
+          value={formatPower(metrics.totalMaxPowerW)}
+          icon={<Zap className="h-3.5 w-3.5" />}
+        />
+        <MetricTile
+          label="Среднее потребление"
+          value={formatPower(metrics.totalAveragePowerW)}
+          icon={<Gauge className="h-3.5 w-3.5" />}
+        />
+        <MetricTile
+          label="Вес экранов"
+          value={formatWeightRange(metrics.totalWeightMinKg, metrics.totalWeightMaxKg)}
+          icon={<Weight className="h-3.5 w-3.5" />}
         />
       </div>
 

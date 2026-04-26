@@ -17,6 +17,60 @@ export function normalizePitch(pitch: string | undefined): '2.6' | '1.9' {
   return pitch === '1.9' ? '1.9' : '2.6';
 }
 
+export type CabinetPitch = ReturnType<typeof normalizePitch>;
+
+export interface CabinetResourceSpec {
+  pitch: CabinetPitch;
+  weightMinKg: number;
+  weightMaxKg: number;
+  maxPowerW: number;
+  averagePowerW: number;
+}
+
+export interface CabinetResourceStats {
+  resourceSpec: CabinetResourceSpec;
+  weightMinKg: number;
+  weightMaxKg: number;
+  maxPowerW: number;
+  averagePowerW: number;
+}
+
+const CABINET_RESOURCE_SPECS: Record<CabinetPitch, CabinetResourceSpec> = {
+  '1.9': {
+    pitch: '1.9',
+    weightMinKg: 7,
+    weightMaxKg: 9,
+    maxPowerW: 200,
+    averagePowerW: 70,
+  },
+  '2.6': {
+    pitch: '2.6',
+    weightMinKg: 6,
+    weightMaxKg: 8,
+    maxPowerW: 160,
+    averagePowerW: 55,
+  },
+};
+
+export function getCabinetResourceSpec(pitch: string | undefined): CabinetResourceSpec {
+  return CABINET_RESOURCE_SPECS[normalizePitch(pitch)];
+}
+
+export function getCabinetResourceStats(
+  plan: CabinetPlan | null | undefined,
+): CabinetResourceStats | null {
+  if (!plan) return null;
+  const totalCount = plan.cols * plan.rows;
+  const resourceSpec = getCabinetResourceSpec(plan.pitch);
+  return {
+    resourceSpec,
+    weightMinKg: totalCount * resourceSpec.weightMinKg,
+    weightMaxKg: totalCount * resourceSpec.weightMaxKg,
+    maxPowerW: totalCount * resourceSpec.maxPowerW,
+    averagePowerW: totalCount * resourceSpec.averagePowerW,
+  };
+}
+
 export interface ScreenSizeMeters {
   width: number;
   height: number;
@@ -79,6 +133,7 @@ export function tweakRows(plan: CabinetPlan, delta: number): CabinetPlan {
 
 export interface CabinetStats {
   size: ScreenSizeMeters;
+  resourceSpec: CabinetResourceSpec;
   moduleMeters: number;
   cols: number;
   rows: number;
@@ -92,6 +147,10 @@ export interface CabinetStats {
   overflowHeight: number;
   pixelWidth: number;
   pixelHeight: number;
+  weightMinKg: number;
+  weightMaxKg: number;
+  maxPowerW: number;
+  averagePowerW: number;
 }
 
 /** Tolerance for cabinets slightly exceeding the metric screen area, metres. */
@@ -122,8 +181,10 @@ export function getCabinetStats(
   );
   const inBoundsCount = Math.min(cols, fitCols) * Math.min(rows, fitRows);
   const pxPerCab = getPixelsPerCabinetSide(plan.pitch);
+  const resourceStats = getCabinetResourceStats(plan)!;
   return {
     size,
+    resourceSpec: resourceStats.resourceSpec,
     moduleMeters,
     cols,
     rows,
@@ -137,6 +198,10 @@ export function getCabinetStats(
     overflowHeight: Math.max(0, usedHeight - size.height),
     pixelWidth: cols * pxPerCab,
     pixelHeight: rows * pxPerCab,
+    weightMinKg: resourceStats.weightMinKg,
+    weightMaxKg: resourceStats.weightMaxKg,
+    maxPowerW: resourceStats.maxPowerW,
+    averagePowerW: resourceStats.averagePowerW,
   };
 }
 
