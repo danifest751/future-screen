@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Ruler, X } from 'lucide-react';
+import CollapsiblePanel from '../CollapsiblePanel';
 import { selectActivePreset } from '../state/selectors';
 import { useActiveScene, useVisualLed } from '../state/VisualLedContext';
 
@@ -36,10 +37,12 @@ const ScalePanel = () => {
       : 'Масштаб не задан';
 
   return (
-    <div className="rounded-xl border border-white/10 bg-slate-900/40 p-3">
-      <h2 className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-        <Ruler className="h-3 w-3" /> Масштаб
-      </h2>
+    <CollapsiblePanel
+      id="scale"
+      title="Масштаб"
+      icon={<Ruler className="h-3 w-3" />}
+      defaultOpen
+    >
       <p className="mb-2 text-[11px] text-slate-500">
         Введи известную длину в метрах, нажми «Старт» и кликни 2 точки на изображении.
       </p>
@@ -89,7 +92,7 @@ const ScalePanel = () => {
       >
         {status}
       </div>
-    </div>
+    </CollapsiblePanel>
   );
 };
 

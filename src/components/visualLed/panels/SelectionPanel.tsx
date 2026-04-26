@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Pencil, Trash2 } from 'lucide-react';
+import { MousePointer2, Pencil, Trash2 } from 'lucide-react';
 import { getElementSizeMeters, scaleQuadToMetric } from '../../../lib/visualLed';
+import CollapsiblePanel from '../CollapsiblePanel';
 import { useActiveScene, useSelectedElement, useVisualLed } from '../state/VisualLedContext';
 
 /**
@@ -62,11 +63,12 @@ const SelectionPanel = () => {
   };
 
   return (
-    <div className="rounded-xl border border-white/10 bg-slate-900/40 p-3">
-      <h2 className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-        Выбранный экран
-      </h2>
-
+    <CollapsiblePanel
+      id="selection"
+      title="Выбранный экран"
+      icon={<MousePointer2 className="h-3 w-3" />}
+      defaultOpen
+    >
       {!selected ? (
         <div className="rounded-md border border-dashed border-white/10 bg-slate-950/40 px-2 py-2 text-[11px] text-slate-500">
           Экран не выбран
@@ -136,7 +138,7 @@ const SelectionPanel = () => {
           )}
         </div>
       )}
-    </div>
+    </CollapsiblePanel>
   );
 };
 

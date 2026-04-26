@@ -11,6 +11,7 @@ import {
   tweakRows,
   type CabinetPlan,
 } from '../../../lib/visualLed';
+import CollapsiblePanel from '../CollapsiblePanel';
 import { useActiveScene, useSelectedElement, useVisualLed } from '../state/VisualLedContext';
 
 /**
@@ -70,10 +71,12 @@ const CabinetPanel = () => {
   const needScale = !scene.scaleCalib;
 
   return (
-    <div className="rounded-xl border border-white/10 bg-slate-900/40 p-3">
-      <h2 className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-        <Grid3x3 className="h-3 w-3" /> Кабинеты 0.5 × 0.5
-      </h2>
+    <CollapsiblePanel
+      id="cabinets"
+      title="Кабинеты 0.5×0.5"
+      icon={<Grid3x3 className="h-3 w-3" />}
+      defaultOpen={false}
+    >
 
       {disabled ? (
         <div className="rounded-md border border-dashed border-white/10 bg-slate-950/40 px-2 py-2 text-[11px] text-slate-500">
@@ -231,7 +234,7 @@ const CabinetPanel = () => {
           </label>
         </div>
       )}
-    </div>
+    </CollapsiblePanel>
   );
 };
 

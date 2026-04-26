@@ -1,4 +1,5 @@
 import { Monitor, Plus, Trash2, X } from 'lucide-react';
+import CollapsiblePanel from '../CollapsiblePanel';
 import { useActiveScene, useVisualLed } from '../state/VisualLedContext';
 
 /**
@@ -18,10 +19,12 @@ const ScreensPanel = () => {
   const cancel = () => dispatch({ type: 'tool/cancel' });
 
   return (
-    <div className="rounded-xl border border-white/10 bg-slate-900/40 p-3">
-      <h2 className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-        <Monitor className="h-3 w-3" /> Экраны
-      </h2>
+    <CollapsiblePanel
+      id="screens"
+      title="Экраны"
+      icon={<Monitor className="h-3 w-3" />}
+      defaultOpen
+    >
       {!placing ? (
         <button
           type="button"
@@ -88,7 +91,7 @@ const ScreensPanel = () => {
           })}
         </div>
       ) : null}
-    </div>
+    </CollapsiblePanel>
   );
 };
 

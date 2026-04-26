@@ -6,6 +6,10 @@ import { fileToDataUrl } from './imageLoader';
 import { uid } from './state/initialState';
 import { useActiveScene, useSelectedElement, useVisualLed } from './state/VisualLedContext';
 
+interface SidebarRightProps {
+  className?: string;
+}
+
 /**
  * Right sidebar — backgrounds + videos libraries.
  *
@@ -13,7 +17,7 @@ import { useActiveScene, useSelectedElement, useVisualLed } from './state/Visual
  * ensureDemoVideos in persistence — no "Демо" button needed. The user's
  * own uploads coexist with the seeded demos in the same grid.
  */
-const SidebarRight = () => {
+const SidebarRight = ({ className = '' }: SidebarRightProps) => {
   const scene = useActiveScene();
   const selected = useSelectedElement();
   const { state, dispatch } = useVisualLed();
@@ -52,7 +56,7 @@ const SidebarRight = () => {
   };
 
   return (
-    <aside className="flex w-full flex-col gap-2 lg:w-64">
+    <aside className={`flex w-full flex-col gap-2 lg:w-64 ${className}`.trim()}>
       <Panel title="Фоны">
         <label className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-white/15 bg-slate-950/40 py-3 text-xs text-slate-300 hover:border-white/30 hover:text-white">
           <Upload className="h-3.5 w-3.5" />

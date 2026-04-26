@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ExternalLink, FileDown } from 'lucide-react';
+import CollapsiblePanel from '../CollapsiblePanel';
 import { runReportExport, type ExportScope } from '../reportExport';
 import { useVisualLed } from '../state/VisualLedContext';
 
@@ -30,10 +31,12 @@ const ReportPanel = () => {
   };
 
   return (
-    <div className="rounded-xl border border-white/10 bg-slate-900/40 p-3">
-      <h2 className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-        <FileDown className="h-3 w-3" /> Отчёт
-      </h2>
+    <CollapsiblePanel
+      id="report"
+      title="Отчёт"
+      icon={<FileDown className="h-3 w-3" />}
+      defaultOpen={false}
+    >
       <label className="mb-2 block text-[11px] text-slate-300">
         Scope
         <select
@@ -74,7 +77,7 @@ const ReportPanel = () => {
             : `Все сцены (${state.scenes.length}): offscreen-рендер каждой`
           : 'Добавь экран — отчёт появится'}
       </div>
-    </div>
+    </CollapsiblePanel>
   );
 };
 

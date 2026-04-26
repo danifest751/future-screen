@@ -4,6 +4,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { Archive, Home } from 'lucide-react';
 import BeforeUnloadGuard from '../components/visualLed/BeforeUnloadGuard';
 import CanvasStage from '../components/visualLed/CanvasStage';
+import MobileSidebarTabs from '../components/visualLed/MobileSidebarTabs';
 import PresetPicker from '../components/visualLed/PresetPicker';
 import PriceHeader from '../components/visualLed/PriceHeader';
 import ProjectLoader from '../components/visualLed/ProjectLoader';
@@ -45,8 +46,16 @@ const VisualLedShell = () => {
     <>
       <ProjectLoader />
       <PriceHeader onRequestQuote={() => setQuoteOpen(true)} />
-      <div className="grid gap-2 lg:grid-cols-[18rem_1fr_16rem]">
-        <SidebarLeft />
+      {/*
+        Layout breakpoints:
+          <md  (phone):  flex-col stack — main first, SidebarRight (Фоны/Видео) below.
+                          SidebarLeft hidden, accessible via MobileSidebarTabs (bottom drawer).
+          md..<lg (tablet portrait): 2-col grid [main | SidebarRight].
+                          SidebarLeft still hidden + drawer.
+          lg+ (desktop): 3-col grid [SidebarLeft | main | SidebarRight] — original.
+      */}
+      <div className="flex flex-col gap-2 pb-14 md:grid md:grid-cols-[1fr_16rem] lg:grid-cols-[18rem_1fr_16rem] lg:pb-0">
+        <SidebarLeft className="hidden lg:flex" />
         <main className="flex min-h-[70vh] flex-col gap-2">
           <StageHeader onOpenShortcuts={() => setShortcutsOpen(true)} />
           <WorkflowSteps />
@@ -55,6 +64,7 @@ const VisualLedShell = () => {
         </main>
         <SidebarRight />
       </div>
+      <MobileSidebarTabs />
       <VideoPool />
       <BeforeUnloadGuard />
       <ShortcutsModal open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { AlertTriangle, Check, Copy, ExternalLink, Loader2, Save, X } from 'lucide-react';
 import { createPortal } from 'react-dom';
+import CollapsiblePanel from '../CollapsiblePanel';
 import { getUploadStatus, saveProject } from '../saveProject';
 import { useVisualLed } from '../state/VisualLedContext';
 
@@ -36,10 +37,12 @@ const SavePanel = () => {
   };
 
   return (
-    <div className="rounded-xl border border-white/10 bg-slate-900/40 p-3">
-      <h2 className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-        <Save className="h-3 w-3" /> Сохранить проект
-      </h2>
+    <CollapsiblePanel
+      id="save"
+      title="Сохранить проект"
+      icon={<Save className="h-3 w-3" />}
+      defaultOpen={false}
+    >
       <button
         type="button"
         onClick={() => void run()}
@@ -78,7 +81,7 @@ const SavePanel = () => {
       ) : null}
 
       {shareUrl ? <ShareDialog url={shareUrl} onClose={() => setShareUrl(null)} /> : null}
-    </div>
+    </CollapsiblePanel>
   );
 };
 
