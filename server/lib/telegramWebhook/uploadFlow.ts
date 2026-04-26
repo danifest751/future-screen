@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import {
   CANCELLED_MESSAGE,
   SESSION_EXPIRED_MESSAGE,
@@ -206,7 +207,11 @@ export const handleFileUpload = async (update: TelegramUpdate): Promise<void> =>
   const isVideo = fileInfo.mimeType.startsWith('video/');
   const folder = isVideo ? 'videos' : 'images';
   const ext = fileInfo.fileName.split('.').pop() || (isVideo ? 'mp4' : 'jpg');
-  const storagePath = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2, 10)}.${ext}`;
+  // Cryptographic random suffix matches api/visual-led/upload-background.ts —
+  // avoids race-driven collisions Math.random() can produce when several
+  // chats upload at the same millisecond.
+  const suffix = randomBytes(8).toString('hex');
+  const storagePath = `${folder}/${Date.now()}_${suffix}.${ext}`;
 
   const { error: uploadError } = await getSupabaseClient()
     .storage.from('images')
