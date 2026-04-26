@@ -17,6 +17,7 @@ vite.config.js
 .vscode/
 .idea/
 .kilocode/
+.claude/
 
 # Python
 __pycache__/
@@ -31,6 +32,7 @@ __pycache__/
 *.tmp
 *.temp
 *.swp
+tmp-*
 
 # OS
 .DS_Store
@@ -92,6 +94,8 @@ docs/admin-remaining-work-plan.md
 docs/key-fal.md
 docs/project-analysis-2026-04-24.md
 docs/visual-led-ux-path-d.md
+docs/need.md
+docs/visual-led-path-d-implementation-plan.md
 project-audit-report.md
 CODE_REVIEW.md
 .vercel
