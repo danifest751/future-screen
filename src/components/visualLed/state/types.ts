@@ -42,6 +42,13 @@ export interface VisualLedState {
   tool: Tool | null;
   drag: Drag | null;
   ui: UiFlags;
+  /**
+   * Slug of the sales preset the user picked at onboarding (e.g.
+   * 'concert', 'festival'). Drives the price header's multiplier and
+   * the QuoteRequestModal's `extra.preset_slug`. `null` until the user
+   * either picks a preset or skips onboarding via "Свой вариант".
+   */
+  selectedPresetSlug: string | null;
 }
 
 // ----- actions -----
@@ -99,4 +106,11 @@ export type Action =
   | { type: 'ui/toggle'; payload: { key: keyof UiFlags; value?: boolean } }
 
   // Wholesale replace — used when hydrating a shared project from a URL.
-  | { type: 'project/replace'; payload: VisualLedState };
+  | { type: 'project/replace'; payload: VisualLedState }
+
+  // Sales-configurator onboarding: applies a preset (sets selectedPresetSlug
+  // and adds the preset's hero image as the active background of the
+  // current scene). The user then continues in editing mode.
+  | { type: 'preset/apply'; payload: { slug: string; backgroundUrl: string; backgroundName: string } }
+  // Reset preset choice (used by "Свой вариант" / restart flow).
+  | { type: 'preset/clear' };

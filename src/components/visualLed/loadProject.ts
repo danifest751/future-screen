@@ -208,6 +208,11 @@ export function hydrateState(raw: unknown): VisualLedState | null {
     ? (raw.videos.map(hydrateVideo).filter(Boolean) as VideoAsset[])
     : [];
 
+  // Backward compat: pre-presets share-link payloads don't carry
+  // selectedPresetSlug. Coerce to null so downstream code stays type-safe.
+  const selectedPresetSlug =
+    typeof raw.selectedPresetSlug === 'string' ? raw.selectedPresetSlug : null;
+
   return {
     scenes,
     activeSceneId,
@@ -215,5 +220,6 @@ export function hydrateState(raw: unknown): VisualLedState | null {
     tool: null,
     drag: null,
     ui: hydrateUi(raw.ui),
+    selectedPresetSlug,
   };
 }

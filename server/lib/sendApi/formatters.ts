@@ -36,6 +36,11 @@ export const localizeSourceToRu = (rawSource: string): string => {
   const source = toCleanString(rawSource);
   if (!source) return 'Сайт';
 
+  // Sales-configurator slugs come straight from the client and are
+  // never wrapped in "(/path)" suffixes — handle them up-front so the
+  // generic fallback doesn't echo the kebab-case slug to the manager.
+  if (source === 'visual-led-config') return 'Visual LED конфигуратор';
+
   const match = source.match(/\((\/[^)]+)\)\s*$/);
   const path = normalizePath(match?.[1] ?? '');
   const baseRaw = match ? source.replace(match[0], '').trim() : source;

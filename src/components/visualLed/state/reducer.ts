@@ -1,5 +1,5 @@
-import type { Scene } from '../../../lib/visualLed';
-import { createSceneData } from './initialState';
+import type { BackgroundAsset, Scene } from '../../../lib/visualLed';
+import { createSceneData, uid } from './initialState';
 import type { Action, UiFlags, VisualLedState } from './types';
 
 /**
@@ -272,7 +272,45 @@ export function visualLedReducer(state: VisualLedState, action: Action): VisualL
 
     // ----- full-state replace (project load) -----
     case 'project/replace':
-      return action.payload;
+      // Project files saved before selectedPresetSlug existed lack the
+      // field; default to null so the loaded state stays type-safe.
+      return {
+        ...action.payload,
+        selectedPresetSlug: action.payload.selectedPresetSlug ?? null,
+      };
+
+    // ----- sales-configurator preset apply -----
+    case 'preset/apply': {
+      // Empty backgroundUrl = the user picked "Свой вариант" — only the
+      // slug needs to update so the onboarding gate flips. No background
+      // is injected; the canvas stays blank for them to build from scratch.
+      if (!action.payload.backgroundUrl.trim()) {
+        return { ...state, selectedPresetSlug: action.payload.slug };
+      }
+      const bg: BackgroundAsset = {
+        id: uid('bg'),
+        name: action.payload.backgroundName,
+        src: action.payload.backgroundUrl,
+        // Hero images are 16:9; precise width/height are recomputed from
+        // the actual <img> on first paint, so these are just safe defaults.
+        width: 1920,
+        height: 1080,
+        uploadStatus: 'uploaded',
+      };
+      return {
+        ...state,
+        selectedPresetSlug: action.payload.slug,
+        scenes: mapActiveScene(state, (scene) => ({
+          ...scene,
+          backgrounds: [...scene.backgrounds, bg],
+          // Make the new preset background the active one immediately.
+          activeBackgroundId: bg.id,
+        })),
+      };
+    }
+
+    case 'preset/clear':
+      return { ...state, selectedPresetSlug: null };
 
     default:
       return state;

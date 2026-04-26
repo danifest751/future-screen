@@ -70,6 +70,7 @@ const makeState = (): VisualLedState => ({
     showAssistGuides: true,
     showStatsOverlay: true,
   },
+  selectedPresetSlug: null,
 });
 
 describe('visualLedReducer', () => {
@@ -233,5 +234,57 @@ describe('visualLedReducer', () => {
 
     const passthrough = visualLedReducer(state, { type: 'unknown' } as never);
     expect(passthrough).toBe(state);
+  });
+
+  it('preset/apply: sets selectedPresetSlug and adds active background', () => {
+    const state = makeState();
+    expect(state.selectedPresetSlug).toBeNull();
+    expect(state.scenes[0].backgrounds).toHaveLength(0);
+
+    const next = visualLedReducer(state, {
+      type: 'preset/apply',
+      payload: {
+        slug: 'concert',
+        backgroundUrl: '/visual-led-presets/concert-stage.jpg',
+        backgroundName: 'Концерт / шоу',
+      },
+    });
+
+    expect(next.selectedPresetSlug).toBe('concert');
+    const scene = next.scenes.find((s) => s.id === next.activeSceneId)!;
+    expect(scene.backgrounds).toHaveLength(1);
+    expect(scene.activeBackgroundId).toBe(scene.backgrounds[0].id);
+    expect(scene.backgrounds[0].src).toBe('/visual-led-presets/concert-stage.jpg');
+    expect(scene.backgrounds[0].name).toBe('Концерт / шоу');
+  });
+
+  it('preset/clear: drops the slug but keeps backgrounds', () => {
+    const withPreset = visualLedReducer(makeState(), {
+      type: 'preset/apply',
+      payload: {
+        slug: 'concert',
+        backgroundUrl: '/visual-led-presets/concert-stage.jpg',
+        backgroundName: 'Концерт',
+      },
+    });
+    const cleared = visualLedReducer(withPreset, { type: 'preset/clear' });
+    expect(cleared.selectedPresetSlug).toBeNull();
+    // Backgrounds stay — clearing the preset choice doesn't undo what the
+    // user already placed; they can keep editing on the same canvas.
+    const scene = cleared.scenes.find((s) => s.id === cleared.activeSceneId)!;
+    expect(scene.backgrounds).toHaveLength(1);
+  });
+
+  it('project/replace: hydrates legacy payloads without selectedPresetSlug', () => {
+    const state = makeState();
+    const legacyPayload = { ...state } as VisualLedState;
+    // Simulate an old project that lacks the new field on disk.
+    delete (legacyPayload as { selectedPresetSlug?: unknown }).selectedPresetSlug;
+
+    const next = visualLedReducer(state, {
+      type: 'project/replace',
+      payload: legacyPayload,
+    });
+    expect(next.selectedPresetSlug).toBeNull();
   });
 });

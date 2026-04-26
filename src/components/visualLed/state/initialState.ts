@@ -41,5 +41,6 @@ export function createInitialState(): VisualLedState {
       showAssistGuides: true,
       showStatsOverlay: true,
     },
+    selectedPresetSlug: null,
   };
 }

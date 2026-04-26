@@ -1,17 +1,65 @@
 import { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Archive, Home } from 'lucide-react';
 import BeforeUnloadGuard from '../components/visualLed/BeforeUnloadGuard';
 import CanvasStage from '../components/visualLed/CanvasStage';
+import PresetPicker from '../components/visualLed/PresetPicker';
+import PriceHeader from '../components/visualLed/PriceHeader';
 import ProjectLoader from '../components/visualLed/ProjectLoader';
+import QuoteRequestModal from '../components/visualLed/QuoteRequestModal';
 import ShortcutsModal from '../components/visualLed/ShortcutsModal';
 import SidebarLeft from '../components/visualLed/SidebarLeft';
 import SidebarRight from '../components/visualLed/SidebarRight';
 import StageHeader from '../components/visualLed/StageHeader';
 import VideoPool from '../components/visualLed/VideoPool';
 import WorkflowSteps from '../components/visualLed/WorkflowSteps';
-import { VisualLedProvider } from '../components/visualLed/state/VisualLedContext';
+import { isOnboardingMode } from '../components/visualLed/state/selectors';
+import { useVisualLed, VisualLedProvider } from '../components/visualLed/state/VisualLedContext';
+
+/**
+ * Sales-configurator gate. Picks between the PresetPicker onboarding
+ * screen and the full editing shell based on isOnboardingMode().
+ * Lives inside VisualLedProvider so it can read state.
+ */
+const VisualLedShell = () => {
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [quoteOpen, setQuoteOpen] = useState(false);
+  const { state } = useVisualLed();
+  const [searchParams] = useSearchParams();
+  const hasUrlProject = Boolean(searchParams.get('project'));
+  const onboarding = isOnboardingMode(state, hasUrlProject);
+
+  if (onboarding) {
+    return (
+      <>
+        <ProjectLoader />
+        <PresetPicker />
+        <BeforeUnloadGuard />
+      </>
+    );
+  }
+
+  return (
+    <>
+      <ProjectLoader />
+      <PriceHeader onRequestQuote={() => setQuoteOpen(true)} />
+      <div className="grid gap-2 lg:grid-cols-[18rem_1fr_16rem]">
+        <SidebarLeft />
+        <main className="flex min-h-[70vh] flex-col gap-2">
+          <StageHeader onOpenShortcuts={() => setShortcutsOpen(true)} />
+          <WorkflowSteps />
+          <CanvasStage />
+        </main>
+        <SidebarRight />
+      </div>
+      <VideoPool />
+      <BeforeUnloadGuard />
+      <ShortcutsModal open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
+      <QuoteRequestModal open={quoteOpen} onClose={() => setQuoteOpen(false)} />
+    </>
+  );
+};
 
 /**
  * React-based Visual LED planner. Primary entry point at /visual-led
@@ -20,8 +68,6 @@ import { VisualLedProvider } from '../components/visualLed/state/VisualLedContex
  * during the observation period.
  */
 const VisualLedV2Page = () => {
-  const [shortcutsOpen, setShortcutsOpen] = useState(false);
-
   return (
     <VisualLedProvider>
       <Helmet>
@@ -64,19 +110,7 @@ const VisualLedV2Page = () => {
             Legacy
           </Link>
         </div>
-        <ProjectLoader />
-        <div className="grid gap-2 lg:grid-cols-[18rem_1fr_16rem]">
-          <SidebarLeft />
-          <main className="flex min-h-[70vh] flex-col gap-2">
-            <StageHeader onOpenShortcuts={() => setShortcutsOpen(true)} />
-            <WorkflowSteps />
-            <CanvasStage />
-          </main>
-          <SidebarRight />
-        </div>
-        <VideoPool />
-        <BeforeUnloadGuard />
-        <ShortcutsModal open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
+        <VisualLedShell />
       </div>
     </VisualLedProvider>
   );

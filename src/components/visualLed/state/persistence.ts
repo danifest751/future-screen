@@ -47,7 +47,15 @@ export function loadPersistedState(): { state: VisualLedState; savedAt: number }
     ) {
       return null;
     }
-    return { state: parsed.state as VisualLedState, savedAt: parsed.savedAt };
+    // Backward compat: snapshots saved before selectedPresetSlug landed
+    // are missing the field — coerce to null so reducer paths that depend
+    // on it (PriceHeader / onboarding selector) don't crash.
+    const stored = parsed.state as VisualLedState;
+    const hydrated: VisualLedState = {
+      ...stored,
+      selectedPresetSlug: stored.selectedPresetSlug ?? null,
+    };
+    return { state: hydrated, savedAt: parsed.savedAt };
   } catch {
     return null;
   }

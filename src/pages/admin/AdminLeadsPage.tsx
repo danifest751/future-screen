@@ -618,6 +618,7 @@ const AdminLeadsPage = () => {
             footer_form: 'Футер',
             header_button: 'Хедер',
             consult_form: 'Консультация',
+            'visual-led-config': 'Visual LED конфигуратор',
           }
         : {
             hero_form: 'Hero form',
@@ -626,6 +627,7 @@ const AdminLeadsPage = () => {
             footer_form: 'Footer',
             header_button: 'Header',
             consult_form: 'Consult form',
+            'visual-led-config': 'Visual LED configurator',
           },
       fallback: (raw) => raw || (ru ? 'Не указано' : 'Unknown'),
     };
