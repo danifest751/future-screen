@@ -68,8 +68,8 @@ export const CaseMediaSelector = ({ selectedMedia, onChange }: CaseMediaSelector
     <>
       {isSelectorOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsSelectorOpen(false)} />
-          <div className="relative flex max-h-[94vh] w-full max-w-7xl flex-col overflow-hidden rounded-xl border border-white/10 bg-slate-900 shadow-2xl">
+          <div className="absolute inset-0 bg-slate-950/75 backdrop-blur-sm" onClick={() => setIsSelectorOpen(false)} />
+          <div className="relative flex max-h-[94vh] w-full max-w-7xl flex-col overflow-hidden rounded-2xl border border-white/10 bg-slate-950 shadow-2xl">
             <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
               <div>
                 <h2 className="text-lg font-semibold text-white">{caseMediaSelectorContent.modal.title}</h2>
@@ -79,7 +79,7 @@ export const CaseMediaSelector = ({ selectedMedia, onChange }: CaseMediaSelector
               </div>
               <button
                 onClick={() => setIsSelectorOpen(false)}
-                className="rounded p-1 text-slate-400 transition-colors hover:bg-slate-800 hover:text-white"
+                className="rounded p-1 text-slate-400 transition hover:bg-slate-800 hover:text-white active:scale-[0.94]"
               >
                 <X size={24} />
               </button>
@@ -112,11 +112,11 @@ export const CaseMediaSelector = ({ selectedMedia, onChange }: CaseMediaSelector
                           onDragStart={() => handleDragStart(index)}
                           onDragOver={(event) => handleDragOver(event, index)}
                           onDragEnd={handleDragEnd}
-                          className={`group flex items-center gap-3 rounded-lg border border-white/10 bg-white/[0.04] p-2 ${
+                          className={`group flex items-center gap-3 rounded-xl border border-white/10 bg-slate-900/70 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] ${
                             draggedIndex === index ? 'opacity-50' : ''
                           }`}
                         >
-                          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-black/40 text-xs font-bold text-white">
+                          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-950/70 text-xs font-bold text-white">
                             {index + 1}
                           </div>
                           <div className="h-12 w-12 shrink-0 overflow-hidden rounded bg-slate-800">
@@ -150,7 +150,7 @@ export const CaseMediaSelector = ({ selectedMedia, onChange }: CaseMediaSelector
                 <div className="border-t border-white/10 p-3">
                   <button
                     onClick={() => setIsSelectorOpen(false)}
-                    className="w-full rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-400"
+                    className="w-full rounded-lg bg-emerald-500/90 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-500 active:scale-[0.98]"
                   >
                     {caseMediaSelectorContent.modal.done(selectedMedia.length)}
                   </button>
@@ -168,7 +168,7 @@ export const CaseMediaSelector = ({ selectedMedia, onChange }: CaseMediaSelector
               <span className="text-sm text-slate-400">
                 {caseMediaSelectorContent.preview.selectedFiles(selectedMedia.length, imageCount, videoCount)}
               </span>
-              <button type="button" onClick={() => setIsSelectorOpen(true)} className="text-sm text-brand-400 hover:text-brand-300">
+              <button type="button" onClick={() => setIsSelectorOpen(true)} className="text-sm text-emerald-300 transition hover:text-emerald-200 active:scale-[0.98]">
                 {caseMediaSelectorContent.preview.edit}
               </button>
             </div>
@@ -181,9 +181,9 @@ export const CaseMediaSelector = ({ selectedMedia, onChange }: CaseMediaSelector
                   onDragStart={() => handleDragStart(index)}
                   onDragOver={(event) => handleDragOver(event, index)}
                   onDragEnd={handleDragEnd}
-                  className={`group relative overflow-hidden rounded-lg border border-white/10 bg-slate-800 ${draggedIndex === index ? 'opacity-50' : ''}`}
+                  className={`group relative overflow-hidden rounded-xl border border-white/10 bg-slate-900/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] ${draggedIndex === index ? 'opacity-50' : ''}`}
                 >
-                  <div className="absolute left-1 top-1 z-10 cursor-grab rounded bg-black/50 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100 active:cursor-grabbing">
+                  <div className="absolute left-1 top-1 z-10 cursor-grab rounded border border-white/10 bg-slate-950/70 p-1 text-white opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100 active:cursor-grabbing">
                     <GripVertical size={12} />
                   </div>
 
@@ -202,7 +202,7 @@ export const CaseMediaSelector = ({ selectedMedia, onChange }: CaseMediaSelector
                   <div className="absolute bottom-1 left-1">
                     <span
                       className={`rounded px-1.5 py-0.5 text-[10px] font-medium uppercase ${
-                        media.type === 'video' ? 'bg-purple-500/80 text-white' : 'bg-slate-700/80 text-slate-300'
+                        media.type === 'video' ? 'border border-white/10 bg-slate-950/75 text-white' : 'border border-white/10 bg-slate-700/80 text-slate-300'
                       }`}
                     >
                       {media.type === 'video' ? caseMediaSelectorContent.preview.video : caseMediaSelectorContent.preview.photo}
@@ -210,7 +210,7 @@ export const CaseMediaSelector = ({ selectedMedia, onChange }: CaseMediaSelector
                   </div>
 
                   <div className="absolute bottom-1 right-1">
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-[10px] font-bold text-white">
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-950/75 text-[10px] font-bold text-white">
                       {index + 1}
                     </span>
                   </div>
@@ -220,7 +220,7 @@ export const CaseMediaSelector = ({ selectedMedia, onChange }: CaseMediaSelector
               <button
                 type="button"
                 onClick={() => setIsSelectorOpen(true)}
-                className="flex aspect-square flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-white/20 bg-slate-800/50 text-slate-500 transition-colors hover:border-white/40 hover:text-slate-300"
+                className="flex aspect-square flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-white/20 bg-slate-900/60 text-slate-500 transition hover:border-white/40 hover:text-slate-300 active:scale-[0.98]"
               >
                 <Plus size={24} />
                 <span className="text-xs">{caseMediaSelectorContent.preview.add}</span>
@@ -233,7 +233,7 @@ export const CaseMediaSelector = ({ selectedMedia, onChange }: CaseMediaSelector
           <button
             type="button"
             onClick={() => setIsSelectorOpen(true)}
-            className="flex w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-white/20 bg-slate-800/50 py-8 text-slate-500 transition-colors hover:border-white/40 hover:text-slate-300"
+            className="flex w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-white/20 bg-slate-900/60 py-8 text-slate-500 transition hover:border-white/40 hover:text-slate-300 active:scale-[0.98]"
           >
             <div className="flex gap-2">
               <Image size={24} />

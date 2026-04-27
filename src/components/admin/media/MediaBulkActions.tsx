@@ -85,8 +85,8 @@ export const MediaBulkActions = ({
                 <button
                   key={tag}
                   onClick={() => toggleTag(tag)}
-                  className={`rounded px-2 py-1 text-xs transition-colors ${
-                    isSelected ? 'bg-brand-500 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                  className={`rounded px-2 py-1 text-xs transition active:scale-[0.98] ${
+                    isSelected ? 'bg-emerald-500 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
                   }`}
                 >
                   {tag}
@@ -106,14 +106,14 @@ export const MediaBulkActions = ({
           value={customTag}
           onChange={(event) => setCustomTag(event.target.value)}
           placeholder={mediaBulkActionsContent.tagModal.inputPlaceholder}
-          className="w-full rounded border border-white/10 bg-slate-900 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-brand-500 focus:outline-none"
+          className="w-full rounded border border-white/10 bg-slate-950 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-emerald-400/70 focus:outline-none"
         />
       </div>
 
       {selectedTags.length > 0 && (
         <div className="flex flex-wrap gap-1">
           {selectedTags.map((tag) => (
-            <span key={tag} className="inline-flex items-center gap-1 rounded bg-brand-500/20 px-2 py-1 text-xs text-brand-200">
+            <span key={tag} className="inline-flex items-center gap-1 rounded border border-emerald-500/30 bg-emerald-500/15 px-2 py-1 text-xs text-emerald-100">
               {tag}
               <button onClick={() => toggleTag(tag)}>
                 <X size={12} />
@@ -152,26 +152,26 @@ export const MediaBulkActions = ({
         }}
       />
 
-      <div className="flex flex-wrap items-center gap-1.5 rounded-lg border border-brand-500/30 bg-brand-500/10 px-3 py-1.5">
-        <span className="text-sm text-brand-200">
+      <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-emerald-500/25 bg-emerald-500/10 px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+        <span className="text-sm text-emerald-100">
           {mediaBulkActionsContent.toolbar.selected(selectedCount, totalCount)}
         </span>
 
-        <div className="mx-2 h-4 w-px bg-brand-500/30" />
+        <div className="mx-2 h-4 w-px bg-emerald-500/25" />
 
         <button
           onClick={selectedCount === totalCount ? onDeselectAll : onSelectAll}
-          className="flex items-center gap-1 rounded px-2 py-1 text-sm text-brand-200 transition-colors hover:bg-brand-500/20"
+          className="flex items-center gap-1 rounded px-2 py-1 text-sm text-emerald-100 transition hover:bg-emerald-500/15 active:scale-[0.98]"
         >
           <CheckSquare size={14} />
           {selectedCount === totalCount ? mediaBulkActionsContent.toolbar.deselect : mediaBulkActionsContent.toolbar.selectAll}
         </button>
 
-        <div className="mx-2 h-4 w-px bg-brand-500/30" />
+        <div className="mx-2 h-4 w-px bg-emerald-500/25" />
 
         <button
           onClick={() => handleOpenTagModal('add')}
-          className="flex items-center gap-1 rounded px-2 py-1 text-sm text-brand-200 transition-colors hover:bg-brand-500/20"
+          className="flex items-center gap-1 rounded px-2 py-1 text-sm text-emerald-100 transition hover:bg-emerald-500/15 active:scale-[0.98]"
         >
           <Tag size={14} />
           {mediaBulkActionsContent.toolbar.addTag}
@@ -179,18 +179,18 @@ export const MediaBulkActions = ({
 
         <button
           onClick={() => handleOpenTagModal('remove')}
-          className="flex items-center gap-1 rounded px-2 py-1 text-sm text-brand-200 transition-colors hover:bg-brand-500/20"
+          className="flex items-center gap-1 rounded px-2 py-1 text-sm text-emerald-100 transition hover:bg-emerald-500/15 active:scale-[0.98]"
         >
           <Tag size={14} className="rotate-45" />
           {mediaBulkActionsContent.toolbar.removeTag}
         </button>
 
-        <div className="mx-2 h-4 w-px bg-brand-500/30" />
+        <div className="mx-2 h-4 w-px bg-emerald-500/25" />
 
         <button
           onClick={() => setShowDeleteModal(true)}
           disabled={isDeleting}
-          className="flex items-center gap-1 rounded px-2 py-1 text-sm text-red-300 transition-colors hover:bg-red-500/20 disabled:opacity-50"
+          className="flex items-center gap-1 rounded px-2 py-1 text-sm text-red-300 transition hover:bg-red-500/20 active:scale-[0.98] disabled:opacity-50"
         >
           <Trash2 size={14} />
           {isDeleting ? mediaBulkActionsContent.toolbar.deleting : mediaBulkActionsContent.toolbar.delete}
@@ -198,7 +198,7 @@ export const MediaBulkActions = ({
 
         <button
           onClick={onDeselectAll}
-          className="ml-auto flex items-center gap-1 rounded px-2 py-1 text-sm text-slate-400 transition-colors hover:text-slate-200"
+          className="ml-auto flex items-center gap-1 rounded px-2 py-1 text-sm text-slate-400 transition hover:text-slate-200 active:scale-[0.98]"
         >
           <X size={14} />
           {mediaBulkActionsContent.toolbar.deselect}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { Copy, ExternalLink, Film, ImageIcon, Loader2, X } from 'lucide-react';
+import { Copy, ExternalLink, Film, ImageIcon, X } from 'lucide-react';
 import { formatFileSize } from '../../../lib/imageCompression';
 import { loadMediaUsage, type MediaUsageEntry } from '../../../services/mediaUsage';
 import type { MediaItem } from '../../../types/media';
@@ -86,13 +86,13 @@ const MediaDetailsModal = ({ media, onClose, copy, formatDate }: MediaDetailsMod
 
   return (
     <div
-      className="fixed inset-0 z-[10003] flex items-center justify-center bg-black/70 p-3"
+      className="fixed inset-0 z-[10003] flex items-center justify-center bg-slate-950/80 p-3"
       role="presentation"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-white/10 bg-slate-900 shadow-2xl">
+      <div className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-white/10 bg-slate-950 shadow-2xl">
         <div className="flex items-start justify-between gap-3 border-b border-white/10 px-5 py-4">
           <div className="min-w-0">
             <div className="text-xs uppercase tracking-wide text-slate-500">{copy.title}</div>
@@ -102,7 +102,7 @@ const MediaDetailsModal = ({ media, onClose, copy, formatDate }: MediaDetailsMod
             type="button"
             onClick={onClose}
             aria-label={copy.close}
-            className="rounded-lg border border-white/10 bg-slate-800 p-1.5 text-slate-300 hover:border-white/30 hover:text-white"
+            className="rounded-lg border border-white/10 bg-slate-900 p-1.5 text-slate-300 transition hover:border-white/30 hover:text-white active:scale-[0.94]"
           >
             <X className="h-4 w-4" />
           </button>
@@ -122,7 +122,7 @@ const MediaDetailsModal = ({ media, onClose, copy, formatDate }: MediaDetailsMod
               <button
                 type="button"
                 onClick={() => void handleCopyUrl()}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-slate-800 px-2.5 py-1.5 text-xs text-slate-200 hover:border-white/30 hover:text-white"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-200 transition hover:border-white/30 hover:text-white active:scale-[0.98]"
               >
                 <Copy className="h-3.5 w-3.5" />
                 {copy.copyLink}
@@ -131,7 +131,7 @@ const MediaDetailsModal = ({ media, onClose, copy, formatDate }: MediaDetailsMod
                 href={media.public_url}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-slate-800 px-2.5 py-1.5 text-xs text-slate-200 hover:border-white/30 hover:text-white"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-200 transition hover:border-white/30 hover:text-white active:scale-[0.98]"
               >
                 <ExternalLink className="h-3.5 w-3.5" />
                 {copy.openExternal}
@@ -181,7 +181,7 @@ const MediaDetailsModal = ({ media, onClose, copy, formatDate }: MediaDetailsMod
                   <div className="mb-1 text-[11px] uppercase text-slate-500">{copy.fields.tags}</div>
                   <div className="flex flex-wrap gap-1">
                     {media.tags.map((tag) => (
-                      <span key={tag} className="rounded bg-slate-800 px-2 py-0.5 text-[11px] text-slate-300">
+                      <span key={tag} className="rounded border border-white/10 bg-slate-900 px-2 py-0.5 text-[11px] text-slate-300">
                         {tag}
                       </span>
                     ))}
@@ -193,9 +193,10 @@ const MediaDetailsModal = ({ media, onClose, copy, formatDate }: MediaDetailsMod
             <div>
               <div className="mb-2 text-[11px] font-semibold uppercase text-slate-500">{copy.sections.usage}</div>
               {usageLoading ? (
-                <div className="flex items-center gap-2 text-xs text-slate-400">
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  {copy.usageLoading}
+                <div className="rounded-lg border border-white/10 bg-slate-900/70 p-2">
+                  <div className="mb-2 h-3 w-36 animate-pulse rounded bg-slate-800" />
+                  <div className="h-3 w-52 animate-pulse rounded bg-slate-800" />
+                  <div className="sr-only">{copy.usageLoading}</div>
                 </div>
               ) : usage && usage.length > 0 ? (
                 <ul className="space-y-1 text-xs text-slate-200">

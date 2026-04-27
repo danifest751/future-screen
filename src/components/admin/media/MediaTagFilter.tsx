@@ -1,5 +1,5 @@
 ﻿import { useMemo, useState } from 'react';
-import { ChevronDown, Tag, X } from 'lucide-react';
+import { Check, ChevronDown, Tag, X } from 'lucide-react';
 import { mediaTagFilterContent } from '../../../content/components/mediaTagFilter';
 
 interface MediaTagFilterProps {
@@ -40,10 +40,10 @@ export const MediaTagFilter = ({
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex w-full items-center justify-between gap-2 rounded-lg border px-3 py-1.5 text-sm transition-colors ${
+        className={`flex w-full items-center justify-between gap-2 rounded-lg border px-3 py-1.5 text-sm transition active:scale-[0.98] ${
           isOpen || selectedTags.length > 0
-            ? 'border-brand-500 bg-brand-500/10 text-white'
-            : 'border-white/10 bg-slate-800 text-slate-300 hover:border-white/20'
+            ? 'border-emerald-500/40 bg-emerald-500/10 text-white'
+            : 'border-white/10 bg-slate-950 text-slate-300 hover:border-white/20'
         }`}
       >
         <span className="flex items-center gap-2 truncate">
@@ -56,7 +56,7 @@ export const MediaTagFilter = ({
       {selectedTags.length > 0 && (
         <div className="mt-1.5 flex flex-wrap gap-1">
           {selectedTags.map((tag) => (
-            <span key={tag} className="inline-flex items-center gap-1 rounded-full bg-brand-500/20 px-2 py-0.5 text-xs text-brand-200">
+            <span key={tag} className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2 py-0.5 text-xs text-emerald-100">
               {tag}
               <button onClick={() => toggleTag(tag)} className="hover:text-white">
                 <X size={12} />
@@ -72,14 +72,14 @@ export const MediaTagFilter = ({
       {isOpen && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-          <div className="absolute left-0 right-0 top-full z-50 mt-1 rounded-lg border border-white/10 bg-slate-800 shadow-xl">
+          <div className="absolute left-0 right-0 top-full z-50 mt-1 rounded-xl border border-white/10 bg-slate-950 shadow-2xl shadow-black/30">
             <div className="border-b border-white/10 p-2">
               <input
                 type="text"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder={mediaTagFilterContent.searchPlaceholder}
-                className="w-full rounded border border-white/10 bg-slate-900 px-2 py-1.5 text-sm text-white placeholder:text-slate-500 focus:border-brand-500 focus:outline-none"
+                className="w-full rounded border border-white/10 bg-slate-900 px-2 py-1.5 text-sm text-white placeholder:text-slate-500 focus:border-emerald-400/70 focus:outline-none"
                 autoFocus
               />
             </div>
@@ -97,14 +97,14 @@ export const MediaTagFilter = ({
                       <button
                         key={tag}
                         onClick={() => toggleTag(tag)}
-                        className={`flex w-full items-center justify-between rounded px-2 py-1 text-left text-sm transition-colors ${
-                          isSelected ? 'bg-brand-500/20 text-brand-200' : 'text-slate-300 hover:bg-slate-700'
+                        className={`flex w-full items-center justify-between rounded px-2 py-1 text-left text-sm transition active:scale-[0.99] ${
+                          isSelected ? 'bg-emerald-500/15 text-emerald-100' : 'text-slate-300 hover:bg-slate-800'
                         }`}
                       >
                         <span>{tag}</span>
                         {isSelected && (
-                          <span className="flex h-4 w-4 items-center justify-center rounded-full bg-brand-500 text-[10px] text-white">
-                            ✓
+                          <span className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 text-white">
+                            <Check size={10} />
                           </span>
                         )}
                       </button>

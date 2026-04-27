@@ -43,8 +43,8 @@ export const MediaCard = memo(function MediaCard({
 
   return (
     <div
-      className={`group relative overflow-hidden rounded-lg border transition-all duration-200 ${
-        isSelected ? 'border-brand-500 bg-brand-500/10 ring-1 ring-brand-500/50' : 'border-white/10 bg-slate-800 hover:border-white/20'
+      className={`group relative overflow-hidden rounded-xl border shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition duration-200 active:scale-[0.995] ${
+        isSelected ? 'border-emerald-500/50 bg-emerald-500/10 ring-1 ring-emerald-500/30' : 'border-white/10 bg-slate-900/70 hover:border-white/20 hover:bg-slate-900'
       }`}
     >
       {selectable && (
@@ -54,8 +54,8 @@ export const MediaCard = memo(function MediaCard({
               event.stopPropagation();
               onToggleSelect();
             }}
-            className={`flex h-5 w-5 items-center justify-center rounded border transition-colors ${
-              isSelected ? 'border-brand-500 bg-brand-500 text-white' : 'border-white/30 bg-black/50 text-transparent hover:border-white/50'
+            className={`flex h-5 w-5 items-center justify-center rounded border backdrop-blur-sm transition ${
+              isSelected ? 'border-emerald-500 bg-emerald-500 text-white' : 'border-white/30 bg-slate-950/70 text-transparent hover:border-white/50'
             }`}
           >
             <Check size={12} />
@@ -64,14 +64,14 @@ export const MediaCard = memo(function MediaCard({
       )}
 
       {showActions && (
-        <div className="absolute right-1.5 top-1.5 z-30 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+        <div className="absolute right-1.5 top-1.5 z-30 flex gap-1">
           {onShowDetails && (
             <button
               onClick={(event) => {
                 event.stopPropagation();
                 onShowDetails(media);
               }}
-              className="flex h-6 w-6 items-center justify-center rounded bg-slate-700/90 text-slate-300 transition-colors hover:bg-sky-500 hover:text-white"
+              className="flex h-6 w-6 items-center justify-center rounded border border-white/10 bg-slate-950/80 text-slate-300 backdrop-blur-sm transition hover:border-white/30 hover:text-white active:scale-[0.94]"
               title={mediaLibraryContent.details.triggerTitle}
             >
               <Info size={14} />
@@ -83,7 +83,7 @@ export const MediaCard = memo(function MediaCard({
                 event.stopPropagation();
                 onEdit(media);
               }}
-              className="flex h-6 w-6 items-center justify-center rounded bg-slate-700/90 text-slate-300 transition-colors hover:bg-brand-500 hover:text-white"
+              className="flex h-6 w-6 items-center justify-center rounded border border-white/10 bg-slate-950/80 text-slate-300 backdrop-blur-sm transition hover:border-emerald-500/40 hover:text-white active:scale-[0.94]"
               title={mediaCardContent.actions.editTitle}
             >
               <Edit2 size={14} />
@@ -95,7 +95,7 @@ export const MediaCard = memo(function MediaCard({
                 event.stopPropagation();
                 onDelete(media);
               }}
-              className="flex h-6 w-6 items-center justify-center rounded bg-slate-700/90 text-slate-300 transition-colors hover:bg-red-500 hover:text-white"
+              className="flex h-6 w-6 items-center justify-center rounded border border-white/10 bg-slate-950/80 text-slate-300 backdrop-blur-sm transition hover:border-red-400/50 hover:text-red-100 active:scale-[0.94]"
               title={mediaCardContent.actions.deleteTitle}
             >
               <Trash2 size={14} />
@@ -129,7 +129,7 @@ export const MediaCard = memo(function MediaCard({
               className="absolute inset-0 z-20 flex cursor-pointer items-center justify-center"
               title={mediaCardContent.actions.previewVideoTitle}
             >
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm transition-transform hover:scale-110">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-slate-950/70 text-white backdrop-blur-sm transition-transform hover:scale-110">
                 <Play size={18} fill="currentColor" />
               </div>
             </button>
@@ -153,29 +153,29 @@ export const MediaCard = memo(function MediaCard({
         )}
 
         <div className="absolute bottom-1.5 left-1.5">
-          <span className={`rounded px-1.5 py-px text-[10px] font-medium uppercase ${isVideo ? 'bg-purple-500/80 text-white' : 'bg-slate-700/80 text-slate-300'}`}>
+          <span className={`rounded border px-1.5 py-px text-[10px] font-medium uppercase backdrop-blur-sm ${isVideo ? 'border-white/10 bg-slate-950/75 text-slate-100' : 'border-white/10 bg-slate-800/80 text-slate-300'}`}>
             {isVideo ? mediaCardContent.labels.video : mediaCardContent.labels.photo}
           </span>
         </div>
 
         <div className="absolute bottom-1.5 right-1.5">
-          <span className="rounded bg-black/60 px-1.5 py-px text-[10px] text-slate-300">{formatFileSize(media.size_bytes)}</span>
+          <span className="rounded border border-white/10 bg-slate-950/75 px-1.5 py-px text-[10px] text-slate-300 backdrop-blur-sm">{formatFileSize(media.size_bytes)}</span>
         </div>
       </div>
 
-      <div className="p-1.5">
-        <p className="truncate text-xs text-slate-400" title={media.name}>
+      <div className="p-2">
+        <p className="truncate text-xs font-medium text-slate-200" title={media.name}>
           {media.name}
         </p>
 
         {media.tags.length > 0 && (
           <div className="mt-1 flex flex-wrap gap-1">
             {media.tags.slice(0, 2).map((tag) => (
-              <span key={tag} className="rounded bg-slate-700 px-1.5 py-px text-[10px] text-slate-300">
+              <span key={tag} className="rounded border border-white/10 bg-slate-800 px-1.5 py-px text-[10px] text-slate-300">
                 {tag}
               </span>
             ))}
-            {media.tags.length > 2 && <span className="rounded bg-slate-700 px-1.5 py-px text-[10px] text-slate-400">+{media.tags.length - 2}</span>}
+            {media.tags.length > 2 && <span className="rounded border border-white/10 bg-slate-800 px-1.5 py-px text-[10px] text-slate-400">+{media.tags.length - 2}</span>}
           </div>
         )}
 
@@ -186,17 +186,17 @@ export const MediaCard = memo(function MediaCard({
 
       {videoModalOpen && isVideo && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setVideoModalOpen(false)}>
-          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
+          <div className="absolute inset-0 bg-slate-950/85 backdrop-blur-sm" />
           <div className="relative z-10 w-full max-w-4xl">
             <button
               onClick={() => setVideoModalOpen(false)}
-              className="absolute -top-10 right-0 flex items-center gap-1 rounded bg-slate-800 px-3 py-1.5 text-sm text-white transition-colors hover:bg-slate-700"
+              className="absolute -top-10 right-0 flex items-center gap-1 rounded bg-slate-800 px-3 py-1.5 text-sm text-white transition hover:bg-slate-700 active:scale-[0.98]"
             >
               <CloseIcon size={16} />
               {mediaCardContent.actions.close}
             </button>
 
-            <div className="overflow-hidden rounded-lg bg-black shadow-2xl">
+            <div className="overflow-hidden rounded-xl bg-slate-950 shadow-2xl">
               <video
                 src={media.public_url}
                 controls

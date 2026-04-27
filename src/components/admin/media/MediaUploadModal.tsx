@@ -109,17 +109,17 @@ const MediaUploadModalContent = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        className="absolute inset-0 bg-slate-950/75 backdrop-blur-sm"
         onClick={handleClose}
       />
 
-      <div className="relative max-h-[90vh] w-full max-w-2xl overflow-auto rounded-xl border border-white/10 bg-slate-900 shadow-2xl">
+      <div className="relative max-h-[90vh] w-full max-w-2xl overflow-auto rounded-2xl border border-white/10 bg-slate-950 shadow-2xl">
         <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
           <h2 className="text-xl font-semibold text-white">{mediaUploadModalContent.header.title}</h2>
           <button
             onClick={handleClose}
             disabled={isUploading}
-            className="rounded p-1 text-slate-400 transition-colors hover:bg-slate-800 hover:text-white disabled:opacity-50"
+            className="rounded p-1 text-slate-400 transition hover:bg-slate-800 hover:text-white active:scale-[0.94] disabled:opacity-50"
           >
             <X size={20} />
           </button>
@@ -130,11 +130,11 @@ const MediaUploadModalContent = ({
             <label className="mb-2 block text-sm font-medium text-slate-300">
               {mediaUploadModalContent.tags.label}
             </label>
-            <div className="flex flex-wrap items-center gap-2 rounded-lg border border-white/10 bg-slate-800 p-2">
+            <div className="flex flex-wrap items-center gap-2 rounded-lg border border-white/10 bg-slate-900 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
               {tags.map((tag) => (
                 <span
                   key={tag}
-                  className="flex items-center gap-1 rounded bg-brand-500/20 px-2 py-1 text-sm text-brand-200"
+                  className="flex items-center gap-1 rounded border border-emerald-500/30 bg-emerald-500/15 px-2 py-1 text-sm text-emerald-100"
                 >
                   {tag}
                   <button
@@ -169,10 +169,10 @@ const MediaUploadModalContent = ({
               onDragLeave={handleDragLeave}
               onClick={() => fileInputRef.current?.click()}
               className={`
-                cursor-pointer rounded-lg border-2 border-dashed p-8 text-center transition-colors
+                cursor-pointer rounded-xl border-2 border-dashed p-8 text-center transition
                 ${isDragging
-                  ? 'border-brand-500 bg-brand-500/10'
-                  : 'border-white/20 bg-slate-800 hover:border-white/40'
+                  ? 'border-emerald-500 bg-emerald-500/10'
+                  : 'border-white/20 bg-slate-900 hover:border-white/40'
                 }
               `}
             >
@@ -211,13 +211,13 @@ const MediaUploadModalContent = ({
                 )}
               </div>
 
-              <div className="max-h-60 space-y-2 overflow-y-auto rounded-lg border border-white/10 bg-slate-800 p-2">
+              <div className="max-h-60 space-y-2 overflow-y-auto rounded-lg border border-white/10 bg-slate-900 p-2">
                 {uploads.map((upload) => (
                   <div
                     key={upload.file.name}
-                    className="flex items-center gap-3 rounded bg-slate-900/50 p-2"
+                    className="flex items-center gap-3 rounded-lg border border-white/10 bg-slate-950/70 p-2"
                   >
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-slate-800">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-slate-900">
                       {upload.file.type.startsWith('image/') ? (
                         <FileImage size={20} className="text-slate-400" />
                       ) : (
@@ -246,7 +246,7 @@ const MediaUploadModalContent = ({
                           {mediaUploadModalContent.list.error}
                         </span>
                       ) : (
-                        <span className="text-xs text-brand-400">
+                        <span className="text-xs text-emerald-300">
                           {formatUploadStatus(upload.status, adminLocale)}
                         </span>
                       )}
@@ -273,7 +273,7 @@ const MediaUploadModalContent = ({
           )}
 
           {isUploading && (
-            <div className="rounded-lg bg-slate-800 p-3">
+            <div className="rounded-lg border border-white/10 bg-slate-900 p-3">
               <div className="mb-2 flex items-center justify-between text-sm">
                 <span className="text-slate-300">{mediaUploadModalContent.progress.uploading}</span>
                 <span className="text-slate-400">
@@ -282,7 +282,7 @@ const MediaUploadModalContent = ({
               </div>
               <div className="h-2 overflow-hidden rounded-full bg-slate-700">
                 <div
-                  className="h-full rounded-full bg-brand-500 transition-all"
+                  className="h-full rounded-full bg-emerald-500 transition-all"
                   style={{
                     width: `${((completedCount + errorCount) / totalCount) * 100}%`,
                   }}
@@ -296,7 +296,7 @@ const MediaUploadModalContent = ({
           <button
             onClick={handleClose}
             disabled={isUploading}
-            className="rounded-lg px-4 py-2 text-sm text-slate-400 transition-colors hover:text-white disabled:opacity-50"
+            className="rounded-lg px-4 py-2 text-sm text-slate-400 transition hover:text-white active:scale-[0.98] disabled:opacity-50"
           >
             {hasCompleted ? mediaUploadModalContent.actions.close : mediaUploadModalContent.actions.cancel}
           </button>
@@ -304,7 +304,7 @@ const MediaUploadModalContent = ({
           {hasCompleted ? (
             <button
               onClick={handleComplete}
-              className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-400"
+              className="rounded-lg bg-emerald-500/90 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-500 active:scale-[0.98]"
             >
               {mediaUploadModalContent.actions.done(completedCount)}
             </button>
@@ -312,7 +312,7 @@ const MediaUploadModalContent = ({
             <button
               onClick={() => handleFileSelect(null)}
               disabled={isUploading}
-              className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-400 disabled:opacity-50"
+              className="rounded-lg bg-emerald-500/90 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-500 active:scale-[0.98] disabled:opacity-50"
             >
               {isUploading ? mediaUploadModalContent.actions.uploading : mediaUploadModalContent.actions.upload}
             </button>
