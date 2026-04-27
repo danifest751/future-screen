@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Toaster } from 'react-hot-toast';
 import {
+  Activity,
+  Archive,
   ClipboardList,
   ExternalLink,
   FolderOpen,
@@ -13,6 +15,7 @@ import {
   Package,
   Phone,
   ShoppingCart,
+  SlidersHorizontal,
   Tag,
   X,
   Zap,
@@ -87,6 +90,9 @@ const createNavSections = (content: ReturnType<typeof getAdminLayoutContent>): N
     items: [
       { to: '/visual-led', label: content.nav.visualLed, Icon: Monitor, external: true },
       { to: '/admin/visual-led-logs', label: content.nav.visualLedLogs, Icon: ClipboardList },
+      { to: '/admin/visual-led/presets', label: content.nav.visualLedPresets, Icon: SlidersHorizontal },
+      { to: '/admin/visual-led/pitch-config', label: content.nav.visualLedPitchConfig, Icon: Activity },
+      { to: '/admin/visual-led/storage', label: content.nav.visualLedStorage, Icon: Archive },
     ],
   },
 ];

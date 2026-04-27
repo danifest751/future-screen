@@ -9,7 +9,7 @@
 //
 // No React, no Supabase, no DOM — this module is fully testable.
 
-import { getPreset, VISUAL_LED_PRESETS, type VisualLedPreset, type VisualLedPresetSlug } from './presets';
+import { VISUAL_LED_PRESETS, type VisualLedPreset, type VisualLedPresetSlug } from './presets';
 
 export interface ScreenDimensions {
   widthM: number;
@@ -69,12 +69,16 @@ export const calculatePresetPrice = (preset: VisualLedPreset, areaM2?: number): 
  *   • preset + screens          → estimate from real area, preset multiplier  (isEstimated = false)
  *   • screens, no preset        → estimate using the smallest active preset's coefficients  (isEstimated = false)
  *   • nothing                   → cheapest preset's "from" price as a floor  (isEstimated = true)
+ *
+ * Pass `presets` from `useVisualLedConfig()` to use DB-driven values;
+ * omit to fall back to the hardcoded constants.
  */
 export const calculateProjectEstimate = (
   presetSlug: string | null | undefined,
   screens: readonly ScreenDimensions[] = [],
+  presets: readonly VisualLedPreset[] = VISUAL_LED_PRESETS,
 ): ProjectEstimate => {
-  const preset = getPreset(presetSlug);
+  const preset = presets.find((p) => p.slug === presetSlug) ?? null;
   const realArea = calculateAreaFromScreens(screens);
   const hasScreens = realArea > 0;
 
@@ -97,9 +101,7 @@ export const calculateProjectEstimate = (
   }
 
   if (hasScreens) {
-    // No preset chosen but the user is sketching. Use the cheapest preset's
-    // coefficients as a neutral baseline so we can still surface a number.
-    const cheapest = VISUAL_LED_PRESETS.reduce((min, p) =>
+    const cheapest = [...presets].reduce((min, p) =>
       p.pricePerM2 < min.pricePerM2 ? p : min,
     );
     return {
@@ -110,8 +112,7 @@ export const calculateProjectEstimate = (
     };
   }
 
-  // Truly empty — show the floor of the cheapest preset.
-  const cheapest = VISUAL_LED_PRESETS.reduce((min, p) =>
+  const cheapest = [...presets].reduce((min, p) =>
     p.basePrice < min.basePrice ? p : min,
   );
   return {

@@ -1,5 +1,5 @@
 import type { ScreenDimensions } from '../../../lib/visualLed/pricing';
-import { getPreset } from '../../../lib/visualLed/presets';
+import { getPreset, VISUAL_LED_PRESETS, type VisualLedPreset } from '../../../lib/visualLed/presets';
 import { calculateProjectEstimate } from '../../../lib/visualLed/pricing';
 import {
   getCabinetResourceStats,
@@ -61,14 +61,19 @@ export const collectScreenDimensions = (state: VisualLedState): ScreenDimensions
 };
 
 /** Live price estimate — what `<PriceHeader>` displays. */
-export const selectProjectEstimate = (state: VisualLedState) => {
+export const selectProjectEstimate = (
+  state: VisualLedState,
+  presets: readonly VisualLedPreset[] = VISUAL_LED_PRESETS,
+) => {
   const screens = collectScreenDimensions(state);
-  return calculateProjectEstimate(state.selectedPresetSlug, screens);
+  return calculateProjectEstimate(state.selectedPresetSlug, screens, presets);
 };
 
 /** Convenience for components that need the chosen preset's metadata. */
-export const selectActivePreset = (state: VisualLedState) =>
-  getPreset(state.selectedPresetSlug);
+export const selectActivePreset = (
+  state: VisualLedState,
+  presets: readonly VisualLedPreset[] = VISUAL_LED_PRESETS,
+) => presets.find((p) => p.slug === state.selectedPresetSlug) ?? getPreset(state.selectedPresetSlug);
 
 export interface ScreenMetric {
   id: string;

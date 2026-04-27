@@ -100,10 +100,16 @@ export interface Scene {
   canvasHeight: number;
 }
 
-/** Pixel pitch → pixels-per-cabinet-side lookup. */
+/**
+ * Pixel pitch → pixels-per-cabinet-side lookup.
+ * Mutable so `useVisualLedConfig` can sync DB values at runtime.
+ * Covers the four standard pitches in the product catalogue.
+ */
 export const PIXELS_PER_CABINET: Record<string, number> = {
-  '2.6': 192,
   '1.9': 256,
+  '2.6': 192,
+  '3.9': 128,
+  '5.9':  84,
 };
 
 /** Default 0.5m × 0.5m cabinet side — physical standard for the fleet. */

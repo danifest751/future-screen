@@ -31,6 +31,9 @@ const AdminRentalCategoryEditPage = lazy(() => import('./pages/admin/AdminRental
 const AdminPrivacyPolicyPage = lazy(() => import('./pages/admin/AdminPrivacyPolicyPage'));
 const AdminVisualLedLogsPage = lazy(() => import('./pages/admin/AdminVisualLedLogsPage'));
 const AdminVisualLedSessionPage = lazy(() => import('./pages/admin/AdminVisualLedSessionPage'));
+const AdminVisualLedPresetsPage = lazy(() => import('./pages/admin/AdminVisualLedPresetsPage'));
+const AdminVisualLedPitchConfigPage = lazy(() => import('./pages/admin/AdminVisualLedPitchConfigPage'));
+const AdminVisualLedStoragePage = lazy(() => import('./pages/admin/AdminVisualLedStoragePage'));
 const AdminHomeEquipmentSectionPage = lazy(() => import('./pages/admin/AdminHomeEquipmentSectionPage'));
 const AdminContentHistoryPage = lazy(() => import('./pages/admin/AdminContentHistoryPage'));
 const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'));
@@ -110,6 +113,9 @@ const App = () => {
     { path: '/admin/content/history', element: <ProtectedRoute requiredRole="admin"><AdminContentHistoryPage /></ProtectedRoute> },
     { path: '/admin/visual-led-logs', element: <ProtectedRoute requiredRole="admin"><AdminVisualLedLogsPage /></ProtectedRoute> },
     { path: '/admin/visual-led-logs/:sessionId', element: <ProtectedRoute requiredRole="admin"><AdminVisualLedSessionPage /></ProtectedRoute> },
+    { path: '/admin/visual-led/presets', element: <ProtectedRoute requiredRole="admin"><AdminVisualLedPresetsPage /></ProtectedRoute> },
+    { path: '/admin/visual-led/pitch-config', element: <ProtectedRoute requiredRole="admin"><AdminVisualLedPitchConfigPage /></ProtectedRoute> },
+    { path: '/admin/visual-led/storage', element: <ProtectedRoute requiredRole="admin"><AdminVisualLedStoragePage /></ProtectedRoute> },
     { path: '/admin', element: <ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute> },
     // Cutover: the React rewrite (VisualLedV2Page) is the primary
     // `/visual-led` entry point now. `/visual-led/v2` is kept as an

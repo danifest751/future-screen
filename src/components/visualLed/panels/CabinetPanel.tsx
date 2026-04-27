@@ -4,7 +4,6 @@ import {
   cabinetsToTargetSize,
   getCabinetStats,
   getElementSizeMeters,
-  getPixelsPerCabinetSide,
   normalizePitch,
   scaleQuadToMetric,
   tweakCols,
@@ -13,6 +12,7 @@ import {
 } from '../../../lib/visualLed';
 import CollapsiblePanel from '../CollapsiblePanel';
 import { useActiveScene, useSelectedElement, useVisualLed } from '../state/VisualLedContext';
+import { useVisualLedConfig } from '../../../hooks/useVisualLedConfig';
 
 /**
  * Cabinet planner — lay out 0.5m × 0.5m modules over the selected screen,
@@ -24,6 +24,9 @@ const CabinetPanel = () => {
   const selected = useSelectedElement();
   const { state, dispatch } = useVisualLed();
 
+  const { pitchConfigs } = useVisualLedConfig();
+  const availablePitches = pitchConfigs.map((c) => c.pitch);
+
   const plan = selected?.cabinetPlan ?? null;
   const size = selected ? getElementSizeMeters(selected.corners, scene.scaleCalib) : null;
   const stats = getCabinetStats(plan, size);
@@ -33,13 +36,14 @@ const CabinetPanel = () => {
     dispatch({ type: 'screen/setCabinetPlan', payload: { id: selected.id, plan: next } });
   };
 
-  const pitch = normalizePitch(plan?.pitch);
-  const pxPerCab = getPixelsPerCabinetSide(pitch);
+  const pitch = normalizePitch(plan?.pitch, availablePitches);
+  const activePitchConfig = pitchConfigs.find((c) => c.pitch === pitch);
+  const pxPerCab = activePitchConfig?.pixelsPerCabinet ?? 192;
 
   const onPitchChange = (nextPitch: string) => {
     if (!selected) return;
     if (plan) {
-      setPlan({ ...plan, pitch: normalizePitch(nextPitch) });
+      setPlan({ ...plan, pitch: normalizePitch(nextPitch, availablePitches) });
     }
   };
 
@@ -95,8 +99,11 @@ const CabinetPanel = () => {
               onChange={(e) => onPitchChange(e.target.value)}
               className="mt-0.5 w-full rounded-md border border-white/10 bg-slate-950/60 px-2 py-1 text-xs text-white focus:border-brand-500 focus:outline-none"
             >
-              <option value="2.6">P2.6 · 192×192 px/кабинет</option>
-              <option value="1.9">P1.9 · 256×256 px/кабинет</option>
+              {pitchConfigs.map((cfg) => (
+                <option key={cfg.pitch} value={cfg.pitch}>
+                  {cfg.label} · {cfg.pixelsPerCabinet}×{cfg.pixelsPerCabinet} px/кабинет
+                </option>
+              ))}
             </select>
           </label>
 

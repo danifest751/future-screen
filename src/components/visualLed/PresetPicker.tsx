@@ -1,7 +1,8 @@
 import { Sparkles } from 'lucide-react';
-import { VISUAL_LED_PRESETS, type VisualLedPreset } from '../../lib/visualLed/presets';
+import type { VisualLedPreset } from '../../lib/visualLed/presets';
 import { calculatePresetPrice, formatRubPrice } from '../../lib/visualLed/pricing';
 import { useVisualLed } from './state/VisualLedContext';
+import { useVisualLedConfig } from '../../hooks/useVisualLedConfig';
 
 interface PresetPickerProps {
   /**
@@ -27,6 +28,7 @@ interface PresetPickerProps {
  */
 const PresetPicker = ({ onAfterPick, compact = false }: PresetPickerProps) => {
   const { dispatch } = useVisualLed();
+  const { presets } = useVisualLedConfig();
 
   const handlePick = (preset: VisualLedPreset) => {
     dispatch({
@@ -71,7 +73,7 @@ const PresetPicker = ({ onAfterPick, compact = false }: PresetPickerProps) => {
       )}
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
-        {VISUAL_LED_PRESETS.map((preset) => {
+        {presets.map((preset) => {
           const priceFrom = calculatePresetPrice(preset);
           return (
             <button

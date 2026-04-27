@@ -11,6 +11,9 @@ type AdminLayoutContent = {
     contacts: string;
     visualLed: string;
     visualLedLogs: string;
+    visualLedPresets: string;
+    visualLedPitchConfig: string;
+    visualLedStorage: string;
     contentHistory: string;
   };
   navGroups: {
@@ -56,6 +59,9 @@ const ru: AdminLayoutContent = {
     contacts: 'Контакты',
     visualLed: 'Визуализатор экрана',
     visualLedLogs: 'Логи visual-led',
+    visualLedPresets: 'Пресеты',
+    visualLedPitchConfig: 'Конфиг pitch',
+    visualLedStorage: 'Хранилище',
     contentHistory: 'История контента',
   },
   navGroups: {
@@ -101,6 +107,9 @@ const en: AdminLayoutContent = {
     contacts: 'Contacts',
     visualLed: 'Screen visualizer',
     visualLedLogs: 'Visual LED logs',
+    visualLedPresets: 'Presets',
+    visualLedPitchConfig: 'Pitch config',
+    visualLedStorage: 'Storage',
     contentHistory: 'Content history',
   },
   navGroups: {

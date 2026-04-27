@@ -12,12 +12,21 @@ export function getPixelsPerCabinetSide(pitch: string | undefined): number {
   return PIXELS_PER_CABINET[pitch ?? ''] ?? PIXELS_PER_CABINET['2.6'];
 }
 
-/** Normalise a pitch string — unknown values fall back to "2.6". */
-export function normalizePitch(pitch: string | undefined): '2.6' | '1.9' {
-  return pitch === '1.9' ? '1.9' : '2.6';
+/**
+ * Normalise a pitch string to one of the known catalogue values.
+ * Unknown values fall back to '2.6'.
+ * `available` can be supplied by `useVisualLedConfig` to support
+ * dynamically added pitches without changing callers.
+ */
+export function normalizePitch(
+  pitch: string | undefined,
+  available: readonly string[] = Object.keys(PIXELS_PER_CABINET),
+): string {
+  if (pitch && available.includes(pitch)) return pitch;
+  return '2.6';
 }
 
-export type CabinetPitch = ReturnType<typeof normalizePitch>;
+export type CabinetPitch = string;
 
 export interface CabinetResourceSpec {
   pitch: CabinetPitch;
@@ -35,25 +44,15 @@ export interface CabinetResourceStats {
   averagePowerW: number;
 }
 
-const CABINET_RESOURCE_SPECS: Record<CabinetPitch, CabinetResourceSpec> = {
-  '1.9': {
-    pitch: '1.9',
-    weightMinKg: 7,
-    weightMaxKg: 9,
-    maxPowerW: 200,
-    averagePowerW: 70,
-  },
-  '2.6': {
-    pitch: '2.6',
-    weightMinKg: 6,
-    weightMaxKg: 8,
-    maxPowerW: 160,
-    averagePowerW: 55,
-  },
+const CABINET_RESOURCE_SPECS: Record<string, CabinetResourceSpec> = {
+  '1.9': { pitch: '1.9', weightMinKg: 7,  weightMaxKg: 9,  maxPowerW: 200, averagePowerW: 70  },
+  '2.6': { pitch: '2.6', weightMinKg: 6,  weightMaxKg: 8,  maxPowerW: 160, averagePowerW: 55  },
+  '3.9': { pitch: '3.9', weightMinKg: 7,  weightMaxKg: 9,  maxPowerW: 200, averagePowerW: 65  },
+  '5.9': { pitch: '5.9', weightMinKg: 12, weightMaxKg: 16, maxPowerW: 300, averagePowerW: 100 },
 };
 
 export function getCabinetResourceSpec(pitch: string | undefined): CabinetResourceSpec {
-  return CABINET_RESOURCE_SPECS[normalizePitch(pitch)];
+  return CABINET_RESOURCE_SPECS[normalizePitch(pitch)] ?? CABINET_RESOURCE_SPECS['2.6'];
 }
 
 export function getCabinetResourceStats(

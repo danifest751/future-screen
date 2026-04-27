@@ -4,6 +4,7 @@ import { formatRubPrice } from '../../lib/visualLed/pricing';
 import PresetSwitcherModal from './PresetSwitcherModal';
 import { selectActivePreset, selectProjectEstimate } from './state/selectors';
 import { useVisualLed } from './state/VisualLedContext';
+import { useVisualLedConfig } from '../../hooks/useVisualLedConfig';
 
 interface PriceHeaderProps {
   onRequestQuote: () => void;
@@ -19,8 +20,9 @@ interface PriceHeaderProps {
  */
 const PriceHeader = ({ onRequestQuote }: PriceHeaderProps) => {
   const { state } = useVisualLed();
-  const estimate = selectProjectEstimate(state);
-  const preset = selectActivePreset(state);
+  const { presets } = useVisualLedConfig();
+  const estimate = selectProjectEstimate(state, presets);
+  const preset = selectActivePreset(state, presets);
   const [switcherOpen, setSwitcherOpen] = useState(false);
 
   return (
