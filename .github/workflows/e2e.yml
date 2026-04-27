@@ -43,8 +43,19 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
-      - name: Run Playwright tests
-        run: npm run test:e2e
+      - name: Run Playwright tests (visualLed scope — no auth required)
+        # Limit to specs that work without admin credentials / live
+        # Supabase. Admin and navigation specs need a logged-in session
+        # which is not wired up in this workflow yet; running them here
+        # would always fail and mask real regressions.
+        run: |
+          npx playwright test \
+            tests/e2e/smoke.spec.ts \
+            tests/e2e/routes.spec.ts \
+            tests/e2e/visual-led-workflows.spec.ts \
+            tests/e2e/visual-led-responsive.spec.ts \
+            tests/e2e/visual-led-ux.spec.ts \
+            tests/e2e/visual-led-snapshots.spec.ts
 
       - name: Upload Playwright report on failure
         if: failure()
