@@ -8,7 +8,7 @@ import {
   Image,
   Film,
   Search,
-  Plus,
+  X,
   Edit2,
   Trash2,
   HelpCircle,
@@ -424,10 +424,10 @@ const AdminCasesRedesignedPage = () => {
       <div className="mb-4 flex justify-end gap-2">
         <button
           onClick={() => setActiveTab('cases')}
-          className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm transition-colors ${
+          className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm transition active:scale-[0.98] ${
             activeTab === 'cases'
-              ? 'border-brand-500 bg-brand-500/20 text-brand-300'
-              : 'border-white/10 bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white'
+              ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-200'
+              : 'border-white/10 bg-slate-900 text-slate-300 hover:bg-slate-800 hover:text-white'
           }`}
         >
           <LayoutGrid size={16} />
@@ -435,10 +435,10 @@ const AdminCasesRedesignedPage = () => {
         </button>
         <button
           onClick={() => setActiveTab('media')}
-          className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm transition-colors ${
+          className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm transition active:scale-[0.98] ${
             activeTab === 'media'
-              ? 'border-brand-500 bg-brand-500/20 text-brand-300'
-              : 'border-white/10 bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white'
+              ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-200'
+              : 'border-white/10 bg-slate-900 text-slate-300 hover:bg-slate-800 hover:text-white'
           }`}
         >
           <Library size={16} />
@@ -469,7 +469,7 @@ const AdminCasesRedesignedPage = () => {
       />
 
       {activeTab === 'media' ? (
-        <div className="rounded-xl border border-white/10 bg-slate-800 p-4">
+        <div className="rounded-2xl border border-white/10 bg-slate-950/35 p-4 shadow-2xl shadow-black/10">
           <div className="mb-4">
             <h2 className="text-lg font-semibold text-white">{adminCasesRedesignedContent.mediaSection.title}</h2>
             <p className="text-sm text-slate-400">{adminCasesRedesignedContent.mediaSection.description}</p>
@@ -477,14 +477,14 @@ const AdminCasesRedesignedPage = () => {
           <MediaLibrary />
         </div>
       ) : (
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(380px,0.9fr)]">
-          <div className="order-2 rounded-xl border border-white/10 bg-slate-800 p-4 lg:order-1">
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(400px,0.9fr)]">
+          <div className="order-2 rounded-2xl border border-white/10 bg-slate-950/35 p-4 shadow-2xl shadow-black/10 lg:order-1">
             <div className="mb-3 flex items-center justify-between gap-3">
               <h2 className="text-lg font-semibold text-white">{adminCasesRedesignedContent.list.title}</h2>
               <button
                 type="button"
                 onClick={() => setResetModalOpen(true)}
-                className="shrink-0 text-sm text-slate-300 hover:text-white"
+                className="shrink-0 text-sm text-slate-300 transition hover:text-white active:scale-[0.98]"
               >
                 {adminCasesRedesignedContent.list.resetAction}
               </button>
@@ -497,14 +497,14 @@ const AdminCasesRedesignedPage = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={adminCasesRedesignedContent.list.searchPlaceholder}
-                className="w-full rounded-lg border border-white/10 bg-slate-900 py-2 pl-10 pr-9 text-sm text-white placeholder:text-slate-500 focus:border-brand-500 focus:outline-none"
+                className="w-full rounded-lg border border-white/10 bg-slate-950 py-2 pl-10 pr-9 text-sm text-white placeholder:text-slate-500 focus:border-emerald-400/70 focus:outline-none"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-slate-500 hover:bg-slate-800 hover:text-white"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-slate-500 transition hover:bg-slate-800 hover:text-white active:scale-[0.94]"
                 >
-                  <Plus size={14} className="rotate-45" />
+                  <X size={14} />
                 </button>
               )}
             </div>
@@ -514,7 +514,7 @@ const AdminCasesRedesignedPage = () => {
                 const { imageCount, videoCount } = getCaseMediaCount(c);
 
                 return (
-                  <div key={c.slug} className="rounded-lg border border-white/10 bg-slate-900/45 px-3 py-2.5">
+                  <div key={c.slug} className="rounded-xl border border-white/10 bg-slate-900/60 px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition hover:border-white/20 hover:bg-slate-900 active:scale-[0.998]">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
                         <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
@@ -545,7 +545,7 @@ const AdminCasesRedesignedPage = () => {
                             </span>
                           )}
                           {c.services.slice(0, 4).map((s) => (
-                            <span key={s} className="rounded bg-slate-700/80 px-1.5 py-0.5 text-[10px] uppercase text-slate-300">
+                            <span key={s} className="rounded border border-white/10 bg-slate-800/80 px-1.5 py-0.5 text-[10px] uppercase text-slate-300">
                               {s}
                             </span>
                           ))}
@@ -558,7 +558,7 @@ const AdminCasesRedesignedPage = () => {
                         <button
                           type="button"
                           onClick={() => startEdit(c)}
-                          className="flex h-8 w-8 items-center justify-center rounded border border-white/20 text-white transition-colors hover:border-white/40"
+                          className="flex h-8 w-8 items-center justify-center rounded border border-white/20 text-white transition hover:border-white/40 active:scale-[0.96]"
                           title={adminCasesRedesignedContent.list.editAction}
                           aria-label={adminCasesRedesignedContent.list.editAction}
                         >
@@ -567,7 +567,7 @@ const AdminCasesRedesignedPage = () => {
                         <button
                           type="button"
                           onClick={() => setDeleteTarget({ slug: c.slug, title: c.title })}
-                          className="flex h-8 w-8 items-center justify-center rounded border border-red-400/40 text-red-200 transition-colors hover:border-red-400"
+                          className="flex h-8 w-8 items-center justify-center rounded border border-red-400/40 text-red-200 transition hover:border-red-400 active:scale-[0.96]"
                           title={adminCasesRedesignedContent.list.deleteAction}
                           aria-label={adminCasesRedesignedContent.list.deleteAction}
                         >
@@ -580,7 +580,7 @@ const AdminCasesRedesignedPage = () => {
               })}
               {filteredCases.length === 0 && (
                 <EmptyState
-                  icon={<FolderOpen size={32} className="text-brand-400" />}
+                  icon={<FolderOpen size={32} className="text-emerald-300" />}
                   title={adminCasesRedesignedContent.list.emptyTitle}
                   description={
                     searchQuery
@@ -592,7 +592,7 @@ const AdminCasesRedesignedPage = () => {
             </div>
           </div>
 
-          <div className="order-1 rounded-xl border border-white/10 bg-slate-800 p-4 lg:order-2 lg:sticky lg:top-6 lg:self-start">
+          <div className="order-1 rounded-2xl border border-white/10 bg-slate-950/35 p-4 shadow-2xl shadow-black/10 lg:order-2 lg:sticky lg:top-6 lg:self-start">
             <div className="mb-3 flex items-start justify-between gap-3">
               <div className="flex items-center gap-2">
                 <h2 className="text-lg font-semibold text-white">
@@ -623,11 +623,11 @@ const AdminCasesRedesignedPage = () => {
                   <span className="flex items-center gap-1">
                     {adminCasesRedesignedContent.form.slugLabel}
                     {!caseEditing && autoSlug && (
-                      <span className="text-[10px] text-brand-400">{adminCasesRedesignedContent.form.slugAutoLabel}</span>
+                      <span className="text-[10px] text-emerald-300">{adminCasesRedesignedContent.form.slugAutoLabel}</span>
                     )}
                   </span>
                   <input
-                    className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                    className="mt-1 w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-white placeholder:text-slate-500 focus:border-emerald-400/70 focus:outline-none"
                     disabled={Boolean(caseEditing)}
                     value={slugValue}
                     onChange={handleSlugChange}
@@ -640,7 +640,7 @@ const AdminCasesRedesignedPage = () => {
                 <label className="text-sm text-slate-200">
                   {adminCasesRedesignedContent.form.titleLabel}
                   <input
-                    className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                    className="mt-1 w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-white placeholder:text-slate-500 focus:border-emerald-400/70 focus:outline-none"
                     value={titleValue}
                     onChange={handleTitleChange}
                     placeholder={adminCasesRedesignedContent.form.titlePlaceholder}
@@ -653,7 +653,7 @@ const AdminCasesRedesignedPage = () => {
                 <label className="text-sm text-slate-200">
                   {adminCasesRedesignedContent.form.cityLabel}
                   <input
-                    className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                    className="mt-1 w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-white placeholder:text-slate-500 focus:border-emerald-400/70 focus:outline-none"
                     {...register('city')}
                     placeholder={adminCasesRedesignedContent.form.cityPlaceholder}
                   />
@@ -661,7 +661,7 @@ const AdminCasesRedesignedPage = () => {
                 <label className="text-sm text-slate-200">
                   {adminCasesRedesignedContent.form.dateLabel}
                   <input
-                    className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-slate-200"
+                    className="mt-1 w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-slate-200 focus:border-emerald-400/70 focus:outline-none"
                     {...register('date')}
                   />
                 </label>
@@ -670,7 +670,7 @@ const AdminCasesRedesignedPage = () => {
               <label className="text-sm text-slate-200">
                 {adminCasesRedesignedContent.form.formatLabel}
                 <select
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-slate-200"
+                  className="mt-1 w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-slate-200 focus:border-emerald-400/70 focus:outline-none"
                   {...register('format')}
                 >
                   <option value="">{adminCasesRedesignedContent.form.formatPlaceholder}</option>
@@ -685,7 +685,7 @@ const AdminCasesRedesignedPage = () => {
                 <label className="text-sm text-slate-200">
                   {adminCasesRedesignedContent.form.summaryLabel}
                   <textarea
-                    className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                    className="mt-1 w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-white placeholder:text-slate-500 focus:border-emerald-400/70 focus:outline-none"
                     rows={2}
                     {...register('summary')}
                     placeholder={adminCasesRedesignedContent.form.summaryPlaceholder}
@@ -696,7 +696,7 @@ const AdminCasesRedesignedPage = () => {
               <label className="text-sm text-slate-200">
                 {adminCasesRedesignedContent.form.metricsLabel}
                 <input
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                  className="mt-1 w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-white placeholder:text-slate-500 focus:border-emerald-400/70 focus:outline-none"
                   {...register('metrics')}
                   placeholder={adminCasesRedesignedContent.form.metricsPlaceholder}
                 />
@@ -705,7 +705,7 @@ const AdminCasesRedesignedPage = () => {
               <label className="text-sm text-slate-200">
                 {adminCasesRedesignedContent.form.servicesLabel}
                 <input
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                  className="mt-1 w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-white placeholder:text-slate-500 focus:border-emerald-400/70 focus:outline-none"
                   {...register('servicesText')}
                   placeholder={adminCasesRedesignedContent.form.servicesPlaceholder}
                 />
@@ -721,7 +721,7 @@ const AdminCasesRedesignedPage = () => {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full rounded-lg bg-brand-500 px-4 py-2 font-semibold text-white hover:bg-brand-400 disabled:opacity-60"
+                className="w-full rounded-lg bg-emerald-500/90 px-4 py-2 font-semibold text-white transition hover:bg-emerald-500 active:scale-[0.98] disabled:opacity-60"
               >
                 {isSubmitting
                   ? adminCasesRedesignedContent.form.submitting

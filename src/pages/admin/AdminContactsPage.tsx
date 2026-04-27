@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Phone } from 'lucide-react';
 import toast from 'react-hot-toast';
 import AdminLayout from '../../components/admin/AdminLayout';
-import { Button, ConfirmModal, EmptyState, FallbackDot, Field, Input, LoadingState, Textarea } from '../../components/admin/ui';
+import { Button, ConfirmModal, EmptyState, FallbackDot, Field, Input, Textarea } from '../../components/admin/ui';
 import { useI18n } from '../../context/I18nContext';
 import { adminContactsPageContent as adminContactsPageContentStatic, getAdminContactsPageContent } from '../../content/pages/adminContacts';
 import { useContacts } from '../../hooks/useContacts';
@@ -133,7 +133,21 @@ const AdminContactsPage = () => {
         contentLocale={adminContentLocale}
         onContentLocaleChange={setAdminContentLocale}
       >
-        <LoadingState />
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(360px,0.85fr)]">
+          {[0, 1].map((panel) => (
+            <div
+              key={panel}
+              className="rounded-2xl border border-white/10 bg-slate-950/35 p-4 shadow-2xl shadow-black/10"
+            >
+              <div className="mb-4 h-4 w-40 animate-pulse rounded bg-slate-800" />
+              <div className="space-y-3">
+                <div className="h-10 animate-pulse rounded-lg bg-slate-800/80" />
+                <div className="h-16 animate-pulse rounded-lg bg-slate-800/80" />
+                <div className="h-10 animate-pulse rounded-lg bg-slate-800/80" />
+              </div>
+            </div>
+          ))}
+        </div>
       </AdminLayout>
     );
   }
@@ -173,8 +187,8 @@ const AdminContactsPage = () => {
         onConfirm={handleResetDefaults}
       />
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(340px,0.85fr)]">
-        <div className="rounded-xl border border-white/10 bg-slate-800 p-4 lg:order-2 lg:sticky lg:top-6 lg:self-start">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(360px,0.85fr)]">
+        <div className="rounded-2xl border border-white/10 bg-slate-950/35 p-4 shadow-2xl shadow-black/10 lg:order-2 lg:sticky lg:top-6 lg:self-start">
           <div className="mb-3 flex items-start justify-between gap-3">
             <div className="flex min-w-0 flex-wrap items-center gap-2">
               <h2 className="text-base font-semibold text-white">{adminContactsPageContent.form.title}</h2>
@@ -185,7 +199,7 @@ const AdminContactsPage = () => {
             </div>
             <div className="flex shrink-0 flex-col items-end gap-1.5">
               {isHydrated && hasContactsDraft && (
-                <span className="rounded-full border border-brand-500/40 bg-brand-500/10 px-2 py-0.5 text-xs text-brand-100">
+                <span className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-100">
                   {adminContactsPageContent.form.restoredDraft}
                 </span>
               )}
@@ -198,7 +212,7 @@ const AdminContactsPage = () => {
                 type="button"
                 onClick={() => setResetModalOpen(true)}
                 disabled={isSubmitting}
-                className="text-sm text-slate-300 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+                className="text-sm text-slate-300 transition hover:text-white active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {adminContactsPageContent.form.resetToDefault}
               </button>
@@ -242,29 +256,29 @@ const AdminContactsPage = () => {
           </form>
         </div>
 
-        <div className="rounded-xl border border-white/10 bg-slate-800 p-4 text-sm text-slate-200 lg:order-1">
+        <div className="rounded-2xl border border-white/10 bg-slate-950/35 p-4 text-sm text-slate-200 shadow-2xl shadow-black/10 lg:order-1">
           <h2 className="mb-3 text-base font-semibold text-white">{adminContactsPageContent.current.title}</h2>
           {!contacts.phones.length && !contacts.emails.length ? (
             <EmptyState
-              icon={<Phone size={32} className="text-brand-400" />}
+              icon={<Phone size={32} className="text-emerald-300" />}
               title={adminContactsPageContent.current.emptyTitle}
               description={adminContactsPageContent.current.emptyDescription}
             />
           ) : (
             <div className="grid gap-2">
-              <div className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2">
+              <div className="rounded-xl border border-white/10 bg-slate-900/60 px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
                 <div className="text-xs text-slate-400">{adminContactsPageContent.current.phonesLabel}</div>
                 <div className="mt-1 text-white">{contacts.phones.join(', ')}</div>
               </div>
-              <div className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2">
+              <div className="rounded-xl border border-white/10 bg-slate-900/60 px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
                 <div className="text-xs text-slate-400">{adminContactsPageContent.current.emailsLabel}</div>
                 <div className="mt-1 text-white">{contacts.emails.join(', ')}</div>
               </div>
-              <div className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2">
+              <div className="rounded-xl border border-white/10 bg-slate-900/60 px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
                 <div className="text-xs text-slate-400">{adminContactsPageContent.current.addressLabel}</div>
                 <div className="mt-1 text-white">{contacts.address}</div>
               </div>
-              <div className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2">
+              <div className="rounded-xl border border-white/10 bg-slate-900/60 px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
                 <div className="text-xs text-slate-400">{adminContactsPageContent.current.workingHoursLabel}</div>
                 <div className="mt-1 text-white">{contacts.workingHours}</div>
               </div>
