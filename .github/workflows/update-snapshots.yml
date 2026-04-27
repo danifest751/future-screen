@@ -70,9 +70,13 @@ jobs:
 
       - name: Commit and push updated baselines
         run: |
-          # Stage every snapshot dir Playwright knows about. Using a
-          # glob keeps this resilient to new specs being added later.
-          git add 'tests/e2e/**/*-snapshots/**' || true
+          # Stage anything Playwright wrote under tests/e2e/. The
+          # test-results/ dir lives at repo root and is gitignored, so
+          # this only picks up specs + adjacent snapshot directories.
+          # Earlier we used `**/*-snapshots/**` but `**` only recurses
+          # under bash with `shopt -s globstar`, which isn't on by default
+          # in `/usr/bin/bash -e`, so the new PNGs were silently skipped.
+          git add tests/e2e/
           if git diff --cached --quiet; then
             echo "No snapshot changes — nothing to commit."
             exit 0
