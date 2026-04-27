@@ -72,7 +72,7 @@ const PriceHeader = ({ onRequestQuote }: PriceHeaderProps) => {
         <button
           type="button"
           onClick={onRequestQuote}
-          className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand-500 px-3 py-2 text-sm font-semibold text-white transition hover:bg-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-500/60 sm:w-auto sm:shrink-0 sm:text-base"
+          className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand-500 px-3 py-2 text-sm font-semibold text-white transition duration-150 hover:bg-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-500/60 active:translate-y-[1px] active:scale-[0.99] sm:w-auto sm:shrink-0 sm:text-base"
         >
           <Phone className="h-4 w-4" />
           Узнать точнее

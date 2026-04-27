@@ -108,7 +108,7 @@ const SidebarRight = ({ className = '' }: SidebarRightProps) => {
                     onClick={() =>
                       dispatch({ type: 'background/remove', payload: { id: bg.id } })
                     }
-                    className="absolute right-1 top-1 hidden rounded bg-black/60 p-0.5 text-slate-300 hover:text-red-300 group-hover:inline-block"
+                    className="absolute right-1 top-1 inline-block rounded bg-black/60 p-0.5 text-slate-300 hover:text-red-300 lg:hidden lg:group-hover:inline-block"
                     title="Удалить фон"
                   >
                     <Trash2 className="h-3 w-3" />
@@ -209,7 +209,7 @@ const SidebarRight = ({ className = '' }: SidebarRightProps) => {
                     <button
                       type="button"
                       onClick={() => dispatch({ type: 'video/remove', payload: { id: video.id } })}
-                      className="absolute right-1 top-1 hidden rounded bg-black/60 p-0.5 text-slate-300 hover:text-red-300 group-hover:inline-block"
+                      className="absolute right-1 top-1 inline-block rounded bg-black/60 p-0.5 text-slate-300 hover:text-red-300 lg:hidden lg:group-hover:inline-block"
                       title="Удалить из библиотеки"
                     >
                       <Trash2 className="h-3 w-3" />

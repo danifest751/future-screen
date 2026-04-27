@@ -54,7 +54,7 @@ const ReportPanel = () => {
           type="button"
           disabled={!canExport || busy}
           onClick={() => void run('download')}
-          className="flex items-center justify-center gap-1 rounded-md bg-brand-500/80 px-2 py-1.5 text-xs font-semibold text-white hover:bg-brand-500 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex items-center justify-center gap-1 rounded-md bg-brand-500/80 px-2 py-1.5 text-xs font-semibold text-white transition duration-150 hover:bg-brand-500 active:translate-y-[1px] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
         >
           <FileDown className="h-3 w-3" />
           {busy ? '…' : 'Скачать'}
@@ -63,7 +63,7 @@ const ReportPanel = () => {
           type="button"
           disabled={!canExport || busy}
           onClick={() => void run('open')}
-          className="flex items-center justify-center gap-1 rounded-md border border-white/15 bg-slate-900 px-2 py-1.5 text-xs text-white hover:border-white/30 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex items-center justify-center gap-1 rounded-md border border-white/15 bg-slate-900 px-2 py-1.5 text-xs text-white transition duration-150 hover:border-white/30 active:translate-y-[1px] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
         >
           <ExternalLink className="h-3 w-3" />
           Открыть

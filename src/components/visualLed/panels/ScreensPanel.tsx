@@ -29,7 +29,7 @@ const ScreensPanel = () => {
         <button
           type="button"
           onClick={startPlace}
-          className="flex w-full items-center justify-center gap-1.5 rounded-md bg-brand-500/80 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-500"
+          className="flex w-full items-center justify-center gap-1.5 rounded-md bg-brand-500/80 px-3 py-1.5 text-xs font-semibold text-white transition duration-150 hover:bg-brand-500 active:translate-y-[1px] active:scale-[0.99]"
         >
           <Plus className="h-3 w-3" />
           Добавить экран

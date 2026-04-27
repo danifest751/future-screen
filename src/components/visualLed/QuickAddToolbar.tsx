@@ -116,7 +116,7 @@ const QuickAddToolbar = () => {
       <button
         type="button"
         onClick={addScreenAtCenter}
-        className="pointer-events-auto inline-flex items-center gap-1.5 rounded-lg border border-brand-400/40 bg-brand-500/90 px-3 py-1.5 text-xs font-semibold text-white shadow-lg shadow-black/30 transition hover:bg-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-500/60"
+        className="pointer-events-auto inline-flex items-center gap-1.5 rounded-lg border border-brand-400/40 bg-brand-500/90 px-3 py-1.5 text-xs font-semibold text-white shadow-lg shadow-black/30 transition duration-150 hover:bg-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-500/60 active:translate-y-[1px] active:scale-[0.99]"
         title="Добавить экран по центру (2×2 кабинета — растягивай за углы, кабинеты подстроятся сами)"
       >
         <Plus className="h-3.5 w-3.5" />

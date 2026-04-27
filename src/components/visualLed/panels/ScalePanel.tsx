@@ -67,7 +67,7 @@ const ScalePanel = () => {
         <button
           type="button"
           onClick={start}
-          className="w-full rounded-md bg-brand-500/80 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-500"
+          className="w-full rounded-md bg-brand-500/80 px-3 py-1.5 text-xs font-semibold text-white transition duration-150 hover:bg-brand-500 active:translate-y-[1px] active:scale-[0.99]"
         >
           Старт
         </button>

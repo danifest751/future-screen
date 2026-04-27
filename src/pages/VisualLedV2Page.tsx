@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Archive, Home } from 'lucide-react';
+import { Home } from 'lucide-react';
 import BeforeUnloadGuard from '../components/visualLed/BeforeUnloadGuard';
 import CanvasStage from '../components/visualLed/CanvasStage';
 import MobileSidebarTabs from '../components/visualLed/MobileSidebarTabs';
@@ -96,30 +96,22 @@ const VisualLedV2Page = () => {
         [data-vled-root="true"] select:focus-visible,
         [data-vled-root="true"] textarea:focus-visible,
         [data-vled-root="true"] a:focus-visible {
-          outline: 2px solid rgb(96 165 250);
+          outline: 2px solid var(--brand-400);
           outline-offset: 2px;
           border-radius: 0.375rem;
         }
       `}</style>
       <div
         data-vled-root="true"
-        className="min-h-screen bg-slate-950 p-2 text-slate-200"
+        className="min-h-[100dvh] bg-slate-950 p-2 text-slate-200"
       >
-        <div className="mb-2 flex items-center justify-between text-xs text-slate-400">
+        <div className="mb-2 flex items-center text-xs text-slate-400">
           <Link
             to="/"
             className="inline-flex items-center gap-1 rounded-md border border-white/10 bg-slate-900/40 px-2 py-1 text-slate-300 hover:border-white/30 hover:text-white"
           >
             <Home className="h-3 w-3" />
             На сайт
-          </Link>
-          <Link
-            to="/visual-led/legacy"
-            className="inline-flex items-center gap-1 rounded-md border border-white/10 bg-slate-900/40 px-2 py-1 text-slate-500 hover:border-white/30 hover:text-white"
-            title="Старая версия визуализатора (временно доступна)"
-          >
-            <Archive className="h-3 w-3" />
-            Legacy
           </Link>
         </div>
         <VisualLedShell />

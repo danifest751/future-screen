@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AlertTriangle, Check, Copy, ExternalLink, Loader2, Save, X } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import CollapsiblePanel from '../CollapsiblePanel';
@@ -47,7 +47,7 @@ const SavePanel = () => {
         type="button"
         onClick={() => void run()}
         disabled={busy || hasPending}
-        className="flex w-full items-center justify-center gap-1.5 rounded-md bg-brand-500/80 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-500 disabled:cursor-not-allowed disabled:opacity-50"
+        className="flex w-full items-center justify-center gap-1.5 rounded-md bg-brand-500/80 px-3 py-1.5 text-xs font-semibold text-white transition duration-150 hover:bg-brand-500 active:translate-y-[1px] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
       >
         {hasPending ? (
           <>
@@ -87,6 +87,15 @@ const SavePanel = () => {
 
 const ShareDialog = ({ url, onClose }: { url: string; onClose: () => void }) => {
   const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(url);
@@ -128,7 +137,7 @@ const ShareDialog = ({ url, onClose }: { url: string; onClose: () => void }) => 
           <button
             type="button"
             onClick={() => void copy()}
-            className="flex items-center gap-1 rounded-md bg-brand-500/80 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-500"
+            className="flex items-center gap-1 rounded-md bg-brand-500/80 px-3 py-1.5 text-xs font-semibold text-white transition duration-150 hover:bg-brand-500 active:translate-y-[1px] active:scale-[0.99]"
           >
             {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
             {copied ? 'Скопировано' : 'Копировать'}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { MousePointer2, Pencil, Trash2 } from 'lucide-react';
+import { Check, MousePointer2, Pencil, Trash2, X } from 'lucide-react';
 import { getElementSizeMeters, scaleQuadToMetric } from '../../../lib/visualLed';
 import CollapsiblePanel from '../CollapsiblePanel';
 import { useActiveScene, useSelectedElement, useVisualLed } from '../state/VisualLedContext';
@@ -15,6 +15,8 @@ const SelectionPanel = () => {
   const { dispatch } = useVisualLed();
   const [widthDraft, setWidthDraft] = useState('');
   const [heightDraft, setHeightDraft] = useState('');
+  const [renaming, setRenaming] = useState(false);
+  const [renameDraft, setRenameDraft] = useState('');
 
   // Sync the drafts whenever the selection or its current size changes.
   useEffect(() => {
@@ -28,6 +30,13 @@ const SelectionPanel = () => {
     setWidthDraft(size.width.toFixed(2));
     setHeightDraft(size.height.toFixed(2));
   }, [scene.scaleCalib, selected]);
+
+  // Cancel an in-flight rename if the selection changes — otherwise the
+  // input would commit a name onto a different screen on blur.
+  useEffect(() => {
+    setRenaming(false);
+    setRenameDraft('');
+  }, [selected?.id]);
 
   const applySize = () => {
     if (!selected || !scene.scaleCalib) return;
@@ -47,14 +56,30 @@ const SelectionPanel = () => {
     });
   };
 
-  const rename = () => {
+  const startRename = () => {
     if (!selected) return;
-    const name = window.prompt('Название экрана', selected.name);
-    if (name === null) return;
-    dispatch({
-      type: 'screen/update',
-      payload: { id: selected.id, patch: { name: name.trim() || selected.name } },
-    });
+    setRenameDraft(selected.name);
+    setRenaming(true);
+  };
+
+  const commitRename = () => {
+    if (!selected) {
+      setRenaming(false);
+      return;
+    }
+    const next = renameDraft.trim();
+    if (next && next !== selected.name) {
+      dispatch({
+        type: 'screen/update',
+        payload: { id: selected.id, patch: { name: next } },
+      });
+    }
+    setRenaming(false);
+  };
+
+  const cancelRename = () => {
+    setRenaming(false);
+    setRenameDraft('');
   };
 
   const remove = () => {
@@ -76,25 +101,74 @@ const SelectionPanel = () => {
       ) : (
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-2 rounded-md border border-white/10 bg-slate-950/40 px-2 py-1.5 text-xs">
-            <span className="truncate text-slate-200">{selected.name}</span>
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={rename}
-                className="rounded p-0.5 text-slate-400 hover:bg-white/10 hover:text-white"
-                title="Переименовать"
-              >
-                <Pencil className="h-3 w-3" />
-              </button>
-              <button
-                type="button"
-                onClick={remove}
-                className="rounded p-0.5 text-slate-400 hover:bg-red-500/20 hover:text-red-300"
-                title="Удалить"
-              >
-                <Trash2 className="h-3 w-3" />
-              </button>
-            </div>
+            {renaming ? (
+              <>
+                <input
+                  autoFocus
+                  value={renameDraft}
+                  onChange={(e) => setRenameDraft(e.target.value)}
+                  onBlur={commitRename}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      commitRename();
+                    }
+                    if (e.key === 'Escape') {
+                      e.preventDefault();
+                      cancelRename();
+                    }
+                  }}
+                  className="min-w-0 flex-1 rounded border border-white/10 bg-slate-950 px-1.5 py-0.5 text-xs text-white outline-none focus:border-brand-500"
+                  aria-label="Новое имя экрана"
+                />
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={commitRename}
+                    className="rounded p-0.5 text-emerald-300 hover:bg-emerald-500/20"
+                    title="Сохранить (Enter)"
+                    aria-label="Сохранить имя"
+                  >
+                    <Check className="h-3 w-3" />
+                  </button>
+                  <button
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={cancelRename}
+                    className="rounded p-0.5 text-slate-400 hover:bg-white/10 hover:text-white"
+                    title="Отмена (Esc)"
+                    aria-label="Отменить переименование"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <span className="truncate text-slate-200">{selected.name}</span>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={startRename}
+                    className="rounded p-0.5 text-slate-400 hover:bg-white/10 hover:text-white"
+                    title="Переименовать"
+                    aria-label="Переименовать экран"
+                  >
+                    <Pencil className="h-3 w-3" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={remove}
+                    className="rounded p-0.5 text-slate-400 hover:bg-red-500/20 hover:text-red-300"
+                    title="Удалить"
+                    aria-label="Удалить экран"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                </div>
+              </>
+            )}
           </div>
 
           {!scene.scaleCalib ? (
@@ -130,7 +204,7 @@ const SelectionPanel = () => {
               <button
                 type="button"
                 onClick={applySize}
-                className="w-full rounded-md border border-white/15 bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:border-white/30"
+                className="w-full rounded-md border border-white/15 bg-slate-900 px-3 py-1.5 text-xs font-medium text-white transition duration-150 hover:border-white/30 active:translate-y-[1px] active:scale-[0.99]"
               >
                 Применить размер
               </button>

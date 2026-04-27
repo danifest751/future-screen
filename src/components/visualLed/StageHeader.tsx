@@ -23,13 +23,10 @@ const StageHeader = ({ onOpenShortcuts }: StageHeaderProps) => {
   const scene = useActiveScene();
   const { dispatch, clearPersistence, canUndo, canRedo } = useVisualLed();
   const [moreOpen, setMoreOpen] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
   const moreRef = useRef<HTMLDivElement>(null);
 
-  const resetAll = () => {
-    const ok = window.confirm(
-      'Сбросить всю сессию? Удалит сохранённое в браузере и перезагрузит визуализатор.',
-    );
-    if (!ok) return;
+  const performReset = () => {
     clearPersistence();
     window.location.reload();
   };
@@ -45,10 +42,14 @@ const StageHeader = ({ onOpenShortcuts }: StageHeaderProps) => {
     const onDocClick = (e: MouseEvent) => {
       if (moreRef.current && !moreRef.current.contains(e.target as Node)) {
         setMoreOpen(false);
+        setConfirmReset(false);
       }
     };
     const onEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setMoreOpen(false);
+      if (e.key === 'Escape') {
+        setMoreOpen(false);
+        setConfirmReset(false);
+      }
     };
     document.addEventListener('mousedown', onDocClick);
     document.addEventListener('keydown', onEsc);
@@ -56,6 +57,12 @@ const StageHeader = ({ onOpenShortcuts }: StageHeaderProps) => {
       document.removeEventListener('mousedown', onDocClick);
       document.removeEventListener('keydown', onEsc);
     };
+  }, [moreOpen]);
+
+  // Drop the confirm-reset flag any time the menu actually closes so
+  // re-opening it never starts in the "armed" state.
+  useEffect(() => {
+    if (!moreOpen) setConfirmReset(false);
   }, [moreOpen]);
 
   // Global keyboard shortcuts: Ctrl+Z / Ctrl+Shift+Z / Cmd+Z / Cmd+Shift+Z / "?"
@@ -169,19 +176,40 @@ const StageHeader = ({ onOpenShortcuts }: StageHeaderProps) => {
                 Сброс view
                 <span className="ml-auto text-[10px] text-slate-500">zoom + pan</span>
               </button>
-              <button
-                type="button"
-                role="menuitem"
-                onClick={() => {
-                  setMoreOpen(false);
-                  resetAll();
-                }}
-                className="flex w-full items-center gap-2 border-t border-white/5 px-3 py-2 text-left text-slate-400 hover:bg-red-500/10 hover:text-red-300"
-              >
-                <RotateCcw className="h-3 w-3" />
-                Сброс сессии
-                <span className="ml-auto text-[10px] text-slate-600">опасно</span>
-              </button>
+              {confirmReset ? (
+                <div className="flex flex-col gap-1.5 border-t border-white/5 bg-red-500/5 px-3 py-2 text-[11px]">
+                  <span className="text-slate-300">
+                    Сбросить всё? Удалит сохранённое в браузере и перезагрузит визуализатор.
+                  </span>
+                  <div className="flex gap-1.5">
+                    <button
+                      type="button"
+                      onClick={performReset}
+                      className="flex-1 rounded-md border border-red-500/40 bg-red-500/15 px-2 py-1 font-semibold text-red-200 hover:border-red-400 hover:bg-red-500/25"
+                    >
+                      Сбросить
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmReset(false)}
+                      className="flex-1 rounded-md border border-white/10 bg-slate-800 px-2 py-1 text-slate-300 hover:border-white/30 hover:text-white"
+                    >
+                      Отмена
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => setConfirmReset(true)}
+                  className="flex w-full items-center gap-2 border-t border-white/5 px-3 py-2 text-left text-slate-400 hover:bg-red-500/10 hover:text-red-300"
+                >
+                  <RotateCcw className="h-3 w-3" />
+                  Сброс сессии
+                  <span className="ml-auto text-[10px] text-slate-600">опасно</span>
+                </button>
+              )}
             </div>
           ) : null}
         </div>

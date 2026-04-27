@@ -104,7 +104,7 @@ const CabinetPanel = () => {
             <button
               type="button"
               onClick={runAutoFill}
-              className="flex items-center justify-center gap-1 rounded-md bg-brand-500/80 px-2 py-1 text-[11px] font-semibold text-white hover:bg-brand-500"
+              className="flex items-center justify-center gap-1 rounded-md bg-brand-500/80 px-2 py-1 text-[11px] font-semibold text-white transition duration-150 hover:bg-brand-500 active:translate-y-[1px] active:scale-[0.99]"
               title={
                 'Auto: подобрать сетку 0.5×0.5 м под текущий размер экрана.\n' +
                 'Считаем по полным кабинетам — частичный кабинет на границе НЕ ставится\n' +
@@ -119,7 +119,7 @@ const CabinetPanel = () => {
               type="button"
               onClick={runFitScreen}
               disabled={!plan}
-              className="flex items-center justify-center gap-1 rounded-md border border-white/15 bg-slate-900 px-2 py-1 text-[11px] text-white hover:border-white/30 disabled:opacity-50"
+              className="flex items-center justify-center gap-1 rounded-md border border-white/15 bg-slate-900 px-2 py-1 text-[11px] text-white transition duration-150 hover:border-white/30 active:translate-y-[1px] active:scale-[0.99] disabled:opacity-50"
               title={
                 'Fit: подогнать сам экран под текущую сетку кабинетов.\n' +
                 'Обратная операция к Auto — если ты вручную задал нужные cols×rows,\n' +
