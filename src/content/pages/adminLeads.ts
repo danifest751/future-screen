@@ -3,7 +3,7 @@ import type { Locale } from '../../i18n/types';
 const ru = {
   layout: {
     title: 'Лента заявок',
-    subtitle: 'Все заявки с сайта и подробный журнал их доставки',
+    subtitle: 'Все заявки с сайта, источники, контакты и журнал доставки',
   },
   statusLabels: {
     queued: 'В очереди',
@@ -11,7 +11,7 @@ const ru = {
     delivered: 'Доставлено',
     partial: 'Частично',
     failed: 'Ошибка',
-    newFallback: 'Новый',
+    newFallback: 'Новая',
   },
   entryStatusLabels: {
     pending: 'Ожидает',
@@ -31,21 +31,21 @@ const ru = {
     label: 'Request ID',
   },
   logModal: {
-    title: 'Лог заявки',
+    title: 'Журнал доставки',
     close: 'Закрыть',
     cards: {
       status: 'Статус',
       created: 'Создана',
       steps: 'Шагов',
     },
-    empty: 'Подробный лог еще не записан.',
+    empty: 'Подробный лог пока не записан.',
   },
   detailsDrawer: {
     title: 'Карточка заявки',
     close: 'Закрыть',
     sections: {
       contacts: 'Контакты',
-      origin: 'Откуда пришла',
+      origin: 'Источник',
       request: 'Запрос',
       extra: 'Дополнительные поля',
       delivery: 'Доставка',
@@ -78,6 +78,7 @@ const ru = {
       noLog: 'Лог доставки пуст',
       noOrigin: 'Источник не указан',
       referrer: 'Переход',
+      noContact: 'Контакт не указан',
     },
   },
   confirm: {
@@ -86,11 +87,19 @@ const ru = {
     clearConfirm: 'Скрыть',
     cancel: 'Отмена',
   },
+  deleteModal: {
+    title: 'Скрыть заявку?',
+    description: (name: string) => `Заявка «${name}» будет скрыта из активного списка.`,
+    action: 'Скрыть',
+    success: 'Заявка скрыта',
+    error: 'Не удалось скрыть заявку',
+  },
   loading: {
-    title: 'Загрузка заявок',
-    description: 'Подождите, данные подтягиваются из базы',
+    title: 'Загружаем заявки',
+    description: 'Данные подтягиваются из базы',
   },
   errors: {
+    title: 'Не удалось загрузить заявки',
     prefix: 'Ошибка',
   },
   summary: {
@@ -102,19 +111,19 @@ const ru = {
     todayHint: 'Новые обращения за день',
     sources: 'Источники',
     sourcesHint: 'Активные точки входа',
-    contactRate: 'Контактность',
+    contactRate: 'С контактами',
     contactRateHint: 'Есть email или Telegram',
-    failedHint: (count: number) => `Есть ошибки доставки: ${count}`,
+    failedHint: (count: number) => `Ошибки доставки: ${count}`,
   },
   actions: {
-    exportCsv: 'Экспорт CSV',
-    exportJson: 'Экспорт JSON',
+    exportCsv: 'CSV',
+    exportJson: 'JSON',
     markAllRead: 'Прочитать все',
     clearAll: 'Скрыть все',
   },
   toolbar: {
-    title: 'Рабочий список заявок',
-    subtitle: 'Фильтруйте поток, выгружайте данные и быстро открывайте лог доставки.',
+    title: 'Рабочий список',
+    subtitle: 'Фильтруйте поток, выгружайте данные и открывайте журнал доставки.',
   },
   chips: {
     search: (value: string) => `Поиск: ${value}`,
@@ -137,7 +146,7 @@ const ru = {
   },
   bulk: {
     selected: (n: number) => `Выбрано: ${n}`,
-    selectAllVisible: 'Выбрать все на странице',
+    selectAllVisible: 'Выбрать все видимые',
     clear: 'Снять выделение',
     markRead: 'Отметить прочитанными',
     delete: 'Скрыть выбранные',
@@ -151,14 +160,14 @@ const ru = {
   table: {
     client: 'Клиент',
     contacts: 'Контакты',
-    origin: 'Откуда',
+    origin: 'Источник',
     request: 'Запрос',
     delivery: 'Доставка',
     actions: 'Действия',
   },
   empty: {
     noLeadsTitle: 'Заявок пока нет',
-    noLeadsDescription: 'После первой отправки формы здесь появятся карточки заявок и журнал доставки.',
+    noLeadsDescription: 'После первой отправки формы здесь появятся заявки и журнал доставки.',
     notFoundTitle: 'Ничего не найдено',
     notFoundDescription: 'Измените поисковый запрос или сбросьте фильтры.',
   },
@@ -171,6 +180,27 @@ const ru = {
     exportJsonError: 'Ошибка экспорта JSON',
     exportCsvSuccess: 'CSV экспорт готов',
     exportCsvError: 'Ошибка экспорта CSV',
+  },
+  sourceLabels: {
+    paths: {
+      '/': 'Главная',
+      '/services': 'Услуги',
+      '/about': 'О нас',
+      '/contacts': 'Контакты',
+      '/cases': 'Кейсы',
+      '/prices': 'Цены',
+      '/rent': 'Аренда',
+    },
+    sources: {
+      hero_form: 'Форма Hero',
+      cta_form: 'CTA-форма',
+      callback: 'Обратный звонок',
+      footer_form: 'Футер',
+      header_button: 'Хедер',
+      consult_form: 'Консультация',
+      'visual-led-config': 'Visual LED конфигуратор',
+    },
+    unknown: 'Не указано',
   },
   csvHeaders: [
     'ID',
@@ -193,7 +223,7 @@ const ru = {
 const en: typeof ru = {
   layout: {
     title: 'Leads feed',
-    subtitle: 'All website leads and detailed delivery logs',
+    subtitle: 'All website leads, sources, contacts, and delivery logs',
   },
   statusLabels: {
     queued: 'Queued',
@@ -221,7 +251,7 @@ const en: typeof ru = {
     label: 'Request ID',
   },
   logModal: {
-    title: 'Lead log',
+    title: 'Delivery log',
     close: 'Close',
     cards: {
       status: 'Status',
@@ -268,6 +298,7 @@ const en: typeof ru = {
       noLog: 'Delivery log is empty',
       noOrigin: 'No origin',
       referrer: 'Referrer',
+      noContact: 'No contact provided',
     },
   },
   confirm: {
@@ -276,11 +307,19 @@ const en: typeof ru = {
     clearConfirm: 'Hide',
     cancel: 'Cancel',
   },
+  deleteModal: {
+    title: 'Hide lead?',
+    description: (name: string) => `Lead "${name}" will be hidden from the active list.`,
+    action: 'Hide',
+    success: 'Lead hidden',
+    error: 'Failed to hide lead',
+  },
   loading: {
     title: 'Loading leads',
-    description: 'Please wait while data is fetched from the database',
+    description: 'Data is being fetched from the database',
   },
   errors: {
+    title: 'Could not load leads',
     prefix: 'Error',
   },
   summary: {
@@ -292,19 +331,19 @@ const en: typeof ru = {
     todayHint: 'New requests today',
     sources: 'Sources',
     sourcesHint: 'Active entry points',
-    contactRate: 'Contact rate',
+    contactRate: 'With contacts',
     contactRateHint: 'Email or Telegram exists',
     failedHint: (count: number) => `Delivery errors: ${count}`,
   },
   actions: {
-    exportCsv: 'Export CSV',
-    exportJson: 'Export JSON',
+    exportCsv: 'CSV',
+    exportJson: 'JSON',
     markAllRead: 'Mark all read',
     clearAll: 'Hide all',
   },
   toolbar: {
-    title: 'Leads workspace',
-    subtitle: 'Filter the flow, export data, and open delivery logs quickly.',
+    title: 'Workspace',
+    subtitle: 'Filter the flow, export data, and open delivery logs.',
   },
   chips: {
     search: (value: string) => `Search: ${value}`,
@@ -327,7 +366,7 @@ const en: typeof ru = {
   },
   bulk: {
     selected: (n: number) => `Selected: ${n}`,
-    selectAllVisible: 'Select all on page',
+    selectAllVisible: 'Select all visible',
     clear: 'Clear selection',
     markRead: 'Mark as read',
     delete: 'Hide selected',
@@ -361,6 +400,27 @@ const en: typeof ru = {
     exportJsonError: 'JSON export failed',
     exportCsvSuccess: 'CSV export is ready',
     exportCsvError: 'CSV export failed',
+  },
+  sourceLabels: {
+    paths: {
+      '/': 'Home',
+      '/services': 'Services',
+      '/about': 'About',
+      '/contacts': 'Contacts',
+      '/cases': 'Cases',
+      '/prices': 'Prices',
+      '/rent': 'Rent',
+    },
+    sources: {
+      hero_form: 'Hero form',
+      cta_form: 'CTA form',
+      callback: 'Callback',
+      footer_form: 'Footer',
+      header_button: 'Header',
+      consult_form: 'Consult form',
+      'visual-led-config': 'Visual LED configurator',
+    },
+    unknown: 'Unknown',
   },
   csvHeaders: [
     'ID',

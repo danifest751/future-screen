@@ -39,7 +39,7 @@ export const countByPreset = (leads: LeadLog[], now: Date = new Date()): Record<
  * "callback_form" to a short, admin-readable channel label.
  *
  * The source field is already free-form (it's whatever the form sets);
- * what we add is a *normalization layer* so that admins see "Главная"
+ * what we add is a normalization layer so admins see "Главная"
  * instead of "/" or "Хедер" instead of "header_button". Falls back to
  * the original value when no rule matches.
  */

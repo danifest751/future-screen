@@ -46,7 +46,7 @@ const FilterPills = <TValue extends string>({
           aria-pressed={pressed}
           className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 transition ${
             pressed
-              ? 'border-brand-500 bg-brand-500/20 text-white'
+              ? 'border-emerald-400/40 bg-emerald-400/10 text-white'
               : 'border-white/10 bg-slate-900 text-slate-300 hover:border-white/30 hover:text-white'
           }`}
         >
