@@ -2,12 +2,9 @@ import type { EditorProfile } from '../services/siteContentVersions';
 
 /**
  * Render a compact editor label for the history table:
- *   · display_name if present;
- *   · else the local part of the email (`alice@…` -> `alice`);
- *   · else the first 8 chars of the uuid.
- *
- * Profile lookup may fail (RLS, missing user). When `profile` is undefined
- * we fall back to the truncated uuid so admins always see *something*.
+ * - display_name if present;
+ * - else the local part of the email;
+ * - else the first 8 chars of the uuid.
  */
 export const formatEditorLabel = (
   id: string | null,

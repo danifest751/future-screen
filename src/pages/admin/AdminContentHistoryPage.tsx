@@ -17,7 +17,7 @@ import {
   type SiteContentVersionOperation,
 } from '../../services/siteContentVersions';
 import { diffJsonStrings, formatJsonValue, type JsonDiffEntry } from '../../lib/jsonDiff';
-import { formatEditorLabel, formatEditorTooltip, indexProfiles } from '../../lib/editorLabel';
+import { formatEditorLabel, formatEditorTooltip } from '../../lib/editorLabel';
 
 const operationColor: Record<SiteContentVersionOperation, string> = {
   INSERT: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
@@ -37,9 +37,6 @@ const formatTimestamp = (iso: string, locale: string): string => {
     return iso;
   }
 };
-
-// kept for tooltips when no profile is available; canonical formatting
-// lives in src/lib/editorLabel.ts.
 
 const summarizeSnapshot = (v: SiteContentVersion, adminLocale: 'ru' | 'en'): string => {
   const pieces: string[] = [];
@@ -249,6 +246,7 @@ const AdminContentHistoryPage = () => {
         filterLabel: 'Ключ',
         allKeys: 'Все ключи',
         refresh: 'Обновить',
+        cancel: 'Отмена',
         restoreConfirm: 'Восстановить эту версию? Текущий контент будет перезаписан (новая запись в истории).',
         rollbackConfirm: 'Откатить эту правку? Текущий контент будет заменён состоянием до выбранного изменения.',
         restoring: 'Восстанавливаю…',
@@ -333,6 +331,7 @@ const AdminContentHistoryPage = () => {
         loadingMore: 'Загружаю…',
         endOfHistory: 'Это все записи',
         compareCheckbox: 'Выбрать для сравнения',
+        compareShort: 'Сравнить',
         compareSelected: (n: number) => `Выбрано: ${n}/2`,
         compareDifferentKeys: 'Можно сравнивать только версии одного ключа',
         compareAction: 'Сравнить выбранные',
@@ -344,6 +343,7 @@ const AdminContentHistoryPage = () => {
         filterLabel: 'Key',
         allKeys: 'All keys',
         refresh: 'Refresh',
+        cancel: 'Cancel',
         restoreConfirm: 'Restore this version? Current content will be overwritten (new history entry).',
         rollbackConfirm: 'Undo this edit? Current content will be replaced with the state before the selected change.',
         restoring: 'Restoring…',
@@ -428,6 +428,7 @@ const AdminContentHistoryPage = () => {
         loadingMore: 'Loading…',
         endOfHistory: 'End of history',
         compareCheckbox: 'Pick for compare',
+        compareShort: 'Compare',
         compareSelected: (n: number) => `Selected: ${n}/2`,
         compareDifferentKeys: 'Only versions of the same key can be compared',
         compareAction: 'Compare selected',
@@ -616,12 +617,6 @@ const AdminContentHistoryPage = () => {
     setDiffLoading(false);
   }, []);
 
-  const keysIndex = useMemo(() => {
-    const m = new Map<string, (typeof keys)[number]>();
-    keys.forEach((k) => m.set(k.key, k));
-    return m;
-  }, [keys]);
-
   const operationStats = useMemo(() => {
     const stats: Record<SiteContentVersionOperation, number> = {
       INSERT: 0,
@@ -694,7 +689,7 @@ const AdminContentHistoryPage = () => {
       } else {
         next.add(op);
       }
-      // Never end up with empty set — toggling the last enabled op
+      // Never end up with an empty set: toggling the last enabled op
       // re-enables all three to avoid a silent empty list.
       if (next.size === 0) {
         return new Set<SiteContentVersionOperation>(['INSERT', 'UPDATE', 'DELETE']);
@@ -746,6 +741,7 @@ const AdminContentHistoryPage = () => {
   return (
     <AdminLayout title={copy.title} subtitle={copy.subtitle}>
       <AdminPageToolbar
+        className="rounded-2xl bg-slate-950/35 shadow-2xl shadow-black/10"
         hint={copy.keyStats(keys.length)}
         filters={
           <>
@@ -757,7 +753,7 @@ const AdminContentHistoryPage = () => {
               <select
                 value={selectedKey ?? ''}
                 onChange={(e) => setSelectedKey(e.target.value || null)}
-                className="min-w-[220px] rounded-lg border border-white/10 bg-slate-950 px-3 py-1.5 text-sm text-white focus:border-brand-500 focus:outline-none"
+                className="min-w-[220px] rounded-lg border border-white/10 bg-slate-950 px-3 py-1.5 text-sm text-white focus:border-emerald-400/70 focus:outline-none"
               >
                 <option value="">{copy.allKeys}</option>
                 {keys.map((k) => (
@@ -778,7 +774,7 @@ const AdminContentHistoryPage = () => {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder={copy.searchPlaceholder}
-                  className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-1.5 pr-8 text-sm text-white focus:border-brand-500 focus:outline-none"
+                  className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-1.5 pr-8 text-sm text-white focus:border-emerald-400/70 focus:outline-none"
                 />
                 {searchQuery && (
                   <button
@@ -840,7 +836,7 @@ const AdminContentHistoryPage = () => {
       )}
 
       {compareIds.length > 0 && (
-        <div className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-violet-500/30 bg-violet-500/10 px-3 py-2 text-xs text-violet-100">
+        <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-emerald-500/25 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-100">
           <span>{copy.compareSelected(compareSelection.items.length)}</span>
           {!compareSelection.sameKey && compareSelection.items.length === 2 && (
             <span className="text-amber-200">{copy.compareDifferentKeys}</span>
@@ -857,7 +853,7 @@ const AdminContentHistoryPage = () => {
               type="button"
               onClick={handleOpenCompare}
               disabled={compareSelection.items.length !== 2 || !compareSelection.sameKey}
-              className="rounded bg-violet-500/80 px-2.5 py-1 font-medium text-white hover:bg-violet-500 disabled:opacity-50"
+              className="rounded bg-emerald-500/90 px-2.5 py-1 font-medium text-white hover:bg-emerald-500 disabled:opacity-50"
             >
               {copy.compareAction}
             </button>
@@ -865,7 +861,7 @@ const AdminContentHistoryPage = () => {
         </div>
       )}
 
-      <div className="overflow-hidden rounded-xl border border-white/10 bg-slate-900/50">
+      <div className="overflow-hidden rounded-2xl border border-white/10 bg-slate-950/35 shadow-2xl shadow-black/10">
         <div className="max-h-[72vh] overflow-auto">
           <table className="min-w-full text-left text-sm">
             <thead className="sticky top-0 bg-slate-900/95 backdrop-blur">
@@ -890,21 +886,40 @@ const AdminContentHistoryPage = () => {
             </thead>
             <tbody>
               {loading && versions.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-3 py-10 text-center text-slate-500">
-                    <div className="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />
-                  </td>
-                </tr>
+                Array.from({ length: 7 }).map((_, index) => (
+                  <tr key={`history-loading-${index}`} className="border-b border-white/5">
+                    <td className="px-3 py-3">
+                      <div className="h-3 w-20 animate-pulse rounded bg-slate-800" />
+                    </td>
+                    <td className="px-3 py-3">
+                      <div className="h-5 w-28 animate-pulse rounded bg-slate-800" />
+                    </td>
+                    <td className="px-3 py-3">
+                      <div className="h-5 w-20 animate-pulse rounded-full bg-slate-800" />
+                    </td>
+                    <td className="px-3 py-3">
+                      <div className="h-3 w-24 animate-pulse rounded bg-slate-800" />
+                    </td>
+                    <td className="px-3 py-3">
+                      <div className="h-3 w-full max-w-xl animate-pulse rounded bg-slate-800" />
+                    </td>
+                    <td className="px-3 py-3">
+                      <div className="ml-auto h-7 w-40 animate-pulse rounded bg-slate-800" />
+                    </td>
+                  </tr>
+                ))
               ) : versions.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-3 py-10 text-center text-slate-500">
-                    {copy.noVersions}
+                    <History className="mx-auto mb-3 h-7 w-7 text-slate-600" />
+                    <span className="text-sm text-slate-400">{copy.noVersions}</span>
                   </td>
                 </tr>
               ) : visibleVersions.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-3 py-10 text-center text-slate-500">
-                    {copy.emptyAfterFilter}
+                    <Search className="mx-auto mb-3 h-7 w-7 text-slate-600" />
+                    <span className="mx-auto block max-w-md text-sm text-slate-400">{copy.emptyAfterFilter}</span>
                   </td>
                 </tr>
               ) : (
@@ -935,16 +950,16 @@ const AdminContentHistoryPage = () => {
                     <td className="px-3 py-2">
                       <div className="flex items-center justify-end gap-1.5">
                         <label
-                          className="inline-flex cursor-pointer items-center gap-1 rounded border border-white/10 bg-slate-900/60 px-1.5 py-1 text-[11px] text-slate-300 hover:border-violet-500/40 hover:text-violet-100"
+                          className="inline-flex cursor-pointer items-center gap-1 rounded border border-white/10 bg-slate-900/60 px-1.5 py-1 text-[11px] text-slate-300 hover:border-emerald-500/40 hover:text-emerald-100"
                           title={copy.compareCheckbox}
                         >
                           <input
                             type="checkbox"
-                            className="h-3 w-3 accent-violet-500"
+                            className="h-3 w-3 accent-emerald-500"
                             checked={compareIds.includes(v.id)}
                             onChange={() => toggleCompare(v.id)}
                           />
-                          A/B
+                          {copy.compareShort}
                         </label>
                         <button
                           onClick={() => void handleOpenDiff(v)}
@@ -977,7 +992,6 @@ const AdminContentHistoryPage = () => {
                 disabled={loadingMore}
                 className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-slate-800 px-3 py-1.5 text-sm text-slate-200 hover:border-white/30 hover:text-white disabled:opacity-60"
               >
-                {loadingMore && <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />}
                 {loadingMore ? copy.loadingMore : copy.loadMore}
               </button>
             ) : (
@@ -994,7 +1008,7 @@ const AdminContentHistoryPage = () => {
             if (e.target === e.currentTarget) handleCloseDiff();
           }}
         >
-          <div className="flex h-[calc(100vh-1.5rem)] max-h-[calc(100vh-1.5rem)] w-full max-w-5xl flex-col rounded-2xl border border-white/15 bg-slate-900 shadow-2xl">
+          <div className="flex h-[calc(100vh-1.5rem)] max-h-[calc(100vh-1.5rem)] w-full max-w-5xl flex-col rounded-2xl border border-white/15 bg-slate-950 shadow-2xl">
             <div className="shrink-0 border-b border-white/10 p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
@@ -1036,9 +1050,13 @@ const AdminContentHistoryPage = () => {
 
             <div className="min-h-0 flex-1 overflow-auto p-4">
               {diffLoading ? (
-                <div className="flex items-center justify-center gap-3 rounded-xl border border-white/10 bg-slate-950/50 p-8 text-sm text-slate-300">
-                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-sky-400 border-t-transparent" />
-                  {copy.previewLoading}
+                <div className="rounded-xl border border-white/10 bg-slate-900/60 p-6">
+                  <div className="mb-4 h-4 w-44 animate-pulse rounded bg-slate-800" />
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <div className="h-24 animate-pulse rounded-lg bg-slate-800/70" />
+                    <div className="h-24 animate-pulse rounded-lg bg-slate-800/70" />
+                  </div>
+                  <p className="mt-4 text-sm text-slate-400">{copy.previewLoading}</p>
                 </div>
               ) : diffError ? (
                 <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300">
@@ -1077,7 +1095,7 @@ const AdminContentHistoryPage = () => {
                               <h4 className="text-sm font-semibold text-white">{copy.fieldLabels[row.labelKey]}</h4>
                               <div className="flex items-center gap-1.5">
                                 {useJsonDiff && (
-                                  <span className="rounded-full border border-violet-500/40 bg-violet-500/15 px-2 py-0.5 text-[11px] font-medium text-violet-200">
+                                  <span className="rounded-full border border-slate-500/35 bg-slate-800/70 px-2 py-0.5 text-[11px] font-medium text-slate-200">
                                     {copy.diffJsonBadge} · {copy.diffJsonPathsCount(jsonDiff.entries.length)}
                                   </span>
                                 )}
@@ -1122,7 +1140,7 @@ const AdminContentHistoryPage = () => {
               )}
             </div>
 
-            <div className="shrink-0 border-t border-white/10 bg-slate-900 p-4">
+            <div className="shrink-0 border-t border-white/10 bg-slate-950 p-4">
               <div className="flex justify-end">
               <button
                 onClick={handleCloseDiff}
@@ -1144,7 +1162,7 @@ const AdminContentHistoryPage = () => {
             if (e.target === e.currentTarget) handleCloseRestorePreview();
           }}
         >
-          <div className="flex max-h-[90vh] w-full max-w-5xl flex-col rounded-2xl border border-white/15 bg-slate-900 shadow-2xl">
+          <div className="flex max-h-[90vh] w-full max-w-5xl flex-col rounded-2xl border border-white/15 bg-slate-950 shadow-2xl">
             <div className="border-b border-white/10 p-5">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
@@ -1191,9 +1209,13 @@ const AdminContentHistoryPage = () => {
 
             <div className="min-h-0 flex-1 overflow-auto p-5">
               {previewLoading ? (
-                <div className="flex items-center justify-center gap-3 rounded-xl border border-white/10 bg-slate-950/50 p-8 text-sm text-slate-300">
-                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-amber-400 border-t-transparent" />
-                  {copy.previewLoading}
+                <div className="rounded-xl border border-white/10 bg-slate-900/60 p-6">
+                  <div className="mb-4 h-4 w-44 animate-pulse rounded bg-slate-800" />
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <div className="h-24 animate-pulse rounded-lg bg-slate-800/70" />
+                    <div className="h-24 animate-pulse rounded-lg bg-slate-800/70" />
+                  </div>
+                  <p className="mt-4 text-sm text-slate-400">{copy.previewLoading}</p>
                 </div>
               ) : previewError ? (
                 <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300">
@@ -1233,7 +1255,7 @@ const AdminContentHistoryPage = () => {
                               <h4 className="text-sm font-semibold text-white">{copy.fieldLabels[row.labelKey]}</h4>
                               <div className="flex items-center gap-1.5">
                                 {useJsonDiff && (
-                                  <span className="rounded-full border border-violet-500/40 bg-violet-500/15 px-2 py-0.5 text-[11px] font-medium text-violet-200">
+                                  <span className="rounded-full border border-slate-500/35 bg-slate-800/70 px-2 py-0.5 text-[11px] font-medium text-slate-200">
                                     {copy.diffJsonBadge} · {copy.diffJsonPathsCount(jsonDiff.entries.length)}
                                   </span>
                                 )}
@@ -1293,7 +1315,7 @@ const AdminContentHistoryPage = () => {
                   className="flex items-center gap-1 rounded-lg border border-white/10 bg-slate-800 px-4 py-2 text-sm font-medium text-slate-200 hover:border-white/30 hover:text-white disabled:opacity-60"
                 >
                   <X className="h-4 w-4" />
-                  {adminLocale === 'ru' ? 'Отмена' : 'Cancel'}
+                  {copy.cancel}
                 </button>
                 <button
                   onClick={() => void handleRestore()}
@@ -1308,9 +1330,6 @@ const AdminContentHistoryPage = () => {
           </div>
         </div>
       )}
-
-      {/* keysIndex is kept in scope for future use (diff views, etc.) */}
-      <div hidden>{keysIndex.size}</div>
     </AdminLayout>
   );
 };
