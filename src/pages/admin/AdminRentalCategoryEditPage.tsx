@@ -98,16 +98,16 @@ const Section = ({
 }) => {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="rounded-xl border border-white/10 bg-slate-800/50">
+    <div className="overflow-hidden rounded-2xl border border-white/10 bg-slate-950/35 shadow-2xl shadow-black/10">
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex w-full items-center justify-between px-4 py-3 text-left transition hover:bg-white/5"
+        className="flex w-full items-center justify-between px-4 py-3 text-left transition hover:bg-white/5 active:bg-white/10"
       >
         <span className="text-base font-semibold text-white">{title}</span>
         {open ? <ChevronUp size={18} className="text-slate-400" /> : <ChevronDown size={18} className="text-slate-400" />}
       </button>
-      {open && <div className="space-y-3 border-t border-white/5 px-4 py-4">{children}</div>}
+      {open && <div className="space-y-3 border-t border-white/5 bg-slate-950/20 px-4 py-4">{children}</div>}
     </div>
   );
 };
@@ -127,12 +127,12 @@ const Field = ({
     <label className="mb-1.5 block text-sm font-medium text-slate-200">{label}</label>
     {children}
     {hint && <p className="mt-1 text-xs text-slate-500">{hint}</p>}
-    {error && <p className="mt-1 text-xs text-red-400">{error}</p>}
+    {error && <p className="mt-1 rounded-lg border border-red-400/20 bg-red-500/10 px-2 py-1 text-xs text-red-200">{error}</p>}
   </div>
 );
 
 const inputClass =
-  'w-full rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-white placeholder-slate-500 focus:border-brand-500 focus:outline-none';
+  'w-full rounded-lg border border-white/10 bg-slate-950/65 px-3 py-1.5 text-sm text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] placeholder-slate-500 transition focus:border-emerald-400/70 focus:outline-none focus:ring-2 focus:ring-emerald-400/10';
 const textareaClass = `${inputClass} resize-y`;
 
 const AdminRentalCategoryEditPage = () => {
@@ -322,7 +322,22 @@ const AdminRentalCategoryEditPage = () => {
         contentLocale={adminContentLocale}
         onContentLocaleChange={setAdminContentLocale}
       >
-        <div className="text-sm text-slate-400">{adminRentalCategoryEditContent.loading.description}</div>
+        <div className="space-y-4">
+          <div className="rounded-2xl border border-white/10 bg-slate-950/35 p-4 shadow-2xl shadow-black/10">
+            <div className="text-sm text-slate-400">{adminRentalCategoryEditContent.loading.description}</div>
+          </div>
+          <div className="grid gap-4 lg:grid-cols-2">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <div key={index} className="rounded-2xl border border-white/10 bg-slate-950/35 p-4 shadow-2xl shadow-black/10">
+                <div className="h-5 w-40 animate-pulse rounded bg-white/10" />
+                <div className="mt-4 space-y-3">
+                  <div className="h-9 animate-pulse rounded-lg bg-white/5" />
+                  <div className="h-16 animate-pulse rounded-lg bg-white/5" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </AdminLayout>
     );
   }
@@ -345,12 +360,12 @@ const AdminRentalCategoryEditPage = () => {
       onContentLocaleChange={setAdminContentLocale}
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <div className="sticky top-4 z-20 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-slate-900/95 px-4 py-3 shadow-xl shadow-black/20 backdrop-blur">
+        <div className="sticky top-4 z-20 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-slate-950/90 px-4 py-3 shadow-2xl shadow-black/20 backdrop-blur">
           <div className="flex flex-wrap items-center gap-3">
             <button
               type="button"
               onClick={() => navigate('/admin/rental-categories')}
-              className="flex items-center gap-1 text-sm text-slate-400 hover:text-white"
+              className="flex items-center gap-1 rounded-lg border border-white/10 px-2.5 py-1.5 text-sm text-slate-300 transition hover:border-white/20 hover:bg-white/5 hover:text-white active:scale-[0.98]"
             >
               <ArrowLeft size={16} /> {adminRentalCategoryEditContent.topBar.back}
             </button>
@@ -365,18 +380,18 @@ const AdminRentalCategoryEditPage = () => {
             )}
           </div>
           <div className="flex items-center gap-2">
-            <label className="flex items-center gap-2 text-sm text-slate-300">
+            <label className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-slate-300">
               <input
                 type="checkbox"
                 {...register('isPublished')}
-                className="rounded border-white/20 bg-white/5 text-brand-500"
+                className="rounded border-white/20 bg-slate-950 text-emerald-400 focus:ring-emerald-400/20"
               />
               {adminRentalCategoryEditContent.topBar.published}
             </label>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="rounded-lg bg-brand-500 px-4 py-1.5 text-sm font-semibold text-white hover:bg-brand-400 disabled:opacity-60"
+              className="rounded-lg bg-emerald-500 px-4 py-1.5 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isSubmitting
                 ? adminRentalCategoryEditContent.topBar.saving
@@ -549,18 +564,18 @@ const AdminRentalCategoryEditPage = () => {
           </div>
         </div>
 
-        <div className="flex justify-end gap-2 border-t border-white/10 pt-3">
+        <div className="flex justify-end gap-2 rounded-2xl border border-white/10 bg-slate-950/35 p-3 shadow-2xl shadow-black/10">
           <button
             type="button"
             onClick={() => navigate('/admin/rental-categories')}
-            className="rounded-lg border border-white/10 px-4 py-1.5 text-sm text-slate-300 hover:bg-white/5"
+            className="rounded-lg border border-white/10 px-4 py-1.5 text-sm text-slate-300 transition hover:border-white/20 hover:bg-white/5 hover:text-white active:scale-[0.98]"
           >
             {adminRentalCategoryEditContent.footer.cancel}
           </button>
           <button
             type="submit"
             disabled={isSubmitting}
-            className="rounded-lg bg-brand-500 px-4 py-1.5 text-sm font-semibold text-white hover:bg-brand-400 disabled:opacity-60"
+            className="rounded-lg bg-emerald-500 px-4 py-1.5 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSubmitting
               ? adminRentalCategoryEditContent.footer.saving

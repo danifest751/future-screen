@@ -206,8 +206,8 @@ const AdminCategoriesPage = () => {
         onConfirm={handleResetDefaults}
       />
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.45fr)_minmax(340px,0.8fr)]">
-        <div className="rounded-xl border border-white/10 bg-slate-800 p-4 lg:order-2 lg:sticky lg:top-6 lg:self-start">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(360px,0.85fr)]">
+        <div className="rounded-2xl border border-white/10 bg-slate-950/35 p-4 shadow-2xl shadow-black/10 lg:order-2 lg:sticky lg:top-6 lg:self-start">
           <AdminEditPanelHeader
             title={editingId ? adminCategoriesPageContent.form.editTitle : adminCategoriesPageContent.form.createTitle}
             description={
@@ -262,7 +262,7 @@ const AdminCategoriesPage = () => {
           </form>
         </div>
 
-        <div className="rounded-xl border border-white/10 bg-slate-800 p-4 lg:order-1">
+        <div className="rounded-2xl border border-white/10 bg-slate-950/35 p-4 shadow-2xl shadow-black/10 lg:order-1">
           <div className="mb-3 flex items-start justify-between gap-3">
             <div>
               <h2 className="text-base font-semibold text-white">{adminCategoriesPageContent.list.title}</h2>
@@ -274,7 +274,7 @@ const AdminCategoriesPage = () => {
               type="button"
               onClick={() => setResetModalOpen(true)}
               disabled={isSubmitting}
-              className="text-sm text-slate-300 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-lg border border-white/10 px-3 py-1.5 text-sm text-slate-300 transition hover:border-white/20 hover:bg-white/5 hover:text-white active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {adminCategoriesPageContent.list.resetToDefault}
             </button>
@@ -295,14 +295,14 @@ const AdminCategoriesPage = () => {
 
           <div className="space-y-2">
             {filteredCategories.map((item) => (
-              <div key={item.id} className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2.5 transition hover:border-white/20 hover:bg-white/[0.07]">
+              <div key={item.id} className="rounded-xl border border-white/10 bg-slate-900/60 px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition hover:border-white/20 hover:bg-slate-900 active:scale-[0.998]">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 font-semibold text-white">
                       <span className="truncate">{item.title}</span>
                       <FallbackDot visible={adminContentLocale === 'en' && !!fallbackById[String(item.id)]} adminLocale={adminLocale} />
                     </div>
-                    <div className="text-xs text-slate-400">ID: {item.id}</div>
+                    <div className="font-mono text-xs text-slate-500">ID: {item.id}</div>
                     <div className="mt-1 line-clamp-2 text-xs text-slate-300">{item.shortDescription}</div>
                     <div className="mt-1 truncate text-xs text-slate-400">
                       {adminCategoriesPageContent.list.pagePathPrefix} {item.pagePath}
@@ -313,7 +313,7 @@ const AdminCategoriesPage = () => {
                       type="button"
                       onClick={() => startEdit(item)}
                       disabled={isSubmitting}
-                      className="rounded border border-white/20 px-3 py-1 text-xs font-semibold text-white hover:border-white/40 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="rounded-lg border border-white/20 px-3 py-1 text-xs font-semibold text-white transition hover:border-emerald-400/40 hover:bg-emerald-500/10 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {adminCategoriesPageContent.list.edit}
                     </button>
@@ -321,7 +321,7 @@ const AdminCategoriesPage = () => {
                       type="button"
                       onClick={() => setDeleteTarget(item)}
                       disabled={isSubmitting}
-                      className="rounded border border-red-400/40 px-3 py-1 text-xs font-semibold text-red-200 hover:border-red-400 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="rounded-lg border border-red-400/40 px-3 py-1 text-xs font-semibold text-red-200 transition hover:border-red-300 hover:bg-red-500/10 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {adminCategoriesPageContent.list.remove}
                     </button>
@@ -331,7 +331,7 @@ const AdminCategoriesPage = () => {
             ))}
             {filteredCategories.length === 0 && (
               <EmptyState
-                icon={<Tag size={32} className="text-brand-400" />}
+                icon={<Tag size={32} className="text-emerald-300" />}
                 title={
                   categories.length === 0
                     ? adminCategoriesPageContent.list.emptyTitle
