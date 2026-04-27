@@ -1,0 +1,77 @@
+name: Update visual snapshots
+
+# Manual trigger only. Run this:
+#   - Once after first committing a snapshot spec from a non-Linux machine,
+#     to seed the Linux baseline for chromium-linux.
+#   - After any intentional UI change that breaks visual regression tests.
+#
+# How to run: GitHub → Actions → "Update visual snapshots" → Run workflow.
+# Pick the branch you want baselines updated on. The workflow regenerates
+# every snapshot, then commits the changed PNGs back to that branch with
+# `[skip ci]` so it doesn't loop with the E2E workflow.
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Branch to update baselines on (defaults to the one this workflow ran from)
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Use a token that can push back. GITHUB_TOKEN has contents:write
+          # via the permissions block above.
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ inputs.branch || github.ref }}
+          # Need full history so the commit doesn't look like a force-push.
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Regenerate snapshots
+        run: npm run test:e2e:update-snapshots
+
+      - name: Configure git author
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Commit and push updated baselines
+        run: |
+          # Stage every snapshot dir Playwright knows about. Using a
+          # glob keeps this resilient to new specs being added later.
+          git add 'tests/e2e/**/*-snapshots/**' || true
+          if git diff --cached --quiet; then
+            echo "No snapshot changes — nothing to commit."
+            exit 0
+          fi
+          git commit -m "chore(e2e): refresh visual snapshots [skip ci]"
+          git push origin HEAD:${{ inputs.branch || github.ref_name }}
