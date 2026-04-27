@@ -17,7 +17,11 @@ vite.config.js
 .vscode/
 .idea/
 .kilocode/
-.claude/
+# Ignore everything Claude Code stores locally (sessions, memory, etc.)
+# EXCEPT the skills directory — those are intentionally shared so the
+# whole team gets the same Claude superpowers when working on the repo.
+.claude/*
+!.claude/skills/
 
 # Python
 __pycache__/
