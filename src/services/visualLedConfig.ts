@@ -147,6 +147,45 @@ export async function deletePitchConfig(pitch: string): Promise<void> {
   if (error) throw error;
 }
 
+// ── Day discounts ────────────────────────────────────────────────────────────
+
+export interface DbDayDiscountRow {
+  day_number: number;
+  discount_percent: number;
+  label_ru: string;
+  is_last_tier: boolean;
+  updated_at: string;
+}
+
+export async function fetchDayDiscounts(): Promise<DbDayDiscountRow[]> {
+  const { data, error } = await supabase
+    .from('visual_led_day_discounts')
+    .select('*')
+    .order('day_number');
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function upsertDayDiscount(
+  row: Omit<DbDayDiscountRow, 'updated_at'>,
+): Promise<DbDayDiscountRow> {
+  const { data, error } = await supabase
+    .from('visual_led_day_discounts')
+    .upsert({ ...row, updated_at: new Date().toISOString() }, { onConflict: 'day_number' })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteDayDiscount(dayNumber: number): Promise<void> {
+  const { error } = await supabase
+    .from('visual_led_day_discounts')
+    .delete()
+    .eq('day_number', dayNumber);
+  if (error) throw error;
+}
+
 // ── Storage helpers ──────────────────────────────────────────────────────────
 
 export async function fetchSharedReports() {

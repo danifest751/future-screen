@@ -125,6 +125,71 @@ export const calculateProjectEstimate = (
 
 // Non-breaking space (U+00A0). Written as Unicode escape so eslint's
 // no-irregular-whitespace rule doesn't trip on the literal byte.
+// \u2500\u2500 Multi-day discount \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+
+/**
+ * One row from `visual_led_day_discounts`.
+ * `isLastTier = true` means this row is the catch-all for day_number and above.
+ */
+export interface DayDiscount {
+  dayNumber: number;
+  discountPercent: number;
+  labelRu: string;
+  isLastTier: boolean;
+}
+
+/** Hardcoded fallback used when the DB is unavailable. */
+export const FALLBACK_DAY_DISCOUNTS: readonly DayDiscount[] = [
+  { dayNumber: 1, discountPercent:  0, labelRu: '\u0414\u0435\u043d\u044c 1',  isLastTier: false },
+  { dayNumber: 2, discountPercent: 20, labelRu: '\u0414\u0435\u043d\u044c 2',  isLastTier: false },
+  { dayNumber: 3, discountPercent: 30, labelRu: '\u0414\u0435\u043d\u044c 3',  isLastTier: false },
+  { dayNumber: 4, discountPercent: 40, labelRu: '\u0414\u0435\u043d\u044c 4+', isLastTier: true  },
+];
+
+/**
+ * Returns the discount percent (0\u201399) applicable to a given rental day.
+ * Days are 1-indexed. The last-tier row catches everything beyond its day_number.
+ */
+export const getDayDiscount = (
+  day: number,
+  discounts: readonly DayDiscount[] = FALLBACK_DAY_DISCOUNTS,
+): number => {
+  if (!discounts.length || day < 1) return 0;
+  const sorted = [...discounts].sort((a, b) => a.dayNumber - b.dayNumber);
+  const exact = sorted.find((d) => d.dayNumber === day);
+  if (exact) return exact.discountPercent;
+  const lastTier = [...sorted].reverse().find((d) => d.isLastTier);
+  if (lastTier && day >= lastTier.dayNumber) return lastTier.discountPercent;
+  return 0;
+};
+
+export interface DayBreakdown {
+  day: number;
+  pricePerDay: number;
+  discountPercent: number;
+}
+
+/**
+ * Total price and per-day breakdown for a multi-day rental.
+ * Uses the base single-day price and applies day-specific discounts.
+ */
+export const calculateMultiDayPrice = (
+  pricePerDay: number,
+  days: number,
+  discounts: readonly DayDiscount[] = FALLBACK_DAY_DISCOUNTS,
+): { total: number; breakdown: readonly DayBreakdown[] } => {
+  const safeDays = Math.max(1, Math.round(days));
+  const breakdown: DayBreakdown[] = [];
+  let total = 0;
+  for (let day = 1; day <= safeDays; day++) {
+    const discountPercent = getDayDiscount(day, discounts);
+    const dayPrice = pricePerDay * (1 - discountPercent / 100);
+    breakdown.push({ day, pricePerDay: dayPrice, discountPercent });
+    total += dayPrice;
+  }
+  return { total, breakdown };
+};
+
 const NBSP = '\u00a0';
 
 /**

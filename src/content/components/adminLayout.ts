@@ -14,6 +14,7 @@ type AdminLayoutContent = {
     visualLedPresets: string;
     visualLedPitchConfig: string;
     visualLedStorage: string;
+    visualLedPricing: string;
     contentHistory: string;
   };
   navGroups: {
@@ -62,6 +63,7 @@ const ru: AdminLayoutContent = {
     visualLedPresets: 'Пресеты',
     visualLedPitchConfig: 'Конфиг pitch',
     visualLedStorage: 'Хранилище',
+    visualLedPricing: 'Скидки за дни',
     contentHistory: 'История контента',
   },
   navGroups: {
@@ -110,6 +112,7 @@ const en: AdminLayoutContent = {
     visualLedPresets: 'Presets',
     visualLedPitchConfig: 'Pitch config',
     visualLedStorage: 'Storage',
+    visualLedPricing: 'Day discounts',
     contentHistory: 'Content history',
   },
   navGroups: {

@@ -13,6 +13,7 @@ import {
   Menu,
   Monitor,
   Package,
+  Percent,
   Phone,
   ShoppingCart,
   SlidersHorizontal,
@@ -93,6 +94,7 @@ const createNavSections = (content: ReturnType<typeof getAdminLayoutContent>): N
       { to: '/admin/visual-led/presets', label: content.nav.visualLedPresets, Icon: SlidersHorizontal },
       { to: '/admin/visual-led/pitch-config', label: content.nav.visualLedPitchConfig, Icon: Activity },
       { to: '/admin/visual-led/storage', label: content.nav.visualLedStorage, Icon: Archive },
+      { to: '/admin/visual-led/pricing', label: content.nav.visualLedPricing, Icon: Percent },
     ],
   },
 ];

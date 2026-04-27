@@ -34,6 +34,7 @@ const AdminVisualLedSessionPage = lazy(() => import('./pages/admin/AdminVisualLe
 const AdminVisualLedPresetsPage = lazy(() => import('./pages/admin/AdminVisualLedPresetsPage'));
 const AdminVisualLedPitchConfigPage = lazy(() => import('./pages/admin/AdminVisualLedPitchConfigPage'));
 const AdminVisualLedStoragePage = lazy(() => import('./pages/admin/AdminVisualLedStoragePage'));
+const AdminVisualLedPricingPage = lazy(() => import('./pages/admin/AdminVisualLedPricingPage'));
 const AdminHomeEquipmentSectionPage = lazy(() => import('./pages/admin/AdminHomeEquipmentSectionPage'));
 const AdminContentHistoryPage = lazy(() => import('./pages/admin/AdminContentHistoryPage'));
 const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'));
@@ -116,6 +117,7 @@ const App = () => {
     { path: '/admin/visual-led/presets', element: <ProtectedRoute requiredRole="admin"><AdminVisualLedPresetsPage /></ProtectedRoute> },
     { path: '/admin/visual-led/pitch-config', element: <ProtectedRoute requiredRole="admin"><AdminVisualLedPitchConfigPage /></ProtectedRoute> },
     { path: '/admin/visual-led/storage', element: <ProtectedRoute requiredRole="admin"><AdminVisualLedStoragePage /></ProtectedRoute> },
+    { path: '/admin/visual-led/pricing', element: <ProtectedRoute requiredRole="admin"><AdminVisualLedPricingPage /></ProtectedRoute> },
     { path: '/admin', element: <ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute> },
     // Cutover: the React rewrite (VisualLedV2Page) is the primary
     // `/visual-led` entry point now. `/visual-led/v2` is kept as an
