@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { ChevronRight, RefreshCcw, UserCog, Image as ImageIcon, Share2, Wand2 } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout';
-import { AdminPageToolbar, Button, EmptyState, FilterPills, Input, LoadingState } from '../../components/admin/ui';
+import { AdminPageToolbar, EmptyState, FilterPills, Input } from '../../components/admin/ui';
 import { useI18n } from '../../context/I18nContext';
 import { useVisualLedSessionsQuery } from '../../queries/visualLedLogs';
 import {
@@ -214,20 +214,26 @@ const AdminVisualLedLogsPage = () => {
     <AdminLayout title={ui.title} subtitle={ui.subtitle}>
       <div className="space-y-3">
         <AdminPageToolbar
+          className="rounded-2xl bg-slate-950/35 shadow-2xl shadow-black/10"
           hint={ui.stats.shown(filtered.length, total)}
           filters={
             <Input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder={ui.search}
-              className="min-w-[220px] max-w-md flex-1 py-1.5"
+              className="min-w-[220px] max-w-md flex-1 border-white/10 bg-slate-950/55 py-1.5 focus:border-emerald-400/70 focus:ring-emerald-400/10"
             />
           }
           actions={
-            <Button onClick={() => void reset()} disabled={loading} size="sm">
+            <button
+              type="button"
+              onClick={() => void reset()}
+              disabled={loading}
+              className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/10 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+            >
               <RefreshCcw className="mr-1 inline h-3.5 w-3.5" />
               {ui.reload}
-            </Button>
+            </button>
           }
           secondary={
             <div className="flex flex-wrap items-center gap-2">
@@ -256,7 +262,7 @@ const AdminVisualLedLogsPage = () => {
                 <button
                   type="button"
                   onClick={resetFilters}
-                  className="ml-1 text-xs text-slate-400 underline-offset-2 hover:text-white hover:underline"
+                  className="ml-1 rounded-lg border border-white/10 px-2 py-1 text-xs text-slate-400 transition hover:border-white/20 hover:bg-white/5 hover:text-white active:scale-[0.98]"
                 >
                   {ui.filters.resetAll}
                 </button>
@@ -265,10 +271,10 @@ const AdminVisualLedLogsPage = () => {
           }
         />
 
-        {error ? <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300">{error}</div> : null}
+        {error ? <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-100 shadow-2xl shadow-black/10">{error}</div> : null}
 
         {loading && sessions.length === 0 ? (
-          <LoadingState title={ui.title} />
+          <SessionsSkeleton />
         ) : filtered.length === 0 ? (
           <EmptyState title={ui.noSessions} />
         ) : (
@@ -278,11 +284,12 @@ const AdminVisualLedLogsPage = () => {
               if (items.length === 0) return null;
               return (
                 <section key={bucket}>
-                  <header className="mb-1.5 flex items-baseline gap-2">
+                  <header className="mb-2 flex items-center gap-3">
                     <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-400">
                       {ui.buckets[bucket]}
                     </h3>
-                    <span className="text-xs text-slate-500">({items.length})</span>
+                    <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 font-mono text-[11px] text-slate-400">{items.length}</span>
+                    <span className="h-px flex-1 bg-white/10" />
                   </header>
                   <div className="space-y-2">
                     {items.map((session) => (
@@ -302,15 +309,43 @@ const AdminVisualLedLogsPage = () => {
 
         {sessions.length < total ? (
           <div className="flex justify-center pt-2">
-            <Button onClick={() => void loadMore()} disabled={loadingMore} size="sm">
-              {loadingMore ? '…' : ui.loadMore}
-            </Button>
+            <button
+              type="button"
+              onClick={() => void loadMore()}
+              disabled={loadingMore}
+              className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/10 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {loadingMore ? '...' : ui.loadMore}
+            </button>
           </div>
         ) : null}
       </div>
     </AdminLayout>
   );
 };
+
+const SessionsSkeleton = () => (
+  <div className="space-y-2">
+    {Array.from({ length: 6 }).map((_, index) => (
+      <div key={index} className="rounded-2xl border border-white/10 bg-slate-950/35 p-3 shadow-2xl shadow-black/10">
+        <div className="flex items-center gap-3">
+          <div className="space-y-2">
+            <div className="h-3 w-14 animate-pulse rounded bg-white/10" />
+            <div className="h-3 w-20 animate-pulse rounded bg-white/5" />
+          </div>
+          <div className="min-w-0 flex-1 space-y-2">
+            <div className="h-3 w-3/5 animate-pulse rounded bg-white/10" />
+            <div className="h-3 w-4/5 animate-pulse rounded bg-white/5" />
+          </div>
+          <div className="hidden gap-1 md:flex">
+            <div className="h-5 w-14 animate-pulse rounded-full bg-white/5" />
+            <div className="h-5 w-14 animate-pulse rounded-full bg-white/5" />
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+);
 
 interface RowCopy {
   scenes: (n: number) => string;
@@ -351,12 +386,12 @@ const SessionRow = ({
   return (
     <Link
       to={`/admin/visual-led-logs/${encodeURIComponent(session.id)}`}
-      className="group flex items-center gap-3 rounded-lg border border-white/10 bg-slate-900/30 px-3 py-2 text-sm transition hover:border-white/25 hover:bg-slate-900/60"
+      className="group grid gap-3 rounded-2xl border border-white/10 bg-slate-950/35 px-3 py-3 text-sm shadow-2xl shadow-black/10 transition hover:border-white/20 hover:bg-slate-900/70 active:scale-[0.998] md:grid-cols-[96px_minmax(0,1fr)_auto_20px] md:items-center"
     >
       {/* Time + short id */}
-      <div className="flex w-24 shrink-0 flex-col">
+      <div className="flex shrink-0 flex-row items-baseline gap-2 md:flex-col md:items-start md:gap-0">
         <span className="font-mono text-xs text-slate-400">{timeLabel}</span>
-        <span className="font-mono text-xs font-semibold text-sky-200">
+        <span className="font-mono text-xs font-semibold text-emerald-200">
           #{shortSessionId(session.session_key)}
         </span>
       </div>
@@ -372,7 +407,7 @@ const SessionRow = ({
           <span className="text-slate-500">·</span>
           <span className="text-slate-300">{formatDurationCompact(session.duration_sec)}</span>
         </div>
-        <div className="mt-1 flex flex-wrap items-center gap-1 text-[11px] text-slate-400">
+        <div className="mt-1.5 flex flex-wrap items-center gap-1 text-[11px] text-slate-400">
           {scenes !== null ? <MetricPill>{rowCopy.scenes(scenes)}</MetricPill> : null}
           {screens !== null ? <MetricPill>{rowCopy.screens(screens)}</MetricPill> : null}
           {events !== null ? <MetricPill>{rowCopy.events(events)}</MetricPill> : null}
@@ -380,20 +415,20 @@ const SessionRow = ({
             <MetricPill>{rowCopy.backgrounds(backgrounds)}</MetricPill>
           ) : null}
           {session.page_url ? (
-            <span className="ml-1 truncate text-[11px] text-slate-500">{session.page_url}</span>
+            <span className="ml-1 max-w-full truncate text-[11px] text-slate-500 md:max-w-[36vw]">{session.page_url}</span>
           ) : null}
         </div>
       </div>
 
       {/* Flags */}
-      <div className="flex shrink-0 items-center gap-1">
+      <div className="flex shrink-0 flex-wrap items-center gap-1 md:justify-end">
         {session.is_admin ? (
           <TagPill className="border-amber-400/40 bg-amber-500/10 text-amber-200">
             {rowCopy.admin}
           </TagPill>
         ) : null}
         {flags.hasAssist ? (
-          <TagPill className="border-violet-400/40 bg-violet-500/10 text-violet-200">
+          <TagPill className="border-emerald-400/30 bg-emerald-500/10 text-emerald-200">
             {rowCopy.assist}
           </TagPill>
         ) : null}
@@ -404,13 +439,13 @@ const SessionRow = ({
         ) : null}
       </div>
 
-      <ChevronRight className="h-4 w-4 shrink-0 text-slate-500 transition group-hover:text-white" />
+      <ChevronRight className="hidden h-4 w-4 shrink-0 text-slate-500 transition group-hover:translate-x-0.5 group-hover:text-white md:block" />
     </Link>
   );
 };
 
 const MetricPill = ({ children }: { children: React.ReactNode }) => (
-  <span className="rounded bg-slate-800/60 px-1.5 py-px font-mono text-slate-300">{children}</span>
+  <span className="rounded-full border border-white/10 bg-slate-950/50 px-1.5 py-px font-mono text-slate-300">{children}</span>
 );
 
 const TagPill = ({ className, children }: { className: string; children: React.ReactNode }) => (

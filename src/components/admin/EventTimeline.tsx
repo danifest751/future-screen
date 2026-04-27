@@ -83,7 +83,7 @@ const EventTimeline = ({
   if (events.length === 0) return null;
 
   return (
-    <div className="rounded-xl border border-white/10 bg-slate-900/50 p-4">
+    <div className="rounded-2xl border border-white/10 bg-slate-950/35 p-4 shadow-2xl shadow-black/10">
       <div className="mb-2 flex items-baseline justify-between text-[11px] text-slate-500">
         <span className="font-mono">{startLabel}</span>
         <span className="uppercase tracking-wide">
@@ -106,7 +106,7 @@ const EventTimeline = ({
               onMouseLeave={() => setHoveredIdx((prev) => (prev === idx ? null : prev))}
               onClick={() => onEventClick?.(marker.event)}
               title={`${marker.label}\n${new Date(marker.event.ts).toLocaleString(localeTag)}`}
-              className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 transition-all hover:scale-150"
+              className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 transition-transform hover:scale-150 active:scale-125"
               style={{ left: `${marker.leftPct}%` }}
             >
               <span
@@ -120,7 +120,7 @@ const EventTimeline = ({
         })}
         {hoveredIdx !== null && markers[hoveredIdx] ? (
           <div
-            className="pointer-events-none absolute z-10 -translate-x-1/2 rounded-md border border-white/15 bg-slate-950/95 px-2 py-1 text-[10px] text-slate-200 shadow-xl whitespace-nowrap"
+            className="pointer-events-none absolute z-10 -translate-x-1/2 whitespace-nowrap rounded-lg border border-white/15 bg-slate-950/95 px-2 py-1 text-[10px] text-slate-200 shadow-xl shadow-black/20"
             style={{
               left: `${markers[hoveredIdx].leftPct}%`,
               bottom: '100%',

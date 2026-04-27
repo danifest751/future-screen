@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, Copy, ExternalLink, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import AdminLayout from '../../components/admin/AdminLayout';
-import { EmptyState, LoadingState } from '../../components/admin/ui';
+import { EmptyState } from '../../components/admin/ui';
 import { safeHref } from '../../lib/safeHref';
 import EventTimeline from '../../components/admin/EventTimeline';
 import { useI18n } from '../../context/I18nContext';
@@ -154,7 +154,7 @@ const copy = {
   },
 } as const;
 
-const CopyButton = ({ value, label }: { value: string; label: string }) => {
+const CopyButton = ({ value, label, copiedLabel }: { value: string; label: string; copiedLabel: string }) => {
   const [copied, setCopied] = useState(false);
   const onClick = useCallback(() => {
     navigator.clipboard.writeText(value).then(() => {
@@ -167,16 +167,16 @@ const CopyButton = ({ value, label }: { value: string; label: string }) => {
       type="button"
       onClick={onClick}
       title={label}
-      className="inline-flex items-center gap-1 rounded border border-white/10 bg-slate-900/60 px-1.5 py-0.5 text-[10px] text-slate-300 hover:border-white/30 hover:text-white"
+      className="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-slate-950/60 px-1.5 py-0.5 text-[10px] text-slate-300 transition hover:border-white/25 hover:bg-white/5 hover:text-white active:scale-[0.96]"
     >
       <Copy className="h-3 w-3" />
-      {copied ? 'ok' : 'copy'}
+      {copied ? copiedLabel : label}
     </button>
   );
 };
 
 const IdentityRow = ({ label, children }: { label: string; children: React.ReactNode }) => (
-  <div className="flex items-start gap-3 py-1.5 text-xs">
+  <div className="grid gap-1 py-1.5 text-xs sm:grid-cols-[128px_minmax(0,1fr)] sm:gap-3">
     <dt className="w-32 shrink-0 font-mono text-slate-500">{label}</dt>
     <dd className="min-w-0 flex-1 break-words text-slate-200">{children}</dd>
   </div>
@@ -187,6 +187,30 @@ const renderJsonIfPresent = (value: Record<string, unknown> | null | undefined):
   if (Object.keys(value).length === 0) return null;
   return JSON.stringify(value);
 };
+
+const SessionSkeleton = () => (
+  <div className="space-y-3">
+    <div className="rounded-2xl border border-white/10 bg-slate-950/35 p-4 shadow-2xl shadow-black/10">
+      <div className="mb-4 h-4 w-32 animate-pulse rounded bg-white/10" />
+      <div className="grid gap-3 md:grid-cols-2">
+        {Array.from({ length: 10 }).map((_, index) => (
+          <div key={index} className="grid gap-2 sm:grid-cols-[128px_minmax(0,1fr)]">
+            <div className="h-3 w-24 animate-pulse rounded bg-white/5" />
+            <div className="h-3 w-4/5 animate-pulse rounded bg-white/10" />
+          </div>
+        ))}
+      </div>
+    </div>
+    <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+      {Array.from({ length: 8 }).map((_, index) => (
+        <div key={index} className="rounded-xl border border-white/10 bg-slate-950/35 p-3 shadow-2xl shadow-black/10">
+          <div className="h-3 w-24 animate-pulse rounded bg-white/5" />
+          <div className="mt-3 h-5 w-16 animate-pulse rounded bg-white/10" />
+        </div>
+      ))}
+    </div>
+  </div>
+);
 
 const AdminVisualLedSessionPage = () => {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -255,18 +279,18 @@ const AdminVisualLedSessionPage = () => {
   const device = deviceKindFromUserAgent(session?.user_agent ?? null);
 
   const tabButtonClass = (active: boolean) =>
-    `rounded-t-lg border-b-2 px-2.5 py-1.5 text-sm font-medium transition ${
+    `rounded-lg border px-3 py-1.5 text-sm font-medium transition active:scale-[0.98] ${
       active
-        ? 'border-brand-400 text-white'
-        : 'border-transparent text-slate-400 hover:border-white/20 hover:text-white'
+        ? 'border-emerald-400/40 bg-emerald-500/10 text-emerald-100'
+        : 'border-white/10 text-slate-400 hover:border-white/20 hover:bg-white/5 hover:text-white'
     }`;
 
   return (
     <AdminLayout title={title} subtitle={subtitle}>
-      <div className="sticky top-4 z-20 mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-slate-900/95 px-3 py-2 shadow-xl shadow-black/20 backdrop-blur">
+      <div className="sticky top-4 z-20 mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-slate-950/90 px-3 py-2 shadow-2xl shadow-black/20 backdrop-blur">
         <Link
           to="/admin/visual-led-logs"
-          className="inline-flex items-center gap-1 text-sm text-slate-300 hover:text-white"
+          className="inline-flex items-center gap-1 rounded-lg border border-white/10 px-2.5 py-1.5 text-sm text-slate-300 transition hover:border-white/20 hover:bg-white/5 hover:text-white active:scale-[0.98]"
         >
           <ArrowLeft className="h-4 w-4" />
           {ui.back}
@@ -275,7 +299,7 @@ const AdminVisualLedSessionPage = () => {
           <button
             type="button"
             onClick={() => setConfirmDelete(true)}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-red-500/40 bg-red-500/10 px-2.5 py-1.5 text-sm font-medium text-red-200 hover:border-red-400 hover:bg-red-500/20"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-red-500/40 bg-red-500/10 px-2.5 py-1.5 text-sm font-medium text-red-200 transition hover:border-red-400 hover:bg-red-500/20 active:scale-[0.98]"
           >
             <Trash2 className="h-3.5 w-3.5" />
             {ui.delete}
@@ -285,12 +309,12 @@ const AdminVisualLedSessionPage = () => {
 
       {confirmDelete && session ? (
         <div
-          className="fixed inset-0 z-[10002] flex items-center justify-center bg-black/70 p-4"
+          className="fixed inset-0 z-[10002] flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm"
           onClick={(e) => {
             if (e.target === e.currentTarget && !deleting) setConfirmDelete(false);
           }}
         >
-          <div className="w-full max-w-md rounded-2xl border border-white/15 bg-slate-900 p-6 shadow-2xl">
+          <div className="w-full max-w-md rounded-2xl border border-white/15 bg-slate-950 p-6 shadow-2xl shadow-black/30">
             <h3 className="mb-2 text-lg font-semibold text-white">{ui.delete}</h3>
             <p className="mb-4 text-sm text-slate-300">{ui.deleteConfirm}</p>
             <div className="mb-5 rounded-lg border border-white/10 bg-slate-950/50 p-3 text-xs">
@@ -303,7 +327,7 @@ const AdminVisualLedSessionPage = () => {
                 type="button"
                 onClick={() => setConfirmDelete(false)}
                 disabled={deleting}
-                className="rounded-lg border border-white/10 bg-slate-800 px-4 py-2 text-sm font-medium text-slate-200 hover:border-white/30 hover:text-white disabled:opacity-60"
+                className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-white/30 hover:bg-white/10 hover:text-white active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {ui.cancel}
               </button>
@@ -311,7 +335,7 @@ const AdminVisualLedSessionPage = () => {
                 type="button"
                 onClick={() => void handleDelete()}
                 disabled={deleting}
-                className="inline-flex items-center gap-1 rounded-lg bg-red-500/90 px-4 py-2 text-sm font-semibold text-white hover:bg-red-500 disabled:opacity-60"
+                className="inline-flex items-center gap-1 rounded-lg bg-red-500/90 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Trash2 className="h-4 w-4" />
                 {deleting ? ui.deleting : ui.delete}
@@ -321,9 +345,9 @@ const AdminVisualLedSessionPage = () => {
         </div>
       ) : null}
 
-      {loading ? <LoadingState title={ui.loading} /> : null}
+      {loading ? <SessionSkeleton /> : null}
       {error ? (
-        <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300">
+        <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-100 shadow-2xl shadow-black/10">
           {error}
         </div>
       ) : null}
@@ -333,7 +357,7 @@ const AdminVisualLedSessionPage = () => {
       {session && !loading ? (
         <div className="space-y-3">
           {/* Identity block — everything we know about the session */}
-          <div className="rounded-xl border border-white/10 bg-slate-900/50 p-3">
+          <div className="rounded-2xl border border-white/10 bg-slate-950/35 p-4 shadow-2xl shadow-black/10">
             <div className="mb-2 flex items-center justify-between">
               <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-300">
                 {ui.identity.heading}
@@ -344,7 +368,7 @@ const AdminVisualLedSessionPage = () => {
                     {ui.identity.admin}
                   </span>
                 ) : (
-                  <span className="rounded-full border border-white/10 bg-slate-800 px-2 py-0.5 text-xs text-slate-400">
+                  <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-xs text-slate-400">
                     {ui.identity.anon}
                   </span>
                 )}
@@ -353,14 +377,14 @@ const AdminVisualLedSessionPage = () => {
             <dl className="grid gap-x-6 md:grid-cols-2">
               <div>
                 <IdentityRow label={ui.identity.shortId}>
-                  <span className="font-mono text-sm font-semibold text-sky-200">
+                  <span className="font-mono text-sm font-semibold text-emerald-200">
                     #{shortSessionId(session.session_key)}
                   </span>
                 </IdentityRow>
                 <IdentityRow label={ui.identity.sessionKey}>
                   <span className="flex items-center gap-2">
                     <span className="font-mono text-xs">{session.session_key}</span>
-                    <CopyButton value={session.session_key} label={ui.copy} />
+                    <CopyButton value={session.session_key} label={ui.copy} copiedLabel={ui.copied} />
                   </span>
                 </IdentityRow>
                 <IdentityRow label={ui.identity.started}>{startedStr}</IdentityRow>
@@ -456,14 +480,14 @@ const AdminVisualLedSessionPage = () => {
           </div>
 
           {/* Tabs */}
-          <div className="border-b border-white/10">
+          <div className="rounded-2xl border border-white/10 bg-slate-950/35 p-2 shadow-2xl shadow-black/10">
             <nav className="flex flex-wrap gap-1">
               <button onClick={() => setTab('overview')} className={tabButtonClass(tab === 'overview')}>
                 {ui.tabs.overview}
               </button>
               <button onClick={() => setTab('events')} className={tabButtonClass(tab === 'events')}>
                 {ui.tabs.events}
-                <span className="ml-1.5 rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-mono">
+                <span className="ml-1.5 rounded-full border border-white/10 bg-white/10 px-1.5 py-0.5 text-[10px] font-mono">
                   {events.length}
                 </span>
               </button>
@@ -472,13 +496,13 @@ const AdminVisualLedSessionPage = () => {
                 className={tabButtonClass(tab === 'backgrounds')}
               >
                 {ui.tabs.backgrounds}
-                <span className="ml-1.5 rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-mono">
+                <span className="ml-1.5 rounded-full border border-white/10 bg-white/10 px-1.5 py-0.5 text-[10px] font-mono">
                   {assets.length}
                 </span>
               </button>
               <button onClick={() => setTab('reports')} className={tabButtonClass(tab === 'reports')}>
                 {ui.tabs.reports}
-                <span className="ml-1.5 rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-mono">
+                <span className="ml-1.5 rounded-full border border-white/10 bg-white/10 px-1.5 py-0.5 text-[10px] font-mono">
                   {insights?.reportShares.length ?? 0}
                 </span>
               </button>
@@ -517,7 +541,7 @@ const AdminVisualLedSessionPage = () => {
               </div>
 
               {insights.reportUrl ? (
-                <div className="rounded-xl border border-white/10 bg-slate-900/50 p-3 text-sm">
+                <div className="rounded-2xl border border-white/10 bg-slate-950/35 p-4 text-sm shadow-2xl shadow-black/10">
                   <div className="mb-1 text-xs uppercase tracking-wide text-slate-400">
                     {ui.cards.reportLink}
                   </div>
@@ -557,9 +581,9 @@ const AdminVisualLedSessionPage = () => {
                       const el = document.getElementById(`event-row-${e.id}`);
                       if (el) {
                         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        el.classList.add('ring-2', 'ring-brand-400');
+                        el.classList.add('ring-2', 'ring-emerald-400');
                         window.setTimeout(() => {
-                          el.classList.remove('ring-2', 'ring-brand-400');
+                          el.classList.remove('ring-2', 'ring-emerald-400');
                         }, 1500);
                       }
                     }}
@@ -586,16 +610,16 @@ const AdminVisualLedSessionPage = () => {
               ) : (
                 <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                   {assets.map((asset) => (
-                    <div key={asset.id} className="rounded-lg border border-white/10 bg-slate-900/50 p-2">
+                    <div key={asset.id} className="rounded-2xl border border-white/10 bg-slate-950/35 p-2 shadow-2xl shadow-black/10 transition hover:border-white/20 hover:bg-slate-900/60">
                       {asset.preview_url ? (
                         <img
                           src={asset.preview_url}
                           alt={asset.file_name}
-                          className="h-36 w-full rounded-md border border-white/10 object-cover"
+                          className="h-36 w-full rounded-xl border border-white/10 object-cover"
                           loading="lazy"
                         />
                       ) : (
-                        <div className="flex h-36 w-full items-center justify-center rounded-md border border-dashed border-white/15 text-xs text-slate-500">
+                        <div className="flex h-36 w-full items-center justify-center rounded-xl border border-dashed border-white/15 bg-slate-950/50 text-xs text-slate-500">
                           preview unavailable
                         </div>
                       )}
@@ -623,16 +647,16 @@ const AdminVisualLedSessionPage = () => {
               ) : (
                 <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                   {insights.reportShares.map((share) => (
-                    <div key={share.id} className="rounded-lg border border-white/10 bg-slate-900/50 p-3">
+                    <div key={share.id} className="rounded-2xl border border-white/10 bg-slate-950/35 p-3 shadow-2xl shadow-black/10 transition hover:border-white/20 hover:bg-slate-900/60">
                       {share.previewImage ? (
                         <img
                           src={share.previewImage}
                           alt="report preview"
-                          className="h-32 w-full rounded-md border border-white/10 object-cover"
+                          className="h-32 w-full rounded-xl border border-white/10 object-cover"
                           loading="lazy"
                         />
                       ) : (
-                        <div className="flex h-32 w-full items-center justify-center rounded-md border border-dashed border-white/15 text-xs text-slate-500">
+                        <div className="flex h-32 w-full items-center justify-center rounded-xl border border-dashed border-white/15 bg-slate-950/50 text-xs text-slate-500">
                           preview unavailable
                         </div>
                       )}
@@ -647,7 +671,7 @@ const AdminVisualLedSessionPage = () => {
                         href={safeHref(share.url)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="mt-2 inline-flex items-center gap-1 rounded-md border border-white/15 bg-white/5 px-2 py-1 text-xs text-slate-200 hover:bg-white/10"
+                        className="mt-2 inline-flex items-center gap-1 rounded-lg border border-white/15 bg-white/5 px-2 py-1 text-xs text-slate-200 transition hover:border-white/25 hover:bg-white/10 active:scale-[0.98]"
                       >
                         {ui.cards.open}
                         <ExternalLink className="h-3 w-3" />
@@ -663,7 +687,7 @@ const AdminVisualLedSessionPage = () => {
             <div className="space-y-3">
               <div>
                 <div className="mb-1 text-xs uppercase tracking-wide text-slate-400">summary</div>
-                <pre className="max-h-96 overflow-auto rounded-xl border border-white/10 bg-slate-950/70 p-3 text-xs text-slate-200">
+                <pre className="max-h-96 overflow-auto rounded-2xl border border-white/10 bg-slate-950/70 p-4 text-xs text-slate-200 shadow-2xl shadow-black/10">
                   {JSON.stringify(session.summary || {}, null, 2)}
                 </pre>
               </div>
@@ -676,9 +700,9 @@ const AdminVisualLedSessionPage = () => {
 };
 
 const StatCard = ({ label, value }: { label: string; value: string | number }) => (
-  <div className="rounded-lg border border-white/10 bg-slate-900/50 p-2.5">
+  <div className="rounded-xl border border-white/10 bg-slate-950/35 p-3 shadow-2xl shadow-black/10">
     <div className="text-[10px] uppercase tracking-wide text-slate-500">{label}</div>
-    <div className="mt-0.5 text-base font-semibold text-white">{value}</div>
+    <div className="mt-1 font-mono text-lg font-semibold text-white">{value}</div>
   </div>
 );
 
@@ -695,11 +719,11 @@ const EventRow = ({
   const meta = getEventMeta(entry.event_type);
   const label = adminLocale === 'ru' ? meta.labelRu : meta.labelEn;
   return (
-    <div id={`event-row-${entry.id}`} className="rounded-lg border border-white/10 bg-slate-900/50 transition-shadow">
+    <div id={`event-row-${entry.id}`} className="rounded-2xl border border-white/10 bg-slate-950/35 shadow-2xl shadow-black/10 transition hover:border-white/20">
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
-        className="flex w-full items-center gap-3 px-3 py-2 text-left text-xs"
+        className="flex w-full items-center gap-3 px-3 py-2.5 text-left text-xs transition hover:bg-white/5 active:bg-white/10"
       >
         <span className="w-36 shrink-0 font-mono text-slate-400">
           {new Date(entry.ts).toLocaleString(localeTag, {
@@ -728,7 +752,7 @@ const EventRow = ({
         </span>
       </button>
       {open ? (
-        <pre className="max-h-64 overflow-auto border-t border-white/10 bg-slate-950/60 p-3 text-[11px] text-slate-200">
+        <pre className="max-h-64 overflow-auto border-t border-white/10 bg-slate-950/70 p-3 text-[11px] text-slate-200">
           {JSON.stringify(entry.payload || {}, null, 2)}
         </pre>
       ) : null}

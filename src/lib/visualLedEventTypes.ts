@@ -25,13 +25,13 @@ export interface VisualLedEventMeta {
 }
 
 const category: Record<VisualLedEventCategory, { color: string; badge: string }> = {
-  session: { color: '#60a5fa', badge: 'bg-blue-500/15 text-blue-300 border-blue-500/30' },
+  session: { color: '#60a5fa', badge: 'bg-sky-500/15 text-sky-300 border-sky-500/30' },
   screen: { color: '#34d399', badge: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' },
-  scene: { color: '#a78bfa', badge: 'bg-violet-500/15 text-violet-300 border-violet-500/30' },
-  asset: { color: '#818cf8', badge: 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30' },
+  scene: { color: '#2dd4bf', badge: 'bg-teal-500/15 text-teal-300 border-teal-500/30' },
+  asset: { color: '#67e8f9', badge: 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30' },
   assist: { color: '#fbbf24', badge: 'bg-amber-500/15 text-amber-300 border-amber-500/30' },
   report: { color: '#38bdf8', badge: 'bg-sky-500/15 text-sky-300 border-sky-500/30' },
-  project: { color: '#f472b6', badge: 'bg-pink-500/15 text-pink-300 border-pink-500/30' },
+  project: { color: '#fb7185', badge: 'bg-rose-500/15 text-rose-300 border-rose-500/30' },
   other: { color: '#94a3b8', badge: 'bg-slate-500/20 text-slate-300 border-slate-500/30' },
 };
 
