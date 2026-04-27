@@ -57,7 +57,7 @@ export const useLeads = () => {
     leads,
     loading: isLoading,
     error: error?.message ?? null,
-    loadLeads: async () => {}, // React Query автоматически загружает
+    loadLeads: async () => {}, // React Query loads leads automatically.
     clearLeads,
     deleteLead,
     markAllRead,

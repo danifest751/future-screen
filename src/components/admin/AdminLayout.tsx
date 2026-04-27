@@ -169,7 +169,7 @@ const AdminLayout = ({ title, subtitle, children, contentLocale, onContentLocale
   };
 
   return (
-    <div className="admin-shell min-h-screen bg-transparent">
+    <div className="admin-shell min-h-screen bg-[#080b10]">
       <Toaster
         position="top-right"
         toastOptions={{
@@ -182,7 +182,7 @@ const AdminLayout = ({ title, subtitle, children, contentLocale, onContentLocale
         onClick={() => setSidebarOpen(!sidebarOpen)}
         aria-label={sidebarOpen ? adminLayoutContent.menu.close : adminLayoutContent.menu.open}
         aria-expanded={sidebarOpen}
-        className="fixed left-4 top-4 z-50 flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-slate-800 text-white lg:hidden"
+        className="fixed left-4 top-4 z-50 flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-slate-900 text-white lg:hidden"
       >
         {sidebarOpen ? <X size={18} /> : <Menu size={18} />}
       </button>
@@ -190,7 +190,7 @@ const AdminLayout = ({ title, subtitle, children, contentLocale, onContentLocale
       {sidebarOpen && <div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={() => setSidebarOpen(false)} />}
 
       <aside
-        className={`fixed left-0 top-0 z-40 h-full w-[280px] transform border-r border-white/10 bg-slate-800 transition-transform duration-300 lg:translate-x-0 ${
+        className={`fixed left-0 top-0 z-40 h-full w-[280px] transform border-r border-white/10 bg-slate-950 transition-transform duration-300 lg:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -199,14 +199,14 @@ const AdminLayout = ({ title, subtitle, children, contentLocale, onContentLocale
             <div className="flex items-center gap-3">
               <div
                 className="flex h-10 w-10 items-center justify-center rounded-lg text-sm font-bold text-white"
-                style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)' }}
+                style={{ background: 'linear-gradient(135deg, #0f172a 0%, #115e59 100%)' }}
               >
                 FS
               </div>
               <div className="min-w-0">
                 <div className="truncate text-sm font-semibold leading-none text-white">{adminLayoutContent.brand.name}</div>
                 <div className="mt-1 flex items-center gap-1 text-xs text-slate-400">
-                  <Zap size={12} className="text-brand-400" />
+                  <Zap size={12} className="text-emerald-300" />
                   {adminLayoutContent.brand.adminPanel}
                 </div>
               </div>
@@ -231,13 +231,13 @@ const AdminLayout = ({ title, subtitle, children, contentLocale, onContentLocale
                         onClick={() => setSidebarOpen(false)}
                         className={`group flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition ${
                           isActive
-                            ? 'bg-white/10 text-white shadow-sm ring-1 ring-brand-500/30'
+                            ? 'bg-white/10 text-white shadow-sm ring-1 ring-emerald-400/25'
                             : 'text-slate-400 hover:bg-white/5 hover:text-white'
                         }`}
                         aria-current={isActive ? 'page' : undefined}
                       >
                         <div className="flex min-w-0 items-center gap-3">
-                          <Icon size={16} className={isActive ? 'text-brand-400' : 'text-slate-500 group-hover:text-slate-300'} />
+                          <Icon size={16} className={isActive ? 'text-emerald-300' : 'text-slate-500 group-hover:text-slate-300'} />
                           <span className="truncate">{item.label}</span>
                         </div>
                         <div className="ml-2 flex items-center gap-2">
@@ -246,7 +246,7 @@ const AdminLayout = ({ title, subtitle, children, contentLocale, onContentLocale
                               {unreadLeadCount}
                             </span>
                           )}
-                          {item.external && <ExternalLink size={13} className={isActive ? 'text-brand-300' : 'text-slate-500'} />}
+                          {item.external && <ExternalLink size={13} className={isActive ? 'text-emerald-200' : 'text-slate-500'} />}
                         </div>
                       </Link>
                     );
@@ -270,7 +270,7 @@ const AdminLayout = ({ title, subtitle, children, contentLocale, onContentLocale
 
       <main className="lg:ml-[280px]">
         <div className="min-h-screen">
-          <header className="border-b border-white/10 bg-slate-800/50 backdrop-blur">
+          <header className="border-b border-white/10 bg-slate-950/70 backdrop-blur">
             <div className="flex min-h-20 flex-col gap-4 px-5 py-4 md:flex-row md:items-center md:justify-between lg:px-8">
               <div className="min-w-0">
                 {breadcrumbs.length > 1 && (
@@ -326,14 +326,14 @@ const AdminLayout = ({ title, subtitle, children, contentLocale, onContentLocale
                     </div>
                   ) : null}
                 </div>
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-500 text-sm font-bold text-white">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full border border-emerald-300/25 bg-emerald-400/10 text-sm font-bold text-emerald-100">
                   A
                 </div>
               </div>
             </div>
           </header>
 
-          <div className="border-b border-white/10 bg-slate-900/40 px-5 py-3 lg:px-8">
+          <div className="border-b border-white/10 bg-slate-950/50 px-5 py-3 lg:px-8">
             <div className="flex items-center gap-2 overflow-x-auto text-xs text-slate-300">
               <span className="whitespace-nowrap font-medium">{adminLayoutContent.quickLinks.label}</span>
               {quickLinkItems.map((item) => {
@@ -346,7 +346,7 @@ const AdminLayout = ({ title, subtitle, children, contentLocale, onContentLocale
                     to={item.to}
                     className={`flex items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1.5 transition ${
                       isActive
-                        ? 'border-brand-500/50 bg-brand-500/10 text-white'
+                        ? 'border-emerald-400/40 bg-emerald-400/10 text-white'
                         : 'border-white/10 bg-white/5 hover:border-white/25 hover:text-white'
                     }`}
                     aria-current={isActive ? 'page' : undefined}

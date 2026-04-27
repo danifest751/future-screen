@@ -3,18 +3,19 @@ import type { Locale } from '../../i18n/types';
 const ru = {
   layout: {
     title: 'Дашборд',
-    subtitle: 'Обзор активности и статистика',
+    subtitle: 'Операционный обзор заявок, источников и быстрых разделов админки',
   },
   state: {
-    loading: 'Загрузка аналитики...',
+    loading: 'Загружаем аналитику',
+    errorTitle: 'Не удалось загрузить заявки',
     errorPrefix: 'Ошибка загрузки заявок:',
   },
   stats: {
     total: 'Всего заявок',
     week: 'За неделю',
-    month: 'За месяц',
-    conversion: 'Конверсия',
-    noNew: 'Нет новых',
+    month: 'За 30 дней',
+    conversion: 'С контактами',
+    noNew: 'Нет новых сегодня',
     todaySuffix: 'сегодня',
     withContactsSuffix: 'с контактами',
     fromTotal: (withContacts: number, total: number) => `${withContacts} из ${total}`,
@@ -23,31 +24,42 @@ const ru = {
     sources: 'Источники заявок',
     cities: 'Города',
     recentLeads: 'Последние заявки',
-    allLeads: 'Все заявки ->',
+    allLeads: 'Все заявки',
+    contentHub: 'Быстрые разделы',
     noData: 'Пока нет данных',
-    emptyRecent:
-      'Заявок пока нет. Заполните форму на сайте, чтобы увидеть первую запись.',
+    emptyRecentTitle: 'Заявок пока нет',
+    emptyRecentDescription: 'Когда клиент отправит форму на сайте, запись появится в этой ленте.',
   },
   lead: {
     separator: '·',
+    noContact: 'Контакт не указан',
+  },
+  deleteModal: {
+    title: 'Скрыть заявку?',
+    description: (name: string) => `Заявка «${name}» будет скрыта из активного списка.`,
+    action: 'Скрыть',
+    cancel: 'Отмена',
+    success: 'Заявка скрыта',
+    error: 'Не удалось удалить заявку',
   },
 };
 
 const en: typeof ru = {
   layout: {
     title: 'Dashboard',
-    subtitle: 'Activity and analytics overview',
+    subtitle: 'Operational view of leads, sources, and fast admin sections',
   },
   state: {
-    loading: 'Loading analytics...',
+    loading: 'Loading analytics',
+    errorTitle: 'Could not load leads',
     errorPrefix: 'Leads loading error:',
   },
   stats: {
     total: 'Total leads',
     week: 'This week',
-    month: 'This month',
-    conversion: 'Conversion',
-    noNew: 'No new leads',
+    month: 'Last 30 days',
+    conversion: 'With contacts',
+    noNew: 'No new leads today',
     todaySuffix: 'today',
     withContactsSuffix: 'with contacts',
     fromTotal: (withContacts: number, total: number) => `${withContacts} of ${total}`,
@@ -56,13 +68,23 @@ const en: typeof ru = {
     sources: 'Lead sources',
     cities: 'Cities',
     recentLeads: 'Recent leads',
-    allLeads: 'All leads ->',
+    allLeads: 'All leads',
+    contentHub: 'Fast sections',
     noData: 'No data yet',
-    emptyRecent:
-      'No leads yet. Submit the form on the website to see the first record.',
+    emptyRecentTitle: 'No leads yet',
+    emptyRecentDescription: 'When a client submits the site form, the record will appear in this feed.',
   },
   lead: {
     separator: '·',
+    noContact: 'No contact provided',
+  },
+  deleteModal: {
+    title: 'Hide lead?',
+    description: (name: string) => `Lead "${name}" will be hidden from the active list.`,
+    action: 'Hide',
+    cancel: 'Cancel',
+    success: 'Lead hidden',
+    error: 'Failed to delete lead',
   },
 };
 

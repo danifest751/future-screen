@@ -1,6 +1,23 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BarChart3, CalendarDays, FileText, FolderOpen, Inbox, Package, Palette, Phone, PhoneCall, Tag, Trash2 } from 'lucide-react';
+import {
+  AlertTriangle,
+  ArrowRight,
+  BarChart3,
+  CalendarDays,
+  Clock3,
+  FileText,
+  FolderOpen,
+  Inbox,
+  MapPin,
+  Package,
+  Palette,
+  Phone,
+  PhoneCall,
+  Settings2,
+  Tag,
+  Trash2,
+} from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
 import AdminLayout from '../../components/admin/AdminLayout';
@@ -21,6 +38,8 @@ const iconMap: Record<string, LucideIcon> = {
   fileText: FileText,
 };
 
+type AdminDashboardContent = ReturnType<typeof getAdminDashboardContent>;
+
 const AdminDashboard = () => {
   const { adminLocale } = useI18n();
   const adminDashboardContent = getAdminDashboardContent(adminLocale);
@@ -29,22 +48,7 @@ const AdminDashboard = () => {
   const { leads: logs, loading, error, deleteLead } = useLeads();
   const [deleteTarget, setDeleteTarget] = useState<LeadLog | null>(null);
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
-
-  const deleteCopy = adminLocale === 'ru'
-    ? {
-        title: 'Скрыть заявку?',
-        description: (name: string) => `Заявка «${name}» будет скрыта из активного списка.`,
-        action: 'Скрыть',
-        success: 'Заявка скрыта',
-        error: 'Не удалось удалить заявку',
-      }
-    : {
-        title: 'Hide lead?',
-        description: (name: string) => `Lead "${name}" will be hidden from the active list.`,
-        action: 'Hide',
-        success: 'Lead hidden',
-        error: 'Failed to delete lead',
-      };
+  const deleteCopy = adminDashboardContent.deleteModal;
 
   const stats = useMemo(() => {
     const now = new Date();
@@ -85,7 +89,10 @@ const AdminDashboard = () => {
     };
   }, [logs]);
 
-  const sourceEntries = Object.entries(stats.bySource) as Array<[string, number]>;
+  const sortedSourceEntries = useMemo(
+    () => Object.entries(stats.bySource).sort((a, b) => b[1] - a[1]) as Array<[string, number]>,
+    [stats.bySource],
+  );
 
   const recentLogs = useMemo(() => {
     return [...logs].sort((a, b) => b.timestamp.localeCompare(a.timestamp)).slice(0, 10);
@@ -107,6 +114,39 @@ const AdminDashboard = () => {
     }
   };
 
+  const statItems = [
+    {
+      title: adminDashboardContent.stats.total,
+      value: stats.total,
+      Icon: Inbox,
+      hint: stats.today > 0
+        ? `+${stats.today} ${adminDashboardContent.stats.todaySuffix}`
+        : adminDashboardContent.stats.noNew,
+      tone: stats.today > 0 ? 'text-emerald-300' : 'text-slate-500',
+    },
+    {
+      title: adminDashboardContent.stats.week,
+      value: stats.week,
+      Icon: CalendarDays,
+      hint: `${stats.today} ${adminDashboardContent.stats.todaySuffix}`,
+      tone: 'text-slate-300',
+    },
+    {
+      title: adminDashboardContent.stats.month,
+      value: stats.month,
+      Icon: BarChart3,
+      hint: `${stats.withContacts} ${adminDashboardContent.stats.withContactsSuffix}`,
+      tone: 'text-slate-300',
+    },
+    {
+      title: adminDashboardContent.stats.conversion,
+      value: `${stats.contactRate}%`,
+      Icon: PhoneCall,
+      hint: adminDashboardContent.stats.fromTotal(stats.withContacts, stats.total),
+      tone: stats.contactRate >= 50 ? 'text-emerald-300' : 'text-amber-300',
+    },
+  ];
+
   return (
     <AdminLayout
       title={adminDashboardContent.layout.title}
@@ -118,218 +158,320 @@ const AdminDashboard = () => {
         title={deleteCopy.title}
         description={deleteTarget ? deleteCopy.description(deleteTarget.name) : ''}
         confirmText={deleteCopy.action}
-        cancelText={adminLocale === 'ru' ? 'Отмена' : 'Cancel'}
+        cancelText={deleteCopy.cancel}
         confirmDisabled={deleteSubmitting}
         onCancel={() => setDeleteTarget(null)}
         onConfirm={handleDeleteConfirm}
       />
 
-      <div className="space-y-4">
-        {loading && <div className="text-sm text-slate-400">{adminDashboardContent.state.loading}</div>}
-        {error && (
-          <div className="text-sm text-red-400">
-            {adminDashboardContent.state.errorPrefix} {error}
-          </div>
-        )}
+      {loading ? (
+        <DashboardSkeleton label={adminDashboardContent.state.loading} />
+      ) : (
+        <div className="space-y-6">
+          {error && (
+            <ErrorPanel
+              title={adminDashboardContent.state.errorTitle}
+              description={`${adminDashboardContent.state.errorPrefix} ${error}`}
+            />
+          )}
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard
-            title={adminDashboardContent.stats.total}
-            value={stats.total}
-            Icon={Inbox}
-            trend={
-              stats.today > 0
-                ? `+${stats.today} ${adminDashboardContent.stats.todaySuffix}`
-                : adminDashboardContent.stats.noNew
-            }
-            trendColor={stats.today > 0 ? 'text-emerald-400' : 'text-slate-400'}
-          />
-          <StatCard
-            title={adminDashboardContent.stats.week}
-            value={stats.week}
-            Icon={CalendarDays}
-            trend={`${stats.today} ${adminDashboardContent.stats.todaySuffix}`}
-            trendColor="text-blue-400"
-          />
-          <StatCard
-            title={adminDashboardContent.stats.month}
-            value={stats.month}
-            Icon={BarChart3}
-            trend={`${stats.withContacts} ${adminDashboardContent.stats.withContactsSuffix}`}
-            trendColor="text-purple-400"
-          />
-          <StatCard
-            title={adminDashboardContent.stats.conversion}
-            value={`${stats.contactRate}%`}
-            Icon={PhoneCall}
-            trend={adminDashboardContent.stats.fromTotal(stats.withContacts, stats.total)}
-            trendColor={stats.contactRate >= 50 ? 'text-emerald-400' : 'text-amber-400'}
-          />
-        </div>
-
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.8fr)]">
-          <div className="rounded-lg border border-white/10 bg-slate-800 shadow-sm">
-            <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
-              <h3 className="text-base font-semibold text-white">{adminDashboardContent.sections.recentLeads}</h3>
-              <Link to="/admin/leads" className="text-sm font-medium text-brand-400 hover:text-brand-300">
-                {adminDashboardContent.sections.allLeads}
-              </Link>
-            </div>
-            <div className="divide-y divide-white/10">
-              {recentLogs.map((log) => (
-                <div key={log.id} className="flex items-center justify-between gap-3 px-3 py-2.5">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex min-w-0 items-center gap-2">
-                      <span className="truncate text-sm font-medium text-white">{log.name}</span>
-                      <span className="shrink-0 rounded bg-slate-700 px-1.5 py-0.5 text-[11px] text-slate-300">
-                        {log.source.split(' (')[0]}
-                      </span>
-                    </div>
-                    <div className="mt-0.5 truncate text-xs text-slate-400">
-                      {log.phone}
-                      {log.email && <span className="ml-2">{adminDashboardContent.lead.separator} {log.email}</span>}
-                      {log.city && <span className="ml-2">{adminDashboardContent.lead.separator} {log.city}</span>}
-                    </div>
-                  </div>
-                  <div className="shrink-0 text-right">
-                    <div className="text-xs text-slate-400">
-                      {new Date(log.timestamp).toLocaleDateString(localeTag, {
-                        day: 'numeric',
-                        month: 'short',
-                      })}
-                    </div>
-                    <div className="text-[11px] text-slate-500">
-                      {new Date(log.timestamp).toLocaleTimeString(localeTag, {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setDeleteTarget(log)}
-                    title={deleteCopy.action}
-                    className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-red-400/30 bg-red-500/10 text-red-100 hover:border-red-400/60"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
+          <section className="overflow-hidden rounded-2xl border border-white/10 bg-slate-950/45 shadow-[0_18px_44px_-32px_rgba(0,0,0,0.9)]">
+            <div className="grid divide-y divide-white/10 sm:grid-cols-2 sm:divide-x sm:divide-y-0 xl:grid-cols-4">
+              {statItems.map((item) => (
+                <StatMetric key={item.title} {...item} />
               ))}
-              {recentLogs.length === 0 && (
-                <div className="p-8 text-center text-slate-400">{adminDashboardContent.sections.emptyRecent}</div>
-              )}
             </div>
-          </div>
+          </section>
 
-          <div className="space-y-4">
-            <div className="rounded-lg border border-white/10 bg-slate-800 p-3 shadow-sm">
-              <div className="mb-2">
-                <h3 className="text-base font-semibold text-white">{adminContentIndexContent.layout.title}</h3>
-                <p className="text-xs text-slate-500">{adminContentIndexContent.layout.subtitle}</p>
+          <div className="grid gap-5 xl:grid-cols-[minmax(0,1.55fr)_minmax(300px,0.75fr)]">
+            <section className="overflow-hidden rounded-2xl border border-white/10 bg-slate-950/35 shadow-[0_18px_44px_-32px_rgba(0,0,0,0.9)]">
+              <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-4 sm:px-5">
+                <div className="min-w-0">
+                  <h3 className="text-base font-semibold text-white">{adminDashboardContent.sections.recentLeads}</h3>
+                </div>
+                <Link
+                  to="/admin/leads"
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1.5 text-xs font-semibold text-emerald-100 transition hover:border-emerald-300/40 hover:bg-emerald-400/15 active:scale-[0.98]"
+                >
+                  {adminDashboardContent.sections.allLeads}
+                  <ArrowRight size={13} />
+                </Link>
               </div>
-              <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
-                {adminContentIndexContent.sections.slice(0, 6).map((section) => {
-                  const Icon = iconMap[section.icon] ?? FileText;
-                  return (
-                    <Link
-                      key={section.to}
-                      to={section.to}
-                      className="group flex items-center gap-3 rounded-lg border border-white/10 bg-slate-900/40 px-3 py-2 transition hover:border-brand-500/40 hover:bg-slate-900/70"
-                    >
-                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-brand-500/20 bg-brand-500/10">
-                        <Icon size={15} className="text-brand-300" />
-                      </span>
-                      <span className="min-w-0">
-                        <span className="block truncate text-sm font-medium text-white">{section.title}</span>
-                        <span className="block truncate text-xs text-slate-500">{section.desc}</span>
-                      </span>
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
 
-            <div className="rounded-lg border border-white/10 bg-slate-800 p-3 shadow-sm">
-              <h3 className="mb-3 text-base font-semibold text-white">{adminDashboardContent.sections.sources}</h3>
-              <div className="space-y-2">
-                {sourceEntries
-                  .sort((a, b) => b[1] - a[1])
-                  .map(([source, count]) => (
-                    <div key={source} className="flex items-center justify-between gap-3">
-                      <span className="min-w-0 truncate text-sm text-slate-300">{source}</span>
-                      <div className="flex shrink-0 items-center gap-2">
-                        <div className="h-1.5 w-24 rounded-full bg-slate-700">
-                          <div
-                            className="h-1.5 rounded-full bg-brand-500"
-                            style={{ width: `${stats.total > 0 ? (count / stats.total) * 100 : 0}%` }}
-                          />
-                        </div>
-                        <span className="w-8 text-right text-sm font-medium text-white">{count}</span>
-                      </div>
-                    </div>
+              {recentLogs.length > 0 ? (
+                <div className="divide-y divide-white/10">
+                  {recentLogs.map((log) => (
+                    <LeadRow
+                      key={log.id}
+                      log={log}
+                      localeTag={localeTag}
+                      content={adminDashboardContent}
+                      onDelete={() => setDeleteTarget(log)}
+                    />
                   ))}
-                {Object.keys(stats.bySource).length === 0 && (
-                  <div className="text-center text-sm text-slate-400">{adminDashboardContent.sections.noData}</div>
-                )}
-              </div>
-            </div>
+                </div>
+              ) : (
+                <EmptyRecent content={adminDashboardContent} />
+              )}
+            </section>
 
-            <div className="rounded-lg border border-white/10 bg-slate-800 p-3 shadow-sm">
-              <h3 className="mb-3 text-base font-semibold text-white">{adminDashboardContent.sections.cities}</h3>
-              <div className="space-y-2">
-                {stats.topCities.map(([city, count], index) => (
-                  <div key={city} className="flex items-center justify-between gap-3">
-                    <div className="flex min-w-0 items-center gap-2">
-                      <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-700 text-[11px] font-bold text-white">
-                        {index + 1}
-                      </div>
-                      <span className="truncate text-sm text-slate-300">{city}</span>
-                    </div>
-                    <span className="text-sm font-medium text-white">{count}</span>
+            <aside className="space-y-5">
+              <section className="rounded-2xl border border-white/10 bg-slate-950/35 p-4 shadow-[0_18px_44px_-32px_rgba(0,0,0,0.9)]">
+                <div className="mb-4 flex items-start justify-between gap-3">
+                  <div>
+                    <h3 className="text-base font-semibold text-white">{adminDashboardContent.sections.contentHub}</h3>
+                    <p className="mt-1 text-xs text-slate-500">{adminContentIndexContent.layout.subtitle}</p>
                   </div>
-                ))}
-                {stats.topCities.length === 0 && (
-                  <div className="text-center text-sm text-slate-400">{adminDashboardContent.sections.noData}</div>
-                )}
-              </div>
-            </div>
+                  <Settings2 size={17} className="text-emerald-300" />
+                </div>
+                <div className="space-y-1.5">
+                  {adminContentIndexContent.sections.slice(0, 6).map((section) => {
+                    const Icon = iconMap[section.icon] ?? FileText;
+                    return (
+                      <Link
+                        key={section.to}
+                        to={section.to}
+                        className="group flex items-center gap-3 rounded-xl border border-transparent px-2 py-2.5 transition hover:border-white/10 hover:bg-white/[0.04] active:scale-[0.99]"
+                      >
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03]">
+                          <Icon size={15} className="text-slate-300 group-hover:text-emerald-200" />
+                        </span>
+                        <span className="min-w-0">
+                          <span className="block truncate text-sm font-medium text-white">{section.title}</span>
+                          <span className="block truncate text-xs text-slate-500">{section.desc}</span>
+                        </span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </section>
+
+              <MetricListPanel
+                title={adminDashboardContent.sections.sources}
+                emptyText={adminDashboardContent.sections.noData}
+                items={sortedSourceEntries}
+                total={stats.total}
+              />
+
+              <CityPanel
+                title={adminDashboardContent.sections.cities}
+                emptyText={adminDashboardContent.sections.noData}
+                items={stats.topCities}
+              />
+            </aside>
           </div>
         </div>
-      </div>
+      )}
     </AdminLayout>
   );
 };
 
-const StatCard = ({
+const StatMetric = ({
   title,
   value,
   Icon,
-  trend,
-  trendColor,
+  hint,
+  tone,
 }: {
   title: string;
   value: number | string;
   Icon: LucideIcon;
-  trend: string;
-  trendColor: string;
+  hint: string;
+  tone: string;
 }) => (
-  <div className="rounded-lg border border-white/10 bg-slate-800 p-3 shadow-sm">
-    <div className="flex items-center justify-between">
-      <div>
-        <div className="text-xs text-slate-400">{title}</div>
-        <div className="mt-0.5 text-2xl font-bold text-white">{value}</div>
+  <div className="group min-h-[118px] p-4 transition hover:bg-white/[0.03] sm:p-5">
+    <div className="flex items-start justify-between gap-4">
+      <div className="min-w-0">
+        <div className="text-xs font-medium uppercase tracking-normal text-slate-500">{title}</div>
+        <div className="mt-2 font-mono text-3xl font-semibold leading-none text-white">{value}</div>
       </div>
-      <div
-        className="flex h-9 w-9 items-center justify-center rounded-lg"
-        style={{
-          background: 'linear-gradient(135deg, rgba(102,126,234,0.2) 0%, rgba(118,75,162,0.15) 100%)',
-          border: '1px solid rgba(102,126,234,0.2)',
-        }}
-      >
-        <Icon size={18} className="text-brand-400" />
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-slate-300 transition group-hover:border-emerald-300/25 group-hover:text-emerald-200">
+        <Icon size={18} />
       </div>
     </div>
-    <div className={`mt-2 text-xs ${trendColor}`}>{trend}</div>
+    <div className={`mt-3 text-xs font-medium ${tone}`}>{hint}</div>
+  </div>
+);
+
+const LeadRow = ({
+  log,
+  localeTag,
+  content,
+  onDelete,
+}: {
+  log: LeadLog;
+  localeTag: string;
+  content: AdminDashboardContent;
+  onDelete: () => void;
+}) => {
+  const date = new Date(log.timestamp);
+  const contactLine = [log.phone, log.email, log.city].filter(Boolean).join(` ${content.lead.separator} `);
+
+  return (
+    <div className="grid gap-3 px-4 py-3.5 transition hover:bg-white/[0.03] sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center sm:px-5">
+      <div className="min-w-0">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="truncate text-sm font-semibold text-white">{log.name}</span>
+          <span className="shrink-0 rounded-md border border-white/10 bg-white/[0.04] px-1.5 py-0.5 text-[11px] text-slate-300">
+            {log.source.split(' (')[0]}
+          </span>
+        </div>
+        <div className="mt-1 truncate text-xs text-slate-400">
+          {contactLine || content.lead.noContact}
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2 text-xs text-slate-400 sm:justify-end">
+        <Clock3 size={13} className="text-slate-600" />
+        <span>
+          {date.toLocaleDateString(localeTag, { day: 'numeric', month: 'short' })}
+        </span>
+        <span className="text-slate-600">{content.lead.separator}</span>
+        <span>
+          {date.toLocaleTimeString(localeTag, { hour: '2-digit', minute: '2-digit' })}
+        </span>
+      </div>
+
+      <button
+        type="button"
+        onClick={onDelete}
+        title={content.deleteModal.action}
+        aria-label={content.deleteModal.action}
+        className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-red-400/25 bg-red-500/10 text-red-100 transition hover:border-red-300/50 hover:bg-red-500/15 active:scale-[0.96]"
+      >
+        <Trash2 size={14} />
+      </button>
+    </div>
+  );
+};
+
+const MetricListPanel = ({
+  title,
+  emptyText,
+  items,
+  total,
+}: {
+  title: string;
+  emptyText: string;
+  items: Array<[string, number]>;
+  total: number;
+}) => (
+  <section className="rounded-2xl border border-white/10 bg-slate-950/35 p-4 shadow-[0_18px_44px_-32px_rgba(0,0,0,0.9)]">
+    <h3 className="text-base font-semibold text-white">{title}</h3>
+    <div className="mt-4 space-y-3">
+      {items.map(([source, count]) => (
+        <div key={source} className="space-y-1.5">
+          <div className="flex items-center justify-between gap-3">
+            <span className="min-w-0 truncate text-sm text-slate-300">{source}</span>
+            <span className="font-mono text-sm font-semibold text-white">{count}</span>
+          </div>
+          <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
+            <div
+              className="h-full rounded-full bg-emerald-400"
+              style={{ width: `${total > 0 ? (count / total) * 100 : 0}%` }}
+            />
+          </div>
+        </div>
+      ))}
+      {items.length === 0 && <div className="rounded-xl border border-dashed border-white/10 px-3 py-4 text-center text-sm text-slate-500">{emptyText}</div>}
+    </div>
+  </section>
+);
+
+const CityPanel = ({
+  title,
+  emptyText,
+  items,
+}: {
+  title: string;
+  emptyText: string;
+  items: Array<[string, number]>;
+}) => (
+  <section className="rounded-2xl border border-white/10 bg-slate-950/35 p-4 shadow-[0_18px_44px_-32px_rgba(0,0,0,0.9)]">
+    <h3 className="text-base font-semibold text-white">{title}</h3>
+    <div className="mt-4 space-y-2">
+      {items.map(([city, count], index) => (
+        <div key={city} className="flex items-center justify-between gap-3 rounded-xl px-2 py-1.5 hover:bg-white/[0.03]">
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] font-mono text-[11px] font-semibold text-slate-300">
+              {index + 1}
+            </span>
+            <MapPin size={13} className="shrink-0 text-slate-600" />
+            <span className="truncate text-sm text-slate-300">{city}</span>
+          </div>
+          <span className="font-mono text-sm font-semibold text-white">{count}</span>
+        </div>
+      ))}
+      {items.length === 0 && <div className="rounded-xl border border-dashed border-white/10 px-3 py-4 text-center text-sm text-slate-500">{emptyText}</div>}
+    </div>
+  </section>
+);
+
+const EmptyRecent = ({ content }: { content: AdminDashboardContent }) => (
+  <div className="flex min-h-[280px] flex-col items-center justify-center gap-3 px-6 py-10 text-center">
+    <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03] text-emerald-200">
+      <Inbox size={20} />
+    </div>
+    <div>
+      <div className="text-base font-semibold text-white">{content.sections.emptyRecentTitle}</div>
+      <div className="mt-1 max-w-md text-sm text-slate-400">{content.sections.emptyRecentDescription}</div>
+    </div>
+  </div>
+);
+
+const ErrorPanel = ({ title, description }: { title: string; description: string }) => (
+  <div className="flex items-start gap-3 rounded-2xl border border-red-400/25 bg-red-500/10 p-4 text-sm text-red-100">
+    <AlertTriangle size={18} className="mt-0.5 shrink-0" />
+    <div>
+      <div className="font-semibold">{title}</div>
+      <div className="mt-1 text-red-100/75">{description}</div>
+    </div>
+  </div>
+);
+
+const DashboardSkeleton = ({ label }: { label: string }) => (
+  <div className="space-y-6" aria-busy="true">
+    <div className="text-sm text-slate-400">{label}</div>
+    <div className="overflow-hidden rounded-2xl border border-white/10 bg-slate-950/45">
+      <div className="grid divide-y divide-white/10 sm:grid-cols-2 sm:divide-x sm:divide-y-0 xl:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <div key={index} className="min-h-[118px] p-5">
+            <div className="h-3 w-24 animate-pulse rounded-full bg-white/10" />
+            <div className="mt-5 h-8 w-16 animate-pulse rounded-lg bg-white/10" />
+            <div className="mt-4 h-3 w-32 animate-pulse rounded-full bg-white/10" />
+          </div>
+        ))}
+      </div>
+    </div>
+    <div className="grid gap-5 xl:grid-cols-[minmax(0,1.55fr)_minmax(300px,0.75fr)]">
+      <div className="rounded-2xl border border-white/10 bg-slate-950/35 p-5">
+        <div className="h-4 w-36 animate-pulse rounded-full bg-white/10" />
+        <div className="mt-5 space-y-4">
+          {Array.from({ length: 7 }).map((_, index) => (
+            <div key={index} className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_140px_32px] sm:items-center">
+              <div>
+                <div className="h-4 w-48 animate-pulse rounded-full bg-white/10" />
+                <div className="mt-2 h-3 w-72 max-w-full animate-pulse rounded-full bg-white/10" />
+              </div>
+              <div className="h-3 w-28 animate-pulse rounded-full bg-white/10" />
+              <div className="h-8 w-8 animate-pulse rounded-lg bg-white/10" />
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="space-y-5">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <div key={index} className="rounded-2xl border border-white/10 bg-slate-950/35 p-4">
+            <div className="h-4 w-32 animate-pulse rounded-full bg-white/10" />
+            <div className="mt-4 space-y-3">
+              {Array.from({ length: 4 }).map((__, itemIndex) => (
+                <div key={itemIndex} className="h-8 animate-pulse rounded-xl bg-white/10" />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   </div>
 );
 
