@@ -17,6 +17,10 @@ import {
   upsertPreset,
   type DbPresetRow,
 } from '../../services/visualLedConfig';
+import { VISUAL_LED_PRESETS } from '../../lib/visualLed/presets';
+
+const getDefaultPreviewPath = (slug: string): string =>
+  VISUAL_LED_PRESETS.find((p) => p.slug === slug)?.preview ?? `/visual-led-presets/${slug}.jpg`;
 
 // ── Form schema ───────────────────────────────────────────────────────────────
 
@@ -76,7 +80,7 @@ const PresetEditForm = ({ row, onSave, onCancel, loading }: PresetEditFormProps)
   });
 
   const previewPath = watch('preview_path');
-  const previewSrc = previewPath ?? `/visual-led-presets/${row.slug}.jpg`;
+  const previewSrc = previewPath ?? getDefaultPreviewPath(row.slug);
 
   const handleMediaSelect = (media: MediaItem) => {
     setValue('preview_path', media.public_url);
@@ -255,7 +259,7 @@ interface PresetCardProps {
 }
 
 const PresetCard = ({ row, onEdit }: PresetCardProps) => {
-  const previewSrc = row.preview_path ?? `/visual-led-presets/${row.slug}.jpg`;
+  const previewSrc = row.preview_path ?? getDefaultPreviewPath(row.slug);
   const priceEstimate = Math.round(
     Number(row.base_price) + Number(row.area_m2) * Number(row.price_per_m2) * Number(row.event_multiplier),
   );

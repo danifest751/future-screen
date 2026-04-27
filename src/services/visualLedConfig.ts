@@ -2,6 +2,7 @@ import { supabase } from '../lib/supabase';
 import {
   PRESET_NATURAL_WIDTH,
   PRESET_NATURAL_HEIGHT,
+  VISUAL_LED_PRESETS,
   type VisualLedPreset,
 } from '../lib/visualLed/presets';
 
@@ -45,8 +46,11 @@ export interface DbPitchConfigRow {
 
 // ── Mappers ──────────────────────────────────────────────────────────────────
 
+const getDefaultPreviewPath = (slug: string): string =>
+  VISUAL_LED_PRESETS.find((p) => p.slug === slug)?.preview ?? `/visual-led-presets/${slug}.jpg`;
+
 export function dbPresetToPreset(row: DbPresetRow): VisualLedPreset {
-  const preview = row.preview_path ?? `/visual-led-presets/${row.slug}.jpg`;
+  const preview = row.preview_path ?? getDefaultPreviewPath(row.slug);
   return {
     slug: row.slug as VisualLedPreset['slug'],
     title: { ru: row.name_ru, en: row.name_en },
