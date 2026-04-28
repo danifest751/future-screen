@@ -45,6 +45,8 @@ const makeState = (): VisualLedState => ({
       view: { scale: 1, minScale: 0.35, maxScale: 6, offsetX: 0, offsetY: 0 },
       canvasWidth: 1280,
       canvasHeight: 720,
+      venue: null,
+      floorPlanView: { scale: 50, minScale: 5, maxScale: 200, offsetX: 0, offsetY: 0 },
     },
     {
       id: 'scene-2',
@@ -57,6 +59,8 @@ const makeState = (): VisualLedState => ({
       view: { scale: 1.5, minScale: 0.35, maxScale: 6, offsetX: 10, offsetY: 20 },
       canvasWidth: 640,
       canvasHeight: 360,
+      venue: null,
+      floorPlanView: { scale: 50, minScale: 5, maxScale: 200, offsetX: 0, offsetY: 0 },
     },
   ],
   activeSceneId: 'scene-1',
@@ -68,6 +72,7 @@ const makeState = (): VisualLedState => ({
     showStatsOverlay: true,
     demosPaused: false,
     freeTransform: false,
+    viewMode: 'visualizer',
   },
   selectedPresetSlug: null,
 });

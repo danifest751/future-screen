@@ -45,6 +45,7 @@ export interface UiFlags {
    * surface in the photo.
    */
   freeTransform: boolean;
+  viewMode: 'visualizer' | 'floorPlan';
 }
 
 export interface VisualLedState {
@@ -113,6 +114,30 @@ export type Action =
 
   // UI flags
   | { type: 'ui/toggle'; payload: { key: keyof UiFlags; value?: boolean } }
+  | { type: 'ui/setViewMode'; payload: 'visualizer' | 'floorPlan' }
+
+  // Venue / floor plan
+  | { type: 'venue/set'; payload: import('../../../lib/visualLed').Venue }
+  | { type: 'venue/wall/add'; payload: import('../../../lib/visualLed').Wall }
+  | { type: 'venue/wall/update'; payload: { id: string; patch: Partial<import('../../../lib/visualLed').Wall> } }
+  | { type: 'venue/wall/remove'; payload: { id: string } }
+  | { type: 'venue/door/add'; payload: import('../../../lib/visualLed').Door }
+  | { type: 'venue/door/remove'; payload: { id: string } }
+  | { type: 'venue/window/add'; payload: import('../../../lib/visualLed').Window }
+  | { type: 'venue/window/remove'; payload: { id: string } }
+  | { type: 'venue/partition/add'; payload: import('../../../lib/visualLed').Partition }
+  | { type: 'venue/partition/remove'; payload: { id: string } }
+  | { type: 'venue/column/add'; payload: import('../../../lib/visualLed').Column }
+  | { type: 'venue/column/remove'; payload: { id: string } }
+  | { type: 'venue/stage/set'; payload: import('../../../lib/visualLed').StageVenue | null }
+
+  // Screen placement on floor plan
+  | { type: 'screen/setPlacement'; payload: { id: string; placement: import('../../../lib/visualLed').ScreenPlacement | null } }
+  | { type: 'screen/updatePlacement'; payload: { id: string; patch: Partial<import('../../../lib/visualLed').ScreenPlacement> } }
+
+  // Floor plan view
+  | { type: 'floorPlanView/set'; payload: Partial<ViewTransform> }
+  | { type: 'floorPlanView/reset' }
 
   // Wholesale replace — used when hydrating a shared project from a URL.
   | { type: 'project/replace'; payload: VisualLedState }
