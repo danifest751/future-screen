@@ -39,6 +39,14 @@ export interface CabinetPlan {
   pitch: string;
 }
 
+export interface ScreenElement {
+  id: string;
+  name: string;
+  corners: Quad;
+  videoId: string | null;
+  cabinetPlan: CabinetPlan | null;
+}
+
 export interface BackgroundAsset {
   id: string;
   name: string;
@@ -79,90 +87,6 @@ export interface VideoAsset {
     | null;
 }
 
-// ───────── Venue / Floor plan types ─────────
-
-export interface Wall {
-  id: string;
-  x1: number;
-  y1: number;
-  x2: number;
-  y2: number;
-  thickness?: number;
-}
-
-export interface Door {
-  id: string;
-  wallId: string;
-  offset: number;
-  width: number;
-  swing?: 'left' | 'right';
-}
-
-export interface Window {
-  id: string;
-  wallId: string;
-  offset: number;
-  width: number;
-  sillHeight?: number;
-}
-
-export interface Partition {
-  id: string;
-  x1: number;
-  y1: number;
-  x2: number;
-  y2: number;
-  thickness?: number;
-}
-
-export interface Column {
-  id: string;
-  x: number;
-  y: number;
-  diameter: number;
-}
-
-export interface StageVenue {
-  id: string;
-  x: number;
-  y: number;
-  width: number;
-  depth: number;
-  height: number;
-  rotation: number;
-}
-
-export interface Venue {
-  width: number;
-  depth: number;
-  height: number;
-  walls: Wall[];
-  doors: Door[];
-  windows: Window[];
-  partitions: Partition[];
-  columns: Column[];
-  stage: StageVenue | null;
-}
-
-export interface ScreenPlacement {
-  x: number;
-  y: number;
-  rotation: number;
-  height: number;
-  mountType: 'suspended' | 'floor';
-}
-
-// ───────── Core scene types (extended) ─────────
-
-export interface ScreenElement {
-  id: string;
-  name: string;
-  corners: Quad;
-  videoId: string | null;
-  cabinetPlan: CabinetPlan | null;
-  placement?: ScreenPlacement;
-}
-
 export interface Scene {
   id: string;
   name: string;
@@ -174,8 +98,6 @@ export interface Scene {
   view: ViewTransform;
   canvasWidth: number;
   canvasHeight: number;
-  venue: Venue | null;
-  floorPlanView: ViewTransform;
 }
 
 /**

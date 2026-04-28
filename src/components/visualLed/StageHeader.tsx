@@ -2,8 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import {
   HardDriveDownload,
   Keyboard,
-  LayoutTemplate,
-  Monitor,
   MoreHorizontal,
   Redo2,
   RotateCcw,
@@ -23,7 +21,7 @@ interface StageHeaderProps {
  */
 const StageHeader = ({ onOpenShortcuts }: StageHeaderProps) => {
   const scene = useActiveScene();
-  const { state, dispatch, clearPersistence, canUndo, canRedo } = useVisualLed();
+  const { dispatch, clearPersistence, canUndo, canRedo } = useVisualLed();
   const [moreOpen, setMoreOpen] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
   const moreRef = useRef<HTMLDivElement>(null);
@@ -99,33 +97,8 @@ const StageHeader = ({ onOpenShortcuts }: StageHeaderProps) => {
   return (
     <header className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-slate-900/50 px-4 py-2">
       <div className="flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-1 rounded-md border border-white/10 bg-slate-900/60 p-0.5">
-          <button
-            type="button"
-            onClick={() => dispatch({ type: 'ui/setViewMode', payload: 'visualizer' })}
-            className={`inline-flex items-center gap-1 rounded px-2 py-1 text-xs transition ${
-              state.ui.viewMode === 'visualizer'
-                ? 'border border-brand-400 bg-brand-500/20 text-white'
-                : 'text-slate-300 hover:text-white'
-            }`}
-            title="Визуализатор"
-          >
-            <Monitor className="h-3 w-3" />
-            Визуализатор
-          </button>
-          <button
-            type="button"
-            onClick={() => dispatch({ type: 'ui/setViewMode', payload: 'floorPlan' })}
-            className={`inline-flex items-center gap-1 rounded px-2 py-1 text-xs transition ${
-              state.ui.viewMode === 'floorPlan'
-                ? 'border border-brand-400 bg-brand-500/20 text-white'
-                : 'text-slate-300 hover:text-white'
-            }`}
-            title="План площадки"
-          >
-            <LayoutTemplate className="h-3 w-3" />
-            План
-          </button>
+        <div className="text-sm font-semibold tracking-tight text-white">
+          Perspective Planner
         </div>
         <ScenesTabs />
       </div>

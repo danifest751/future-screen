@@ -58,22 +58,9 @@ export function loadPersistedState(): { state: VisualLedState; savedAt: number }
       ui: {
         ...stored.ui,
         freeTransform: stored.ui?.freeTransform ?? false,
-        viewMode: stored.ui?.viewMode ?? 'visualizer',
       },
     });
-    // Backward compat: scenes saved before venue/floorPlanView
-    const scenesWithVenue = hydrated.scenes.map((scene) => ({
-      ...scene,
-      venue: scene.venue ?? null,
-      floorPlanView: scene.floorPlanView ?? {
-        scale: 50,
-        minScale: 5,
-        maxScale: 200,
-        offsetX: 0,
-        offsetY: 0,
-      },
-    }));
-    return { state: { ...hydrated, scenes: scenesWithVenue }, savedAt: parsed.savedAt };
+    return { state: hydrated, savedAt: parsed.savedAt };
   } catch {
     return null;
   }

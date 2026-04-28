@@ -100,8 +100,6 @@ describe('buildSceneReport + buildReportHtml', () => {
     view: { scale: 1, minScale: 0.35, maxScale: 6, offsetX: 0, offsetY: 0 },
     canvasWidth: 1280,
     canvasHeight: 720,
-    venue: null,
-    floorPlanView: { scale: 50, minScale: 5, maxScale: 200, offsetX: 0, offsetY: 0 },
   };
 
   it('builds a scene report with one row', () => {

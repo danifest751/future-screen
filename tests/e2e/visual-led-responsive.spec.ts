@@ -8,8 +8,11 @@ import { expect, test, type Page } from '@playwright/test';
  */
 const dismissOnboarding = async (page: Page) => {
   const skip = page.getByRole('button', { name: /Свой вариант/ }).first();
-  if (await skip.isVisible({ timeout: 1500 }).catch(() => false)) {
-    await skip.click();
+  try {
+    await skip.scrollIntoViewIfNeeded({ timeout: 2000 });
+    await skip.click({ timeout: 2000 });
+  } catch {
+    // Onboarding gate not present — already in editor.
   }
 };
 

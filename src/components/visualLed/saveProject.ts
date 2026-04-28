@@ -31,8 +31,6 @@ export function serializeProjectState(state: VisualLedState): Record<string, unk
       view: scene.view,
       canvasWidth: scene.canvasWidth,
       canvasHeight: scene.canvasHeight,
-      venue: scene.venue,
-      floorPlanView: scene.floorPlanView,
     })),
     activeSceneId: state.activeSceneId,
     selectedPresetSlug: state.selectedPresetSlug ?? null,

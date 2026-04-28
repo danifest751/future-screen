@@ -31,8 +31,10 @@ test.describe('Public navigation', () => {
     await page.locator('#login-password').fill('password');
     await page.locator('[role="dialog"] form button[type="submit"]').click();
 
-    await expect(page).toHaveURL(/\/admin\/content$/);
-    await expect(page.getByRole('heading', { name: /все настройки|all settings/i })).toBeVisible();
+    // Login redirects to the dashboard (the standalone /admin/content hub
+    // was retired; its section cards moved into the dashboard itself).
+    await expect(page).toHaveURL(/\/admin$/);
+    await expect(page.getByRole('heading', { name: /дашборд|dashboard/i })).toBeVisible();
   });
 });
 

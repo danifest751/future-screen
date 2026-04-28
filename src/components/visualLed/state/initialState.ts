@@ -56,14 +56,6 @@ export function createSceneData(name = 'default'): Scene {
     },
     canvasWidth: 1280,
     canvasHeight: 720,
-    venue: null,
-    floorPlanView: {
-      scale: 50,
-      minScale: 5,
-      maxScale: 200,
-      offsetX: 0,
-      offsetY: 0,
-    },
   };
 }
 
@@ -80,7 +72,6 @@ export function createInitialState(): VisualLedState {
       showStatsOverlay: true,
       demosPaused: false,
       freeTransform: false,
-      viewMode: 'visualizer',
     },
     selectedPresetSlug: null,
   };

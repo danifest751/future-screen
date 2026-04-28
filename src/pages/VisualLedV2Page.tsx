@@ -4,7 +4,6 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { Home } from 'lucide-react';
 import BeforeUnloadGuard from '../components/visualLed/BeforeUnloadGuard';
 import CanvasStage from '../components/visualLed/CanvasStage';
-import FloorPlanStage from '../components/visualLed/FloorPlanStage';
 import MobileSidebarTabs from '../components/visualLed/MobileSidebarTabs';
 import PresetPicker from '../components/visualLed/PresetPicker';
 import PriceHeader from '../components/visualLed/PriceHeader';
@@ -59,9 +58,9 @@ const VisualLedShell = () => {
         <SidebarLeft className="hidden lg:flex" />
         <main className="flex min-h-[70vh] flex-col gap-2">
           <StageHeader onOpenShortcuts={() => setShortcutsOpen(true)} />
-          {state.ui.viewMode === 'visualizer' && <WorkflowSteps />}
-          {state.ui.viewMode === 'visualizer' && <SceneMetricsBar />}
-          {state.ui.viewMode === 'visualizer' ? <CanvasStage /> : <FloorPlanStage />}
+          <WorkflowSteps />
+          <SceneMetricsBar />
+          <CanvasStage />
         </main>
         <SidebarRight />
       </div>
@@ -84,7 +83,7 @@ const VisualLedV2Page = () => {
   return (
     <VisualLedProvider>
       <Helmet>
-        <title>Visual LED · Planner</title>
+        <title>Visual LED · Perspective Planner</title>
       </Helmet>
       {/*
         Scoped focus-visible ring so keyboard navigation is visible.
