@@ -21,7 +21,8 @@ export function serializeProjectState(state: VisualLedState): Record<string, unk
         height: bg.height,
         storagePath: bg.storagePath ?? null,
         storageBucket: bg.storageBucket ?? null,
-        // `src` (data URL) intentionally dropped.
+        // Data URLs are dropped (too large); public paths (preset backgrounds) are kept.
+        src: bg.src?.startsWith('data:') ? undefined : (bg.src ?? undefined),
       })),
       activeBackgroundId: scene.activeBackgroundId,
       elements: scene.elements,
@@ -32,6 +33,7 @@ export function serializeProjectState(state: VisualLedState): Record<string, unk
       canvasHeight: scene.canvasHeight,
     })),
     activeSceneId: state.activeSceneId,
+    selectedPresetSlug: state.selectedPresetSlug ?? null,
     ui: state.ui,
   };
 }
