@@ -122,12 +122,16 @@ export type Action =
   | { type: 'venue/wall/update'; payload: { id: string; patch: Partial<import('../../../lib/visualLed').Wall> } }
   | { type: 'venue/wall/remove'; payload: { id: string } }
   | { type: 'venue/door/add'; payload: import('../../../lib/visualLed').Door }
+  | { type: 'venue/door/update'; payload: { id: string; patch: Partial<import('../../../lib/visualLed').Door> } }
   | { type: 'venue/door/remove'; payload: { id: string } }
   | { type: 'venue/window/add'; payload: import('../../../lib/visualLed').Window }
+  | { type: 'venue/window/update'; payload: { id: string; patch: Partial<import('../../../lib/visualLed').Window> } }
   | { type: 'venue/window/remove'; payload: { id: string } }
   | { type: 'venue/partition/add'; payload: import('../../../lib/visualLed').Partition }
+  | { type: 'venue/partition/update'; payload: { id: string; patch: Partial<import('../../../lib/visualLed').Partition> } }
   | { type: 'venue/partition/remove'; payload: { id: string } }
   | { type: 'venue/column/add'; payload: import('../../../lib/visualLed').Column }
+  | { type: 'venue/column/update'; payload: { id: string; patch: Partial<import('../../../lib/visualLed').Column> } }
   | { type: 'venue/column/remove'; payload: { id: string } }
   | { type: 'venue/stage/set'; payload: import('../../../lib/visualLed').StageVenue | null }
 

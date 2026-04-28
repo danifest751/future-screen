@@ -328,6 +328,24 @@ export function visualLedReducer(state: VisualLedState, action: Action): VisualL
         }),
       };
 
+    case 'venue/door/update':
+      return {
+        ...state,
+        scenes: mapActiveScene(state, (scene) => {
+          const venue = scene.venue;
+          if (!venue) return scene;
+          return {
+            ...scene,
+            venue: {
+              ...venue,
+              doors: venue.doors.map((d) =>
+                d.id === action.payload.id ? { ...d, ...action.payload.patch } : d,
+              ),
+            },
+          };
+        }),
+      };
+
     case 'venue/door/remove':
       return {
         ...state,
@@ -348,6 +366,24 @@ export function visualLedReducer(state: VisualLedState, action: Action): VisualL
           const venue = scene.venue;
           if (!venue) return scene;
           return { ...scene, venue: { ...venue, windows: [...venue.windows, action.payload] } };
+        }),
+      };
+
+    case 'venue/window/update':
+      return {
+        ...state,
+        scenes: mapActiveScene(state, (scene) => {
+          const venue = scene.venue;
+          if (!venue) return scene;
+          return {
+            ...scene,
+            venue: {
+              ...venue,
+              windows: venue.windows.map((w) =>
+                w.id === action.payload.id ? { ...w, ...action.payload.patch } : w,
+              ),
+            },
+          };
         }),
       };
 
@@ -377,6 +413,24 @@ export function visualLedReducer(state: VisualLedState, action: Action): VisualL
         }),
       };
 
+    case 'venue/partition/update':
+      return {
+        ...state,
+        scenes: mapActiveScene(state, (scene) => {
+          const venue = scene.venue;
+          if (!venue) return scene;
+          return {
+            ...scene,
+            venue: {
+              ...venue,
+              partitions: venue.partitions.map((p) =>
+                p.id === action.payload.id ? { ...p, ...action.payload.patch } : p,
+              ),
+            },
+          };
+        }),
+      };
+
     case 'venue/partition/remove':
       return {
         ...state,
@@ -400,6 +454,24 @@ export function visualLedReducer(state: VisualLedState, action: Action): VisualL
           const venue = scene.venue;
           if (!venue) return scene;
           return { ...scene, venue: { ...venue, columns: [...venue.columns, action.payload] } };
+        }),
+      };
+
+    case 'venue/column/update':
+      return {
+        ...state,
+        scenes: mapActiveScene(state, (scene) => {
+          const venue = scene.venue;
+          if (!venue) return scene;
+          return {
+            ...scene,
+            venue: {
+              ...venue,
+              columns: venue.columns.map((c) =>
+                c.id === action.payload.id ? { ...c, ...action.payload.patch } : c,
+              ),
+            },
+          };
         }),
       };
 

@@ -21,6 +21,7 @@ import type { ViewTransform } from '../../lib/visualLed/types';
 export interface FloorPlanRenderOptions {
   selectedElementId: string | null;
   toolPreview?: { type: string; points: { x: number; y: number }[] } | null;
+  stageRectPreview?: { start: { x: number; y: number }; current: { x: number; y: number } } | null;
 }
 
 export function renderFloorPlan(
@@ -88,6 +89,24 @@ export function renderFloorPlan(
     const depthM = getScreenAssemblyDepth(el.placement.mountType);
     const isSelected = el.id === options.selectedElementId;
     drawScreenOnPlan(ctx, el.placement, widthM, depthM, el.name, isSelected, view.scale, venue);
+  }
+
+  // Stage rect preview
+  if (options.stageRectPreview) {
+    const { start, current } = options.stageRectPreview;
+    const x = Math.min(start.x, current.x);
+    const y = Math.min(start.y, current.y);
+    const w = Math.abs(current.x - start.x);
+    const h = Math.abs(current.y - start.y);
+    ctx.save();
+    ctx.strokeStyle = 'rgba(96,165,250,0.8)';
+    ctx.fillStyle = 'rgba(96,165,250,0.15)';
+    ctx.lineWidth = 0.04;
+    ctx.setLineDash([0.2, 0.1]);
+    ctx.fillRect(x, y, w, h);
+    ctx.strokeRect(x, y, w, h);
+    ctx.setLineDash([]);
+    ctx.restore();
   }
 
   // Tool preview

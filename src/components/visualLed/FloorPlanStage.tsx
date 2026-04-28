@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { Point, ScreenPlacement } from '../../lib/visualLed';
+import type { Column, Point, ScreenPlacement, StageVenue, Wall } from '../../lib/visualLed';
 import {
-  checkBackWallDistance,
   getScreenAssemblyDepth,
   getScreenPhysicalSize,
   getScreenRectOnPlan,
@@ -16,14 +15,21 @@ import { useActiveScene, useVisualLed } from './state/VisualLedContext';
 const CANVAS_W = 1280;
 const CANVAS_H = 720;
 
+type VenueDragTarget =
+  | { kind: 'wall'; id: string }
+  | { kind: 'partition'; id: string }
+  | { kind: 'column'; id: string }
+  | { kind: 'stage'; id: string };
+
 const FloorPlanStage = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const scene = useActiveScene();
-  const { state, dispatch } = useVisualLed();
+  const { dispatch } = useVisualLed();
   const [dropActive, setDropActive] = useState(false);
   const [activeTool, setActiveTool] = useState<FloorPlanTool>('select');
   const [toolPoints, setToolPoints] = useState<Point[]>([]);
   const [touchMode, setTouchMode] = useState(false);
+  const [stageRectStart, setStageRectStart] = useState<Point | null>(null);
 
   const view = scene.floorPlanView;
 
@@ -33,12 +39,24 @@ const FloorPlanStage = () => {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+
+    let preview: { type: string; points: Point[] } | null = null;
+    if (stageRectStart) {
+      // Stage rect preview will be handled differently
+    } else if (toolPoints.length > 0) {
+      preview = { type: activeTool, points: toolPoints };
+    }
+
     renderFloorPlan(ctx, scene, view, {
       selectedElementId: scene.selectedElementId,
-      toolPreview:
-        toolPoints.length > 0 ? { type: activeTool, points: toolPoints } : null,
+      toolPreview: preview,
+      stageRectPreview: stageRectStart
+        ? { start: stageRectStart, current: stageRectCurrentRef.current }
+        : null,
     });
-  }, [scene, view, activeTool, toolPoints]);
+  }, [scene, view, activeTool, toolPoints, stageRectStart]);
+
+  const stageRectCurrentRef = useRef<Point>({ x: 0, y: 0 });
 
   // Helpers
   const getPointerWorld = useCallback(
@@ -65,7 +83,6 @@ const FloorPlanStage = () => {
         const widthM = size?.width ?? 2;
         const depthM = getScreenAssemblyDepth(el.placement.mountType);
         const quad = getScreenRectOnPlan(el.placement, widthM, depthM);
-        // Simple point-in-rect test via half-planes or bounding box
         const minX = Math.min(quad[0].x, quad[1].x, quad[2].x, quad[3].x);
         const maxX = Math.max(quad[0].x, quad[1].x, quad[2].x, quad[3].x);
         const minY = Math.min(quad[0].y, quad[1].y, quad[2].y, quad[3].y);
@@ -100,16 +117,20 @@ const FloorPlanStage = () => {
     [scene.elements, scene.selectedElementId],
   );
 
-  const findNearestWall = useCallback(
+  const findNearestWallPoint = useCallback(
     (p: Point) => {
       if (!scene.venue) return null;
-      let best: { wallId: string; t: number; distance: number; point: Point } | null = null;
+      let best: { kind: 'wall' | 'partition'; id: string; distance: number } | null = null;
       for (const wall of scene.venue.walls) {
-        const a = { x: wall.x1, y: wall.y1 };
-        const b = { x: wall.x2, y: wall.y2 };
-        const proj = projectPointToSegment(p, a, b);
-        if (!best || proj.distance < best.distance) {
-          best = { wallId: wall.id, t: proj.t, distance: proj.distance, point: proj.point };
+        const d = pointToSegmentDistance(p, { x: wall.x1, y: wall.y1 }, { x: wall.x2, y: wall.y2 });
+        if (!best || d < best.distance) {
+          best = { kind: 'wall', id: wall.id, distance: d };
+        }
+      }
+      for (const part of scene.venue.partitions) {
+        const d = pointToSegmentDistance(p, { x: part.x1, y: part.y1 }, { x: part.x2, y: part.y2 });
+        if (!best || d < best.distance) {
+          best = { kind: 'partition', id: part.id, distance: d };
         }
       }
       return best;
@@ -117,11 +138,51 @@ const FloorPlanStage = () => {
     [scene.venue],
   );
 
+  const findVenueObjectAt = useCallback(
+    (p: Point): VenueDragTarget | null => {
+      if (!scene.venue) return null;
+
+      // Stage
+      if (scene.venue.stage) {
+        const s = scene.venue.stage;
+        const cos = Math.cos((s.rotation * Math.PI) / 180);
+        const sin = Math.sin((s.rotation * Math.PI) / 180);
+        const localX = (p.x - s.x) * cos + (p.y - s.y) * sin;
+        const localY = -(p.x - s.x) * sin + (p.y - s.y) * cos;
+        if (
+          localX >= -s.width / 2 &&
+          localX <= s.width / 2 &&
+          localY >= -s.depth / 2 &&
+          localY <= s.depth / 2
+        ) {
+          return { kind: 'stage', id: s.id };
+        }
+      }
+
+      // Columns
+      for (const col of scene.venue.columns) {
+        if (Math.hypot(p.x - col.x, p.y - col.y) <= Math.max(col.diameter / 2, 0.15)) {
+          return { kind: 'column', id: col.id };
+        }
+      }
+
+      // Walls / partitions
+      const nearest = findNearestWallPoint(p);
+      if (nearest && nearest.distance < 0.2) {
+        return { kind: nearest.kind, id: nearest.id };
+      }
+
+      return null;
+    },
+    [scene.venue, findNearestWallPoint],
+  );
+
   // Drag state
   const dragRef = useRef<
     | { type: 'pan'; lastClientX: number; lastClientY: number }
     | { type: 'move'; id: string; last: Point }
     | { type: 'rotate'; id: string; center: Point }
+    | { type: 'venueMove'; target: VenueDragTarget; last: Point }
     | null
   >(null);
   const spaceDownRef = useRef(false);
@@ -162,6 +223,7 @@ const FloorPlanStage = () => {
         const mid = canvasMidpoint(a, b);
         if (mid && startDist > 0) {
           dragRef.current = null;
+          setStageRectStart(null);
           pinchRef.current = {
             startDist,
             startScale: view.scale,
@@ -208,12 +270,13 @@ const FloorPlanStage = () => {
       }
 
       if (activeTool === 'door' || activeTool === 'window') {
-        const nearest = findNearestWall(p);
+        const nearest = findNearestWallPoint(p);
         if (nearest && nearest.distance < 0.5) {
-          const wall = scene.venue?.walls.find((w) => w.id === nearest.wallId);
+          const wall = scene.venue?.walls.find((w) => w.id === nearest.id);
           if (wall) {
             const wallLen = Math.hypot(wall.x2 - wall.x1, wall.y2 - wall.y1);
-            const offset = nearest.t * wallLen;
+            const proj = projectPointToSegment(p, { x: wall.x1, y: wall.y1 }, { x: wall.x2, y: wall.y2 });
+            const offset = proj.t * wallLen;
             const isDoor = activeTool === 'door';
             dispatch({
               type: isDoor ? 'venue/door/add' : 'venue/window/add',
@@ -238,7 +301,9 @@ const FloorPlanStage = () => {
       }
 
       if (activeTool === 'stage') {
-        setToolPoints([p]);
+        setStageRectStart(p);
+        stageRectCurrentRef.current = p;
+        canvas.setPointerCapture(event.pointerId);
         return;
       }
 
@@ -261,10 +326,18 @@ const FloorPlanStage = () => {
         return;
       }
 
+      // Venue object drag
+      const venueObj = findVenueObjectAt(p);
+      if (venueObj) {
+        canvas.setPointerCapture(event.pointerId);
+        dragRef.current = { type: 'venueMove', target: venueObj, last: p };
+        return;
+      }
+
       // Click empty space = deselect
       dispatch({ type: 'screen/select', payload: { id: null } });
     },
-    [activeTool, toolPoints, dispatch, scene, view, getPointerWorld, findScreenAt, findRotateHandleAt, findNearestWall, touchMode, canvasMidpoint],
+    [activeTool, toolPoints, dispatch, scene, view, getPointerWorld, findScreenAt, findRotateHandleAt, findVenueObjectAt, findNearestWallPoint, touchMode, canvasMidpoint],
   );
 
   const onPointerMove = useCallback(
@@ -292,7 +365,25 @@ const FloorPlanStage = () => {
       }
 
       const drag = dragRef.current;
-      if (!drag) return;
+      if (!drag) {
+        // Stage rect preview
+        if (stageRectStart) {
+          stageRectCurrentRef.current = getPointerWorld(event.clientX, event.clientY);
+          // Force re-render
+          const canvas = canvasRef.current;
+          if (canvas) {
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+              renderFloorPlan(ctx, scene, view, {
+                selectedElementId: scene.selectedElementId,
+                stageRectPreview: { start: stageRectStart, current: stageRectCurrentRef.current },
+              });
+            }
+          }
+        }
+        return;
+      }
+
       const canvas = canvasRef.current;
       if (!canvas) return;
 
@@ -332,21 +423,99 @@ const FloorPlanStage = () => {
 
       if (drag.type === 'rotate') {
         const angle = Math.atan2(p.y - drag.center.y, p.x - drag.center.x);
-        const rotation = (angle * 180) / Math.PI + 90; // +90 because 0 is "up"
+        const rotation = (angle * 180) / Math.PI + 90;
         dispatch({
           type: 'screen/updatePlacement',
           payload: { id: drag.id, patch: { rotation } },
         });
+        return;
+      }
+
+      if (drag.type === 'venueMove') {
+        const dx = p.x - drag.last.x;
+        const dy = p.y - drag.last.y;
+        const target = drag.target;
+
+        if (target.kind === 'wall') {
+          const wall = scene.venue?.walls.find((w) => w.id === target.id);
+          if (wall) {
+            dispatch({
+              type: 'venue/wall/update',
+              payload: {
+                id: target.id,
+                patch: { x1: wall.x1 + dx, y1: wall.y1 + dy, x2: wall.x2 + dx, y2: wall.y2 + dy },
+              },
+            });
+          }
+        } else if (target.kind === 'partition') {
+          const part = scene.venue?.partitions.find((p) => p.id === target.id);
+          if (part) {
+            dispatch({
+              type: 'venue/partition/update',
+              payload: {
+                id: target.id,
+                patch: { x1: part.x1 + dx, y1: part.y1 + dy, x2: part.x2 + dx, y2: part.y2 + dy },
+              },
+            });
+          }
+        } else if (target.kind === 'column') {
+          const col = scene.venue?.columns.find((c) => c.id === target.id);
+          if (col) {
+            dispatch({
+              type: 'venue/column/update',
+              payload: {
+                id: target.id,
+                patch: { x: col.x + dx, y: col.y + dy },
+              },
+            });
+          }
+        } else if (target.kind === 'stage') {
+          const stage = scene.venue?.stage;
+          if (stage) {
+            dispatch({
+              type: 'venue/stage/set',
+              payload: { ...stage, x: stage.x + dx, y: stage.y + dy },
+            });
+          }
+        }
+
+        drag.last = p;
       }
     },
-    [dispatch, scene, view, getPointerWorld, canvasMidpoint],
+    [dispatch, scene, view, getPointerWorld, canvasMidpoint, stageRectStart],
   );
 
-  const onPointerUp = useCallback((event: React.PointerEvent<HTMLCanvasElement>) => {
-    activePointersRef.current.delete(event.pointerId);
-    if (activePointersRef.current.size < 2) pinchRef.current = null;
-    if (activePointersRef.current.size === 0) dragRef.current = null;
-  }, []);
+  const onPointerUp = useCallback(
+    (event: React.PointerEvent<HTMLCanvasElement>) => {
+      activePointersRef.current.delete(event.pointerId);
+      if (activePointersRef.current.size < 2) pinchRef.current = null;
+
+      // Stage rect completion
+      if (stageRectStart) {
+        const end = getPointerWorld(event.clientX, event.clientY);
+        const w = Math.abs(end.x - stageRectStart.x);
+        const d = Math.abs(end.y - stageRectStart.y);
+        if (w > 0.3 && d > 0.3) {
+          const stage: StageVenue = {
+            id: uid('stage'),
+            x: (stageRectStart.x + end.x) / 2,
+            y: (stageRectStart.y + end.y) / 2,
+            width: w,
+            depth: d,
+            height: 0.6,
+            rotation: 0,
+          };
+          dispatch({ type: 'venue/stage/set', payload: stage });
+        }
+        setStageRectStart(null);
+        dragRef.current = null;
+        return;
+      }
+
+      if (activePointersRef.current.size === 0) dragRef.current = null;
+    },
+    [stageRectStart, getPointerWorld, dispatch],
+  );
 
   const onWheel = useCallback(
     (event: React.WheelEvent<HTMLCanvasElement>) => {
@@ -389,6 +558,7 @@ const FloorPlanStage = () => {
       }
       if (e.key === 'Escape') {
         setToolPoints([]);
+        setStageRectStart(null);
         setActiveTool('select');
       }
     };
@@ -412,13 +582,13 @@ const FloorPlanStage = () => {
       onDragLeave={() => setDropActive(false)}
       onDrop={(e) => { e.preventDefault(); setDropActive(false); }}
     >
-      <FloorPlanToolbar activeTool={activeTool} onToolChange={(t) => { setActiveTool(t); setToolPoints([]); }} />
+      <FloorPlanToolbar activeTool={activeTool} onToolChange={(t) => { setActiveTool(t); setToolPoints([]); setStageRectStart(null); }} />
       <canvas
         ref={canvasRef}
         width={CANVAS_W}
         height={CANVAS_H}
         className="max-h-full max-w-full touch-none rounded-lg border border-white/5 shadow-xl"
-        style={{ cursor: activeTool === 'select' ? 'default' : 'crosshair' }}
+        style={{ cursor: activeTool === 'select' ? 'default' : activeTool === 'stage' ? 'crosshair' : 'crosshair' }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}

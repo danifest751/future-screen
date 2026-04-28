@@ -59,8 +59,8 @@ const VisualLedShell = () => {
         <SidebarLeft className="hidden lg:flex" />
         <main className="flex min-h-[70vh] flex-col gap-2">
           <StageHeader onOpenShortcuts={() => setShortcutsOpen(true)} />
-          <WorkflowSteps />
-          <SceneMetricsBar />
+          {state.ui.viewMode === 'visualizer' && <WorkflowSteps />}
+          {state.ui.viewMode === 'visualizer' && <SceneMetricsBar />}
           {state.ui.viewMode === 'visualizer' ? <CanvasStage /> : <FloorPlanStage />}
         </main>
         <SidebarRight />
