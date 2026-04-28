@@ -166,6 +166,16 @@ function hydrateScene(raw: unknown): Scene {
     view: hydrateView(raw.view),
     canvasWidth: asNumber(raw.canvasWidth, seed.canvasWidth),
     canvasHeight: asNumber(raw.canvasHeight, seed.canvasHeight),
+    venue: isRecord(raw.venue) ? (raw.venue as unknown as Scene['venue']) : seed.venue,
+    floorPlanView: isRecord(raw.floorPlanView)
+      ? {
+          scale: asNumber(raw.floorPlanView.scale, 50),
+          minScale: asNumber(raw.floorPlanView.minScale, 5),
+          maxScale: asNumber(raw.floorPlanView.maxScale, 200),
+          offsetX: asNumber(raw.floorPlanView.offsetX, 0),
+          offsetY: asNumber(raw.floorPlanView.offsetY, 0),
+        }
+      : seed.floorPlanView,
   };
 }
 
@@ -188,6 +198,7 @@ function hydrateUi(raw: unknown): UiFlags {
       showStatsOverlay: true,
       demosPaused: false,
       freeTransform: false,
+      viewMode: 'visualizer',
     };
   }
   return {
@@ -195,6 +206,7 @@ function hydrateUi(raw: unknown): UiFlags {
     showStatsOverlay: asBoolean(raw.showStatsOverlay, true),
     demosPaused: asBoolean(raw.demosPaused, false),
     freeTransform: asBoolean(raw.freeTransform, false),
+    viewMode: raw.viewMode === 'floorPlan' ? 'floorPlan' : 'visualizer',
   };
 }
 

@@ -70,7 +70,11 @@ describe('saveProject helpers', () => {
     const bg = serialized.scenes[0].backgrounds[2];
     expect(bg.storagePath).toBe('visual-led/backgrounds/bg-ok.jpg');
     expect(bg.storageBucket).toBe('assets');
-    expect(bg).not.toHaveProperty('src');
+    // Non-data URLs (signed/preset) are kept; data URLs are dropped
+    expect(bg.src).toBe('https://signed.local/bg.jpg');
+
+    const dataBg = serialized.scenes[0].backgrounds[0];
+    expect(dataBg).not.toHaveProperty('src');
   });
 
   it('counts pending and failed uploads', () => {
