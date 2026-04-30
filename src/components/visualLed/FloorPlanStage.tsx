@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { Column, Point, ScreenPlacement, StageVenue, Wall } from '../../lib/visualLed';
+import type { FloorPlanObjectSelection, Point, StageVenue } from '../../lib/visualLed';
 import {
   getScreenAssemblyDepth,
   getScreenPhysicalSize,
@@ -15,11 +15,7 @@ import { useActiveScene, useVisualLed } from './state/VisualLedContext';
 const CANVAS_W = 1280;
 const CANVAS_H = 720;
 
-type VenueDragTarget =
-  | { kind: 'wall'; id: string }
-  | { kind: 'partition'; id: string }
-  | { kind: 'column'; id: string }
-  | { kind: 'stage'; id: string };
+type VenueDragTarget = FloorPlanObjectSelection;
 
 const FloorPlanStage = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -49,6 +45,7 @@ const FloorPlanStage = () => {
 
     renderFloorPlan(ctx, scene, view, {
       selectedElementId: scene.selectedElementId,
+      selectedFloorPlanObject: scene.selectedFloorPlanObject,
       toolPreview: preview,
       stageRectPreview: stageRectStart
         ? { start: stageRectStart, current: stageRectCurrentRef.current }
@@ -141,6 +138,31 @@ const FloorPlanStage = () => {
   const findVenueObjectAt = useCallback(
     (p: Point): VenueDragTarget | null => {
       if (!scene.venue) return null;
+
+      // Doors / windows live on top of walls, so they need to win hit testing.
+      for (const door of scene.venue.doors) {
+        const wall = scene.venue.walls.find((w) => w.id === door.wallId);
+        if (!wall) continue;
+        const wallLen = Math.hypot(wall.x2 - wall.x1, wall.y2 - wall.y1);
+        if (wallLen < 1e-6) continue;
+        const projected = projectPointToSegment(p, { x: wall.x1, y: wall.y1 }, { x: wall.x2, y: wall.y2 });
+        const offsetDelta = Math.abs(projected.t * wallLen - door.offset);
+        if (projected.distance < 0.45 && offsetDelta <= Math.max(door.width, 0.35)) {
+          return { kind: 'door', id: door.id };
+        }
+      }
+
+      for (const window of scene.venue.windows) {
+        const wall = scene.venue.walls.find((w) => w.id === window.wallId);
+        if (!wall) continue;
+        const wallLen = Math.hypot(wall.x2 - wall.x1, wall.y2 - wall.y1);
+        if (wallLen < 1e-6) continue;
+        const projected = projectPointToSegment(p, { x: wall.x1, y: wall.y1 }, { x: wall.x2, y: wall.y2 });
+        const offsetDelta = Math.abs(projected.t * wallLen - window.offset);
+        if (projected.distance < 0.3 && offsetDelta <= Math.max(window.width / 2, 0.25)) {
+          return { kind: 'window', id: window.id };
+        }
+      }
 
       // Stage
       if (scene.venue.stage) {
@@ -285,6 +307,7 @@ const FloorPlanStage = () => {
                 wallId: wall.id,
                 offset,
                 width: isDoor ? 0.9 : 1.2,
+                ...(isDoor ? { swing: 'left' as const, swingSide: 'inside' as const } : {}),
               },
             });
           }
@@ -331,11 +354,13 @@ const FloorPlanStage = () => {
       if (venueObj) {
         canvas.setPointerCapture(event.pointerId);
         dragRef.current = { type: 'venueMove', target: venueObj, last: p };
+        dispatch({ type: 'floorPlan/selectObject', payload: venueObj });
         return;
       }
 
       // Click empty space = deselect
       dispatch({ type: 'screen/select', payload: { id: null } });
+      dispatch({ type: 'floorPlan/selectObject', payload: null });
     },
     [activeTool, toolPoints, dispatch, scene, view, getPointerWorld, findScreenAt, findRotateHandleAt, findVenueObjectAt, findNearestWallPoint, touchMode, canvasMidpoint],
   );
@@ -376,6 +401,7 @@ const FloorPlanStage = () => {
             if (ctx) {
               renderFloorPlan(ctx, scene, view, {
                 selectedElementId: scene.selectedElementId,
+                selectedFloorPlanObject: scene.selectedFloorPlanObject,
                 stageRectPreview: { start: stageRectStart, current: stageRectCurrentRef.current },
               });
             }
@@ -469,6 +495,28 @@ const FloorPlanStage = () => {
               },
             });
           }
+        } else if (target.kind === 'door') {
+          const door = scene.venue?.doors.find((d) => d.id === target.id);
+          const wall = door ? scene.venue?.walls.find((w) => w.id === door.wallId) : null;
+          if (door && wall) {
+            const wallLen = Math.hypot(wall.x2 - wall.x1, wall.y2 - wall.y1);
+            const projected = projectPointToSegment(p, { x: wall.x1, y: wall.y1 }, { x: wall.x2, y: wall.y2 });
+            dispatch({
+              type: 'venue/door/update',
+              payload: { id: target.id, patch: { offset: Math.max(0, Math.min(wallLen, projected.t * wallLen)) } },
+            });
+          }
+        } else if (target.kind === 'window') {
+          const window = scene.venue?.windows.find((w) => w.id === target.id);
+          const wall = window ? scene.venue?.walls.find((w) => w.id === window.wallId) : null;
+          if (window && wall) {
+            const wallLen = Math.hypot(wall.x2 - wall.x1, wall.y2 - wall.y1);
+            const projected = projectPointToSegment(p, { x: wall.x1, y: wall.y1 }, { x: wall.x2, y: wall.y2 });
+            dispatch({
+              type: 'venue/window/update',
+              payload: { id: target.id, patch: { offset: Math.max(0, Math.min(wallLen, projected.t * wallLen)) } },
+            });
+          }
         } else if (target.kind === 'stage') {
           const stage = scene.venue?.stage;
           if (stage) {
@@ -553,6 +601,16 @@ const FloorPlanStage = () => {
       if (e.key === 'Delete' || e.key === 'Backspace') {
         const tag = (document.activeElement?.tagName ?? '').toLowerCase();
         if (tag === 'input' || tag === 'textarea') return;
+        if (scene.selectedFloorPlanObject) {
+          const selected = scene.selectedFloorPlanObject;
+          if (selected.kind === 'wall') dispatch({ type: 'venue/wall/remove', payload: { id: selected.id } });
+          else if (selected.kind === 'partition') dispatch({ type: 'venue/partition/remove', payload: { id: selected.id } });
+          else if (selected.kind === 'door') dispatch({ type: 'venue/door/remove', payload: { id: selected.id } });
+          else if (selected.kind === 'window') dispatch({ type: 'venue/window/remove', payload: { id: selected.id } });
+          else if (selected.kind === 'column') dispatch({ type: 'venue/column/remove', payload: { id: selected.id } });
+          else if (selected.kind === 'stage') dispatch({ type: 'venue/stage/set', payload: null });
+          return;
+        }
         if (!scene.selectedElementId) return;
         dispatch({ type: 'screen/setPlacement', payload: { id: scene.selectedElementId, placement: null } });
       }
@@ -571,7 +629,7 @@ const FloorPlanStage = () => {
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
     };
-  }, [dispatch, scene.selectedElementId]);
+  }, [dispatch, scene.selectedElementId, scene.selectedFloorPlanObject]);
 
   return (
     <div

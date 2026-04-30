@@ -41,6 +41,7 @@ const makeState = (): VisualLedState => ({
       activeBackgroundId: null,
       elements: [],
       selectedElementId: null,
+      selectedFloorPlanObject: null,
       scaleCalib: null,
       view: { scale: 1, minScale: 0.35, maxScale: 6, offsetX: 0, offsetY: 0 },
       canvasWidth: 1280,
@@ -55,6 +56,7 @@ const makeState = (): VisualLedState => ({
       activeBackgroundId: null,
       elements: [],
       selectedElementId: null,
+      selectedFloorPlanObject: null,
       scaleCalib: null,
       view: { scale: 1.5, minScale: 0.35, maxScale: 6, offsetX: 10, offsetY: 20 },
       canvasWidth: 640,
@@ -186,6 +188,43 @@ describe('visualLedReducer', () => {
 
     const dragEnd = visualLedReducer(dragBegin, { type: 'drag/end' });
     expect(dragEnd.drag).toBeNull();
+  });
+
+  it('tracks selected floor-plan objects separately from screen selection', () => {
+    const state = makeState();
+    const withVenue = visualLedReducer(state, {
+      type: 'venue/set',
+      payload: {
+        width: 10,
+        depth: 8,
+        height: 3,
+        walls: [{ id: 'wall-1', x1: 0, y1: 0, x2: 10, y2: 0, thickness: 0.2 }],
+        doors: [],
+        windows: [],
+        partitions: [],
+        columns: [],
+        stage: null,
+      },
+    });
+
+    const withDoor = visualLedReducer(withVenue, {
+      type: 'venue/door/add',
+      payload: { id: 'door-1', wallId: 'wall-1', offset: 2, width: 0.9, swing: 'left', swingSide: 'inside' },
+    });
+    expect(withDoor.scenes[0].selectedFloorPlanObject).toEqual({ kind: 'door', id: 'door-1' });
+    expect(withDoor.scenes[0].selectedElementId).toBeNull();
+
+    const updatedDoor = visualLedReducer(withDoor, {
+      type: 'venue/door/update',
+      payload: { id: 'door-1', patch: { swing: 'right', swingSide: 'outside' } },
+    });
+    expect(updatedDoor.scenes[0].venue?.doors[0].swing).toBe('right');
+    expect(updatedDoor.scenes[0].venue?.doors[0].swingSide).toBe('outside');
+
+    const screen = makeScreen('s1');
+    const withScreen = visualLedReducer(updatedDoor, { type: 'screen/add', payload: screen });
+    expect(withScreen.scenes[0].selectedElementId).toBe('s1');
+    expect(withScreen.scenes[0].selectedFloorPlanObject).toBeNull();
   });
 
   it('handles view, videos, ui toggles and project replace', () => {

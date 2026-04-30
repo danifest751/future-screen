@@ -1,5 +1,7 @@
 import type {
   BackgroundAsset,
+  FloorPlanObjectKind,
+  FloorPlanObjectSelection,
   Quad,
   ScaleCalibration,
   Scene,
@@ -142,6 +144,16 @@ function hydrateView(raw: unknown): ViewTransform {
   };
 }
 
+function hydrateFloorPlanSelection(raw: unknown): FloorPlanObjectSelection | null {
+  if (!isRecord(raw)) return null;
+  const kind = raw.kind;
+  const id = raw.id;
+  const validKinds: FloorPlanObjectKind[] = ['wall', 'partition', 'door', 'window', 'column', 'stage'];
+  if (typeof kind !== 'string' || typeof id !== 'string') return null;
+  if (!validKinds.includes(kind as FloorPlanObjectKind)) return null;
+  return { kind: kind as FloorPlanObjectKind, id };
+}
+
 function hydrateScene(raw: unknown): Scene {
   const seed = createSceneData();
   if (!isRecord(raw)) return seed;
@@ -162,6 +174,7 @@ function hydrateScene(raw: unknown): Scene {
     elements,
     selectedElementId:
       typeof raw.selectedElementId === 'string' ? raw.selectedElementId : null,
+    selectedFloorPlanObject: hydrateFloorPlanSelection(raw.selectedFloorPlanObject),
     scaleCalib: hydrateScale(raw.scaleCalib),
     view: hydrateView(raw.view),
     canvasWidth: asNumber(raw.canvasWidth, seed.canvasWidth),

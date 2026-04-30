@@ -46,6 +46,7 @@ export function createSceneData(name = 'default'): Scene {
     activeBackgroundId: null,
     elements: [],
     selectedElementId: null,
+    selectedFloorPlanObject: null,
     scaleCalib: null,
     view: {
       scale: 1,

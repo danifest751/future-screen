@@ -96,6 +96,7 @@ export interface Door {
   offset: number;
   width: number;
   swing?: 'left' | 'right';
+  swingSide?: 'inside' | 'outside';
 }
 
 export interface Window {
@@ -152,6 +153,13 @@ export interface ScreenPlacement {
   mountType: 'suspended' | 'floor';
 }
 
+export type FloorPlanObjectKind = 'wall' | 'partition' | 'door' | 'window' | 'column' | 'stage';
+
+export interface FloorPlanObjectSelection {
+  kind: FloorPlanObjectKind;
+  id: string;
+}
+
 // ───────── Core scene types (extended) ─────────
 
 export interface ScreenElement {
@@ -170,6 +178,7 @@ export interface Scene {
   activeBackgroundId: string | null;
   elements: ScreenElement[];
   selectedElementId: string | null;
+  selectedFloorPlanObject: FloorPlanObjectSelection | null;
   scaleCalib: ScaleCalibration | null;
   view: ViewTransform;
   canvasWidth: number;

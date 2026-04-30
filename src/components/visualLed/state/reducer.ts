@@ -24,6 +24,10 @@ function nextSceneName(existing: Scene[]): string {
   return `scene ${idx}`;
 }
 
+function isSelectedFloorPlanObject(scene: Scene, kind: NonNullable<Scene['selectedFloorPlanObject']>['kind'], id: string): boolean {
+  return scene.selectedFloorPlanObject?.kind === kind && scene.selectedFloorPlanObject.id === id;
+}
+
 export function visualLedReducer(state: VisualLedState, action: Action): VisualLedState {
   switch (action.type) {
     // ----- scenes -----
@@ -121,6 +125,7 @@ export function visualLedReducer(state: VisualLedState, action: Action): VisualL
           ...scene,
           elements: [...scene.elements, action.payload],
           selectedElementId: action.payload.id,
+          selectedFloorPlanObject: null,
         })),
       };
     }
@@ -169,6 +174,7 @@ export function visualLedReducer(state: VisualLedState, action: Action): VisualL
           elements: scene.elements.filter((el) => el.id !== action.payload.id),
           selectedElementId:
             scene.selectedElementId === action.payload.id ? null : scene.selectedElementId,
+          selectedFloorPlanObject: null,
         })),
       };
     }
@@ -179,6 +185,18 @@ export function visualLedReducer(state: VisualLedState, action: Action): VisualL
         scenes: mapActiveScene(state, (scene) => ({
           ...scene,
           selectedElementId: action.payload.id,
+          selectedFloorPlanObject: action.payload.id ? null : scene.selectedFloorPlanObject,
+        })),
+      };
+    }
+
+    case 'floorPlan/selectObject': {
+      return {
+        ...state,
+        scenes: mapActiveScene(state, (scene) => ({
+          ...scene,
+          selectedElementId: action.payload ? null : scene.selectedElementId,
+          selectedFloorPlanObject: action.payload,
         })),
       };
     }
@@ -270,7 +288,7 @@ export function visualLedReducer(state: VisualLedState, action: Action): VisualL
     case 'venue/set': {
       return {
         ...state,
-        scenes: mapActiveScene(state, (scene) => ({ ...scene, venue: action.payload })),
+        scenes: mapActiveScene(state, (scene) => ({ ...scene, venue: action.payload, selectedFloorPlanObject: null })),
       };
     }
 
@@ -280,7 +298,12 @@ export function visualLedReducer(state: VisualLedState, action: Action): VisualL
         scenes: mapActiveScene(state, (scene) => {
           const venue = scene.venue;
           if (!venue) return scene;
-          return { ...scene, venue: { ...venue, walls: [...venue.walls, action.payload] } };
+          return {
+            ...scene,
+            selectedElementId: null,
+            selectedFloorPlanObject: { kind: 'wall', id: action.payload.id },
+            venue: { ...venue, walls: [...venue.walls, action.payload] },
+          };
         }),
       };
 
@@ -314,6 +337,9 @@ export function visualLedReducer(state: VisualLedState, action: Action): VisualL
               ...venue,
               walls: venue.walls.filter((w) => w.id !== action.payload.id),
             },
+            selectedFloorPlanObject: isSelectedFloorPlanObject(scene, 'wall', action.payload.id)
+              ? null
+              : scene.selectedFloorPlanObject,
           };
         }),
       };
@@ -324,7 +350,12 @@ export function visualLedReducer(state: VisualLedState, action: Action): VisualL
         scenes: mapActiveScene(state, (scene) => {
           const venue = scene.venue;
           if (!venue) return scene;
-          return { ...scene, venue: { ...venue, doors: [...venue.doors, action.payload] } };
+          return {
+            ...scene,
+            selectedElementId: null,
+            selectedFloorPlanObject: { kind: 'door', id: action.payload.id },
+            venue: { ...venue, doors: [...venue.doors, action.payload] },
+          };
         }),
       };
 
@@ -355,6 +386,9 @@ export function visualLedReducer(state: VisualLedState, action: Action): VisualL
           return {
             ...scene,
             venue: { ...venue, doors: venue.doors.filter((d) => d.id !== action.payload.id) },
+            selectedFloorPlanObject: isSelectedFloorPlanObject(scene, 'door', action.payload.id)
+              ? null
+              : scene.selectedFloorPlanObject,
           };
         }),
       };
@@ -365,7 +399,12 @@ export function visualLedReducer(state: VisualLedState, action: Action): VisualL
         scenes: mapActiveScene(state, (scene) => {
           const venue = scene.venue;
           if (!venue) return scene;
-          return { ...scene, venue: { ...venue, windows: [...venue.windows, action.payload] } };
+          return {
+            ...scene,
+            selectedElementId: null,
+            selectedFloorPlanObject: { kind: 'window', id: action.payload.id },
+            venue: { ...venue, windows: [...venue.windows, action.payload] },
+          };
         }),
       };
 
@@ -396,6 +435,9 @@ export function visualLedReducer(state: VisualLedState, action: Action): VisualL
           return {
             ...scene,
             venue: { ...venue, windows: venue.windows.filter((w) => w.id !== action.payload.id) },
+            selectedFloorPlanObject: isSelectedFloorPlanObject(scene, 'window', action.payload.id)
+              ? null
+              : scene.selectedFloorPlanObject,
           };
         }),
       };
@@ -408,6 +450,8 @@ export function visualLedReducer(state: VisualLedState, action: Action): VisualL
           if (!venue) return scene;
           return {
             ...scene,
+            selectedElementId: null,
+            selectedFloorPlanObject: { kind: 'partition', id: action.payload.id },
             venue: { ...venue, partitions: [...venue.partitions, action.payload] },
           };
         }),
@@ -443,6 +487,9 @@ export function visualLedReducer(state: VisualLedState, action: Action): VisualL
               ...venue,
               partitions: venue.partitions.filter((p) => p.id !== action.payload.id),
             },
+            selectedFloorPlanObject: isSelectedFloorPlanObject(scene, 'partition', action.payload.id)
+              ? null
+              : scene.selectedFloorPlanObject,
           };
         }),
       };
@@ -453,7 +500,12 @@ export function visualLedReducer(state: VisualLedState, action: Action): VisualL
         scenes: mapActiveScene(state, (scene) => {
           const venue = scene.venue;
           if (!venue) return scene;
-          return { ...scene, venue: { ...venue, columns: [...venue.columns, action.payload] } };
+          return {
+            ...scene,
+            selectedElementId: null,
+            selectedFloorPlanObject: { kind: 'column', id: action.payload.id },
+            venue: { ...venue, columns: [...venue.columns, action.payload] },
+          };
         }),
       };
 
@@ -484,6 +536,9 @@ export function visualLedReducer(state: VisualLedState, action: Action): VisualL
           return {
             ...scene,
             venue: { ...venue, columns: venue.columns.filter((c) => c.id !== action.payload.id) },
+            selectedFloorPlanObject: isSelectedFloorPlanObject(scene, 'column', action.payload.id)
+              ? null
+              : scene.selectedFloorPlanObject,
           };
         }),
       };
@@ -494,7 +549,12 @@ export function visualLedReducer(state: VisualLedState, action: Action): VisualL
         scenes: mapActiveScene(state, (scene) => {
           const venue = scene.venue;
           if (!venue) return scene;
-          return { ...scene, venue: { ...venue, stage: action.payload } };
+          return {
+            ...scene,
+            selectedElementId: action.payload ? null : scene.selectedElementId,
+            selectedFloorPlanObject: action.payload ? { kind: 'stage', id: action.payload.id } : null,
+            venue: { ...venue, stage: action.payload },
+          };
         }),
       };
 
@@ -509,6 +569,12 @@ export function visualLedReducer(state: VisualLedState, action: Action): VisualL
               ? { ...el, placement: action.payload.placement ?? undefined }
               : el,
           ),
+          selectedElementId: action.payload.placement
+            ? action.payload.id
+            : scene.selectedElementId === action.payload.id
+              ? null
+              : scene.selectedElementId,
+          selectedFloorPlanObject: action.payload.placement ? null : scene.selectedFloorPlanObject,
         })),
       };
 

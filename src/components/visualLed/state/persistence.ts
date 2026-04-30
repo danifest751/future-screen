@@ -65,6 +65,7 @@ export function loadPersistedState(): { state: VisualLedState; savedAt: number }
     const scenesWithVenue = hydrated.scenes.map((scene) => ({
       ...scene,
       venue: scene.venue ?? null,
+      selectedFloorPlanObject: scene.selectedFloorPlanObject ?? null,
       floorPlanView: scene.floorPlanView ?? {
         scale: 50,
         minScale: 5,

@@ -27,6 +27,7 @@ export function serializeProjectState(state: VisualLedState): Record<string, unk
       activeBackgroundId: scene.activeBackgroundId,
       elements: scene.elements,
       selectedElementId: scene.selectedElementId,
+      selectedFloorPlanObject: scene.selectedFloorPlanObject,
       scaleCalib: scene.scaleCalib,
       view: scene.view,
       canvasWidth: scene.canvasWidth,

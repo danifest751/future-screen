@@ -1,6 +1,7 @@
 import type {
   BackgroundAsset,
   CabinetPlan,
+  FloorPlanObjectSelection,
   Point,
   Quad,
   ScaleCalibration,
@@ -89,6 +90,7 @@ export type Action =
   | { type: 'screen/setCabinetPlan'; payload: { id: string; plan: CabinetPlan | null } }
   | { type: 'screen/delete'; payload: { id: string } }
   | { type: 'screen/select'; payload: { id: string | null } }
+  | { type: 'floorPlan/selectObject'; payload: FloorPlanObjectSelection | null }
 
   // Scale calibration
   | { type: 'scale/set'; payload: ScaleCalibration }

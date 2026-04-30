@@ -45,13 +45,26 @@ const FloorPlanScreensPanel = () => {
             const size = getScreenPhysicalSize(el);
             const hasSize = size !== null;
             const isPlaced = Boolean(el.placement);
+            const isSelected = scene.selectedElementId === el.id;
             return (
               <div
                 key={el.id}
-                className={`flex items-center justify-between gap-1 rounded-md border px-2 py-1 text-[11px] ${
-                  isPlaced
-                    ? 'border-brand-400/30 bg-brand-500/10 text-white'
-                    : 'border-white/10 bg-slate-950/40 text-slate-300'
+                role="button"
+                tabIndex={0}
+                aria-pressed={isSelected}
+                onClick={() => dispatch({ type: 'screen/select', payload: { id: el.id } })}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    dispatch({ type: 'screen/select', payload: { id: el.id } });
+                  }
+                }}
+                className={`flex cursor-pointer items-center justify-between gap-1 rounded-md border px-2 py-1 text-[11px] transition ${
+                  isSelected
+                    ? 'border-amber-300/70 bg-amber-400/15 text-white shadow-[0_0_0_1px_rgba(251,191,36,0.28)]'
+                    : isPlaced
+                      ? 'border-brand-400/30 bg-brand-500/10 text-white hover:border-brand-300/50'
+                      : 'border-white/10 bg-slate-950/40 text-slate-300 hover:border-white/20'
                 }`}
               >
                 <div className="flex flex-col">
@@ -69,7 +82,10 @@ const FloorPlanScreensPanel = () => {
                 {isPlaced ? (
                   <button
                     type="button"
-                    onClick={() => removePlacement(el.id)}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      removePlacement(el.id);
+                    }}
                     className="rounded p-0.5 text-slate-400 hover:bg-red-500/20 hover:text-red-300"
                     title="Убрать с плана"
                   >
@@ -78,7 +94,10 @@ const FloorPlanScreensPanel = () => {
                 ) : (
                   <button
                     type="button"
-                    onClick={() => placeScreen(el.id)}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      placeScreen(el.id);
+                    }}
                     disabled={!hasSize}
                     className="rounded p-0.5 text-slate-400 hover:bg-brand-500/20 hover:text-brand-300 disabled:cursor-not-allowed disabled:opacity-30"
                     title={hasSize ? 'Разместить на плане' : 'Задай кабинетную сетку или масштаб'}

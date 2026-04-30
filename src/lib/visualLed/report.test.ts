@@ -96,6 +96,7 @@ describe('buildSceneReport + buildReportHtml', () => {
     activeBackgroundId: null,
     elements: [sampleElement],
     selectedElementId: null,
+    selectedFloorPlanObject: null,
     scaleCalib: scale,
     view: { scale: 1, minScale: 0.35, maxScale: 6, offsetX: 0, offsetY: 0 },
     canvasWidth: 1280,

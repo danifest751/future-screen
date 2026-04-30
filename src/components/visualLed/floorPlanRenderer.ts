@@ -14,12 +14,13 @@ import {
   getScreenAssemblyDepth,
   getScreenPhysicalSize,
   getScreenRectOnPlan,
-  pointToSegmentDistance,
 } from '../../lib/visualLed/floorPlanGeometry';
 import type { ViewTransform } from '../../lib/visualLed/types';
+import type { FloorPlanObjectSelection } from '../../lib/visualLed/types';
 
 export interface FloorPlanRenderOptions {
   selectedElementId: string | null;
+  selectedFloorPlanObject?: FloorPlanObjectSelection | null;
   toolPreview?: { type: string; points: { x: number; y: number }[] } | null;
   stageRectPreview?: { start: { x: number; y: number }; current: { x: number; y: number } } | null;
 }
@@ -52,32 +53,32 @@ export function renderFloorPlan(
   if (venue) {
     // Draw walls
     for (const wall of venue.walls) {
-      drawWall(ctx, wall);
+      drawWall(ctx, wall, options.selectedFloorPlanObject?.kind === 'wall' && options.selectedFloorPlanObject.id === wall.id, view.scale);
     }
 
     // Draw doors
     for (const door of venue.doors) {
-      drawDoor(ctx, door, venue.walls);
+      drawDoor(ctx, door, venue.walls, options.selectedFloorPlanObject?.kind === 'door' && options.selectedFloorPlanObject.id === door.id, view.scale);
     }
 
     // Draw windows
     for (const window of venue.windows) {
-      drawWindow(ctx, window, venue.walls);
+      drawWindow(ctx, window, venue.walls, options.selectedFloorPlanObject?.kind === 'window' && options.selectedFloorPlanObject.id === window.id, view.scale);
     }
 
     // Draw partitions
     for (const part of venue.partitions) {
-      drawPartition(ctx, part);
+      drawPartition(ctx, part, options.selectedFloorPlanObject?.kind === 'partition' && options.selectedFloorPlanObject.id === part.id, view.scale);
     }
 
     // Draw columns
     for (const col of venue.columns) {
-      drawColumn(ctx, col);
+      drawColumn(ctx, col, options.selectedFloorPlanObject?.kind === 'column' && options.selectedFloorPlanObject.id === col.id, view.scale);
     }
 
     // Draw stage
     if (venue.stage) {
-      drawStage(ctx, venue.stage, view.scale);
+      drawStage(ctx, venue.stage, view.scale, options.selectedFloorPlanObject?.kind === 'stage' && options.selectedFloorPlanObject.id === venue.stage.id);
     }
   }
 
@@ -162,31 +163,41 @@ function drawGrid(
   }
 }
 
-function drawWall(ctx: CanvasRenderingContext2D, wall: Wall): void {
-  ctx.strokeStyle = 'rgba(226,232,240,0.85)';
-  ctx.lineWidth = wall.thickness ?? 0.2;
+function drawWall(ctx: CanvasRenderingContext2D, wall: Wall, selected: boolean, viewScale: number): void {
+  ctx.save();
+  ctx.strokeStyle = selected ? 'rgba(251,191,36,0.98)' : 'rgba(226,232,240,0.85)';
+  ctx.lineWidth = selected ? Math.max(wall.thickness ?? 0.2, 4 / viewScale) : wall.thickness ?? 0.2;
   ctx.lineCap = 'butt';
+  if (selected) {
+    ctx.shadowColor = 'rgba(251,191,36,0.65)';
+    ctx.shadowBlur = 10 / viewScale;
+  }
   ctx.beginPath();
   ctx.moveTo(wall.x1, wall.y1);
   ctx.lineTo(wall.x2, wall.y2);
   ctx.stroke();
+  ctx.restore();
 }
 
-function drawPartition(ctx: CanvasRenderingContext2D, part: Partition): void {
-  ctx.strokeStyle = 'rgba(226,232,240,0.5)';
-  ctx.lineWidth = part.thickness ?? 0.1;
+function drawPartition(ctx: CanvasRenderingContext2D, part: Partition, selected: boolean, viewScale: number): void {
+  ctx.save();
+  ctx.strokeStyle = selected ? 'rgba(251,191,36,0.95)' : 'rgba(226,232,240,0.5)';
+  ctx.lineWidth = selected ? Math.max(part.thickness ?? 0.1, 3 / viewScale) : part.thickness ?? 0.1;
   ctx.setLineDash([0.3, 0.2]);
   ctx.beginPath();
   ctx.moveTo(part.x1, part.y1);
   ctx.lineTo(part.x2, part.y2);
   ctx.stroke();
   ctx.setLineDash([]);
+  ctx.restore();
 }
 
 function drawDoor(
   ctx: CanvasRenderingContext2D,
   door: Door,
   walls: Wall[],
+  selected: boolean,
+  viewScale: number,
 ): void {
   const wall = walls.find((w) => w.id === door.wallId);
   if (!wall) return;
@@ -194,7 +205,6 @@ function drawDoor(
   const wallLen = Math.hypot(wall.x2 - wall.x1, wall.y2 - wall.y1);
   if (wallLen < 1e-6) return;
 
-  const t = Math.max(0, Math.min(1, door.offset / wallLen));
   const nx = (wall.x2 - wall.x1) / wallLen;
   const ny = (wall.y2 - wall.y1) / wallLen;
 
@@ -206,28 +216,55 @@ function drawDoor(
   const py = nx;
 
   const doorW = door.width;
-  const swing = door.swing === 'left' ? 1 : -1;
+  const hingeSign = (door.swing ?? 'left') === 'left' ? 1 : -1;
+  const sideSign = (door.swingSide ?? 'inside') === 'inside' ? 1 : -1;
+  const wallEndX = cx + nx * doorW * hingeSign;
+  const wallEndY = cy + ny * doorW * hingeSign;
+  const openEndX = cx + px * doorW * sideSign;
+  const openEndY = cy + py * doorW * sideSign;
+  const controlX = cx + nx * doorW * hingeSign + px * doorW * sideSign;
+  const controlY = cy + ny * doorW * hingeSign + py * doorW * sideSign;
 
   // Opening arc
-  ctx.strokeStyle = 'rgba(226,232,240,0.6)';
-  ctx.lineWidth = 0.02;
+  ctx.save();
+  ctx.strokeStyle = selected ? 'rgba(251,191,36,0.98)' : 'rgba(226,232,240,0.6)';
+  ctx.lineWidth = selected ? Math.max(0.04, 3 / viewScale) : 0.02;
+  if (selected) {
+    ctx.shadowColor = 'rgba(251,191,36,0.75)';
+    ctx.shadowBlur = 8 / viewScale;
+  }
   ctx.beginPath();
-  ctx.arc(cx, cy, doorW, Math.atan2(ny, nx), Math.atan2(ny, nx) + (swing * Math.PI) / 2, swing < 0);
+  ctx.moveTo(wallEndX, wallEndY);
+  ctx.quadraticCurveTo(controlX, controlY, openEndX, openEndY);
   ctx.stroke();
 
   // Door line
-  const dx = cx + px * doorW * swing * 0.3;
-  const dy = cy + py * doorW * swing * 0.3;
   ctx.beginPath();
   ctx.moveTo(cx, cy);
-  ctx.lineTo(dx, dy);
+  ctx.lineTo(openEndX, openEndY);
   ctx.stroke();
+
+  // Threshold / hinge side marker
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.lineTo(wallEndX, wallEndY);
+  ctx.stroke();
+
+  if (selected) {
+    ctx.fillStyle = 'rgba(251,191,36,1)';
+    ctx.beginPath();
+    ctx.arc(cx, cy, 0.08, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
 }
 
 function drawWindow(
   ctx: CanvasRenderingContext2D,
   window: Window,
   walls: Wall[],
+  selected: boolean,
+  viewScale: number,
 ): void {
   const wall = walls.find((w) => w.id === window.wallId);
   if (!wall) return;
@@ -235,7 +272,6 @@ function drawWindow(
   const wallLen = Math.hypot(wall.x2 - wall.x1, wall.y2 - wall.y1);
   if (wallLen < 1e-6) return;
 
-  const t = Math.max(0, Math.min(1, window.offset / wallLen));
   const nx = (wall.x2 - wall.x1) / wallLen;
   const ny = (wall.y2 - wall.y1) / wallLen;
 
@@ -245,8 +281,9 @@ function drawWindow(
   const px = -ny * 0.15;
   const py = nx * 0.15;
 
-  ctx.strokeStyle = 'rgba(148,163,184,0.6)';
-  ctx.lineWidth = 0.03;
+  ctx.save();
+  ctx.strokeStyle = selected ? 'rgba(251,191,36,0.95)' : 'rgba(148,163,184,0.6)';
+  ctx.lineWidth = selected ? Math.max(0.05, 3 / viewScale) : 0.03;
   ctx.beginPath();
   ctx.moveTo(cx - nx * window.width * 0.5 + px, cy - ny * window.width * 0.5 + py);
   ctx.lineTo(cx + nx * window.width * 0.5 + px, cy + ny * window.width * 0.5 + py);
@@ -256,31 +293,34 @@ function drawWindow(
   ctx.moveTo(cx - nx * window.width * 0.5 - px, cy - ny * window.width * 0.5 - py);
   ctx.lineTo(cx + nx * window.width * 0.5 - px, cy + ny * window.width * 0.5 - py);
   ctx.stroke();
+  ctx.restore();
 }
 
-function drawColumn(ctx: CanvasRenderingContext2D, col: Column): void {
-  ctx.fillStyle = 'rgba(148,163,184,0.6)';
+function drawColumn(ctx: CanvasRenderingContext2D, col: Column, selected: boolean, viewScale: number): void {
+  ctx.save();
+  ctx.fillStyle = selected ? 'rgba(251,191,36,0.32)' : 'rgba(148,163,184,0.6)';
   ctx.beginPath();
   ctx.arc(col.x, col.y, col.diameter / 2, 0, Math.PI * 2);
   ctx.fill();
-  ctx.strokeStyle = 'rgba(226,232,240,0.4)';
-  ctx.lineWidth = 0.02;
+  ctx.strokeStyle = selected ? 'rgba(251,191,36,0.95)' : 'rgba(226,232,240,0.4)';
+  ctx.lineWidth = selected ? Math.max(0.04, 3 / viewScale) : 0.02;
   ctx.stroke();
+  ctx.restore();
 }
 
-function drawStage(ctx: CanvasRenderingContext2D, stage: StageVenue, viewScale: number): void {
+function drawStage(ctx: CanvasRenderingContext2D, stage: StageVenue, viewScale: number, selected: boolean): void {
   ctx.save();
   ctx.translate(stage.x, stage.y);
   ctx.rotate(degToRad(stage.rotation));
 
-  ctx.fillStyle = 'rgba(96,165,250,0.12)';
-  ctx.strokeStyle = 'rgba(96,165,250,0.55)';
-  ctx.lineWidth = 0.04;
+  ctx.fillStyle = selected ? 'rgba(251,191,36,0.18)' : 'rgba(96,165,250,0.12)';
+  ctx.strokeStyle = selected ? 'rgba(251,191,36,0.95)' : 'rgba(96,165,250,0.55)';
+  ctx.lineWidth = selected ? Math.max(0.06, 4 / viewScale) : 0.04;
   ctx.fillRect(-stage.width / 2, -stage.depth / 2, stage.width, stage.depth);
   ctx.strokeRect(-stage.width / 2, -stage.depth / 2, stage.width, stage.depth);
 
   // Label
-  ctx.fillStyle = 'rgba(96,165,250,0.9)';
+  ctx.fillStyle = selected ? 'rgba(251,191,36,0.95)' : 'rgba(96,165,250,0.9)';
   ctx.font = `${0.35 / viewScale}px sans-serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';

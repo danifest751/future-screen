@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { Building2, Plus, Trash2 } from 'lucide-react';
+import { useState, type KeyboardEvent } from 'react';
+import { Building2, Plus, RotateCcw, Trash2 } from 'lucide-react';
+import type { FloorPlanObjectKind } from '../../../lib/visualLed';
 import CollapsiblePanel from '../CollapsiblePanel';
 import { useActiveScene, useVisualLed } from '../state/VisualLedContext';
 import { uid } from '../state/initialState';
@@ -12,6 +13,23 @@ const VenuePanel = () => {
   const [widthDraft, setWidthDraft] = useState('10');
   const [depthDraft, setDepthDraft] = useState('8');
   const [heightDraft, setHeightDraft] = useState('3.5');
+
+  const selectedObject = scene.selectedFloorPlanObject;
+  const isSelectedObject = (kind: FloorPlanObjectKind, id: string) =>
+    selectedObject?.kind === kind && selectedObject.id === id;
+  const selectObject = (kind: FloorPlanObjectKind, id: string) =>
+    dispatch({ type: 'floorPlan/selectObject', payload: { kind, id } });
+  const itemClass = (selected: boolean) =>
+    `rounded border px-2 py-1 text-[11px] transition ${
+      selected
+        ? 'border-amber-300/70 bg-amber-400/15 text-white shadow-[0_0_0_1px_rgba(251,191,36,0.28)]'
+        : 'border-white/5 bg-slate-950/40 text-slate-300 hover:border-white/15 hover:bg-slate-900/60'
+    }`;
+  const onObjectKeyDown = (event: KeyboardEvent, kind: FloorPlanObjectKind, id: string) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    selectObject(kind, id);
+  };
 
   const createVenue = () => {
     const w = Number(widthDraft);
@@ -46,7 +64,7 @@ const VenuePanel = () => {
   const removeDoor = (id: string) => dispatch({ type: 'venue/door/remove', payload: { id } });
   const removeWindow = (id: string) => dispatch({ type: 'venue/window/remove', payload: { id } });
 
-  const updateDoor = (id: string, patch: { offset?: number; width?: number }) =>
+  const updateDoor = (id: string, patch: { offset?: number; width?: number; swing?: 'left' | 'right'; swingSide?: 'inside' | 'outside' }) =>
     dispatch({
       type: 'venue/door/update',
       payload: { id, patch },
@@ -118,9 +136,17 @@ const VenuePanel = () => {
             <div className="mb-1 text-[10px] font-medium uppercase tracking-wide text-slate-500">Стены</div>
             <div className="space-y-1">
               {venue.walls.map((w, i) => (
-                <div key={w.id} className="flex items-center justify-between rounded border border-white/5 bg-slate-950/40 px-2 py-1 text-[11px] text-slate-300">
+                <div
+                  key={w.id}
+                  role="button"
+                  tabIndex={0}
+                  aria-pressed={isSelectedObject('wall', w.id)}
+                  onClick={() => selectObject('wall', w.id)}
+                  onKeyDown={(event) => onObjectKeyDown(event, 'wall', w.id)}
+                  className={`flex cursor-pointer items-center justify-between ${itemClass(isSelectedObject('wall', w.id))}`}
+                >
                   <span>Стена {i + 1} · {Math.hypot(w.x2 - w.x1, w.y2 - w.y1).toFixed(2)}м</span>
-                  <button type="button" onClick={() => removeWall(w.id)} className="rounded p-0.5 text-slate-400 hover:bg-red-500/20 hover:text-red-300" title="Удалить"><Trash2 className="h-3 w-3" /></button>
+                  <button type="button" onClick={(event) => { event.stopPropagation(); removeWall(w.id); }} className="rounded p-0.5 text-slate-400 hover:bg-red-500/20 hover:text-red-300" title="Удалить"><Trash2 className="h-3 w-3" /></button>
                 </div>
               ))}
             </div>
@@ -132,9 +158,17 @@ const VenuePanel = () => {
             <div className="mb-1 text-[10px] font-medium uppercase tracking-wide text-slate-500">Перегородки</div>
             <div className="space-y-1">
               {venue.partitions.map((p, i) => (
-                <div key={p.id} className="flex items-center justify-between rounded border border-white/5 bg-slate-950/40 px-2 py-1 text-[11px] text-slate-300">
+                <div
+                  key={p.id}
+                  role="button"
+                  tabIndex={0}
+                  aria-pressed={isSelectedObject('partition', p.id)}
+                  onClick={() => selectObject('partition', p.id)}
+                  onKeyDown={(event) => onObjectKeyDown(event, 'partition', p.id)}
+                  className={`flex cursor-pointer items-center justify-between ${itemClass(isSelectedObject('partition', p.id))}`}
+                >
                   <span>Перегородка {i + 1} · {Math.hypot(p.x2 - p.x1, p.y2 - p.y1).toFixed(2)}м</span>
-                  <button type="button" onClick={() => removePartition(p.id)} className="rounded p-0.5 text-slate-400 hover:bg-red-500/20 hover:text-red-300" title="Удалить"><Trash2 className="h-3 w-3" /></button>
+                  <button type="button" onClick={(event) => { event.stopPropagation(); removePartition(p.id); }} className="rounded p-0.5 text-slate-400 hover:bg-red-500/20 hover:text-red-300" title="Удалить"><Trash2 className="h-3 w-3" /></button>
                 </div>
               ))}
             </div>
@@ -146,9 +180,17 @@ const VenuePanel = () => {
             <div className="mb-1 text-[10px] font-medium uppercase tracking-wide text-slate-500">Колонны</div>
             <div className="space-y-1">
               {venue.columns.map((c, i) => (
-                <div key={c.id} className="flex items-center justify-between rounded border border-white/5 bg-slate-950/40 px-2 py-1 text-[11px] text-slate-300">
+                <div
+                  key={c.id}
+                  role="button"
+                  tabIndex={0}
+                  aria-pressed={isSelectedObject('column', c.id)}
+                  onClick={() => selectObject('column', c.id)}
+                  onKeyDown={(event) => onObjectKeyDown(event, 'column', c.id)}
+                  className={`flex cursor-pointer items-center justify-between ${itemClass(isSelectedObject('column', c.id))}`}
+                >
                   <span>Колонна {i + 1} · {c.diameter}м</span>
-                  <button type="button" onClick={() => removeColumn(c.id)} className="rounded p-0.5 text-slate-400 hover:bg-red-500/20 hover:text-red-300" title="Удалить"><Trash2 className="h-3 w-3" /></button>
+                  <button type="button" onClick={(event) => { event.stopPropagation(); removeColumn(c.id); }} className="rounded p-0.5 text-slate-400 hover:bg-red-500/20 hover:text-red-300" title="Удалить"><Trash2 className="h-3 w-3" /></button>
                 </div>
               ))}
             </div>
@@ -160,12 +202,23 @@ const VenuePanel = () => {
             <div className="mb-1 text-[10px] font-medium uppercase tracking-wide text-slate-500">Двери</div>
             <div className="space-y-1">
               {venue.doors.map((d, i) => (
-                <div key={d.id} className="rounded border border-white/5 bg-slate-950/40 px-2 py-1.5 text-[11px]">
+                <div
+                  key={d.id}
+                  role="button"
+                  tabIndex={0}
+                  aria-pressed={isSelectedObject('door', d.id)}
+                  onClick={() => selectObject('door', d.id)}
+                  onKeyDown={(event) => onObjectKeyDown(event, 'door', d.id)}
+                  className={`cursor-pointer py-1.5 ${itemClass(isSelectedObject('door', d.id))}`}
+                >
                   <div className="mb-1 flex items-center justify-between text-slate-300">
-                    <span>Дверь {i + 1}</span>
-                    <button type="button" onClick={() => removeDoor(d.id)} className="rounded p-0.5 text-slate-400 hover:bg-red-500/20 hover:text-red-300" title="Удалить"><Trash2 className="h-3 w-3" /></button>
+                    <span>
+                      Дверь {i + 1} · {d.swing === 'right' ? 'петля справа' : 'петля слева'} ·{' '}
+                      {(d.swingSide ?? 'inside') === 'inside' ? 'внутрь' : 'наружу'}
+                    </span>
+                    <button type="button" onClick={(event) => { event.stopPropagation(); removeDoor(d.id); }} className="rounded p-0.5 text-slate-400 hover:bg-red-500/20 hover:text-red-300" title="Удалить"><Trash2 className="h-3 w-3" /></button>
                   </div>
-                  <div className="grid grid-cols-2 gap-1">
+                  <div className="grid grid-cols-2 gap-1" onClick={(event) => event.stopPropagation()}>
                     <label className="text-[10px] text-slate-400">
                       Смещение, м
                       <input type="number" step="0.1" value={d.offset.toFixed(2)}
@@ -181,6 +234,58 @@ const VenuePanel = () => {
                       />
                     </label>
                   </div>
+                  <div className="mt-1.5 grid grid-cols-2 gap-1" onClick={(event) => event.stopPropagation()}>
+                    <button
+                      type="button"
+                      onClick={() => updateDoor(d.id, { swing: 'left' })}
+                      aria-pressed={(d.swing ?? 'left') === 'left'}
+                      className={`inline-flex items-center justify-center gap-1 rounded border px-2 py-1 text-[10px] transition ${
+                        (d.swing ?? 'left') === 'left'
+                          ? 'border-amber-300/50 bg-amber-400/15 text-amber-100'
+                          : 'border-white/10 bg-slate-950/60 text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      <RotateCcw className="h-3 w-3" /> Влево
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => updateDoor(d.id, { swing: 'right' })}
+                      aria-pressed={d.swing === 'right'}
+                      className={`inline-flex items-center justify-center gap-1 rounded border px-2 py-1 text-[10px] transition ${
+                        d.swing === 'right'
+                          ? 'border-amber-300/50 bg-amber-400/15 text-amber-100'
+                          : 'border-white/10 bg-slate-950/60 text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      <RotateCcw className="h-3 w-3 scale-x-[-1]" /> Вправо
+                    </button>
+                  </div>
+                  <div className="mt-1 grid grid-cols-2 gap-1" onClick={(event) => event.stopPropagation()}>
+                    <button
+                      type="button"
+                      onClick={() => updateDoor(d.id, { swingSide: 'inside' })}
+                      aria-pressed={(d.swingSide ?? 'inside') === 'inside'}
+                      className={`rounded border px-2 py-1 text-[10px] transition ${
+                        (d.swingSide ?? 'inside') === 'inside'
+                          ? 'border-amber-300/50 bg-amber-400/15 text-amber-100'
+                          : 'border-white/10 bg-slate-950/60 text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      Внутрь
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => updateDoor(d.id, { swingSide: 'outside' })}
+                      aria-pressed={d.swingSide === 'outside'}
+                      className={`rounded border px-2 py-1 text-[10px] transition ${
+                        d.swingSide === 'outside'
+                          ? 'border-amber-300/50 bg-amber-400/15 text-amber-100'
+                          : 'border-white/10 bg-slate-950/60 text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      Наружу
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -192,12 +297,20 @@ const VenuePanel = () => {
             <div className="mb-1 text-[10px] font-medium uppercase tracking-wide text-slate-500">Окна</div>
             <div className="space-y-1">
               {venue.windows.map((win, i) => (
-                <div key={win.id} className="rounded border border-white/5 bg-slate-950/40 px-2 py-1.5 text-[11px]">
+                <div
+                  key={win.id}
+                  role="button"
+                  tabIndex={0}
+                  aria-pressed={isSelectedObject('window', win.id)}
+                  onClick={() => selectObject('window', win.id)}
+                  onKeyDown={(event) => onObjectKeyDown(event, 'window', win.id)}
+                  className={`cursor-pointer py-1.5 ${itemClass(isSelectedObject('window', win.id))}`}
+                >
                   <div className="mb-1 flex items-center justify-between text-slate-300">
                     <span>Окно {i + 1}</span>
-                    <button type="button" onClick={() => removeWindow(win.id)} className="rounded p-0.5 text-slate-400 hover:bg-red-500/20 hover:text-red-300" title="Удалить"><Trash2 className="h-3 w-3" /></button>
+                    <button type="button" onClick={(event) => { event.stopPropagation(); removeWindow(win.id); }} className="rounded p-0.5 text-slate-400 hover:bg-red-500/20 hover:text-red-300" title="Удалить"><Trash2 className="h-3 w-3" /></button>
                   </div>
-                  <div className="grid grid-cols-2 gap-1">
+                  <div className="grid grid-cols-2 gap-1" onClick={(event) => event.stopPropagation()}>
                     <label className="text-[10px] text-slate-400">
                       Смещение, м
                       <input type="number" step="0.1" value={win.offset.toFixed(2)}
@@ -221,9 +334,16 @@ const VenuePanel = () => {
 
         {venue.stage && (
           <div className="space-y-1">
-            <div className="flex items-center justify-between rounded border border-white/5 bg-slate-950/40 px-2 py-1 text-[11px] text-slate-300">
+            <div
+              role="button"
+              tabIndex={0}
+              aria-pressed={isSelectedObject('stage', venue.stage.id)}
+              onClick={() => selectObject('stage', venue.stage!.id)}
+              onKeyDown={(event) => onObjectKeyDown(event, 'stage', venue.stage!.id)}
+              className={`flex cursor-pointer items-center justify-between ${itemClass(isSelectedObject('stage', venue.stage.id))}`}
+            >
               <span>Сцена · {venue.stage.width.toFixed(1)}×{venue.stage.depth.toFixed(1)}м</span>
-              <button type="button" onClick={() => dispatch({ type: 'venue/stage/set', payload: null })} className="rounded p-0.5 text-slate-400 hover:bg-red-500/20 hover:text-red-300" title="Удалить"><Trash2 className="h-3 w-3" /></button>
+              <button type="button" onClick={(event) => { event.stopPropagation(); dispatch({ type: 'venue/stage/set', payload: null }); }} className="rounded p-0.5 text-slate-400 hover:bg-red-500/20 hover:text-red-300" title="Удалить"><Trash2 className="h-3 w-3" /></button>
             </div>
             <label className="text-[11px] text-slate-400">
               Высота сцены, м
