@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { type Theme, getThemeById, applyTheme, themes } from '../themes';
 
 interface ThemeContextValue {
@@ -21,14 +21,19 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     applyTheme(theme);
   }, [theme]);
 
-  const setTheme = (id: string) => {
+  const setTheme = useCallback((id: string) => {
     const t = getThemeById(id);
     setThemeState(t);
     localStorage.setItem(STORAGE_KEY, id);
-  };
+  }, []);
+
+  const value = useMemo<ThemeContextValue>(
+    () => ({ theme, setTheme, themes }),
+    [setTheme, theme],
+  );
 
   return (
-    <ThemeCtx.Provider value={{ theme, setTheme, themes }}>
+    <ThemeCtx.Provider value={value}>
       {children}
     </ThemeCtx.Provider>
   );

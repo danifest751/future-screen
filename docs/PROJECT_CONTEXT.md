@@ -1,184 +1,285 @@
 # Project Context
 
 ## Что это
-Future Screen — сайт для аренды LED-экранов с калькулятором подбора оборудования и админ-панелью.
+
+Future Screen — React/Vite сайт компании по техническому сопровождению мероприятий: LED-экраны, звук, свет, сцены, аренда оборудования и кейсы. В проекте есть публичный сайт, админ-панель, inline-редактирование контента, Supabase-бэкенд и отдельный инструмент `/visual-led` для визуальной расстановки LED-экранов на изображениях площадок.
+
+Этот документ нужен как быстрая карта проекта для разработчиков и AI-агентов. За строгими правилами работы см. `AGENTS.md`, `CLAUDE.md`, `docs/AI_RULES.md` и `CONTRIBUTING.md`.
 
 ## Стек
-- **Frontend**: React 18 + TypeScript + Vite
-- **Styling**: Tailwind CSS + CSS Modules
-- **Backend**: Supabase (PostgreSQL + Auth + Realtime)
-- **API**: Vercel Serverless Functions (Node.js)
-- **State**: React Query + Context
-- **Backgrounds**: WebGL/Three.js (ReactBits компоненты)
 
----
+- Frontend: React 18, TypeScript, Vite, React Router 6.
+- Styling: Tailwind CSS, глобальные CSS-переменные в `src/index.css`, публичные темы в `src/themes/`.
+- State/data: React Context + `@tanstack/react-query`.
+- Forms: `react-hook-form`, `zod`, `react-hot-toast`.
+- Backend: Supabase (Postgres, Auth, Storage, RLS) + Vercel Functions в `api/`.
+- Local server: `server/` Express-обвязка для `npm run dev:all`.
+- Tests: Vitest/jsdom, Testing Library, Playwright e2e.
+- UI assets: `lucide-react`, media library in Supabase Storage, static assets in `public/`.
 
-## Структура проекта
+## Главная структура
 
-```
+```text
 src/
+├── App.tsx                 # lazy routes, visual-led fullscreen bypass
+├── main.tsx                # providers: Query, Helmet, Router, I18n, Theme, Auth, EditMode
 ├── components/
-│   ├── calculator/           # Калькулятор LED-экранов
-│   │   ├── Calculator.tsx    # Главный компонент (шаги, состояние)
-│   │   ├── steps/            # Шаги формы (StepAudience, StepDistance и т.д.)
-│   │   ├── Result/           # Результаты расчёта (ResultCard, визуализации)
-│   │   └── LeadForm/         # Форма захвата лида
-│   ├── admin/                # Админ-панель
-│   │   ├── AdminLayout.tsx   # Лейаут с sidebar
-│   │   └── ui/               # UI компоненты админки (Button, Input, Modal)
-│   ├── backgrounds/          # WebGL анимированные фоны
-│   │   ├── ReactBitsLazy.tsx # Ленивая загрузка фонов
-│   │   └── reactbits/        # 8 фонов: Aurora, Mesh, Dots, Waves, Rings, Nebula, Galaxy, ColorBends
-│   ├── backgrounds/          # Каждый фон = JSX + CSS
-│   │   └── reactbits/
-│   │       ├── Mesh.jsx      # WebGL через Three.js
-│   │       ├── Mesh.css      # Стили контейнера
-│   │       └── ...
-│   └── ...                   # Header, Footer, RequestForm и т.д.
-├── pages/                    # Страницы (роутинг)
-│   ├── CalculatorPage.tsx
-│   ├── AdminDashboard.tsx
-│   └── ...
-├── hooks/                    # Кастомные хуки
-│   ├── useCalculatorConfig.ts # Конфиг калькулятора из Supabase
-│   ├── useSiteSettings.ts    # Настройки сайта (вкл/выкр разделы)
-│   └── ...
-├── lib/                      # Утилиты и API
-│   ├── supabase.ts           # Клиент Supabase
-│   ├── backgrounds.ts        # Логика фонов (синхронизация)
-│   └── ...
-├── data/                     # Статичные данные и конфиги
-│   ├── calculatorConfig.ts   # Конфигурация расчётов
-│   ├── categories.ts         # Категории услуг
-│   └── ...
-└── context/                  # React Context
-    ├── AdminDataContext.tsx  # Данные для админки
-    ├── AuthContext.tsx       # Авторизация
-    └── ThemeContext.tsx      # Тема (dark/light/neon)
-api/                          # Vercel Serverless Functions
-├── send.ts                   # Отправка форм (EmailJS + Telegram)
-└── client-log.ts             # Логирование клиентских ошибок
-supabase/migrations/          # SQL миграции БД
+│   ├── admin/              # admin layout, inline editors, media library, admin/ui primitives
+│   ├── rental/             # rental category public sections
+│   └── visualLed/          # React visual LED editor: canvas, panels, state/history
+├── content/                # all user-facing copy, RU+EN, split by pages/components/system
+├── context/                # Auth, EditMode, I18n, Theme
+├── data/                   # fallback/static cases, categories, packages, icons
+├── hooks/                  # entity hooks and page-content hooks
+├── i18n/                   # locale types/helpers
+├── lib/                    # pure utilities, Supabase client, mappers, analytics, visualLed math
+├── pages/                  # public pages
+│   └── admin/              # protected admin pages
+├── queries/                # React Query keys/hooks/mutations
+├── services/               # thin Supabase service wrappers
+└── types/                  # domain types
+
+api/                        # Vercel Functions: forms, logs, reports, telegram, visual-led
+server/                     # local Express/server helpers for dev:all
+supabase/
+├── migrations/             # canonical DB schema and data migrations
+└── legacy/                 # historical SQL only; do not add new files
+tests/e2e/                  # Playwright specs and Supabase mocks
+docs/                       # project guides and feature specs
 ```
 
----
+## Роуты
 
-## Где искать при задачах
+Публичные:
 
-### Калькулятор не работает / нужно изменить логику
-- Логика шагов: `src/components/calculator/steps/`
-- Конфигурация: `src/data/calculatorConfig.ts` или `src/hooks/useCalculatorConfig.ts`
-- Результаты: `src/components/calculator/Result/ResultCard.tsx`
-- Отправка лида: `src/lib/submitForm.ts` + `api/send.ts`
+- `/` — главная.
+- `/led` — LED-экраны.
+- `/support` — техническое сопровождение.
+- `/rent` и `/rent/:slug` — аренда и категории аренды.
+- `/cases` и `/cases/:slug` — кейсы.
+- `/prices` — пакеты/цены.
+- `/about`, `/contacts`, `/consult`, `/privacy`.
+- `/visual-led` — основной React-инструмент визуализации LED.
+- `/visual-led/v2` — alias на React-инструмент.
+- `/visual-led/legacy` — старый HTML-инструмент через iframe для fallback.
 
-### Проблемы с фонами / добавить новый фон
-- Компоненты фонов: `src/components/backgrounds/reactbits/`
-- Логика переключения: `src/lib/backgrounds.ts`
-- Ленивая загрузка: `src/components/backgrounds/ReactBitsLazy.tsx`
-- **Важно**: каждый JSX импортирует одноимённый CSS файл
-- Синхронизация между клиентами: через Supabase Realtime
+Админка, все через `ProtectedRoute requiredRole="admin"`:
 
-### Админка / управление контентом
-- Лейаут: `src/components/admin/AdminLayout.tsx`
-- Страницы админки: `src/pages/Admin*Page.tsx`
-- Данные: `src/context/AdminDataContext.tsx`
-- API: `src/services/adminData.ts`
+- `/admin` — dashboard и навигация по секциям.
+- `/admin/leads` — заявки.
+- `/admin/cases`, `/admin/packages`, `/admin/categories`, `/admin/contacts`.
+- `/admin/rental-categories`, `/admin/rental/:id`.
+- `/admin/privacy-policy`.
+- `/admin/content/home-equipment`, `/admin/content/history`.
+- `/admin/visual-led-logs`, `/admin/visual-led-logs/:sessionId`.
+- `/admin/visual-led/presets`, `/admin/visual-led/pitch-config`, `/admin/visual-led/storage`, `/admin/visual-led/pricing`.
+- `/admin/content` больше не отдельный hub: редиректит на `/admin`.
 
-### Формы / отправка данных
-- Валидация: `zod` (в submitForm.ts)
-- Email: EmailJS (`VITE_EMAILJS_*` env vars)
-- Telegram: бот для уведомлений
-- Логи: `api/client-log.ts`
+## Локализация и контент
 
-### Темы / стили
-- Переменные CSS: `src/index.css` (:root)
-- Темы: `data-theme="light"`, `data-theme="neon"`
-- Переключатель: `src/components/ThemeSwitcher.tsx`
+- Весь user-facing текст должен жить в `src/content/...`, а не inline в JSX.
+- Контентные словари обычно экспортируют `{ ru, en }` и `getXxxContent(locale)`.
+- Публичный сайт по умолчанию использует `en`, админ-интерфейс по умолчанию `ru`.
+- `I18nContext` разделяет `siteLocale`, `adminLocale` и `adminContentLocale`.
+- Админ может редактировать RU/EN контент отдельно; fallback-индикаторы показывают, когда EN берётся из RU.
+- При добавлении текста обновляйте обе локали, либо делайте явный fallback там, где он нужен.
 
----
+## Supabase и данные
 
-## Важные нюансы
+Источник истины для схемы — `supabase/migrations/`. Новые изменения БД только новой миграцией, не правкой старой применённой миграции.
 
-### Фоны (ReactBits)
-- 8 WebGL фонов на Three.js
-- **Каждый фон требует CSS файл** с тем же именем
-- Лениво загружаются (React.lazy)
-- Синхронизируются через Supabase (глобальный фон для всех пользователей)
-- Настройки фонов: яркость, скорость, цвета — в `src/lib/backgrounds.ts`
+Ключевые области данных:
 
-### Калькулятор
-- Многошаговая форма (4 шага)
-- Конфиг может загружаться из Supabase (useCalculatorConfig)
-- Расчёты в `src/utils/screenMath.ts`
-- Результат с визуализацией размеров экрана
+- `site_content` — JSON/key-value контент публичных секций и глобальных блоков.
+- `site_content_versions` — append-only аудит изменений контента, rollback/history в админке.
+- `leads` — заявки с tracking/delivery/read status.
+- `cases`, `packages`, `contacts`, `rental_categories` — основные публичные сущности.
+- `media_items`, `case_media_links`, Storage bucket `images` — медиа-библиотека.
+- `visual_led_sessions`, `visual_led_events`, `visual_led_assets` — логирование visual-led.
+- `visual_led_projects` — сохранённые проекты visual-led.
+- `visual_led_presets`, `visual_led_pitch_config`, `visual_led_day_discounts` — admin-managed конфиг визуализатора.
 
-### Админка
-- Требует авторизации (Supabase Auth)
-- Роли пользователей
-- Редактирование категорий, кейсов, пакетов
-- Управление фонами и настройками сайта
+RBAC:
 
-### Билд
-- Vite собирает в `dist/`
-- TypeScript строгий (no `any`)
-- Pre-commit: `npm run build` должен проходить
+- Роли: `admin`, `editor`, `viewer`.
+- Источник роли: `auth.jwt() -> app_metadata -> role`.
+- `user_metadata` не использовать для авторизации.
+- RLS-политики завязаны на `public.current_user_role()` и admin-only записи.
 
----
+После изменения схемы обновляйте типы и мапперы:
 
-## Политика конфиденциальности
-
-### Структура
-- **Страница**: `/privacy` — публичная страница с текстом политики
-- **Админка**: `/admin/privacy-policy` — редактирование политики
-- **Контент хранится в БД**: таблица `site_content` с ключом `privacy_policy`
-
-### Компоненты
-- `ConsentCheckbox` (`src/components/ConsentCheckbox.tsx`) — чекбокс согласия на обработку персональных данных
-- Используется в `RequestForm` и `CtaForm` (HomePage)
-
-### SQL
-- `sql/003_create_site_content.sql` — миграция для таблицы site_content
-- `sql/004_seed_privacy_policy.sql` — начальные данные политики
-
-### Роуты
-- `/privacy` — публичная страница (`PrivacyPolicyPage.tsx`)
-- `/admin/privacy-policy` — страница редактирования (`AdminPrivacyPolicyPage.tsx`)
-
-### Сервисы
-- `src/services/siteContent.ts` — загрузка и сохранение контента
-- `src/hooks/usePrivacyPolicy.ts` — хук для работы с политикой
-
----
-
-## Environment Variables
 ```bash
-# Supabase
+npm run gen:types
+```
+
+## Inline-редактирование сайта
+
+Админ может включить edit-mode на публичных страницах через `AdminGearButton`.
+
+Основные компоненты:
+
+- `src/context/EditModeContext.tsx` — edit-mode, active saves, beforeunload guard integration.
+- `src/hooks/useEditableBinding.ts` — text/multiline binding.
+- `src/hooks/useEditableSave.ts` — единый lifecycle сохранения и toast.
+- `src/components/admin/EditableImage.tsx`.
+- `src/components/admin/EditableList.tsx`.
+- `src/components/admin/EditableIcon.tsx`.
+- `src/components/admin/EditableMarkdown.tsx`.
+- `src/components/admin/EditToolbar.tsx`.
+
+Важно:
+
+- Каждый Editable должен получать уникальный осмысленный `label`, например `Home hero - title`, чтобы toast-id не коллидил.
+- `saveSiteContent` и `loadSiteContent` требуют явный `locale`; не обходить это через casts.
+- Новые публичные editable-секции должны иметь fallback в `src/content/...`, Supabase key и админский способ увидеть источник/fallback.
+
+## Админка
+
+Основной layout: `src/components/admin/AdminLayout.tsx`.
+
+Перед созданием нового UI проверьте `src/components/admin/ui/`:
+
+- `Button`, `Input`, `Select`, `Textarea`, `Field`.
+- `ConfirmModal`.
+- `EmptyState`, `LoadingState`.
+- `FallbackDot`.
+- `MetricCard`.
+- `FilterPills`.
+- `AdminPageToolbar`.
+- `AdminEditPanelHeader`.
+
+Полезные хуки:
+
+- `useAdminCrudHandlers` — submit/cancel/delete/reset для CRUD-страниц.
+- `useFormDraftPersistence` — черновики форм в localStorage.
+- `useUnsavedChangesGuard` — guard при несохранённых изменениях.
+- `useUserRole` — роль из Supabase JWT.
+
+В новой админке не пишите собственные spinner/toast-паттерны без причины: берите общие примитивы и хуки.
+
+## Visual LED
+
+`/visual-led` — крупный самостоятельный модуль. Он не является старым LED-калькулятором.
+
+Где искать:
+
+- React UI: `src/pages/VisualLedV2Page.tsx`, `src/components/visualLed/`.
+- State/history/persistence: `src/components/visualLed/state/`.
+- Geometry/pricing/report math: `src/lib/visualLed/`.
+- Server API: `api/visual-led/save.ts`, `api/visual-led/load.ts`, `api/visual-led/upload-background.ts`, `api/visual-led-logs/[action].ts`.
+- Admin config: `src/pages/admin/AdminVisualLed*Page.tsx`, `src/services/visualLedConfig.ts`, `src/hooks/useVisualLedConfig.ts`.
+- Legacy assets: `public/visual-led-legacy/`.
+- Preset assets: `public/visual-led-presets/`.
+- Functional overview: `docs/visual-led-functional-overview.md`.
+
+Возможности:
+
+- загрузка фона/плана площадки;
+- масштабирование и калибровка;
+- добавление экранов по перспективе и в floor-plan режиме;
+- pixel pitch, кабинеты, разрешение, цена;
+- несколько сцен;
+- видео/демо-пресеты;
+- сохранение/загрузка проектов;
+- HTML-отчёты и share-links;
+- логирование пользовательских событий для админки.
+
+## API и интеграции
+
+Vercel rewrites находятся в `vercel.json`.
+
+Основные endpoints:
+
+- `api/send.ts` — формы, запись lead, email, Telegram.
+- `api/client-log.ts` — клиентские ошибки.
+- `api/telegram-webhook.ts` — загрузки/команды через Telegram.
+- `api/report-share.ts` и `/reports/:slug` — сохранённые отчёты visual-led.
+- `api/visual-led/*` — сохранение проектов, загрузка, background upload.
+- `api/visual-led-logs/[action].ts` — visual-led event/session APIs.
+
+Server-side код использует `SUPABASE_SERVICE_ROLE_KEY`; не добавлять fallback на anon key для write/admin операций.
+
+## Переменные окружения
+
+Актуальный набор смотрите по коду, так как `.env.example` сейчас отсутствует. Часто используемые:
+
+```bash
 VITE_SUPABASE_URL=
 VITE_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=  # только сервер
+SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
 
-# EmailJS (отправка форм)
-VITE_EMAILJS_SERVICE_ID=
-VITE_EMAILJS_TEMPLATE_ID=
-VITE_EMAILJS_PUBLIC_KEY=
+VITE_API_URL=
+VITE_ERROR_LOG_URL=
+PUBLIC_SITE_URL=
+ALLOWED_ORIGINS=
 
-# Telegram (уведомления)
-TELEGRAM_BOT_TOKEN=
-TELEGRAM_CHAT_ID=
+SMTP_USER=
+SMTP_PASS=
+SMTP_TO=
+
+TG_BOT_TOKEN=
+TG_CHAT_ID=
+TELEGRAM_WEBHOOK_SECRET=
+
+UPSTASH_REDIS_REST_URL=
+UPSTASH_REDIS_REST_TOKEN=
 ```
+
+Yandex.Metrika id захардкожен в `src/lib/analytics.ts`.
 
 ## Команды
+
 ```bash
-npm run dev      # vite dev server (port 5000, --host 0.0.0.0)
-npm run dev:all  # vite + local serverless mock (port 3001 для server/index.js)
-npm run build    # tsc + tsc --project tsconfig.api.json + vite build
-npm run test     # vitest run
-npm run preview  # preview production build
-npm run test:e2e # playwright (поднимает dev-сервер на 4174)
+npm run dev                 # Vite dev server на порту 5000
+npm run server              # локальный Express server
+npm run dev:all             # server + Vite
+npm run lint                # lint src/server/api
+npm run build               # TS build + API TS check + Vite build
+npm run test                # Vitest
+npm run test:e2e            # Playwright
+npm run test:e2e:update-snapshots
+npm run check:prepush       # lint + build + work:end
+npm run secrets:scan
 ```
 
-## Типичные проблемы
-1. **"Could not resolve './Xxx.css'"** — создать CSS файл для компонента фона
-2. **"@import must precede all other statements"** — переместить `@import` в начало index.css
-3. **Фон не меняется** — проверить `src/lib/backgrounds.ts` и Supabase realtime подписку
-4. **Ошибка авторизации в админке** — проверить env vars Supabase
+Память проекта:
+
+```bash
+npm run memory:session
+npm run memory:search -- "<query>"
+npm run memory:session:save
+npm run memory:status
+```
+
+## Тесты и качество
+
+- Unit/component: Vitest + jsdom.
+- E2E: Playwright, Supabase моки в `tests/e2e/helpers/supabaseMock.ts`.
+- API tests: `tests/api/` и `api/*.test.ts`.
+- Visual-led имеет много точечных тестов в `src/lib/visualLed/` и `src/components/visualLed/`.
+- `@testing-library/jest-dom` подключён через `vitest.setup.ts`; DOM matchers доступны глобально в Vitest.
+- Перед handoff/push по правилам проекта: `npm run check:prepush`.
+
+## Где искать по типовым задачам
+
+- Роутинг/страницы: `src/App.tsx`, `src/pages/`.
+- Публичный текст: `src/content/pages/`, `src/content/components/`, `src/content/global.ts`.
+- Глобальная шапка/подвал/формы: `src/hooks/useGlobal*`, `src/lib/content/*`, `src/content/global.ts`.
+- Главная: `src/hooks/useHome*`, `src/lib/content/home*`, `src/content/pages/home.ts`.
+- Аренда: `src/pages/RentPage.tsx`, `src/pages/RentalCategoryPage.tsx`, `src/components/rental/`, `src/services/rentalCategories.ts`.
+- Кейсы и медиа: `src/pages/admin/AdminCasesRedesignedPage.tsx`, `src/components/admin/media/`, `src/services/mediaUsage.ts`.
+- Лиды и уведомления: `api/send.ts`, `server/lib/sendApi/`, `src/pages/admin/AdminLeadsPage.tsx`.
+- Telegram upload flow: `api/telegram-webhook.ts`, `server/lib/telegramWebhook/`.
+- Content history/rollback: `src/pages/admin/AdminContentHistoryPage.tsx`, `src/services/siteContentVersions.ts`, `src/lib/jsonDiff.ts`.
+- Supabase policies/types: `supabase/migrations/`, `src/lib/database.types.ts`, `src/lib/mappers.ts`.
+- Visual-led: `src/components/visualLed/`, `src/lib/visualLed/`, `docs/visual-led-functional-overview.md`.
+
+## Важные ограничения
+
+- Не добавлять новые user-facing строки inline в active UI.
+- Не смешивать локали: public default EN, admin UI default RU, admin content locale отдельная.
+- Не править старые применённые миграции; добавлять новую.
+- Не делать авторизацию через `user_metadata`.
+- Не писать секреты в репозиторий; перед push проверить staged files и при необходимости `npm run secrets:scan`.
+- Не использовать `vercel --prod`, force push или destructive git-команды без явной просьбы.

@@ -46,12 +46,9 @@ export function useFocusTrap({ active, returnFocusTo, onEscape }: UseFocusTrapOp
 
   // Возвращаем фокус при деактивации
   useEffect(() => {
-    return () => {
-      if (!active) {
-        const elementToFocus = returnFocusTo || previousActiveElement.current;
-        elementToFocus?.focus();
-      }
-    };
+    if (active) return;
+    const elementToFocus = returnFocusTo || previousActiveElement.current;
+    elementToFocus?.focus();
   }, [active, returnFocusTo]);
 
   // Устанавливаем начальный фокус

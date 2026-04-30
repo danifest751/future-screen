@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
@@ -10,6 +10,7 @@ import { useGlobalHeader } from '../hooks/useGlobalHeader';
 import { useGlobalBrand } from '../hooks/useGlobalBrand';
 import { safeHref } from '../lib/safeHref';
 import { useEditableBinding } from '../hooks/useEditableBinding';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 import type { GlobalHeaderContent } from '../lib/content/globalHeader';
 import type { GlobalBrandContent } from '../lib/content/globalBrand';
 
@@ -34,6 +35,7 @@ const Header = () => {
   const [scrolled, setScrolled] = useState(false);
   const [rentalDropdownOpen, setRentalDropdownOpen] = useState(false);
   const rentalTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
   const { isAuthenticated, logout } = useAuth();
   const { siteLocale, setSiteLocale } = useI18n();
   const navigate = useNavigate();
@@ -117,7 +119,12 @@ const Header = () => {
     }
   }, [location.pathname]);
 
-  const closeMenu = () => setMenuOpen(false);
+  const closeMenu = useCallback(() => setMenuOpen(false), []);
+  const mobileMenuTrap = useFocusTrap({
+    active: menuOpen,
+    returnFocusTo: menuButtonRef.current,
+    onEscape: closeMenu,
+  });
 
   const handleRentalMouseEnter = () => {
     if (rentalTimeoutRef.current) clearTimeout(rentalTimeoutRef.current);
@@ -128,6 +135,13 @@ const Header = () => {
     rentalTimeoutRef.current = setTimeout(() => {
       setRentalDropdownOpen(false);
     }, 150);
+  };
+
+  const handleRentalTouchStart = (event: React.TouchEvent<HTMLAnchorElement>) => {
+    if (!rentalDropdownOpen) {
+      event.preventDefault();
+      setRentalDropdownOpen(true);
+    }
   };
 
   const handleHashNav = (event: React.MouseEvent<HTMLAnchorElement>, href: string) => {
@@ -220,6 +234,7 @@ const Header = () => {
           <div className="relative" onMouseEnter={handleRentalMouseEnter} onMouseLeave={handleRentalMouseLeave}>
             <PrefetchLink
               to="/rent"
+              onTouchStart={handleRentalTouchStart}
               className="rounded-full px-4 py-2 text-sm font-medium text-gray-300 transition-all duration-200 hover:bg-white/5 hover:text-white"
             >
               <span {...rentLabelEdit.bindProps}>{rentLabelEdit.value}</span>
@@ -287,10 +302,13 @@ const Header = () => {
           )}
 
           <button
+            ref={menuButtonRef}
             type="button"
             onClick={() => setMenuOpen((value) => !value)}
             className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 text-gray-400 transition hover:border-white/30 hover:text-white lg:hidden"
             aria-label={headerContent.menuAriaLabel}
+            aria-expanded={menuOpen}
+            aria-controls="mobile-navigation"
           >
             {menuOpen ? (
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
@@ -306,7 +324,11 @@ const Header = () => {
       </div>
 
       {menuOpen ? (
-        <div className="border-t border-white/10 bg-black/85 px-4 py-4 backdrop-blur lg:hidden">
+        <div
+          id="mobile-navigation"
+          ref={mobileMenuTrap.containerRef as React.RefObject<HTMLDivElement>}
+          className="border-t border-white/10 bg-black/85 px-4 py-4 backdrop-blur lg:hidden"
+        >
           <nav className="container-page flex flex-col gap-2">
             {!isAdminPath ? (
               <div className="mb-1">

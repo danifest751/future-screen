@@ -12,12 +12,21 @@ import type { MediaItem, MediaFilter, CaseMediaLink } from '../types/media';
 export const mediaQueryKeys = {
   all: ['media'] as const,
   lists: () => [...mediaQueryKeys.all, 'list'] as const,
-  list: (filter: MediaFilter) => [...mediaQueryKeys.lists(), filter] as const,
+  list: (filter: MediaFilter, pagination: MediaPaginationOptions) =>
+    [...mediaQueryKeys.lists(), filter, pagination] as const,
   details: () => [...mediaQueryKeys.all, 'detail'] as const,
   detail: (id: string) => [...mediaQueryKeys.details(), id] as const,
   tags: () => [...mediaQueryKeys.all, 'tags'] as const,
   caseMedia: (caseId: number) => [...mediaQueryKeys.all, 'case', caseId] as const,
 };
+
+export type MediaPaginationOptions = {
+  limit?: number;
+  offset?: number;
+};
+
+const clampLimit = (value: number | undefined, fallback: number) =>
+  Math.min(Math.max(value ?? fallback, 1), 250);
 
 // ============================================
 // Queries
@@ -26,13 +35,19 @@ export const mediaQueryKeys = {
 /**
  * Get all media items with optional filtering
  */
-export function useMediaLibraryQuery(filter: MediaFilter = {}) {
+export function useMediaLibraryQuery(
+  filter: MediaFilter = {},
+  pagination: MediaPaginationOptions = {},
+) {
+  const limit = clampLimit(pagination.limit, 96);
+  const offset = Math.max(pagination.offset ?? 0, 0);
+
   return useQuery({
-    queryKey: mediaQueryKeys.list(filter),
+    queryKey: mediaQueryKeys.list(filter, { limit, offset }),
     queryFn: async () => {
       let query = supabase
         .from('media_items')
-        .select('*');
+        .select('*', { count: 'exact' });
 
       // Apply type filter
       if (filter.type && filter.type !== 'all') {
@@ -66,10 +81,15 @@ export function useMediaLibraryQuery(filter: MediaFilter = {}) {
           query = query.order('created_at', { ascending: false });
       }
 
-      const { data, error } = await query;
+      const { data, error, count } = await query.range(offset, offset + limit - 1);
 
       if (error) throw error;
-      return (data || []) as MediaItem[];
+      return {
+        items: (data || []) as MediaItem[],
+        total: count ?? data?.length ?? 0,
+        limit,
+        offset,
+      };
     },
   });
 }

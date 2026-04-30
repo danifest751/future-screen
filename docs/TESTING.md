@@ -26,19 +26,19 @@ npm run test:e2e -- some-file  # один e2e spec
 
 ---
 
-## Что НЕ подключено (важно)
+## Глобальный setup
 
-### `@testing-library/jest-dom` НЕ загружен глобально
+### `@testing-library/jest-dom`
 
-`expect(el).toBeInTheDocument()`, `toHaveAttribute()`, `toHaveClass()` —
-все они **бросят `TypeError: ... is not a function`**.
+`vitest.setup.ts` подключает `@testing-library/jest-dom/vitest`, поэтому
+`expect(el).toBeInTheDocument()`, `toHaveAttribute()`, `toHaveClass()` и
+другие DOM matchers доступны во всех Vitest-тестах.
 
 ```ts
-// ❌ не работает
 expect(button).toBeInTheDocument();
 expect(button).toHaveAttribute('aria-pressed', 'true');
 
-// ✅ работает
+// Vanilla DOM ассерты тоже ок, когда они читаются проще.
 expect(button).not.toBeNull();
 expect(button.getAttribute('aria-pressed')).toBe('true');
 expect(button.textContent).toContain('Сохранить');

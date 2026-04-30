@@ -2,18 +2,32 @@
  * Custom hooks for Media Library operations
  */
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useMediaLibraryQuery, useMediaTagsQuery, useDeleteMediaItemsMutation, useAddTagsMutation, useRemoveTagsMutation, useUpdateMediaItemMutation } from '../queries/mediaLibrary';
 import type { MediaFilter, MediaItem } from '../types/media';
 
+const EMPTY_MEDIA_ITEMS: MediaItem[] = [];
+
 export const useMediaLibrary = (filter: MediaFilter = {}) => {
-  const { data: mediaItems, isLoading, error, refetch } = useMediaLibraryQuery(filter);
+  const pageSize = 96;
+  const [page, setPage] = useState(0);
+  const { data: mediaPage, isLoading, error, refetch } = useMediaLibraryQuery(filter, {
+    limit: (page + 1) * pageSize,
+    offset: 0,
+  });
   const { data: allTags, isLoading: isTagsLoading } = useMediaTagsQuery();
   const deleteMutation = useDeleteMediaItemsMutation();
   const addTagsMutation = useAddTagsMutation();
   const removeTagsMutation = useRemoveTagsMutation();
   const updateMutation = useUpdateMediaItemMutation();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const mediaItems = mediaPage?.items ?? EMPTY_MEDIA_ITEMS;
+  const totalCount = mediaPage?.total ?? mediaItems.length;
+
+  useEffect(() => {
+    setPage(0);
+    setSelectedIds(new Set());
+  }, [filter.search, filter.sortBy, filter.tags, filter.type]);
 
   const toggleSelection = useCallback((id: string) => {
     setSelectedIds((prev) => {
@@ -74,6 +88,8 @@ export const useMediaLibrary = (filter: MediaFilter = {}) => {
 
   return {
     mediaItems: mediaItems || [],
+    totalCount,
+    hasMore: mediaItems.length < totalCount,
     allTags: allTags || [],
     selectedIds,
     isLoading: isLoading || isTagsLoading,
@@ -88,6 +104,7 @@ export const useMediaLibrary = (filter: MediaFilter = {}) => {
     addTagsToSelected,
     removeTagsFromSelected,
     updateMediaItem,
+    loadMore: () => setPage((value) => value + 1),
     refetch,
   };
 };

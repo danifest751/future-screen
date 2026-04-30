@@ -35,14 +35,20 @@ type HomeEquipmentExtraItem = HomeEquipmentSectionContent['extraItems'][number];
 // Scroll reveal hook
 function useScrollReveal(threshold = 0.15) {
   const ref = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
+    if (!('IntersectionObserver' in window)) {
+      setIsVisible(true);
+      return;
+    }
+
     const obs = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          el.style.opacity = '1';
-          el.style.transform = 'translateY(0)';
+          setIsVisible(true);
           obs.disconnect();
         }
       },
@@ -51,7 +57,8 @@ function useScrollReveal(threshold = 0.15) {
     obs.observe(el);
     return () => obs.disconnect();
   }, [threshold]);
-  return ref;
+
+  return { ref, isVisible };
 }
 
 // Icons moved to src/data/homeIcons.tsx so the admin icon picker can
@@ -531,12 +538,13 @@ function EventsSliderView({
 
 // Section wrapper with scroll reveal
 const RevealSection = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => {
-  const ref = useScrollReveal(0.1);
+  const { ref, isVisible } = useScrollReveal(0.1);
   return (
     <div
       ref={ref}
-      className={className}
-      style={{ opacity: 0, transform: 'translateY(24px)', transition: 'opacity 0.7s ease, transform 0.7s ease' }}
+      className={`${className} transform transition-[opacity,transform] duration-700 ease-out ${
+        isVisible ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'
+      }`}
     >
       {children}
     </div>
@@ -575,7 +583,7 @@ const CtaForm = () => {
     label: 'CTA form — success reset button',
   });
 
-  const [formData, setFormData] = useState({ name: '', phone: '', email: '' });
+  const [formData, setFormData] = useState({ name: '', phone: '', email: '', honey: '' });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -605,6 +613,7 @@ const CtaForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     trackEvent('submit_cta_form');
+    if (formData.honey.trim()) return;
     if (!validate()) return;
     setIsSubmitting(true);
     try {
@@ -613,11 +622,12 @@ const CtaForm = () => {
         name: formData.name.trim(),
         phone: formData.phone.trim() || '-',
         email: formData.email.trim() || undefined,
+        honey: formData.honey,
         pagePath: window.location.pathname,
       });
       if (result.tg || result.email) {
         setIsSuccess(true);
-        setFormData({ name: '', phone: '', email: '' });
+        setFormData({ name: '', phone: '', email: '', honey: '' });
       } else {
         setErrors({ submit: ctaForm.errors.submit });
       }
@@ -651,6 +661,16 @@ const CtaForm = () => {
 
   return (
     <form onSubmit={handleSubmit} className="mx-auto max-w-2xl">
+      <label className="absolute left-[-10000px] top-auto h-px w-px overflow-hidden">
+        Company website
+        <input
+          type="text"
+          tabIndex={-1}
+          autoComplete="off"
+          value={formData.honey}
+          onChange={(e) => setFormData({ ...formData, honey: e.target.value })}
+        />
+      </label>
       <div className="flex flex-col gap-4 md:flex-row md:items-start">
         <div className="flex-1 space-y-4">
           <div>

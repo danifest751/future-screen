@@ -124,7 +124,10 @@ export const RequestForm = ({
       </div>
 
       <form className="grid gap-3" onSubmit={handleSubmit(onSubmit)}>
-        <input type="text" className="hidden" tabIndex={-1} autoComplete="off" {...register('honey')} />
+        <label className="absolute left-[-10000px] top-auto h-px w-px overflow-hidden">
+          Company website
+          <input type="text" tabIndex={-1} autoComplete="off" {...register('honey')} />
+        </label>
 
         <label className="space-y-1 text-sm text-slate-200">
           <EditableLabel

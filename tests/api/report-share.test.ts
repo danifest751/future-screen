@@ -39,6 +39,7 @@ const createSupabaseMock = (options?: SupabaseMockOptions) => {
           return builder;
         });
         builder.eq = vi.fn(() => builder);
+        builder.gt = vi.fn(() => builder);
         builder.maybeSingle = vi.fn(async () => {
           if (builder.__select.includes('slug')) {
             return state.slugChecks.shift() ?? { data: null, error: null };

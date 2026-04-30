@@ -145,7 +145,7 @@ const createUniqueSlug = async (supabase: SupabaseClient): Promise<string> => {
 
 const sendHtmlResponse = (res: VercelResponse, html: string): VercelResponse => {
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
-  res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+  res.setHeader('Cache-Control', 'no-store');
   // Defence-in-depth: even if something slips past DOMPurify, the browser
   // runs the page sandboxed — no script execution, no top-level navigation,
   // no cookies or storage access. `allow-same-origin` keeps images from
@@ -164,6 +164,8 @@ const sendHtmlResponse = (res: VercelResponse, html: string): VercelResponse => 
     ].join('; '),
   );
   res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+  res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
   return res.status(200).send(html);
 };
 
@@ -307,8 +309,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       const { data, error } = await supabase
         .from(SHARE_TABLE)
-        .select('html')
+        .select('html, expires_at')
         .eq('slug', slug)
+        .gt('expires_at', new Date().toISOString())
         .maybeSingle();
       if (error) throw error;
       if (!data?.html) {

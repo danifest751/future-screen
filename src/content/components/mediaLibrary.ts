@@ -25,7 +25,9 @@ export const mediaLibraryContent = {
   },
   results: {
     loading: 'Загрузка...',
-    found: (count: number) => `Найдено: ${count}`,
+    found: (count: number, total?: number) =>
+      typeof total === 'number' && total > count ? `Показано: ${count} из ${total}` : `Найдено: ${count}`,
+    loadMore: 'Показать ещё',
     totalTags: (count: number) => `Всего тегов: ${count}`,
   },
   empty: {

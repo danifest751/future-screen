@@ -68,14 +68,16 @@ export const MediaLibrary = ({
     };
   }, [deletingMedia]);
   const queryFilter = useMemo<MediaFilter>(() => ({
-    search: '',
+    search: filter.search,
     tags: filter.tags,
     type: filter.type,
     sortBy: filter.sortBy,
-  }), [filter.sortBy, filter.tags, filter.type]);
+  }), [filter.search, filter.sortBy, filter.tags, filter.type]);
 
   const {
     mediaItems,
+    totalCount,
+    hasMore,
     allTags,
     selectedIds: localSelectedIds,
     isLoading,
@@ -88,6 +90,7 @@ export const MediaLibrary = ({
     addTagsToSelected,
     removeTagsFromSelected,
     updateMediaItem,
+    loadMore,
     refetch,
     error,
   } = useMediaLibrary(queryFilter);
@@ -356,7 +359,11 @@ export const MediaLibrary = ({
           </div>
 
           <div className="mt-3 grid gap-2 border-t border-white/10 pt-3 text-xs text-slate-400 sm:grid-cols-4">
-            <span>{isLoading ? mediaLibraryContent.results.loading : mediaLibraryContent.results.found(filteredItems.length)}</span>
+            <span>
+              {isLoading
+                ? mediaLibraryContent.results.loading
+                : mediaLibraryContent.results.found(filteredItems.length, totalCount)}
+            </span>
             <span>{mediaLibraryContent.list.image}: {mediaStats.imageCount}</span>
             <span>{mediaLibraryContent.list.video}: {mediaStats.videoCount}</span>
             <span className="font-mono">{formatFileSize(mediaStats.totalSize)}</span>
@@ -455,31 +462,45 @@ export const MediaLibrary = ({
             )}
           </div>
         ) : viewMode === 'grid' ? (
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">
-            {filteredItems.map((media) => (
-              <MediaCard
-                key={media.id}
-                media={media}
-                isSelected={effectiveSelectedIds.has(media.id)}
-                onToggleSelect={() => handleToggleSelect(media.id)}
-                onEdit={!selectable ? setEditingMedia : undefined}
-                onDelete={!selectable ? setDeletingMedia : undefined}
-                onShowDetails={!selectable ? setDetailsMedia : undefined}
-                selectable
-                showActions={!selectable}
-              />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">
+              {filteredItems.map((media) => (
+                <MediaCard
+                  key={media.id}
+                  media={media}
+                  isSelected={effectiveSelectedIds.has(media.id)}
+                  onToggleSelect={() => handleToggleSelect(media.id)}
+                  onEdit={!selectable ? setEditingMedia : undefined}
+                  onDelete={!selectable ? setDeletingMedia : undefined}
+                  onShowDetails={!selectable ? setDetailsMedia : undefined}
+                  selectable
+                  showActions={!selectable}
+                />
+              ))}
+            </div>
+            {hasMore ? (
+              <div className="flex justify-center pt-3">
+                <button
+                  type="button"
+                  onClick={loadMore}
+                  className="rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-sm text-slate-200 transition hover:border-white/30 hover:text-white active:scale-[0.98]"
+                >
+                  {mediaLibraryContent.results.loadMore}
+                </button>
+              </div>
+            ) : null}
+          </>
         ) : (
-          <div className="space-y-1.5">
-            {filteredItems.map((media) => (
-              <div
-                key={media.id}
-                onClick={() => handleToggleSelect(media.id)}
-                className={`flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition active:scale-[0.998] ${
-                  effectiveSelectedIds.has(media.id) ? 'border-emerald-500/50 bg-emerald-500/10' : 'border-white/10 bg-slate-900/70 hover:border-white/20 hover:bg-slate-900'
-                }`}
-              >
+          <>
+            <div className="space-y-1.5">
+              {filteredItems.map((media) => (
+                <div
+                  key={media.id}
+                  onClick={() => handleToggleSelect(media.id)}
+                  className={`flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition active:scale-[0.998] ${
+                    effectiveSelectedIds.has(media.id) ? 'border-emerald-500/50 bg-emerald-500/10' : 'border-white/10 bg-slate-900/70 hover:border-white/20 hover:bg-slate-900'
+                  }`}
+                >
                 {media.type === 'image' ? (
                   <img src={media.public_url} alt={media.name} className="h-10 w-12 rounded object-cover" />
                 ) : (
@@ -549,9 +570,21 @@ export const MediaLibrary = ({
                     </>
                   )}
                 </div>
+                </div>
+              ))}
+            </div>
+            {hasMore ? (
+              <div className="flex justify-center pt-3">
+                <button
+                  type="button"
+                  onClick={loadMore}
+                  className="rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-sm text-slate-200 transition hover:border-white/30 hover:text-white active:scale-[0.98]"
+                >
+                  {mediaLibraryContent.results.loadMore}
+                </button>
               </div>
-            ))}
-          </div>
+            ) : null}
+          </>
         )}
       </div>
     </>

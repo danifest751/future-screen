@@ -9,22 +9,39 @@ import type { Database } from '../lib/database.types';
 
 type LeadRow = Database['public']['Tables']['leads']['Row'];
 
+export type LeadQueryOptions = {
+  limit?: number;
+  offset?: number;
+};
+
+const clampLimit = (value: number | undefined, fallback: number) =>
+  Math.min(Math.max(value ?? fallback, 1), 500);
+
 /**
- * Получить все лиды.
+ * Получить страницу лидов.
  */
-export function useLeadsQuery() {
+export function useLeadsQuery(options: LeadQueryOptions = {}) {
+  const limit = clampLimit(options.limit, 200);
+  const offset = Math.max(options.offset ?? 0, 0);
+
   return useQuery({
-    queryKey: queryKeys.leads.all,
+    queryKey: queryKeys.leads.list(limit, offset),
     queryFn: async () => {
       // PR #5b: soft-delete — hide rows where deleted_at IS NOT NULL.
-      const { data, error } = await supabase
+      const { data, error, count } = await supabase
         .from('leads')
-        .select('*')
+        .select('*', { count: 'exact' })
         .is('deleted_at', null)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1);
 
       if (error) throw error;
-      return data as LeadRow[];
+      return {
+        items: data as LeadRow[],
+        total: count ?? data?.length ?? 0,
+        limit,
+        offset,
+      };
     },
   });
 }

@@ -9,13 +9,13 @@ import { mapLeadFromDB } from '../lib/mappers';
 import type { LeadLog } from '../types/leads';
 
 export const useLeads = () => {
-  const { data: leadsRaw, isLoading, error } = useLeadsQuery();
+  const { data: leadsPage, isLoading, error } = useLeadsQuery();
   const clearMutation = useClearLeadsMutation();
   const deleteMutation = useDeleteLeadMutation();
   const markAllReadMutation = useMarkAllLeadsReadMutation();
   const markReadMutation = useMarkLeadReadMutation();
 
-  const leads: LeadLog[] = leadsRaw?.map(mapLeadFromDB) ?? [];
+  const leads: LeadLog[] = leadsPage?.items.map(mapLeadFromDB) ?? [];
 
   const clearLeads = async () => {
     try {
@@ -55,6 +55,7 @@ export const useLeads = () => {
 
   return {
     leads,
+    total: leadsPage?.total ?? leads.length,
     loading: isLoading,
     error: error?.message ?? null,
     loadLeads: async () => {}, // React Query loads leads automatically.

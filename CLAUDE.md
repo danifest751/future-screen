@@ -152,7 +152,7 @@ docs/               # AI_RULES, PROJECT_CONTEXT, спеки фич
 
 ### 6. Тесты
 
-- **Unit/component**: vitest + jsdom. **`@testing-library/jest-dom` НЕ подключён глобально** — `toBeInTheDocument`/`toHaveAttribute` не работают. Используйте либо vanilla DOM (`element.getAttribute(...)`), либо `expect(element.textContent).toContain(...)`. Примеры: [FilterPills.test.tsx](src/components/admin/ui/FilterPills.test.tsx), [ConfirmModal.test.tsx](src/components/admin/ui/ConfirmModal.test.tsx).
+- **Unit/component**: vitest + jsdom. `@testing-library/jest-dom` подключён через [vitest.setup.ts](vitest.setup.ts), так что DOM matchers (`toBeInTheDocument`, `toHaveAttribute` и т.д.) доступны в тестах.
 - **React-hooks**: `renderHook` + `act` из `@testing-library/react`, мокайте `react-hot-toast`, `EditModeContext`, `I18nContext` — см. [useEditableSave.test.tsx](src/hooks/useEditableSave.test.tsx).
 - **Supabase сервисы**: chain-mocker через Proxy; см. [siteContentVersions.test.ts](src/services/siteContentVersions.test.ts) или [mediaUsage.test.ts](src/services/mediaUsage.test.ts).
 - **E2E**: моки Supabase в [tests/e2e/helpers/supabaseMock.ts](tests/e2e/helpers/supabaseMock.ts). Если добавляете новый запрос на site_content / RPC — добавьте handler.
@@ -183,7 +183,6 @@ docs/               # AI_RULES, PROJECT_CONTEXT, спеки фич
 - ❌ Не добавляй inline-литералы на русском/английском в новый JSX — заведи запись в `src/content/...`.
 - ❌ Не правь SQL-миграции, которые уже есть на проде — добавляй новую.
 - ❌ Не используй `user_metadata` для проверки роли. Только `app_metadata.role` через `useUserRole()` или `current_user_role()`.
-- ❌ Не пиши тесты с `toBeInTheDocument` — работают только vanilla DOM ассерты.
 - ❌ Не вызывай `vercel --prod` или `git push --force` без явной просьбы.
 
 ---

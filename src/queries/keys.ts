@@ -31,6 +31,7 @@ export const queryKeys = {
   // Leads
   leads: {
     all: ['leads'] as const,
+    list: (limit: number, offset: number) => ['leads', 'list', limit, offset] as const,
   },
   
   // Privacy Policy

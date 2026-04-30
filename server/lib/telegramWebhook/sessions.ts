@@ -40,7 +40,7 @@ export const setSession = async (chatId: number, session: Session): Promise<void
         chat_id: chatId,
         state: session.state,
         selected_tags: session.selectedTags,
-        last_activity: Date.now(),
+        last_activity: new Date().toISOString(),
       });
     } catch (err) {
       console.error('[Session] Supabase write failed:', err);

@@ -9,6 +9,7 @@ export type FormPayload = {
   date?: string;
   format?: string;
   comment?: string;
+  honey?: string;
   extra?: Record<string, string>;
   pagePath?: string;
   referrer?: string;
