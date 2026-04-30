@@ -215,15 +215,22 @@ function drawDoor(
   const px = -ny;
   const py = nx;
 
-  const doorW = door.width;
-  const hingeSign = (door.swing ?? 'left') === 'left' ? 1 : -1;
+  const doorW = Math.max(door.width, 0.01);
+  const halfDoorW = doorW / 2;
+  const leftJambX = cx - nx * halfDoorW;
+  const leftJambY = cy - ny * halfDoorW;
+  const rightJambX = cx + nx * halfDoorW;
+  const rightJambY = cy + ny * halfDoorW;
+  const hingeIsLeft = (door.swing ?? 'left') === 'left';
+  const hingeX = hingeIsLeft ? leftJambX : rightJambX;
+  const hingeY = hingeIsLeft ? leftJambY : rightJambY;
+  const latchX = hingeIsLeft ? rightJambX : leftJambX;
+  const latchY = hingeIsLeft ? rightJambY : leftJambY;
   const sideSign = (door.swingSide ?? 'inside') === 'inside' ? 1 : -1;
-  const wallEndX = cx + nx * doorW * hingeSign;
-  const wallEndY = cy + ny * doorW * hingeSign;
-  const openEndX = cx + px * doorW * sideSign;
-  const openEndY = cy + py * doorW * sideSign;
-  const controlX = cx + nx * doorW * hingeSign + px * doorW * sideSign;
-  const controlY = cy + ny * doorW * hingeSign + py * doorW * sideSign;
+  const openEndX = hingeX + px * doorW * sideSign;
+  const openEndY = hingeY + py * doorW * sideSign;
+  const controlX = latchX + px * doorW * sideSign;
+  const controlY = latchY + py * doorW * sideSign;
 
   // Opening arc
   ctx.save();
@@ -234,26 +241,26 @@ function drawDoor(
     ctx.shadowBlur = 8 / viewScale;
   }
   ctx.beginPath();
-  ctx.moveTo(wallEndX, wallEndY);
+  ctx.moveTo(latchX, latchY);
   ctx.quadraticCurveTo(controlX, controlY, openEndX, openEndY);
   ctx.stroke();
 
   // Door line
   ctx.beginPath();
-  ctx.moveTo(cx, cy);
+  ctx.moveTo(hingeX, hingeY);
   ctx.lineTo(openEndX, openEndY);
   ctx.stroke();
 
-  // Threshold / hinge side marker
+  // Threshold stays fixed while left/right only swaps the hinge jamb.
   ctx.beginPath();
-  ctx.moveTo(cx, cy);
-  ctx.lineTo(wallEndX, wallEndY);
+  ctx.moveTo(leftJambX, leftJambY);
+  ctx.lineTo(rightJambX, rightJambY);
   ctx.stroke();
 
   if (selected) {
     ctx.fillStyle = 'rgba(251,191,36,1)';
     ctx.beginPath();
-    ctx.arc(cx, cy, 0.08, 0, Math.PI * 2);
+    ctx.arc(hingeX, hingeY, 0.08, 0, Math.PI * 2);
     ctx.fill();
   }
   ctx.restore();

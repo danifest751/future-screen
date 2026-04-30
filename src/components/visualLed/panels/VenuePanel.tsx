@@ -213,7 +213,7 @@ const VenuePanel = () => {
                 >
                   <div className="mb-1 flex items-center justify-between text-slate-300">
                     <span>
-                      Дверь {i + 1} · {d.swing === 'right' ? 'петля справа' : 'петля слева'} ·{' '}
+                      Дверь {i + 1} · {d.swing === 'right' ? 'косяк справа' : 'косяк слева'} ·{' '}
                       {(d.swingSide ?? 'inside') === 'inside' ? 'внутрь' : 'наружу'}
                     </span>
                     <button type="button" onClick={(event) => { event.stopPropagation(); removeDoor(d.id); }} className="rounded p-0.5 text-slate-400 hover:bg-red-500/20 hover:text-red-300" title="Удалить"><Trash2 className="h-3 w-3" /></button>
@@ -245,7 +245,7 @@ const VenuePanel = () => {
                           : 'border-white/10 bg-slate-950/60 text-slate-400 hover:text-white'
                       }`}
                     >
-                      <RotateCcw className="h-3 w-3" /> Влево
+                      <RotateCcw className="h-3 w-3" /> Косяк слева
                     </button>
                     <button
                       type="button"
@@ -257,7 +257,7 @@ const VenuePanel = () => {
                           : 'border-white/10 bg-slate-950/60 text-slate-400 hover:text-white'
                       }`}
                     >
-                      <RotateCcw className="h-3 w-3 scale-x-[-1]" /> Вправо
+                      <RotateCcw className="h-3 w-3 scale-x-[-1]" /> Косяк справа
                     </button>
                   </div>
                   <div className="mt-1 grid grid-cols-2 gap-1" onClick={(event) => event.stopPropagation()}>

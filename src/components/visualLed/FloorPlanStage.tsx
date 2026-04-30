@@ -298,15 +298,19 @@ const FloorPlanStage = () => {
           if (wall) {
             const wallLen = Math.hypot(wall.x2 - wall.x1, wall.y2 - wall.y1);
             const proj = projectPointToSegment(p, { x: wall.x1, y: wall.y1 }, { x: wall.x2, y: wall.y2 });
-            const offset = proj.t * wallLen;
             const isDoor = activeTool === 'door';
+            const width = isDoor ? 0.9 : 1.2;
+            const halfWidth = Math.min(width / 2, wallLen / 2);
+            const offset = isDoor
+              ? Math.max(halfWidth, Math.min(wallLen - halfWidth, proj.t * wallLen))
+              : proj.t * wallLen;
             dispatch({
               type: isDoor ? 'venue/door/add' : 'venue/window/add',
               payload: {
                 id: uid(isDoor ? 'door' : 'win'),
                 wallId: wall.id,
                 offset,
-                width: isDoor ? 0.9 : 1.2,
+                width,
                 ...(isDoor ? { swing: 'left' as const, swingSide: 'inside' as const } : {}),
               },
             });
@@ -501,9 +505,13 @@ const FloorPlanStage = () => {
           if (door && wall) {
             const wallLen = Math.hypot(wall.x2 - wall.x1, wall.y2 - wall.y1);
             const projected = projectPointToSegment(p, { x: wall.x1, y: wall.y1 }, { x: wall.x2, y: wall.y2 });
+            const halfDoorWidth = Math.min(door.width / 2, wallLen / 2);
             dispatch({
               type: 'venue/door/update',
-              payload: { id: target.id, patch: { offset: Math.max(0, Math.min(wallLen, projected.t * wallLen)) } },
+              payload: {
+                id: target.id,
+                patch: { offset: Math.max(halfDoorWidth, Math.min(wallLen - halfDoorWidth, projected.t * wallLen)) },
+              },
             });
           }
         } else if (target.kind === 'window') {
